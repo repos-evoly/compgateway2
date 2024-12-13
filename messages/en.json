@@ -1,0 +1,220 @@
+{
+    "sidebarItems": {
+      "statementOfAccount":"Statement of account",
+      "title":"Companies Gateway",
+          "transfer":{
+          "label": "Transfers",
+          "inBank": "Transfers within the bank",
+          "betweenBanks": "Transfers between banks",
+          "out":"External transfers "
+      },
+      "requests":{
+        "label":"Requests",
+        "checkBook":"Request a check book",
+        "certifiedCheck":"Certified Check request",
+        "guaranteeLetter":"Letter of guarantee request",
+        "creditFacility":"Credit facility request",
+        "visa":"visa card Request",
+        "rtgs":"RTGS transfer request",
+        "foreign":"license for foreign transfers request",
+        "cbl":"CBL Inquiry Request"
+      },
+      "localization":"Localization of salaries",
+      "documentary":"Documentary Credits",
+      "followUp":"Follow Up Requests",
+      "settings":"Settings",
+      "currRate":"Currency exchange rates",
+  
+      "logout":"Logout"
+     },
+    "mainHeader":{
+      "title":"Companies Gateway"
+    },
+    "cblForm":{
+      "partyName":"Party Name",
+      "capital":"Capital",
+      "foundingDate":{
+        "title":"Founding Date",
+        "sub":"meladi"
+      },
+      "legalForm":"Legal Form",
+      "branchOrAgency":"Branch or Agnecy",
+      "sub":"m",
+      "currentAccount":"Currenct account number",
+      "accountOpening":"Account opening date",
+  
+    
+      "commercialLicense":"Commercial license number",
+      "validatyLicense":"Validaty of commercial license",
+      "commercialRegistration":"Commercial registration number",
+      "validatyRegister":"Validity of the commercial register",
+      "statisticalCode":"Statistical Code",
+      "validatyCode":"Statistical Code Validity",
+      "chamberNumber":"Chamber of commerce number",
+      "validatyChamber":"Validaty of the chamber of commerce",
+      "taxNumber":"Tax Number",
+      "taxAdmin":"Tax Administration",
+      "office":"Office",
+      "legalRepresentative":"Name of the legal representative",
+      "representativeNumber":"The national number of the legal representative",
+      "birthDate":"Date of birth",
+      "passportNumber":"Passport number",
+      "passportIssuance":"Passport issuance date",
+      "passportExpiry":"Passport expiry date",
+      "mobile":"Mobile number",
+      "address":"Permanent address",
+  
+  
+      "table1":{
+        "title":"Board Director Members",
+        "columns":{
+          "name":"Name",
+          "position":"Position"
+        }
+      },
+  
+      "table2":{
+        "title":"Authorized signatories on the account",
+        "columns":{
+          "name":"Name",
+          "signature":"Signature"
+        }
+      },
+  
+      "infoBox": {
+        "1": "Attachments",
+        "2": "A colored copy of the passport for the authorized person and members (valid)",
+        "3": "The national number form for the authorized person and members (stamped)",
+        "4": "A colored copy of the ID card for the authorized person and members (valid)",
+        "5": "A colored copy of the statistical code (valid)",
+        "6": "A colored copy of the chamber of commerce certificate (authentic copy, valid)",
+        "7": "A colored copy of the license (authentic copy, valid)",
+        "8": "A colored copy of the commercial registration (authentic copy, valid)",
+        "9": "A copy of the Articles of Association",
+        "10": "Tax clearance certificate",
+        "note": "Note:",
+        "n1": "The authorized person must be the legal representative in the commercial registration.",
+        "n2": "The members mentioned in the Articles of Association and the commercial registration.",
+        "n3": "Documents will not be accepted unless sent by mail and stamped.",
+        "n4": "Ensure that the customer fills in the information correctly."
+      },
+      
+  
+      "footerArray": {
+        "signatureLegalR": "Signature of the legal representative",
+        "date": "Filling date",
+        "name": "Name of the responsible employee",
+        "signature": "Signature and stamp",
+        "addionalLine": "Branch Manager/Agency Head Approval",
+        "sub":"m"
+      }
+      
+  
+  
+    
+    },
+  
+    "signaturePad":{
+      "open":"Open signature pad",
+      "done":"Done",
+      "clear":"Clear"
+    },
+    "actions":"Actions",
+  
+    "RTGSForm":{
+      "accountNb":"ACCCOUNT NO",
+      "name":"NAME OF APPLICANT",
+      "address":"ADDRESS",
+      "benName":"BENEFFICIRYS NAME",
+      "benAccNum":"BENEFFICIRYS ACCCOUNT NO",
+      "benBank":"BENEFFICIRYS BANK",
+      "branch":"BRANCH NAME",
+      "amount":"AMOUNT(LYD)",
+      "only":"ONLY",
+      "reniInfo":"RENITTANCEIN INFORMATION",
+      "custSignature":"Customer Signature",
+      "branchOrAgency":"Branch Manager/Agency Head",
+      "auditorSign":"Internal Auditor Signature",
+      "finSign":"Signature of Financial Intelligence Unit employee",
+      "attachments":"Attachments",
+      "invoice":"Invoice",
+      "contract":"Contract",
+      "claim":"Claim",
+      "otherDoc":"Other documents",
+      "note":"Note: Any transfer exceeding one million dinars must be approved by an employee of the bank’s Financial Information Unit.",
+      "ach":"ACH",
+      "rtgs":"RTGS",
+      "title":"مصرف التجارة و التنمية",
+      "subtitle":"الادارة العامة - بنغازي",
+      "accInfo":"Account Information",
+      "benDetails":"Beneficiary Details",
+      "payDetails":"Payment Details",
+      "footer":"",
+      "refNum":"Reference number",
+      "date":"Date"
+  
+  
+    },
+  
+  
+    "checkForm": {
+      "name": "Full Name",
+      "address": "Address",
+      "accNum": "Account Number",
+      "sendTo": "Please send to",
+      "book": "A book containing",
+      "checkbox": "Check",
+      "checks": "Checks",
+      "for": "For",
+      "holder": "The Holder",
+      "forUse": "For Use",
+      "branch": "Branch",
+      "specificTo": "Specific to",
+      "email": "Send by mail",
+      "savedUntil": "To be kept until claimed",
+      "erase": "(Please erase the words that are not needed)",
+      "agree": "I/We undertake to bear all responsibilities of any kind that directly fall on the bank as a result of the loss, theft, or misuse of one or all of these checks, except in cases where the bank has proceeded with the disbursement of such lost, stolen, or misused checks, or has been properly notified in writing beforehand about the loss, theft, or misuse of these checks.",
+      "date": "Date",
+      "signature": "Signature",
+      "note": "Note: The request will only be accepted with the approved bank signature and a dual signature for accounts requiring dual signatures.",
+      "checkDetails":"Check Details",
+      "checkboxSection":""
+    },
+  
+  
+    "CheckRequest": {
+      "title": "Certified Check Request",
+      "branch": "Branch",
+      "branchNum": "Branch Number",
+      "date": "Date",
+      "f": "F",
+      "customerName": "Customer Name",
+      "cardNum": "Card Number",
+      "checkAmountChars": "Check Amount in Words",
+      "amount": "Amount",
+      "dirham": "Dirham",
+      "lyd": "LYD",
+      "curr": "Currency",
+      "expenses": "Expenses",
+      "totalAmount": "Total Amount",
+      "accountNum": "Account Number",
+      "beneficiary": "Beneficiary",
+      "cust1Sign": "Customer Signature 1",
+      "cust2Sign": "Customer Signature 2",
+      "cust3Sign": "Customer Signature 3",
+      "note": "Please deduct the specified amount from my account and issue a certified check for it.",
+      "filledByBank": "To be filled by the bank",
+      "checkNum": "Certified Check Number",
+      "employeeSign": "Responsible Employee's Signature",
+      "custSign": "Customer's Receipt Signature",
+      "otherInfo":"",
+      "customerInfo":"",
+      "actions":"Actions",
+      "amountTable":""
+  
+  
+    }
+    
+    
+  
+  }

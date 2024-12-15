@@ -5,7 +5,7 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Divider from "./Divider";
 
 type SidebarItem = {
-  id: number; // Unique identifier
+  id: number;
   path: string; // Navigation path
   label: string; // Translation key for the label
   icon: React.FC<React.SVGProps<SVGSVGElement>>; // Icon component
@@ -43,15 +43,21 @@ const LinkItem: React.FC<LinkItemProps> = ({
   if (item.isLocaleToggle) {
     return (
       <div
-        className="flex items-center gap-4 p-2 rounded cursor-pointer hover:bg-success-light"
+        className="flex items-center gap-4 p-2 rounded cursor-pointer hover:bg-info-dark"
         onClick={toggleLocale}
       >
-        <item.icon className="w-6 h-6" />
-        {sidebarOpen && (
-          <span className="text-sm">
-            {currentLocale === "ar" ? "English" : "العربية"}
-          </span>
-        )}
+        <item.icon
+          className={`${
+            sidebarOpen ? "w-6 h-6" : "w-5 h-5"
+          } flex-shrink-0 transition-all duration-300`}
+        />
+        <span
+          className={`text-sm transition-opacity duration-300 ${
+            sidebarOpen ? "opacity-100" : "opacity-0 invisible"
+          }`}
+        >
+          {currentLocale === "ar" ? "English" : "العربية"}
+        </span>
       </div>
     );
   }
@@ -66,14 +72,24 @@ const LinkItem: React.FC<LinkItemProps> = ({
         <div
           className={`flex items-center justify-between p-2 rounded cursor-pointer ${
             isActive
-              ? "bg-success-light"
-              : "hover:bg-success-light hover:text-white"
+              ? "bg-info-dark text-white"
+              : "hover:bg-info-dark hover:text-white"
           }`}
           onClick={() => toggleSubmenu(item.id)}
         >
           <div className="flex items-center gap-4">
-            <item.icon className="w-6 h-6" />
-            {sidebarOpen && <span className="text-sm">{t(item.label)}</span>}
+            <item.icon
+              className={`${
+                sidebarOpen ? "w-6 h-6" : "w-5 h-5"
+              } flex-shrink-0 transition-all duration-300`}
+            />
+            <span
+              className={`text-sm break-words ${
+                sidebarOpen ? "opacity-100" : "opacity-0 invisible"
+              }`}
+            >
+              {t(item.label)}
+            </span>
           </div>
           {sidebarOpen && (
             <div>
@@ -90,34 +106,57 @@ const LinkItem: React.FC<LinkItemProps> = ({
           href={`/${currentLocale}${item.path}`}
           className={`flex items-center p-2 rounded ${
             isActive
-              ? "bg-success-light"
-              : "hover:bg-success-light hover:text-white"
+              ? "bg-info-dark text-white"
+              : "hover:bg-info-dark hover:text-white"
           }`}
         >
           <div className="flex items-center gap-4">
-            <item.icon className="w-6 h-6" />
-            {sidebarOpen && <span className="text-sm">{t(item.label)}</span>}
+            <item.icon
+              className={`${
+                sidebarOpen ? "w-6 h-6" : "w-5 h-5"
+              } flex-shrink-0 transition-all duration-300`}
+            />
+            <span
+              className={`text-sm break-words ${
+                sidebarOpen ? "opacity-100" : "opacity-0 invisible"
+              }`}
+            >
+              {t(item.label)}
+            </span>
           </div>
         </Link>
       )}
 
       {/* Submenu Items */}
       {submenuOpen === item.id && hasChildren && (
-        <div className={`pl-${sidebarOpen ? 6 : 2}`}>
-          {item.children?.map((child) => (
-            <Link
-              key={child.id}
-              href={`/${currentLocale}${child.path}`}
-              className={`flex items-center gap-4 p-2 rounded ${
-                pathname === `/${currentLocale}${child.path}`
-                  ? "bg-info-dark"
-                  : "hover:bg-success-light hover:text-white"
-              }`}
-            >
-              <child.icon className="w-5 h-5" />
-              {sidebarOpen && <span className="text-sm">{t(child.label)}</span>}
-            </Link>
-          ))}
+        <div className="pl-4">
+          {item.children?.map((child) => {
+            const isChildActive = pathname === `/${currentLocale}${child.path}`;
+            return (
+              <Link
+                key={child.id}
+                href={`/${currentLocale}${child.path}`}
+                className={`flex items-center gap-4 p-2 rounded ${
+                  isChildActive
+                    ? "bg-info-dark text-white"
+                    : "hover:bg-info-dark hover:text-white"
+                }`}
+              >
+                <child.icon
+                  className={`${
+                    sidebarOpen ? "w-5 h-5" : "w-4 h-4"
+                  } flex-shrink-0 transition-all duration-300`}
+                />
+                <span
+                  className={`text-sm break-words ${
+                    sidebarOpen ? "opacity-100" : "opacity-0 invisible"
+                  }`}
+                >
+                  {t(child.label)}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       )}
     </>

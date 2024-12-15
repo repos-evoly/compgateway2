@@ -10,7 +10,6 @@ import LinkItem from "./LinkItem";
 
 const Sidebar = () => {
   const pathname = usePathname();
-
   const t = useTranslations("sidebarItems");
 
   const [sidebarOpen, setSidebarOpen] = useState(true); // Sidebar toggle state
@@ -33,9 +32,7 @@ const Sidebar = () => {
     <div
       className={`${
         sidebarOpen ? "w-64" : "w-16"
-      } bg-secondary-dark text-white h-screen transition-all duration-300 text-sm ${
-        currentLocale === "ar" ? "rtl" : "ltr"
-      }`}
+      } bg-secondary-dark text-white h-screen transition-all duration-300 text-sm flex-shrink-0`}
     >
       {/* Sidebar Header */}
       <div className="flex items-center justify-between p-4">
@@ -46,32 +43,32 @@ const Sidebar = () => {
           >
             <FaBars className="w-6 h-6" />
           </button>
-          {sidebarOpen && (
-            <span className="text-lg font-semibold">{t("title")}</span>
-          )}
+          <span
+            className={`text-lg font-semibold whitespace-nowrap transition-opacity duration-300 ${
+              sidebarOpen ? "opacity-100" : "opacity-0 invisible"
+            }`}
+          >
+            {t("title")}
+          </span>
         </div>
       </div>
 
       <Divider />
 
       {/* Sidebar Items */}
-      <nav
-        className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]"
-        style={{
-          direction: currentLocale === "ar" ? "rtl" : "ltr",
-        }}
-      >
-        {sidebarItems.map((item) => (
-          <LinkItem
-            key={item.id}
-            item={item}
-            t={t}
-            sidebarOpen={sidebarOpen}
-            submenuOpen={submenuOpen}
-            toggleSubmenu={toggleSubmenu}
-            currentLocale={currentLocale}
-            toggleLocale={item.isLocaleToggle ? toggleLocale : undefined}
-          />
+      <nav className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
+        {sidebarItems.map((item, index) => (
+          <div key={`sidebar-item-${index}`}>
+            <LinkItem
+              item={item}
+              t={t}
+              sidebarOpen={sidebarOpen}
+              submenuOpen={submenuOpen}
+              toggleSubmenu={toggleSubmenu}
+              currentLocale={currentLocale}
+              toggleLocale={item.isLocaleToggle ? toggleLocale : undefined}
+            />
+          </div>
         ))}
       </nav>
     </div>

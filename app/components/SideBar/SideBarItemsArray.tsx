@@ -1,23 +1,30 @@
 import {
-  FaHome,
-  FaCog,
-  FaSignOutAlt,
-  FaDollarSign,
   FaExchangeAlt,
-  FaBook,
+  FaUniversity,
+  FaCheck,
+  FaHandshake,
+  FaMoneyCheckAlt,
+  FaGlobe,
   FaCreditCard,
+  FaReceipt,
   FaClipboardList,
-  FaMoneyBillWave,
-  FaArrowAltCircleDown,
+  FaFileInvoice,
+  FaSignOutAlt,
+  FaCog,
+  FaTasks,
+  FaFileSignature,
+  FaLanguage,
 } from "react-icons/fa";
-import { IoLanguage } from "react-icons/io5";
+import { IoWalletSharp, IoEarth } from "react-icons/io5";
+import { MdRequestQuote } from "react-icons/md";
+import { HiOutlineCurrencyDollar } from "react-icons/hi";
 
 export const sidebarItems = [
   {
     id: 1,
     label: "statementOfAccount",
     path: "/statement-of-account",
-    icon: FaHome,
+    icon: FaFileInvoice, // More relevant to "Statement of Account"
     children: [],
   },
   {
@@ -31,25 +38,25 @@ export const sidebarItems = [
     id: 3,
     label: "transfer.label",
     path: "/transfer",
-    icon: FaExchangeAlt,
+    icon: IoWalletSharp, // General wallet icon for transfers
     children: [
       {
         id: 4,
         label: "transfer.inBank",
         path: "/transfer/in-bank",
-        icon: FaMoneyBillWave,
+        icon: FaUniversity, // Represents transfers within the same bank
       },
       {
         id: 5,
         label: "transfer.betweenBanks",
         path: "/transfer/between-banks",
-        icon: FaDollarSign,
+        icon: FaExchangeAlt, // Icon for exchange between banks
       },
       {
         id: 6,
         label: "transfer.out",
         path: "/transfer/external",
-        icon: FaArrowAltCircleDown,
+        icon: IoEarth, // Represents external (global) transfers
       },
     ],
   },
@@ -64,55 +71,55 @@ export const sidebarItems = [
     id: 8,
     label: "requests.label",
     path: "/requests",
-    icon: FaClipboardList,
+    icon: MdRequestQuote, // General icon for "Requests"
     children: [
       {
         id: 9,
         label: "requests.checkBook",
         path: "/checkbook",
-        icon: FaBook,
+        icon: FaMoneyCheckAlt, // Icon for checkbook requests
       },
       {
         id: 10,
         label: "requests.certifiedCheck",
         path: "/checkRequest",
-        icon: FaCreditCard,
+        icon: FaCheck, // Certified check requests
       },
       {
         id: 11,
         label: "requests.guaranteeLetter",
         path: "/requests/guarantee-letter",
-        icon: FaCog,
+        icon: FaFileSignature, // Letter of guarantee request
       },
       {
         id: 12,
         label: "requests.creditFacility",
         path: "/requests/credit-facility",
-        icon: FaDollarSign,
+        icon: FaHandshake, // Icon for credit facility agreements
       },
       {
         id: 13,
         label: "requests.visa",
         path: "/requests/visa-card",
-        icon: FaCreditCard,
+        icon: FaCreditCard, // Icon for Visa card requests
       },
       {
         id: 14,
         label: "requests.rtgs",
         path: "/rtgs",
-        icon: FaCog,
+        icon: FaReceipt, // Icon for RTGS transfer receipts
       },
       {
         id: 15,
         label: "requests.foreign",
         path: "/requests/foreign-transfers",
-        icon: FaExchangeAlt,
+        icon: FaGlobe, // Represents foreign transfers
       },
       {
         id: 16,
         label: "requests.cbl",
         path: "/cbl",
-        icon: FaClipboardList,
+        icon: FaClipboardList, // Icon for inquiry requests (CBL)
       },
     ],
   },
@@ -127,21 +134,21 @@ export const sidebarItems = [
     id: 18,
     label: "localization",
     path: "/localization",
-    icon: FaCog,
+    icon: HiOutlineCurrencyDollar, // Represents salary localization or money management
     children: [],
   },
   {
     id: 19,
     label: "documentary",
     path: "/documentary",
-    icon: FaBook,
+    icon: FaFileInvoice, // Icon for documentary credits
     children: [],
   },
   {
     id: 20,
     label: "followUp",
     path: "/follow-up",
-    icon: FaClipboardList,
+    icon: FaTasks, // Icon for following up requests
     children: [],
   },
   {
@@ -155,14 +162,14 @@ export const sidebarItems = [
     id: 22,
     label: "settings",
     path: "/settings",
-    icon: FaCog,
+    icon: FaCog, // Standard icon for settings
     children: [],
   },
   {
     id: 23,
     label: "changeLanguage",
     path: "/change-language", // A pseudo-path for the toggle
-    icon: IoLanguage,
+    icon: FaLanguage, // Icon for language change
     children: [],
     isLocaleToggle: true, // Custom property to identify this special action
   },
@@ -170,7 +177,7 @@ export const sidebarItems = [
     id: 24,
     label: "logout",
     path: "/logout",
-    icon: FaSignOutAlt,
+    icon: FaSignOutAlt, // Standard logout icon
     children: [],
   },
 ];

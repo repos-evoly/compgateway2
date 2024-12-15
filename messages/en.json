@@ -213,8 +213,12 @@
       "amountTable":""
   
   
+    },
+
+    "notFound":{
+        "title":"Page Not Available",
+        "des":"Sorry, this page is currently not available. Please check back later."
     }
-    
     
   
   }

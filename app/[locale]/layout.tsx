@@ -3,7 +3,7 @@ import { getMessages } from "next-intl/server";
 import "../globals.css";
 import { Cairo } from "next/font/google";
 import MainHeader from "../components/mainHeader/MainHeader";
-import logoUrl from "@/public/images/logo.jpeg";
+import logoUrl from "@/public/images/logo-trans.png";
 import SideBar2 from "../components/SideBar/SideBar2";
 
 // Importing Cairo font from Google Fonts
@@ -14,7 +14,7 @@ export default async function LocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale?: string }>; // Adjust to match the expected type
+  params: Promise<{ locale?: string }>;
 }) {
   const resolvedParams = await params;
   const locale = resolvedParams?.locale || "en"; // Fallback to "en" if locale is undefined
@@ -29,15 +29,15 @@ export default async function LocaleLayout({
         lang={locale}
         dir={isRtl ? "rtl" : "ltr"}
       >
-        <body className="h-full flex flex-col">
+        <body className="h-full flex flex-row">
           <NextIntlClientProvider messages={messages}>
-            {/* Main Header */}
-            <MainHeader title={"title"} logoUrl={logoUrl} isRtl={isRtl} />
+            {/* Sidebar */}
+            <SideBar2 />
 
             {/* Main Content Layout */}
-            <div className="flex flex-1 h-full">
-              {/* Sidebar */}
-              <SideBar2 />
+            <div className="flex-1 flex flex-col">
+              {/* Main Header */}
+              <MainHeader title={"title"} logoUrl={logoUrl} isRtl={isRtl} />
 
               {/* Page Content */}
               <main className="flex-1 p-4 overflow-auto bg-gray-100">

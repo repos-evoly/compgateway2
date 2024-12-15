@@ -5,6 +5,7 @@ import { Cairo } from "next/font/google";
 import MainHeader from "../components/mainHeader/MainHeader";
 import logoUrl from "@/public/images/logo-trans.png";
 import SideBar2 from "../components/SideBar/SideBar2";
+import { GlobalProvider } from "../context/GlobalContext";
 
 // Importing Cairo font from Google Fonts
 const cairo = Cairo({ subsets: ["latin", "arabic"] });
@@ -30,21 +31,23 @@ export default async function LocaleLayout({
         dir={isRtl ? "rtl" : "ltr"}
       >
         <body className="h-full flex flex-row">
-          <NextIntlClientProvider messages={messages}>
-            {/* Sidebar */}
-            <SideBar2 />
+          <GlobalProvider>
+            <NextIntlClientProvider messages={messages}>
+              {/* Sidebar */}
+              <SideBar2 />
 
-            {/* Main Content Layout */}
-            <div className="flex-1 flex flex-col">
-              {/* Main Header */}
-              <MainHeader title={"title"} logoUrl={logoUrl} isRtl={isRtl} />
+              {/* Main Content Layout */}
+              <div className="flex-1 flex flex-col">
+                {/* Main Header */}
+                <MainHeader title={"title"} logoUrl={logoUrl} isRtl={isRtl} />
 
-              {/* Page Content */}
-              <main className="flex-1 p-4 overflow-auto bg-gray-100">
-                {children}
-              </main>
-            </div>
-          </NextIntlClientProvider>
+                {/* Page Content */}
+                <main className="flex-1 p-4 overflow-auto bg-gray-100">
+                  {children}
+                </main>
+              </div>
+            </NextIntlClientProvider>
+          </GlobalProvider>
         </body>
       </html>
     );

@@ -25,7 +25,9 @@
       "settings":"الإعدادات",
       "currRate":"اسعار صرف العملات",
   
-      "logout":"تسجيل الخروج"
+      "logout":"تسجيل الخروج",
+      "defaultTitle":""
+
     },
     "mainHeader":{
       "title":"منظومة بوابة الشركات"

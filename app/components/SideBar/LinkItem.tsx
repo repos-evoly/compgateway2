@@ -52,11 +52,15 @@ const LinkItem: React.FC<LinkItemProps> = ({
         <div className="w-6 h-6 flex items-center justify-center">
           <item.icon className="w-5 h-5" />
         </div>
-        {sidebarOpen && (
-          <span className="text-sm transition-all duration-300">
+        <div
+          className={`transition-opacity duration-300 ${
+            sidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
+          }`}
+        >
+          <span className="text-sm">
             {currentLocale === "ar" ? "English" : "العربية"}
           </span>
-        )}
+        </div>
       </div>
     );
   }
@@ -77,24 +81,18 @@ const LinkItem: React.FC<LinkItemProps> = ({
         }}
       >
         <div className="flex items-center gap-3">
-          {hasChildren && !sidebarOpen ? (
-            // Render only the up/down arrow if the sidebar is closed
-            submenuOpen === item.id ? (
-              <FaChevronUp className="w-5 h-5" />
-            ) : (
-              <FaChevronDown className="w-5 h-5" />
-            )
-          ) : (
-            // Render parent icon when the sidebar is open or item has no children
-            <div className="w-6 h-6 flex items-center justify-center">
-              <item.icon className="w-5 h-5" />
-            </div>
-          )}
-          {sidebarOpen && (
-            <span className="text-sm transition-all duration-300">
-              {t(item.label)}
-            </span>
-          )}
+          <div className="w-6 h-6 flex items-center justify-center">
+            <item.icon className="w-5 h-5" />
+          </div>
+          <div
+            className={`transition-opacity duration-300 ${
+              sidebarOpen
+                ? "opacity-100 w-auto"
+                : "opacity-0 w-0 overflow-hidden"
+            }`}
+          >
+            <span className="text-sm whitespace-nowrap">{t(item.label)}</span>
+          </div>
         </div>
         {sidebarOpen && hasChildren && (
           <div>
@@ -126,11 +124,17 @@ const LinkItem: React.FC<LinkItemProps> = ({
                 <div className="w-6 h-6 flex items-center justify-center">
                   <child.icon className="w-5 h-5" />
                 </div>
-                {sidebarOpen && (
-                  <span className="text-sm transition-all duration-300">
+                <div
+                  className={`transition-opacity duration-300 ${
+                    sidebarOpen
+                      ? "opacity-100 w-auto"
+                      : "opacity-0 w-0 overflow-hidden"
+                  }`}
+                >
+                  <span className="text-sm whitespace-nowrap">
                     {t(child.label)}
                   </span>
-                )}
+                </div>
               </Link>
             );
           })}

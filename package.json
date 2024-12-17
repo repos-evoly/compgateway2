@@ -11,18 +11,21 @@
   },
   "dependencies": {
     "dayjs": "^1.11.13",
+    "formik": "^2.4.6",
     "husky": "^9.1.7",
     "next": "15.1.0",
     "next-intl": "^3.26.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-icons": "^5.4.0"
+    "react-icons": "^5.4.0",
+    "yup": "^1.6.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/yup": "^0.32.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
     "postcss": "^8",

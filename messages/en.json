@@ -2,10 +2,10 @@
     "sidebarItems": {
       "statementOfAccount":"Statement of account",
       "title":"Companies Gateway",
-          "transfer":{
+
+      "transfer":{
           "label": "Transfers",
-          "inBank": "Transfers within the bank",
-          "betweenBanks": "Transfers between banks",
+          "in": "Internal Transfers",
           "out":"External transfers "
       },
       "requests":{
@@ -232,10 +232,29 @@
         "title": "Data Grid",
         "searchPlaceholder": "Search by",
         "dropdownDefault": "Select an option",
-        "addButton": "Add"
+        "addButton": "Add",
+        "noItems":"No items available"
+
     },
     "edit":"Edit",
-    "delete":"Delete"
+    "delete":"Delete",
+    
+    "internalTransferForm": {
+        "title": "Internal Bank Transfer",
+        "from": "From Account",
+        "to": "To Account",
+        "value": "Value",
+        "curr": "Commissions",
+        "description": "Description",
+        "rec": "Recurring Transfer",
+        "ends": "Ends At",
+        "continue": "Continue",
+        "delete": "Cancel",
+        "back":"Back",
+        "onhold":"On hold",
+        "inactive":"Inactive"
+      }
+      
 
     
   

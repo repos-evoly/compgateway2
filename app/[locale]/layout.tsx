@@ -42,7 +42,7 @@ export default async function LocaleLayout({
                 <MainHeader title={"title"} logoUrl={logoUrl} isRtl={isRtl} />
 
                 {/* Page Content */}
-                <main className="flex-1 p-4 overflow-auto bg-gray-100">
+                <main className="flex-1 p-4 overflow-auto">
                   {children}
                 </main>
               </div>

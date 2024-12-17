@@ -1,5 +1,4 @@
 import {
-  FaExchangeAlt,
   FaUniversity,
   FaCheck,
   FaHandshake,
@@ -43,16 +42,11 @@ export const sidebarItems = [
     children: [
       {
         id: 4,
-        label: "transfer.inBank",
-        path: "/transfer/in-bank",
+        label: "transfer.in",
+        path: "/transfers/internal",
         icon: FaUniversity,
       },
-      {
-        id: 5,
-        label: "transfer.betweenBanks",
-        path: "/transfer/between-banks",
-        icon: FaExchangeAlt,
-      },
+
       {
         id: 6,
         label: "transfer.out",

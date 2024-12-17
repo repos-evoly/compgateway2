@@ -49,7 +49,7 @@ const LinkItem: React.FC<LinkItemProps> = ({
         className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-info-dark"
         onClick={toggleLocale}
       >
-        <div className="w-6 h-6 flex items-center justify-center">
+        <div className="w-6 h-6 flex items-center justify-center shrink-0">
           <item.icon className="w-5 h-5" />
         </div>
         <div
@@ -65,82 +65,105 @@ const LinkItem: React.FC<LinkItemProps> = ({
     );
   }
 
-  // Parent and Child Items
-  return (
-    <>
-      {/* Parent Item */}
-      <div
-        className={`flex items-center justify-between p-2 rounded cursor-pointer ${
-          isActive
-            ? "bg-info-dark text-white"
-            : "hover:bg-info-dark hover:text-white"
-        }`}
-        onClick={() => {
-          if (hasChildren) toggleSubmenu(item.id);
-          else setHeaderTitleLabel(item.label);
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 flex items-center justify-center">
-            <item.icon className="w-5 h-5" />
+  // Parent Item
+  if (hasChildren) {
+    return (
+      <>
+        <div
+          className={`flex items-center justify-between p-2 rounded cursor-pointer ${
+            isActive
+              ? "bg-info-dark text-white"
+              : "hover:bg-info-dark hover:text-white"
+          }`}
+          onClick={() => toggleSubmenu(item.id)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 flex items-center justify-center shrink-0">
+              <item.icon className="w-5 h-5" />
+            </div>
+            <div
+              className={`transition-opacity duration-300 ${
+                sidebarOpen
+                  ? "opacity-100 w-auto"
+                  : "opacity-0 w-0 overflow-hidden"
+              }`}
+            >
+              <span className="text-sm whitespace-nowrap">{t(item.label)}</span>
+            </div>
           </div>
-          <div
-            className={`transition-opacity duration-300 ${
-              sidebarOpen
-                ? "opacity-100 w-auto"
-                : "opacity-0 w-0 overflow-hidden"
-            }`}
-          >
-            <span className="text-sm whitespace-nowrap">{t(item.label)}</span>
-          </div>
+          {sidebarOpen && (
+            <div>
+              {submenuOpen === item.id ? (
+                <FaChevronUp className="w-4 h-4" />
+              ) : (
+                <FaChevronDown className="w-4 h-4" />
+              )}
+            </div>
+          )}
         </div>
-        {sidebarOpen && hasChildren && (
-          <div>
-            {submenuOpen === item.id ? (
-              <FaChevronUp className="w-4 h-4" />
-            ) : (
-              <FaChevronDown className="w-4 h-4" />
-            )}
+
+        {/* Submenu Items */}
+        {submenuOpen === item.id && (
+          <div className="flex flex-col">
+            {item.children?.map((child) => {
+              const isChildActive =
+                pathname === `/${currentLocale}${child.path}`;
+              return (
+                <Link
+                  key={child.id}
+                  href={`/${currentLocale}${child.path}`}
+                  className={`flex items-center p-2 gap-3 rounded ${
+                    isChildActive
+                      ? "bg-info-dark text-white"
+                      : "hover:bg-info-dark hover:text-white"
+                  }`}
+                  onClick={() => setHeaderTitleLabel(child.label)}
+                >
+                  <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                    <child.icon className="w-5 h-5" />
+                  </div>
+                  <div
+                    className={`transition-opacity duration-300 ${
+                      sidebarOpen
+                        ? "opacity-100 w-auto"
+                        : "opacity-0 w-0 overflow-hidden"
+                    }`}
+                  >
+                    <span className="text-sm whitespace-nowrap">
+                      {t(child.label)}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
-      </div>
+      </>
+    );
+  }
 
-      {/* Submenu Items */}
-      {submenuOpen === item.id && hasChildren && (
-        <div className="flex flex-col gap-2">
-          {item.children?.map((child) => {
-            const isChildActive = pathname === `/${currentLocale}${child.path}`;
-            return (
-              <Link
-                key={child.id}
-                href={`/${currentLocale}${child.path}`}
-                className={`flex items-center gap-3 p-2 rounded ${
-                  isChildActive
-                    ? "bg-info-dark text-white"
-                    : "hover:bg-info-dark hover:text-white"
-                }`}
-                onClick={() => setHeaderTitleLabel(child.label)}
-              >
-                <div className="w-6 h-6 flex items-center justify-center">
-                  <child.icon className="w-5 h-5" />
-                </div>
-                <div
-                  className={`transition-opacity duration-300 ${
-                    sidebarOpen
-                      ? "opacity-100 w-auto"
-                      : "opacity-0 w-0 overflow-hidden"
-                  }`}
-                >
-                  <span className="text-sm whitespace-nowrap">
-                    {t(child.label)}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </>
+  // Non-parent Item (Direct Link)
+  return (
+    <Link
+      href={`/${currentLocale}${item.path}`}
+      className={`flex items-center p-2 rounded ${
+        isActive
+          ? "bg-info-dark text-white"
+          : "hover:bg-info-dark hover:text-white"
+      }`}
+      onClick={() => setHeaderTitleLabel(item.label)}
+    >
+      <div className="w-6 h-6 flex items-center justify-center shrink-0">
+        <item.icon className="w-5 h-5" />
+      </div>
+      <div
+        className={`transition-opacity duration-300 ${
+          sidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
+        }`}
+      >
+        <span className="text-sm whitespace-nowrap">{t(item.label)}</span>
+      </div>
+    </Link>
   );
 };
 

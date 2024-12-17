@@ -24,6 +24,9 @@ const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
 
   return (
     <div className="flex items-center justify-between bg-info-dark p-2 h-16 rounded">
+      {showAddButton && onAddClick && (
+        <AddButton onClick={onAddClick} label={t("addButton")} />
+      )}
       {/* Conditional Search Bar */}
       {showSearchBar && onSearch && onDropdownSelect && (
         <SearchWithDropdown
@@ -32,11 +35,6 @@ const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
           onSearch={onSearch}
           onDropdownSelect={onDropdownSelect}
         />
-      )}
-
-      {/* Add Button */}
-      {showAddButton && onAddClick && (
-        <AddButton onClick={onAddClick} label={t("addButton")} />
       )}
     </div>
   );

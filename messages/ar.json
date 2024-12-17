@@ -4,8 +4,7 @@
       "title":"منظومة بوابة الشركات",
       "transfer":{
           "label": "التحاويل",
-          "inBank": "تحويل داخل المصرف",
-          "betweenBanks": "تحويل بين المصارف",
+          "in": "تحويل داخلي",
           "out":"تحويل خارجي"
       },
       "requests":{
@@ -227,10 +226,27 @@
         "title": "شبكة البيانات",
         "searchPlaceholder": "ابحث من خلال",
         "dropdownDefault": "اختر خيارًا",
-        "addButton": "إضافة"
+        "addButton": "إضافة",
+        "noItems":"لا يوجد عناصر متاحة"
       },
 
 
       "edit":"تعديل",
-      "delete":"حذف"
+      "delete":"حذف",
+
+      "internalTransferForm":{
+        "title":"التحويل داخل المصرف",
+        "from":"من حساب",
+        "to":"إلى حساب",
+        "value":"القيمة",
+        "curr":"العمولات",
+        "description":"الشرح",
+        "rec":"حوالة متكررة",
+        "ends":"تنتهي في",
+        "continue":"متابعة",
+        "delete":"إلغاء",
+        "back":"العودة",
+        "onhold":"معلق",
+        "inactive":"غير نشط"
+      }
   }

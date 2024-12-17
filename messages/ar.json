@@ -19,7 +19,12 @@
         "foreign":"طلب اصدار رخصة للحوالات الخارجية",
         "cbl":"طلب استفسار عن CBL"
       },
-      "localization":"توطين المعاشات",
+      "salaryLocalization":{
+        "title":"توطين المعاشات",
+        "salaries":"المعاشات",
+        "uploadFiles":"تحميل الملفات",
+        "salariesTransfer":"ترحيل المعاشات"
+      },
       "documentary":"اعتمادات مستندية",
       "followUp":"متابعة الطلبات",
       "settings":"الإعدادات",
@@ -217,8 +222,15 @@
     "notFound":{
         "title":"الصفحة غير متاحة حاليا",
         "des": "عذرا، هذه الصفحة غير متاحة حاليا. يرجى التحقق في وقت لاحق."
-    }
-    
-  
-  
+    },
+    "crudDataGrid": {
+        "title": "شبكة البيانات",
+        "searchPlaceholder": "ابحث من خلال",
+        "dropdownDefault": "اختر خيارًا",
+        "addButton": "إضافة"
+      },
+
+
+      "edit":"تعديل",
+      "delete":"حذف"
   }

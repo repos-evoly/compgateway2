@@ -19,7 +19,12 @@
         "foreign":"license for foreign transfers request",
         "cbl":"CBL Inquiry Request"
       },
-      "localization":"Localization of salaries",
+      "salaryLocalization":{
+        "title":"Localization of salaries",
+        "salaries":"Salaries",
+        "uploadFiles":"Import from excel",
+        "salariesTransfer":"Posting to BCD"
+      },
       "documentary":"Documentary Credits",
       "followUp":"Follow Up Requests",
       "settings":"Settings",
@@ -220,7 +225,18 @@
     "notFound":{
         "title":"Page Not Available",
         "des":"Sorry, this page is currently not available. Please check back later."
-    }
+    },
+
+
+    "crudDataGrid": {
+        "title": "Data Grid",
+        "searchPlaceholder": "Search by",
+        "dropdownDefault": "Select an option",
+        "addButton": "Add"
+    },
+    "edit":"Edit",
+    "delete":"Delete"
+
     
   
   }

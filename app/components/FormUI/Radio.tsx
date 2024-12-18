@@ -13,27 +13,41 @@ type Props = {
 
 type DropdownType = { value: string | number; label: string };
 
+// Define the form values interface
+interface FormValues {
+  [key: string]: string | number; // Allows dynamic field names with string/number values
+}
+
 const RadiobuttonWrapper = ({
   name,
   label,
   options,
   flexDir = ["row", "row"],
 }: Props): JSX.Element => {
-  const pathname = usePathname(); // Get the current pathname
+  const pathname = usePathname();
 
   React.useEffect(() => {
     const segments = pathname?.split("/") || [];
-    const locale = segments[1]; // Assuming the locale is the first segment after "/"
+    const locale = segments[1];
     if (locale !== "ar" && locale !== "en") {
       console.warn("Unsupported locale detected:", locale);
     }
   }, [pathname]);
 
-  const { setFieldValue } = useFormikContext();
+  // Always call hooks at the top level
+  const formik = useFormikContext<FormValues>(); // Use the exact form values type
   const [field, meta] = useField(name);
 
+  // Conditional rendering, but hooks are called first
+  if (!formik) {
+    console.error(
+      "RadiobuttonWrapper must be used within a Formik context. Ensure it's inside a Formik component."
+    );
+    return <p className="text-red-500">Formik context not found</p>;
+  }
+
   const handleChange = (value: string | number) => {
-    setFieldValue(name, value);
+    formik.setFieldValue(name, value);
   };
 
   return (

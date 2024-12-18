@@ -1,7 +1,6 @@
 "use client";
-
 import React, { useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import StatementGenerator from "./StatementOfAccountsContainer"; // Import the StatementGenerator component
 import {
@@ -39,14 +38,14 @@ const Page = () => {
     // Implement your print logic here (e.g., generating PDF using jsPDF or other libraries)
   };
 
+  const t = useTranslations("statementOfAccount");
+
   return (
     <div className="p-8 flex flex-col items-center space-y-12">
       {/* Statement Generator */}
-      <div className="bg-white p-6 rounded-md w-full ">
-        <h2 className="text-2xl font-bold mb-4 text-center">
-          {locale === "ar"
-            ? "توليد كشف الحساب"
-            : "Generate Statement of Accounts"}
+      <div className="bg-white p-6 rounded-md w-full">
+        <h2 className="text-2xl font-bold text-center bg-info-dark w-3/4 m-auto h-14 text-white rounded-t-lg flex items-center justify-center">
+          {t("title")}
         </h2>
         <StatementGenerator onContinue={handleContinue} />
       </div>
@@ -59,12 +58,15 @@ const Page = () => {
             columns={withCurrencyColumns}
             showSearchBar={false}
             showAddButton={false}
-          >
-            {/* Header Information */}
-            <div className="text-sm text-white">{accountInfo}</div>
-            <div className="text-sm text-white">{fromDateInfo}</div>
-            <div className="text-sm text-white">{toDateInfo}</div>
-          </CrudDataGrid>
+            haveChildrens={true} // Enable custom children
+            childrens={
+              <div className="flex justify-between text-sm text-white w-full">
+                <div>{accountInfo}</div>
+                <div>{fromDateInfo}</div>
+                <div>{toDateInfo}</div>
+              </div>
+            }
+          />
 
           {/* Print Button */}
           <div className="flex justify-end">

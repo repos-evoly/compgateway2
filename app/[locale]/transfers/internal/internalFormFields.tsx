@@ -2,7 +2,6 @@ import {
   FaMoneyBillWave,
   FaFileAlt,
   FaExchangeAlt,
-  FaCalendar,
 } from "react-icons/fa";
 
 export const formFields = [
@@ -11,35 +10,34 @@ export const formFields = [
     label: "From Account",
     startIcon: <FaExchangeAlt />,
     type: "text",
+    width: "w-1/2", // Custom width
   },
   {
     name: "to",
     label: "To Account",
     startIcon: <FaExchangeAlt />,
     type: "text",
+    width: "w-1/2", // Custom width
   },
   {
     name: "value",
     label: "Value",
     startIcon: <FaMoneyBillWave />,
     type: "number",
+    width: "w-1/2", // Custom width
   },
   {
     name: "curr",
     label: "Currency",
     startIcon: <FaMoneyBillWave />,
     type: "text",
+    width: "w-1/2", // Custom width
   },
   {
     name: "description",
     label: "Description",
     startIcon: <FaFileAlt />,
     type: "text",
-  },
-  {
-    name: "ends",
-    label: "Transaction Date",
-    startIcon: <FaCalendar />, // Icon for Date Picker
-    type: "date", // Add a new type 'date'
+    width: "w-full", // Full width
   },
 ];

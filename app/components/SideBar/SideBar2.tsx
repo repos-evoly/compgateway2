@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { sidebarItems } from "./SideBarItemsArray";
 import { useTranslations } from "next-intl";
-import { FaBars } from "react-icons/fa";
+import { FaBars, FaUser } from "react-icons/fa";
 import Divider from "./Divider";
 import LinkItem from "./LinkItem";
 
@@ -70,6 +70,15 @@ const Sidebar = () => {
             />
           </div>
         ))}
+
+        <div className="flex items-center gap-3 p-3 rounded hover:bg-gray-700">
+          <div className="flex items-center justify-center shrink-0">
+            <FaUser className="w-5 h-5 text-white" />
+          </div>
+          {sidebarOpen && (
+            <span className="text-sm font-medium leading-none">عصمت العياش</span>
+          )}
+        </div>
       </nav>
     </div>
   );

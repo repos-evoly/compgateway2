@@ -1,5 +1,6 @@
-import React, { FC, JSX } from "react";
+import React, { JSX } from "react";
 import { useFormikContext } from "formik";
+import { FC } from "react";
 
 type ResetButtonPropsType = {
   title: string;
@@ -16,7 +17,7 @@ type ResetButtonPropsType = {
     | "error-main"
     | "secondary-main"
     | "secondary-light"
-    | "secondary-dark"; // Tailwind dynamic colors
+    | "secondary-dark"; // Define Tailwind dynamic colors
   fullWidth?: boolean;
   adminOff?: boolean;
 };
@@ -24,14 +25,14 @@ type ResetButtonPropsType = {
 const ResetButton = ({
   title,
   Icon,
-  color = "error-main", // Default Tailwind color for reset
-  fullWidth = false,
+  color = "error-main", // Default to 'error-main'
+  fullWidth = true,
   adminOff = false,
 }: ResetButtonPropsType): JSX.Element => {
   const { resetForm } = useFormikContext();
 
   const handleClick = () => {
-    resetForm(); // Reset all form fields
+    resetForm(); // Clear all form fields
   };
 
   // Map color prop to dynamic Tailwind color class
@@ -39,7 +40,7 @@ const ResetButton = ({
 
   return (
     <div
-      className={`flex  ${
+      className={`flex ${
         fullWidth ? "w-full" : "w-auto"
       } items-center justify-center`}
     >
@@ -47,12 +48,16 @@ const ResetButton = ({
         type="button"
         onClick={handleClick}
         disabled={adminOff}
-        className={`flex  items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${
-          adminOff ? "bg-gray-300 text-gray-500 cursor-not-allowed" : colorClass
+        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 text-white ${
+          adminOff
+            ? "bg-warning-light text-gray-500 cursor-not-allowed"
+            : colorClass
         }`}
       >
-        {title}
-        <Icon className="h-5 w-5" />
+        <>
+          {title}
+          <Icon className="h-5 w-5" />
+        </>
       </button>
     </div>
   );

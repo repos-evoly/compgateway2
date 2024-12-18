@@ -7,10 +7,12 @@ type Action = { name: string; icon: React.ReactNode; tip: string };
 // Base props
 type BaseProps = {
   data: { [key: string]: string | number }[];
-  columns: { key: string; label: string }[];
+  columns: { key: string; label: string }[]; // Update: Columns now include key and label
   showSearchBar?: boolean;
   showActions?: boolean;
   showAddButton?: boolean;
+  haveChildrens?: boolean; // New prop
+  childrens?: React.ReactNode; // New prop
 };
 
 // Conditional props for `showSearchBar`
@@ -50,17 +52,11 @@ type AddButtonProps =
       onAddClick?: never;
     };
 
-// Props for passing children to CrudDataGridHeader
-type HeaderChildrenProps = {
-  children?: React.ReactNode; // Optional flexible children for header
-};
-
 // Combine all props
 export type CrudDataGridProps = BaseProps &
   SearchBarProps &
   ActionsProps &
-  AddButtonProps &
-  HeaderChildrenProps;
+  AddButtonProps;
 
 const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   data,
@@ -73,7 +69,8 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   actions,
   showAddButton = false,
   onAddClick,
-  children, // Children for the header
+  haveChildrens = false, // Default to false
+  childrens, // Optional custom children
 }) => {
   const handleActionClick = (rowIndex: number, action: string) => {
     console.log(`Action '${action}' clicked for row ${rowIndex}`);
@@ -90,15 +87,15 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
           showAddButton={showAddButton}
           onAddClick={onAddClick}
           showSearchBar={showSearchBar}
-        >
-          {children} {/* Pass flexible header children */}
-        </CrudDataGridHeader>
+          haveChildrens={haveChildrens} // Pass new prop
+          childrens={childrens} // Pass new prop
+        />
       </div>
 
       {/* Body */}
       <div className="bg-white">
         <CrudDataGridBody
-          columns={columns}
+          columns={columns} // Pass updated columns with keys and labels
           data={data}
           showActions={showActions}
           actions={actions}

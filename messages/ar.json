@@ -243,13 +243,17 @@
         "description":"الشرح",
         "rec":"حوالة متكررة",
         "ends":"تنتهي في",
+        "status":"الحالة",
         "continue":"متابعة",
         "delete":"إلغاء",
         "back":"العودة",
         "onhold":"معلق",
-        "inactive":"غير نشط"
+        "inactive":"غير نشط",
+        "balance":"الرصيد"
+
       },
       "statementOfAccount": {
+        "title":"توليد كشف الحساب",
         "account": "رقم الحساب",
         "from": "من التاريخ",
         "to": "إلى التاريخ",

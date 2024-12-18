@@ -248,13 +248,16 @@
         "description": "Description",
         "rec": "Recurring Transfer",
         "ends": "Ends At",
+        "status":"status",
         "continue": "Continue",
         "delete": "Cancel",
         "back":"Back",
         "onhold":"On hold",
-        "inactive":"Inactive"
+        "inactive":"Inactive",
+        "balance":"Balance"
       },
       "statementOfAccount":{
+        "title":"Generate Statement of Accounts",
         "account":"Account Number",
         "from":"From Date",
         "to":"To Date",

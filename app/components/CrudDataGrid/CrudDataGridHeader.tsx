@@ -1,42 +1,45 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import AddButton from "./AddButton";
 import SearchWithDropdown from "./SearchWithDropdown";
 import { useTranslations } from "next-intl";
 
 type CrudDataGridHeaderProps = {
-  children?: ReactNode; // Optional children for flexible content
   onSearch?: (value: string) => void; // Optional
   onDropdownSelect?: (value: string) => void; // Optional
   dropdownOptions?: string[]; // Optional
   showAddButton?: boolean;
   onAddClick?: () => void;
   showSearchBar?: boolean;
+  haveChildrens?: boolean; // New prop to determine custom children rendering
+  childrens?: React.ReactNode; // Optional custom children
 };
 
 const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
-  children,
   onSearch,
   onDropdownSelect,
-  dropdownOptions = [],
+  dropdownOptions = [], // Default empty array
   showAddButton = true,
   onAddClick,
   showSearchBar = true,
+  haveChildrens = false,
+  childrens,
 }) => {
   const t = useTranslations("crudDataGrid");
 
-  return (
-    <div className="flex items-center justify-between bg-info-dark p-2 h-16 rounded">
-      {/* Flexible Children Section */}
-      <div className="flex-1 flex justify-between items-center px-4">
-        {children}
+  if (haveChildrens && childrens) {
+    return (
+      <div className="flex items-center justify-between bg-info-dark p-2 h-16 rounded">
+        {childrens}
       </div>
+    );
+  }
 
-      {/* Add Button */}
+  return (
+    <div className="flex items-center justify-between bg-info-dark p-2 h-16 rounded rounded-b-none">
       {showAddButton && onAddClick && (
         <AddButton onClick={onAddClick} label={t("addButton")} />
       )}
-
-      {/* Search Bar */}
+      {/* Conditional Search Bar */}
       {showSearchBar && onSearch && onDropdownSelect && (
         <SearchWithDropdown
           placeholder={t("searchPlaceholder")}

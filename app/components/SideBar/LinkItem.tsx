@@ -154,7 +154,7 @@ const LinkItem: React.FC<LinkItemProps> = ({
       onClick={() => setHeaderTitleLabel(item.label)}
     >
       <div className="w-6 h-6 flex items-center justify-center shrink-0">
-        <item.icon className="w-5 h-5" />
+        <item.icon className="w-5 h-5 rounded-md" />
       </div>
       <div
         className={`transition-opacity duration-300 ${

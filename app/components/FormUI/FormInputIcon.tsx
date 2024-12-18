@@ -1,16 +1,6 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import { useField } from "formik";
-
-type Props = {
-  name: string;
-  label: string;
-  type?: string;
-  startIcon?: ReactNode; // ReactNode for the start icon
-  children?: ReactNode; // ReactNode for the end icon or actions
-  onClick?: () => void; // Handler for the end icon click
-  onMouseDown?: (event: React.MouseEvent<HTMLButtonElement>) => void; // Handler for mouse down event
-  helpertext?: string; // Optional helper text
-};
+import { FormInputIconProps } from "@/types";
 
 const FormInputIcon = ({
   name,
@@ -21,7 +11,7 @@ const FormInputIcon = ({
   onClick,
   onMouseDown,
   helpertext,
-}: Props) => {
+}: FormInputIconProps) => {
   const [field, meta] = useField(name);
 
   return (

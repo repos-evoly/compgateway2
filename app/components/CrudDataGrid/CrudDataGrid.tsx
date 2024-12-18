@@ -7,7 +7,7 @@ type Action = { name: string; icon: React.ReactNode; tip: string };
 // Base props
 type BaseProps = {
   data: { [key: string]: string | number }[];
-  columns: { key: string; label: string }[]; // Update: Columns now include key and label
+  columns: { key: string; label: string }[];
   showSearchBar?: boolean;
   showActions?: boolean;
   showAddButton?: boolean;
@@ -50,11 +50,17 @@ type AddButtonProps =
       onAddClick?: never;
     };
 
+// Props for passing children to CrudDataGridHeader
+type HeaderChildrenProps = {
+  children?: React.ReactNode; // Optional flexible children for header
+};
+
 // Combine all props
 export type CrudDataGridProps = BaseProps &
   SearchBarProps &
   ActionsProps &
-  AddButtonProps;
+  AddButtonProps &
+  HeaderChildrenProps;
 
 const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   data,
@@ -67,6 +73,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   actions,
   showAddButton = false,
   onAddClick,
+  children, // Children for the header
 }) => {
   const handleActionClick = (rowIndex: number, action: string) => {
     console.log(`Action '${action}' clicked for row ${rowIndex}`);
@@ -83,13 +90,15 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
           showAddButton={showAddButton}
           onAddClick={onAddClick}
           showSearchBar={showSearchBar}
-        />
+        >
+          {children} {/* Pass flexible header children */}
+        </CrudDataGridHeader>
       </div>
 
       {/* Body */}
       <div className="bg-white">
         <CrudDataGridBody
-          columns={columns} // Pass updated columns with keys and labels
+          columns={columns}
           data={data}
           showActions={showActions}
           actions={actions}

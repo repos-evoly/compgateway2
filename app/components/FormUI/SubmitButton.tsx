@@ -1,7 +1,9 @@
-import React, { FC, JSX } from "react";
+import React, { JSX } from "react";
 import { useFormikContext } from "formik";
+import { FC } from "react";
+import { FaSpinner } from "react-icons/fa"; // Import the spinner icon
 
-type ResetButtonPropsType = {
+type SubmitButtonPropsType = {
   title: string;
   Icon: FC<React.SVGProps<SVGSVGElement>>; // Use React's built-in SVGProps
   color?:
@@ -16,39 +18,28 @@ type ResetButtonPropsType = {
     | "error-main"
     | "secondary-main"
     | "secondary-light"
-    | "secondary-dark"; // Tailwind dynamic colors
+    | "secondary-dark"; // Define Tailwind dynamic colors
   fullWidth?: boolean;
   adminOff?: boolean;
+  isSubmitting?: boolean; // Pass as a prop to control submitting state
 };
 
-const ResetButton = ({
+const SubmitButton = ({
   title,
   Icon,
-  color = "error-main", // Default Tailwind color for reset
-  fullWidth = false,
+  color = "success-main", // Default to 'success-main'
+  fullWidth = true,
   adminOff = false,
-}: ResetButtonPropsType): JSX.Element => {
-  const { resetForm } = useFormikContext();
+  isSubmitting = false,
+}: SubmitButtonPropsType): JSX.Element => {
+  const { handleSubmit } = useFormikContext();
 
   const handleClick = () => {
-    resetForm(); // Reset all form fields
+    handleSubmit();
   };
 
-  // Map Tailwind colors
-  const colorClasses = {
-    "success-main": "bg-success-main hover:bg-success-dark text-white",
-    "success-light": "bg-success-light hover:bg-success-main text-white",
-    "success-dark": "bg-success-dark hover:bg-success-main text-white",
-    "warning-main": "bg-warning-main hover:bg-warning-light text-black",
-    "warning-light": "bg-warning-light hover:bg-warning-main text-black",
-    "info-main": "bg-info-main hover:bg-info-dark text-white",
-    "info-light": "bg-info-light hover:bg-info-main text-white",
-    "info-dark": "bg-info-dark hover:bg-info-main text-white",
-    "error-main": "bg-error-main hover:bg-error-main text-white",
-    "secondary-main": "bg-secondary-main hover:bg-secondary-dark text-white",
-    "secondary-light": "bg-secondary-light hover:bg-secondary-main text-white",
-    "secondary-dark": "bg-secondary-dark hover:bg-secondary-main text-white",
-  };
+  // Map color prop to dynamic Tailwind color class
+  const colorClass = `bg-${color} hover:bg-opacity-90 text-white`;
 
   return (
     <div
@@ -57,20 +48,29 @@ const ResetButton = ({
       } items-center justify-center`}
     >
       <button
-        type="button"
+        type="submit"
         onClick={handleClick}
-        disabled={adminOff}
+        disabled={isSubmitting || adminOff}
         className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${
-          adminOff
+          isSubmitting || adminOff
             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-            : colorClasses[color]
+            : colorClass
         }`}
       >
-        {title}
-        <Icon className="h-5 w-5" />
+        {isSubmitting ? (
+          <span className="flex items-center gap-2">
+            <FaSpinner className="animate-spin h-5 w-5" />
+            <span>Submitting...</span>
+          </span>
+        ) : (
+          <>
+            {title}
+            <Icon className="h-5 w-5" />
+          </>
+        )}
       </button>
     </div>
   );
 };
 
-export default ResetButton;
+export default SubmitButton;

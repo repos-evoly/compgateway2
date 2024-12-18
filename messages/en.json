@@ -253,6 +253,12 @@
         "back":"Back",
         "onhold":"On hold",
         "inactive":"Inactive"
+      },
+      "statementOfAccount":{
+        "account":"Account Number",
+        "from":"From Date",
+        "to":"To Date",
+        "continue":"Continue"
       }
       
 

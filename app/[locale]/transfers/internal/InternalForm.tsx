@@ -18,7 +18,7 @@ type SpecialFieldWrapperProps = {
   t: (key: string) => string; // Properly typed translation function
 };
 
-type InternalFormValues = {
+export type InternalFormValues = {
   from: string;
   to: string;
   value: number;
@@ -27,6 +27,18 @@ type InternalFormValues = {
   selectField: string;
   recurring: boolean;
   date?: string; // Optional date field for the recurring checkbox
+  //   formType: string; // Added formType to InternalFormValues
+};
+
+type InternalFormProps = {
+  initialData?: Partial<InternalFormValues>; // Optional prop for initial data
+  onSubmit: (values: InternalFormValues) => void; // Required onSubmit function
+};
+
+type RecurringDateDisplayProps = {
+  t: (key: string) => string; // Translation function
+  isEditing: boolean; // Editing mode flag
+  ends?: string; // Date to display if in editing mode
 };
 
 const SpecialFieldWrapper = ({ field, t }: SpecialFieldWrapperProps) => {
@@ -69,8 +81,33 @@ const SpecialFieldWrapper = ({ field, t }: SpecialFieldWrapperProps) => {
   );
 };
 
-const InternalForm = () => {
-  const initialValues = {
+const RecurringDateDisplay = ({
+  t,
+  isEditing,
+  ends,
+}: RecurringDateDisplayProps) => {
+  const { values } = useFormikContext<InternalFormValues>();
+
+  if (isEditing) {
+    // Show static date if in editing mode
+    return values.recurring ? (
+      <span className="text-sm mb-4 mx-4 text-gray-700">
+        {t("ends")}: {ends || ""}
+      </span>
+    ) : null;
+  } else {
+    // Show DatePickerValue if checkbox is checked
+    return values.recurring ? (
+      <div className=" w-1/3">
+        <DatePickerValue name="date" label={t("ends")} titlePosition="side" />
+      </div>
+    ) : null;
+  }
+};
+
+const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
+  const isEditing = !!initialData; // Determine if it is editing mode
+  const defaultValues: InternalFormValues = {
     from: "",
     to: "",
     value: 0,
@@ -78,7 +115,25 @@ const InternalForm = () => {
     description: "",
     selectField: "",
     recurring: false,
+    date: "", // Default date
+    // formType: ""
   };
+
+  // Transform the initialData
+  const transformedData = initialData
+    ? {
+        ...initialData,
+        recurring: initialData.recurring === true, // Ensure boolean type for `recurring`
+        date: initialData.date || initialData.date, // Use ends as default date in editing
+      }
+    : {};
+
+  // Merge default values with transformed initial data
+  const initialValues = { ...defaultValues, ...transformedData };
+
+  // Log the data passed to the form
+  console.log("InternalForm Initial Data:", initialData);
+  console.log("InternalForm Initial Values:", initialValues);
 
   const validationSchema = Yup.object({
     from: Yup.string().required("From account is required"),
@@ -91,11 +146,12 @@ const InternalForm = () => {
     description: Yup.string().required("Description is required"),
     selectField: Yup.string().required("Please select an option"),
     recurring: Yup.boolean().default(false),
+    // formType: Yup.string().required("Form type is required")
   });
 
-  const handleSubmit = (values: typeof initialValues) => {
-    console.log("Form Submitted:", values);
-  };
+  //   const handleSubmit = (values: InternalFormValues) => {
+  //     console.log("Form Submitted:", values);
+  //   };
 
   const t = useTranslations("internalTransferForm");
 
@@ -108,8 +164,9 @@ const InternalForm = () => {
     <div className="p-6 bg-gray-100">
       <Form
         initialValues={initialValues}
-        onSubmit={handleSubmit}
+        onSubmit={onSubmit}
         validationSchema={validationSchema}
+        enableReinitialize // Reinitialize form when initialData changes
       >
         {/* Dynamically render fields */}
         <div className="grid grid-cols-1 gap-y-6">
@@ -119,7 +176,7 @@ const InternalForm = () => {
               {["from", "to"].includes(field.name) ? (
                 <SpecialFieldWrapper field={field} t={t} />
               ) : field.type === "checkbox" ? (
-                <CheckboxWrapper name={field.name} label={t(field.name)} />
+                <CheckboxWrapper name="recurring" label={t(field.name)} />
               ) : field.type === "date" ? (
                 <DatePickerValue name={field.name} label={t(field.name)} />
               ) : (
@@ -136,21 +193,19 @@ const InternalForm = () => {
           ))}
         </div>
 
-        {/* Recurring Checkbox and SelectWrapper */}
-        <div className="flex gap-6 items-center mt-4">
-          <div className="flex-1 mt-5">
+        {/* Recurring Checkbox and Conditional Content */}
+        <div className="flex items-center gap-4 mt-4">
+          <div>
             <CheckboxWrapper name="recurring" label={t("rec")} />
           </div>
-          <div className="flex-1">
-            <DatePickerValue
-              name="date"
-              label={t("ends")}
-              titlePosition="side"
-            />
-          </div>
+          <RecurringDateDisplay
+            t={t}
+            isEditing={isEditing}
+            ends={initialData?.date}
+          />
         </div>
 
-        <div className="w-1/4 mt-4">
+        <div className="w-1/3 mt-4">
           <SelectWrapper
             name="selectField"
             label={t("status")}

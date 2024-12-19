@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 type CrudDataGridBodyProps = {
   columns: { key: string; label: string }[];
-  data: { [key: string]: string | number }[];
+  data: { [key: string]: string | number | boolean }[];
   showActions?: boolean;
   actions?: { name: string; icon: React.ReactNode; tip: string }[];
   onActionClick?: (rowIndex: number, action: string) => void;
@@ -12,13 +12,13 @@ type CrudDataGridBodyProps = {
   modalComponent?: React.ReactNode;
   onModalOpen?: (
     rowIndex: number,
-    row: { [key: string]: string | number }
+    row: { [key: string]: string | number | boolean }
   ) => void;
   isComponent?: boolean;
   componentToRender?: React.ReactNode;
   onComponentRender?: (
     rowIndex: number,
-    row: { [key: string]: string | number }
+    row: { [key: string]: string | number | boolean }
   ) => void;
 };
 
@@ -91,7 +91,11 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
                       key={colIndex}
                       className="flex-1 px-4 py-2 text-gray-600"
                     >
-                      {row[col.key] || ""}
+                      {typeof row[col.key] === "boolean"
+                        ? row[col.key]
+                          ? t("yes") || "Yes"
+                          : t("no") || "No"
+                        : row[col.key] || ""}
                     </div>
                   ))}
                   {showActions && (

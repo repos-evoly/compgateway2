@@ -233,7 +233,9 @@
         "searchPlaceholder": "Search by",
         "dropdownDefault": "Select an option",
         "addButton": "Add",
-        "noItems":"No items available"
+        "noItems":"No items available",
+        "yes":"yes",
+        "no":"no"
 
     },
     "edit":"Edit",
@@ -262,7 +264,12 @@
         "from":"From Date",
         "to":"To Date",
         "continue":"Continue"
+      },
+      "formTypeSelect": {
+        "internal": "Internal Transfer",
+        "between": "Transfer Between Banks"
       }
+      
       
 
     

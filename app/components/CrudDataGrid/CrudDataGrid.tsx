@@ -5,7 +5,7 @@ import CrudDataGridBody from "./CrudDataGridBody";
 type Action = { name: string; icon: React.ReactNode; tip: string };
 
 type BaseProps = {
-  data: { [key: string]: string | number }[];
+  data: { [key: string]: string | number | boolean }[];
   columns: { key: string; label: string }[];
   showSearchBar?: boolean;
   showActions?: boolean;
@@ -60,13 +60,13 @@ type CrudDataGridProps = BaseProps &
     modalComponent?: React.ReactNode;
     onModalOpen?: (
       rowIndex: number,
-      row: { [key: string]: string | number }
+      row: { [key: string]: string | number | boolean }
     ) => void;
     isComponent?: boolean;
     componentToRender?: React.ReactNode;
     onComponentRender?: (
       rowIndex: number,
-      row: { [key: string]: string | number }
+      row: { [key: string]: string | number | boolean }
     ) => void;
   };
 
@@ -98,7 +98,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
 
   const handleModalOpen = (
     rowIndex: number,
-    row: { [key: string]: string | number }
+    row: { [key: string]: string | number | boolean }
   ) => {
     setActiveRow(rowIndex);
     if (onModalOpen) onModalOpen(rowIndex, row);
@@ -106,7 +106,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
 
   const handleComponentRender = (
     rowIndex: number,
-    row: { [key: string]: string | number }
+    row: { [key: string]: string | number | boolean }
   ) => {
     setActiveRow(rowIndex);
     if (onComponentRender) onComponentRender(rowIndex, row);

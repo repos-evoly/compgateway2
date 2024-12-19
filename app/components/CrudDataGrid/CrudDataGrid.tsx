@@ -1,21 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import CrudDataGridHeader from "./CrudDataGridHeader";
 import CrudDataGridBody from "./CrudDataGridBody";
 
 type Action = { name: string; icon: React.ReactNode; tip: string };
 
-// Base props
 type BaseProps = {
   data: { [key: string]: string | number }[];
-  columns: { key: string; label: string }[]; // Update: Columns now include key and label
+  columns: { key: string; label: string }[];
   showSearchBar?: boolean;
   showActions?: boolean;
   showAddButton?: boolean;
-  haveChildrens?: boolean; // New prop
-  childrens?: React.ReactNode; // New prop
+  haveChildrens?: boolean;
+  childrens?: React.ReactNode;
+  isModal?: boolean;
+  modalComponent?: React.ReactNode;
+  isComponent?: boolean;
+  componentToRender?: React.ReactNode;
 };
 
-// Conditional props for `showSearchBar`
 type SearchBarProps =
   | {
       showSearchBar: true;
@@ -30,7 +32,6 @@ type SearchBarProps =
       dropdownOptions?: never;
     };
 
-// Conditional props for `showActions`
 type ActionsProps =
   | {
       showActions: true;
@@ -41,7 +42,6 @@ type ActionsProps =
       actions?: never;
     };
 
-// Conditional props for `showAddButton`
 type AddButtonProps =
   | {
       showAddButton: true;
@@ -52,11 +52,23 @@ type AddButtonProps =
       onAddClick?: never;
     };
 
-// Combine all props
-export type CrudDataGridProps = BaseProps &
+type CrudDataGridProps = BaseProps &
   SearchBarProps &
   ActionsProps &
-  AddButtonProps;
+  AddButtonProps & {
+    isModal?: boolean;
+    modalComponent?: React.ReactNode;
+    onModalOpen?: (
+      rowIndex: number,
+      row: { [key: string]: string | number }
+    ) => void;
+    isComponent?: boolean;
+    componentToRender?: React.ReactNode;
+    onComponentRender?: (
+      rowIndex: number,
+      row: { [key: string]: string | number }
+    ) => void;
+  };
 
 const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   data,
@@ -69,15 +81,46 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   actions,
   showAddButton = false,
   onAddClick,
-  haveChildrens = false, // Default to false
-  childrens, // Optional custom children
+  haveChildrens = false,
+  childrens,
+  isModal,
+  modalComponent,
+  onModalOpen,
+  isComponent,
+  componentToRender,
+  onComponentRender,
 }) => {
+  const [activeRow, setActiveRow] = useState<number | null>(null);
+
   const handleActionClick = (rowIndex: number, action: string) => {
     console.log(`Action '${action}' clicked for row ${rowIndex}`);
   };
 
+  const handleModalOpen = (
+    rowIndex: number,
+    row: { [key: string]: string | number }
+  ) => {
+    setActiveRow(rowIndex);
+    if (onModalOpen) onModalOpen(rowIndex, row);
+  };
+
+  const handleComponentRender = (
+    rowIndex: number,
+    row: { [key: string]: string | number }
+  ) => {
+    setActiveRow(rowIndex);
+    if (onComponentRender) onComponentRender(rowIndex, row);
+  };
+
   return (
     <div className="border border-gray-300 rounded-md shadow-sm overflow-hidden">
+      {/* Debugging activeRow */}
+      {activeRow !== null && (
+        <div className="bg-yellow-100 text-yellow-900 p-2">
+          Active Row Index: {activeRow}
+        </div>
+      )}
+
       {/* Header */}
       <div className="border-b border-gray-200 bg-gray-50">
         <CrudDataGridHeader
@@ -87,19 +130,25 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
           showAddButton={showAddButton}
           onAddClick={onAddClick}
           showSearchBar={showSearchBar}
-          haveChildrens={haveChildrens} // Pass new prop
-          childrens={childrens} // Pass new prop
+          haveChildrens={haveChildrens}
+          childrens={childrens}
         />
       </div>
 
       {/* Body */}
       <div className="bg-white">
         <CrudDataGridBody
-          columns={columns} // Pass updated columns with keys and labels
+          columns={columns}
           data={data}
           showActions={showActions}
           actions={actions}
           onActionClick={handleActionClick}
+          isModal={isModal}
+          modalComponent={modalComponent}
+          onModalOpen={handleModalOpen}
+          isComponent={isComponent}
+          componentToRender={componentToRender}
+          onComponentRender={handleComponentRender}
         />
       </div>
     </div>

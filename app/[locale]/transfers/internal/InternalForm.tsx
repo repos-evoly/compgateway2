@@ -12,6 +12,7 @@ import { FaCheck, FaTrash } from "react-icons/fa";
 import { useTranslations } from "next-intl";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import { FormInputIconProps } from "@/types";
+import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 
 type SpecialFieldWrapperProps = {
   field: FormInputIconProps;
@@ -22,12 +23,13 @@ export type InternalFormValues = {
   from: string;
   to: string;
   value: number;
-  curr: string;
+  commision: number;
   description: string;
   selectField: string;
   recurring: boolean;
-  date?: string; // Optional date field for the recurring checkbox
+  date?: string | null;
   //   formType: string; // Added formType to InternalFormValues
+  receiverOrSender: string; // Either "sender" or "receiver"
 };
 
 type InternalFormProps = {
@@ -38,7 +40,7 @@ type InternalFormProps = {
 type RecurringDateDisplayProps = {
   t: (key: string) => string; // Translation function
   isEditing: boolean; // Editing mode flag
-  ends?: string; // Date to display if in editing mode
+  ends?: string | null; // Date to display if in editing mode
 };
 
 const SpecialFieldWrapper = ({ field, t }: SpecialFieldWrapperProps) => {
@@ -105,18 +107,41 @@ const RecurringDateDisplay = ({
   }
 };
 
+type CommisionMessageProps = {
+  t: (key: string) => string; // Translation function
+};
+
+const CommisionMessage = ({ t }: CommisionMessageProps) => {
+  const { values } = useFormikContext<InternalFormValues>();
+
+  // Only display the message if a commission value is entered and greater than 0
+  return (
+    <>
+      {values.commision > 0 && (
+        <span className="text-gray-700 text-sm">
+          {`${values.commision} ${
+            values.receiverOrSender === "sender"
+              ? t("commisionSender")
+              : t("commisionReceiver")
+          }`}
+        </span>
+      )}
+    </>
+  );
+};
 const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
   const isEditing = !!initialData; // Determine if it is editing mode
   const defaultValues: InternalFormValues = {
     from: "",
     to: "",
     value: 0,
-    curr: "",
+    commision: 0,
     description: "",
     selectField: "",
     recurring: false,
     date: "", // Default date
     // formType: ""
+    receiverOrSender: "sender",
   };
 
   // Transform the initialData
@@ -142,11 +167,19 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
       .typeError("Value must be a number")
       .required("Value is required")
       .positive("Value must be greater than 0"),
-    curr: Yup.string().required("Currency is required"),
+    commision: Yup.number()
+      .typeError("Value must be a number")
+      .required("Value is required")
+      .positive("Value must be greater than 0"),
+    // curr: Yup.string().required("Currency is required"),
     description: Yup.string().required("Description is required"),
     selectField: Yup.string().required("Please select an option"),
     recurring: Yup.boolean().default(false),
     // formType: Yup.string().required("Form type is required")
+    receiverOrSender: Yup.string()
+      .oneOf(["sender", "receiver"])
+      .required("Please select Sender or Receiver"),
+    date: Yup.string().nullable().notRequired(), // Allows null or undefined
   });
 
   //   const handleSubmit = (values: InternalFormValues) => {
@@ -172,9 +205,30 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
         <div className="grid grid-cols-1 gap-y-6">
           {formFields.map((field) => (
             <div key={field.name}>
-              {/* Wrap 'from' and 'to' fields with special logic */}
-              {["from", "to"].includes(field.name) ? (
+              {field.name === "receiverOrSender" && field.options ? (
+                <RadiobuttonWrapper
+                  name={field.name}
+                  label={t(field.label)}
+                  options={field.options} // Ensure options is not undefined
+                  flexDir={["row", "row"]}
+                  t={t}
+                />
+              ) : ["from", "to"].includes(field.name) ? (
+                // Use SpecialFieldWrapper for "from" and "to" fields
                 <SpecialFieldWrapper field={field} t={t} />
+              ) : field.name === "commision" ? (
+                // Render the commission field with a dynamic message
+                <div className="flex items-center gap-4">
+                  <div className={`${field.width || "w-full"}`}>
+                    <FormInputIcon
+                      name={field.name}
+                      label={t(field.label)}
+                      startIcon={field.startIcon}
+                      type={field.type}
+                    />
+                  </div>
+                  <CommisionMessage t={t} />
+                </div>
               ) : field.type === "checkbox" ? (
                 <CheckboxWrapper name="recurring" label={t(field.name)} />
               ) : field.type === "date" ? (

@@ -1,8 +1,4 @@
-import {
-  FaMoneyBillWave,
-  FaFileAlt,
-  FaExchangeAlt,
-} from "react-icons/fa";
+import { FaMoneyBillWave, FaFileAlt, FaExchangeAlt } from "react-icons/fa";
 
 export const formFields = [
   {
@@ -27,10 +23,20 @@ export const formFields = [
     width: "w-1/2", // Custom width
   },
   {
-    name: "curr",
-    label: "Currency",
+    name: "receiverOrSender",
+    label: "bearer", // Add a label for the radio buttons
+    type: "radio",
+    options: [
+      { value: "receiver", label: "receiver" },
+      { value: "sender", label: "sender" },
+    ], // Radio button options
+    width: "w-full", // Full width for flex alignment
+  },
+  {
+    name: "commision",
+    label: "commision",
     startIcon: <FaMoneyBillWave />,
-    type: "text",
+    type: "number",
     width: "w-1/2", // Custom width
   },
   {

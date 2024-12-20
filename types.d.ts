@@ -39,3 +39,6 @@ export type FormItemsProps = {
     width?: string; // Optional custom width property
 
   };
+
+
+  type DropdownType = { value: string | number; label: string };

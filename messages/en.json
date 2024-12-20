@@ -246,7 +246,7 @@
         "from": "From Account",
         "to": "To Account",
         "value": "Value",
-        "curr": "Commissions",
+        "commision": "Commissions",
         "description": "Description",
         "rec": "Recurring Transfer",
         "ends": "Ends At",
@@ -256,7 +256,13 @@
         "back":"Back",
         "onhold":"On hold",
         "inactive":"Inactive",
-        "balance":"Balance"
+        "balance":"Balance",
+        "bearer": "Commission bearer",
+        "sender": "Sender",
+        "receiver": "Receiver",
+        "commisionSender":" deducted from Sender",
+        "commisionReceiver":" deducted from Receiver"
+
       },
       "statementOfAccount":{
         "title":"Generate Statement of Accounts",

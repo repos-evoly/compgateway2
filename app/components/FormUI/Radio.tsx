@@ -3,15 +3,15 @@
 import React, { JSX } from "react";
 import { useField, useFormikContext } from "formik";
 import { usePathname } from "next/navigation";
+import { DropdownType } from "@/types";
 
 type Props = {
   name: string;
   label: string;
   options: DropdownType[];
   flexDir?: string[];
+  t: (key: string) => string; // Properly typed translation function
 };
-
-type DropdownType = { value: string | number; label: string };
 
 // Define the form values interface
 interface FormValues {
@@ -23,6 +23,7 @@ const RadiobuttonWrapper = ({
   label,
   options,
   flexDir = ["row", "row"],
+  t,
 }: Props): JSX.Element => {
   const pathname = usePathname();
 
@@ -61,14 +62,14 @@ const RadiobuttonWrapper = ({
 
       {/* Radio Group */}
       <div
-        className={`flex ${
+        className={`flex space-x-2 rtl:space-x-reverse ${
           flexDir[1] === "row" ? "flex-row" : "flex-col"
         } gap-2`}
       >
         {options.map((option) => (
           <label
             key={option.value}
-            className="flex items-center space-x-2 cursor-pointer"
+            className="flex items-center space-x-2 rtl: space-x-reverse cursor-pointer"
           >
             <input
               type="radio"
@@ -78,7 +79,7 @@ const RadiobuttonWrapper = ({
               onChange={() => handleChange(option.value)}
               className="form-radio h-4 w-4 text-green-500 focus:ring focus:ring-green-300"
             />
-            <span className="text-gray-700">{option.label}</span>
+            <span className="text-gray-700">{t(option.label)}</span>
           </label>
         ))}
       </div>

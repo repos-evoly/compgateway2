@@ -241,7 +241,7 @@
         "from":"من حساب",
         "to":"إلى حساب",
         "value":"القيمة",
-        "curr":"العمولات",
+        "commision":"العمولات",
         "description":"البيان",
         "rec":"حوالة متكررة",
         "ends":"تنتهي في",
@@ -251,7 +251,12 @@
         "back":"العودة",
         "onhold":"معلق",
         "inactive":"غير نشط",
-        "balance":"الرصيد"
+        "balance":"الرصيد",
+        "bearer":"حامل العمولة",
+        "sender":"المرسل",
+        "receiver":"المتلقي",
+        "commisionSender": " تستقطع من المرسل",
+        "commisionReceiver": "تستقطع من المتلقي"
 
       },
       "statementOfAccount": {

@@ -2,13 +2,18 @@
 
 import React, { useState } from "react";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import { dataEn, dataAr, columnsEn, columnsAr, dropdownOptions } from "./data";
-import InternalForm from "./InternalForm";
-import BetweenForm from "./BetweenForm"; // New BetweenForm component
+import {
+  dataEn,
+  dataAr,
+  columnsEn,
+  columnsAr,
+  dropdownOptions,
+} from "../../../components/forms/transfers/internal/data";
+import InternalForm from "../../../components/forms/transfers/internal/InternalForm";
+import BetweenForm from "../../../components/forms/transfers/internal/BetweenForm"; // New BetweenForm component
 import { useTranslations, useLocale } from "next-intl";
-import FormTypeSelect from "./FormTypeSelect";
-import { InternalFormValues } from "./InternalForm"; // Import the type
-
+import FormTypeSelect from "../../../components/forms/transfers/internal/FormTypeSelect";
+import { InternalFormValues } from "@/types"; // Import the type
 
 const Page = () => {
   const locale = useLocale();

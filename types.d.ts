@@ -42,3 +42,77 @@ export type FormItemsProps = {
 
 
   type DropdownType = { value: string | number; label: string };
+
+
+  export type SpecialFieldWrapperProps = {
+    field: FormInputIconProps;
+    t: (key: string) => string;
+  };
+  
+  export type InternalFormValues = {
+    from: string;
+    to: string;
+    value: number;
+    commision: number;
+    description: string;
+    selectField: string;
+    recurring: boolean;
+    date?: string | null;
+    receiverOrSender: string;
+  };
+  
+  export type InternalFormProps = {
+    initialData?: Partial<InternalFormValues>;
+    onSubmit: (values: InternalFormValues) => void;
+  };
+  
+  export type RecurringDateDisplayProps = {
+    t: (key: string) => string;
+    isEditing: boolean;
+    ends?: string | null;
+  };
+
+  export type AdditionalData = {
+    fromName?: string;
+    toName?: string;
+    fromBalance?: string;
+  };
+
+  export type Metadata = {
+    [key: string]: {
+      label: string;
+      type?: string;
+      options?: { value: string | number; label: string }[];
+      value?: string;
+    };
+  };
+  
+  export type ConfirmationModalProps<T extends Record<string, unknown>> = {
+    isOpen: boolean;
+    onClose: () => void;
+    metadata: Metadata;
+    additionalData?: T; // Accepts any shape dynamically
+  };
+
+
+  export type SpecialFieldsDisplayProps = {
+    field: {
+      name: string;
+      startIcon?: JSX.Element;
+      type: string;
+      width?: string;
+    };
+    displayType: "account" | "commission";
+    t: (key: string) => string;
+  };
+
+  export type FormTypeSelectProps = {
+    selectedFormType: string;
+    onFormTypeChange: (formType: string) => void;
+  };
+
+  export type ContinueButtonProps = {
+    onClick: (data: InternalFormValues) => void;
+    touchedFields: { [key: string]: boolean }; // Object of fields to mark as touched
+  };
+  

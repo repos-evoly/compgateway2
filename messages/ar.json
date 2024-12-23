@@ -253,6 +253,7 @@
         "inactive":"غير نشط",
         "balance":"الرصيد",
         "bearer":"حامل العمولة",
+        "receiverOrSender":"حامل العمولة",
         "sender":"المرسل",
         "receiver":"المتلقي",
         "commisionSender": " تستقطع من المرسل",
@@ -269,6 +270,14 @@
       "formTypeSelect":{
         "internal":"تحويل داخل المصرف",
         "between":"تحويل بين المصارف"
+      },
+      "confirmationModal": {
+        "title": "التأكيد",
+        "print": "طباعة",
+        "submit": "تأكيد"
+      },
+      "continueButton":{
+        "continue": "متابعة"
       }
       
   }

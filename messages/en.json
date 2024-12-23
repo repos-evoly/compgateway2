@@ -258,6 +258,7 @@
         "inactive":"Inactive",
         "balance":"Balance",
         "bearer": "Commission bearer",
+        "receiverOrSender":"Commission bearer",
         "sender": "Sender",
         "receiver": "Receiver",
         "commisionSender":" deducted from Sender",
@@ -274,8 +275,17 @@
       "formTypeSelect": {
         "internal": "Internal Transfer",
         "between": "Transfer Between Banks"
+      },
+      "confirmationModal":{
+        "title":"Confirm",
+        "print":"PDF",
+        "submit":"Submit"
+      },
+      "continueButton":{
+        "continue": "Continue"
       }
-      
+
+
       
 
     

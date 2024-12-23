@@ -1,10 +1,8 @@
+import { FormTypeSelectProps } from "@/types";
 import { useTranslations } from "next-intl";
 import React from "react";
 
-type FormTypeSelectProps = {
-  selectedFormType: string;
-  onFormTypeChange: (formType: string) => void;
-};
+
 
 const FormTypeSelect: React.FC<FormTypeSelectProps> = ({
   selectedFormType,

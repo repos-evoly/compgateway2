@@ -1,8 +1,7 @@
-"use client";
+import React from "react";
 
-
-const ExamplePage: React.FC = () => {
-  return <div className="p-6 bg-gray-100 min-h-screen">example</div>;
+const page = () => {
+  return <div>page</div>;
 };
 
-export default ExamplePage;
+export default page;

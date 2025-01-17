@@ -133,9 +133,9 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
       }),
       {}
     ),
-    recurring: { label: t("rec"), type: "checkbox" },
-    date: { label: t("ends"), type: "date" },
-    selectField: { label: t("status"), type: "select", options: selectOptions },
+    // recurring: { label: t("rec"), type: "checkbox" },
+    // date: { label: t("ends"), type: "date" },
+    // selectField: { label: t("status"), type: "select", options: selectOptions },
     fromName: { label: "from account name", type: "text" },
     fromBalance: { label: t("balance"), type: "text" },
     toName: { label: "to account name" },
@@ -239,6 +239,7 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
             onClose={() => setIsModalOpen(false)}
             metadata={metadata}
             additionalData={modalData.additionalData} // Make sure this matches state structure
+            excludedFields={["recurring", "date", "selectField"]} // Fields to exclude
           />
         )}
       </Form>

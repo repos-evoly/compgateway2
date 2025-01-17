@@ -6,14 +6,13 @@ import { FaPrint, FaTimes } from "react-icons/fa";
 import SubmitButton from "@/app/components/FormUI/SubmitButton"; // Adjust path as necessary
 import { FaCheck } from "react-icons/fa";
 
-// Updated Metadata type with flexibility for additional data fields
-
 const ConfirmationModal = <T extends Record<string, unknown>>({
   isOpen,
   onClose,
   metadata,
   additionalData,
-}: ConfirmationModalProps<T>) => {
+  excludedFields = [], // Optional prop to exclude fields
+}: ConfirmationModalProps<T> & { excludedFields?: string[] }) => {
   const { values } = useFormikContext<InternalFormValues>();
   const t = useTranslations("confirmationModal");
 
@@ -42,71 +41,75 @@ const ConfirmationModal = <T extends Record<string, unknown>>({
         {/* Scrollable Content */}
         <div className="p-6">
           {/* Form Values */}
-          {Object.keys(values as InternalFormValues).map((fieldName) => {
-            const fieldMeta = metadata[fieldName] || {};
-            const fieldType = fieldMeta.type || "text";
-            const fieldLabel = fieldMeta.label || fieldName;
+          {Object.keys(values as InternalFormValues)
+            .filter((fieldName) => !excludedFields.includes(fieldName)) // Exclude fields
+            .map((fieldName) => {
+              const fieldMeta = metadata[fieldName] || {};
+              const fieldType = fieldMeta.type || "text";
+              const fieldLabel = fieldMeta.label || fieldName;
 
-            return (
-              <div key={fieldName} className="flex flex-col mb-4 last:mb-0">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  {fieldLabel}
-                </label>
-                {fieldType === "checkbox" ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!values[fieldName as keyof InternalFormValues]}
-                      disabled
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                    />
-                    <span>
-                      {values[fieldName as keyof InternalFormValues]
-                        ? "Yes"
-                        : "No"}
-                    </span>
-                  </div>
-                ) : fieldType === "select" || fieldType === "radio" ? (
-                  <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
-                    {fieldMeta.options?.find(
-                      (opt) =>
-                        opt.value ===
-                        values[fieldName as keyof InternalFormValues]
-                    )?.label || "—"}
-                  </div>
-                ) : fieldType === "date" ? (
-                  <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
-                    {values[fieldName as keyof InternalFormValues] || "—"}
-                  </div>
-                ) : fieldType === "multiselect" ? (
-                  <div className="flex flex-wrap gap-2">
-                    {(
-                      values[fieldName as keyof InternalFormValues]
-                        ?.toString()
-                        .split(",") || []
-                    ).map((selectedValue) => (
-                      <span
-                        key={selectedValue}
-                        className="inline-block bg-gray-200 px-2 py-1 rounded"
-                      >
-                        {
-                          fieldMeta.options?.find(
-                            (opt) => opt.value.toString() === selectedValue
-                          )?.label
+              return (
+                <div key={fieldName} className="flex flex-col mb-4 last:mb-0">
+                  <label className="text-sm font-medium text-gray-700 mb-1">
+                    {fieldLabel}
+                  </label>
+                  {fieldType === "checkbox" ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={
+                          !!values[fieldName as keyof InternalFormValues]
                         }
+                        disabled
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      />
+                      <span>
+                        {values[fieldName as keyof InternalFormValues]
+                          ? "Yes"
+                          : "No"}
                       </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
-                    {fieldMeta.value ||
-                      values[fieldName as keyof InternalFormValues] ||
-                      "—"}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                    </div>
+                  ) : fieldType === "select" || fieldType === "radio" ? (
+                    <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
+                      {fieldMeta.options?.find(
+                        (opt) =>
+                          opt.value ===
+                          values[fieldName as keyof InternalFormValues]
+                      )?.label || "—"}
+                    </div>
+                  ) : fieldType === "date" ? (
+                    <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
+                      {values[fieldName as keyof InternalFormValues] || "—"}
+                    </div>
+                  ) : fieldType === "multiselect" ? (
+                    <div className="flex flex-wrap gap-2">
+                      {(
+                        values[fieldName as keyof InternalFormValues]
+                          ?.toString()
+                          .split(",") || []
+                      ).map((selectedValue) => (
+                        <span
+                          key={selectedValue}
+                          className="inline-block bg-gray-200 px-2 py-1 rounded"
+                        >
+                          {
+                            fieldMeta.options?.find(
+                              (opt) => opt.value.toString() === selectedValue
+                            )?.label
+                          }
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
+                      {fieldMeta.value ||
+                        values[fieldName as keyof InternalFormValues] ||
+                        "—"}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
 
         {/* Footer Buttons */}

@@ -31,7 +31,8 @@
       "currRate":"Currency exchange rates",
   
       "logout":"Logout",
-      "defaultTitle":""
+      "defaultTitle":"",
+      "customizations":"Customizations"
     
     },
     "mainHeader":{
@@ -235,7 +236,8 @@
         "addButton": "Add",
         "noItems":"No items available",
         "yes":"yes",
-        "no":"no"
+        "no":"no",
+        "actions":"Actions"
 
     },
     "edit":"Edit",
@@ -283,11 +285,48 @@
       },
       "continueButton":{
         "continue": "Continue"
+      },
+      "salaries":{
+        "columns":{
+          "id":"ID",
+          "name":"Name",
+          "salary":"Salary",
+          "deduction":"Deduction"
+        },
+        "salariesPage": {
+          "columns": {
+            "date": "Date",
+            "month": "Month",
+            "total": "Total",
+            "submittingDate": "Submitting Date"
+          }
+        }
+      },
+
+      "customizations":{
+        "banks":{
+          "title":"banks",
+          "description":"Description",
+          "swiftcode":"Swiftcode",
+          "bankNumber":"Bank Number"
+        },
+        "commissions":{
+          "title":"Commissions",
+          "tc":"TC",
+          "from":"From",
+          "to":"To",
+          "per":"Percent",
+          "value":"Value",
+          "bearer":"Bearer"
+        },
+        "limits":{
+          "title":"Limits",
+          "ft":"FT",
+          "mc":"M/C",
+          "from":"from",
+          "to":"To",
+          "checker":"Checker"
+        }
       }
-
-
       
-
-    
-  
   }

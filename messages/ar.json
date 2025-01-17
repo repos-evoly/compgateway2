@@ -30,7 +30,9 @@
       "currRate":"اسعار صرف العملات",
   
       "logout":"تسجيل الخروج",
-      "defaultTitle":""
+      "defaultTitle":"",
+      "customizations":"تعريفات"
+
 
     },
     "mainHeader":{
@@ -229,7 +231,8 @@
         "addButton": "إضافة",
         "noItems":"لا يوجد عناصر متاحة",
         "yes":"نعم",
-        "no":"لا"
+        "no":"لا",
+        "actions":"عمليات"
       },
 
 
@@ -278,6 +281,47 @@
       },
       "continueButton":{
         "continue": "متابعة"
+      },
+      "salaries": {
+        "columns": {
+          "id": "المعرف",
+          "name": "الاسم",
+          "salary": "الراتب",
+          "deduction": "الخصم"
+        },
+        "salariesPage": {
+          "columns": {
+            "date": "التاريخ",
+            "month": "الشهر",
+            "total": "الإجمالي",
+            "submittingDate": "تاريخ التقديم"
+          }
+        }
+      },
+      "customizations": {
+        "banks": {
+          "title": "البنوك",
+          "description": "الوصف",
+          "swiftcode": "رمز السويفت",
+          "bankNumber": "رقم البنك"
+        },
+        "commissions": {
+          "title": "العمولات",
+          "tc": "رمز المعاملة",
+          "from": "من",
+          "to": "إلى",
+          "per": "النسبة المئوية",
+          "value": "القيمة",
+          "bearer": "الجهة المتحملة"
+        },
+        "limits": {
+          "title": "الحدود",
+          "ft": "نوع المعاملة",
+          "mc": "المُنشئ / المدقق",
+          "from": "من",
+          "to": "إلى",
+          "checker": "المدقق"
+        }
       }
       
   }

@@ -134,13 +134,13 @@ export const sidebarItems = [
       {
         id: 25,
         label: "salaryLocalization.salaries",
-        path: "/localization/salaries",
+        path: "/salaries",
         icon: BiDollarCircle, // Icon representing salaries/money
       },
       {
         id: 26,
         label: "salaryLocalization.uploadFiles",
-        path: "/localization/upload-files",
+        path: "/salaries/upload-files",
         icon: BiUpload, // Icon for file uploads
       },
       {
@@ -172,15 +172,22 @@ export const sidebarItems = [
     icon: () => null,
     children: [],
   },
+  // {
+  //   id: 22,
+  //   label: "customizations",
+  //   path: "/customizations",
+  //   icon: FaCog,
+  //   children: [],
+  // },
   {
-    id: 22,
+    id: 23,
     label: "settings",
     path: "/settings",
     icon: FaCog,
     children: [],
   },
   {
-    id: 23,
+    id: 24,
     label: "changeLanguage",
     path: "/change-language",
     icon: FaLanguage,
@@ -188,7 +195,7 @@ export const sidebarItems = [
     isLocaleToggle: true,
   },
   {
-    id: 24,
+    id: 25,
     label: "logout",
     path: "/logout",
     icon: FaSignOutAlt,

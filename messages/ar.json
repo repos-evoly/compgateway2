@@ -41,17 +41,17 @@
     "cblForm":{
       "partyName":"اسم الجهة",
       "capital":"رأس المال",
-      "foundingDate":{
-        "title":"تاريخ التأسيس",
-        "sub":"ميلادي"
-      },
+      "foundingDate":"تاريخ التأسيس",
       "legalForm":"الشكل القانوني",
       "branchOrAgency":"الفرع أو الوكالة",
       "sub":"م",
       "currentAccount":"رقم الحساب الجاري",
       "accountOpening":"تاريخ فتح الحساب",
   
-  
+      "generalInformation": "المعلومات العامة",
+      "financialInformation": "المعلومات المالية",
+      "representativeInformation": "معلومات الممثل القانوني",
+
   
       "commercialLicense":"رقم الرخصة التجارية",
       "validatyLicense":"صلاحية الرخصة التجارية",
@@ -61,6 +61,8 @@
       "validatyCode":"صلاحية الرمز الاحصائي",
       "chamberNumber":"رقم الغرفة التجارية",
       "validatyChamber":"صلاحية الغرفة التجارية",
+
+  
       "taxNumber":"الرقم الضريبي",
       "taxAdmin":"إدارة الضرائب",
       "office":"مكتب",
@@ -109,16 +111,10 @@
         "n3":"لا تُقبل المستندات ما لن ترسل عن طريق البريد و مختومة",
         "n4":"التأكيد على تعبئة البيانات من قبل الزبون بشل صحيح"
       },
-  
-      "footerArray":{
-        "signatureLegalR":"توقيع الممثل القانوني",
-        "date":"تاريخ التعبئة",
-        "name":"اسم الموظف المختص",
-        "signature":"التوقيع و ختم",
-        "addionalLine":"اعتماد مدير الفرع/ رئيس الوكالة",
-        "sub":"م"
-        
-      }
+
+      "additionalInformation":"معلومات إضافية",
+      "packingDate":"تاريخ التعبئة",
+      "specialistName": "اسم الموظف المختص"
   
     },
   
@@ -216,6 +212,7 @@
       "customerInfo":"",
       "actions":"عمليات",
       "amountTable":""
+
   
     },
   

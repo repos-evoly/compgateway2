@@ -41,16 +41,18 @@
     "cblForm":{
       "partyName":"Party Name",
       "capital":"Capital",
-      "foundingDate":{
-        "title":"Founding Date",
-        "sub":"meladi"
-      },
+      "foundingDate":"Founding Date",
+
       "legalForm":"Legal Form",
       "branchOrAgency":"Branch or Agnecy",
       "sub":"m",
       "currentAccount":"Currenct account number",
       "accountOpening":"Account opening date",
   
+      "generalInformation": "General Information",
+      "financialInformation": "Financial Information",
+      "representativeInformation": "Representative Information",
+
     
       "commercialLicense":"Commercial license number",
       "validatyLicense":"Validaty of commercial license",
@@ -106,16 +108,10 @@
         "n3": "Documents will not be accepted unless sent by mail and stamped.",
         "n4": "Ensure that the customer fills in the information correctly."
       },
-      
-  
-      "footerArray": {
-        "signatureLegalR": "Signature of the legal representative",
-        "date": "Filling date",
-        "name": "Name of the responsible employee",
-        "signature": "Signature and stamp",
-        "addionalLine": "Branch Manager/Agency Head Approval",
-        "sub":"m"
-      }
+
+      "additionalInformation":"Additional information",
+      "packingDate": "Filling date",
+      "specialistName":"Name of the responsible employee"
       
   
   

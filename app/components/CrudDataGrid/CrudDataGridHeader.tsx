@@ -28,7 +28,7 @@ const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
 
   if (haveChildrens && childrens) {
     return (
-      <div className="flex items-center justify-between bg-info-dark p-2 h-16 rounded">
+      <div className="flex items-center justify-between bg-info-dark p-2 h-max rounded">
         {childrens}
       </div>
     );

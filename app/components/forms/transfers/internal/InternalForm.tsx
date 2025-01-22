@@ -1,5 +1,5 @@
 // InternalForm.tsx
-
+"use client";
 import React, { useState } from "react";
 import * as Yup from "yup";
 import Form from "@/app/components/FormUI/Form";
@@ -133,9 +133,6 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
       }),
       {}
     ),
-    // recurring: { label: t("rec"), type: "checkbox" },
-    // date: { label: t("ends"), type: "date" },
-    // selectField: { label: t("status"), type: "select", options: selectOptions },
     fromName: { label: "from account name", type: "text" },
     fromBalance: { label: t("balance"), type: "text" },
     toName: { label: "to account name" },

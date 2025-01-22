@@ -39,7 +39,7 @@ const SubmitButton = ({
   };
 
   // Map color prop to dynamic Tailwind color class
-  const colorClass = `bg-${color} hover:bg-opacity-90 text-white`;
+  const colorClass = `bg-${color} text-white hover:bg-warning-light hover:text-info-dark`;
 
   return (
     <div

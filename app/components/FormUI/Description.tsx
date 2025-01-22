@@ -11,9 +11,7 @@ const Description = ({
   children,
   className = "text-green-500", // Default styling using Tailwind
 }: Props) => {
-  const Component = variant; // Dynamically assign the tag (e.g., h1, h2, etc.)
-
-  return <Component className={className}>{children}</Component>;
+  return React.createElement(variant, { className }, children);
 };
 
 export default Description;

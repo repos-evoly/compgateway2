@@ -77,32 +77,26 @@ const Page = () => {
         />
       ) : (
         <div className="bg-white p-6 rounded">
-          <div className="flex justify-center mb-6">
-            <FormTypeSelect
-              selectedFormType={formType}
-              onFormTypeChange={setFormType}
-            />
-          </div>
           {/* Header with Back Button and Title */}
-          <div className="w-full bg-info-dark p-4 rounded-md rounded-b-none flex items-center justify-between relative">
-            {/* Title Centered */}
-            <h1 className="absolute left-1/2 transform -translate-x-1/2 text-white text-xl font-bold">
-              {t("title")}
-            </h1>
-
-            {/* Back Button Aligned to the Right */}
+          <div className="w-full bg-info-dark p-4 rounded-md rounded-b-none flex items-center justify-start gap-8 relative">
+            {/* Back Button */}
             <button
               onClick={handleFormClose}
-              className="text-white border px-4 py-2 rounded-md hover:bg-warning-light hover:text-info-dark hover:border-none transition duration-300"
+              className="text-white border px-4 py-2 rounded-md hover:bg-warning-light hover:text-info-dark hover:border-transparent transition duration-300"
             >
               {t("back")}
             </button>
+
+            {/* FormTypeSelect Aligned Horizontally */}
+            <div className="flex items-center">
+              <FormTypeSelect
+                selectedFormType={formType}
+                onFormTypeChange={setFormType}
+              />
+            </div>
           </div>
 
-          {/* Form with Radio Buttons */}
-          <div>
-            {/* Centered Radio Buttons */}
-
+          <div className="">
             {/* InternalForm or BetweenForm based on selected form type */}
             {formType === "internal" ? (
               <InternalForm

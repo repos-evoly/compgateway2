@@ -1,6 +1,9 @@
+"use client";
+
 import React, { useState } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import { useTranslations } from "use-intl";
+import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 
 interface TableProps {
   title: string; // Title of the table
@@ -9,26 +12,18 @@ interface TableProps {
 
 const Table: React.FC<TableProps> = ({ title, columns }) => {
   // State to manage rows in the table
-  const [rows, setRows] = useState<string[][]>([
-    Array(columns.length).fill(""),
-  ]);
+  const [rows, setRows] = useState<number[]>([0]); // Track the number of rows
 
   const t = useTranslations();
+
   // Handler to add a new row
   const addRow = () => {
-    setRows([...rows, Array(columns.length).fill("")]);
+    setRows([...rows, rows.length]);
   };
 
   // Handler to delete a row
   const deleteRow = (rowIndex: number) => {
     const updatedRows = rows.filter((_, index) => index !== rowIndex);
-    setRows(updatedRows);
-  };
-
-  // Handler to update cell content
-  const updateCell = (rowIndex: number, columnIndex: number, value: string) => {
-    const updatedRows = [...rows];
-    updatedRows[rowIndex][columnIndex] = value;
     setRows(updatedRows);
   };
 
@@ -68,17 +63,15 @@ const Table: React.FC<TableProps> = ({ title, columns }) => {
 
           {/* Table Body */}
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="border-b">
-                {row.map((cell, columnIndex) => (
+            {rows.map((rowId, rowIndex) => (
+              <tr key={rowId} className="border-b">
+                {columns.map((_, columnIndex) => (
                   <td key={columnIndex} className="px-4 py-2 border">
-                    <input
+                    <FormInputIcon
+                      name={`rows.${rowIndex}.${columnIndex}`}
+                      label=""
+                      textColor="text-gray-700"
                       type="text"
-                      value={cell}
-                      onChange={(e) =>
-                        updateCell(rowIndex, columnIndex, e.target.value)
-                      }
-                      className="w-full p-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                   </td>
                 ))}

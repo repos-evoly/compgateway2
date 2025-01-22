@@ -39,12 +39,12 @@ export default async function LocaleLayout({
               {/* Main Content Layout */}
               <div className="flex-1 flex flex-col">
                 {/* Main Header */}
-                <MainHeader title={"title"} logoUrl={logoUrl} isRtl={isRtl} />
-
+                <div className=" mx-4">
+                  {/* Add margin here */}
+                  <MainHeader title={"title"} logoUrl={logoUrl} isRtl={isRtl} />
+                </div>
                 {/* Page Content */}
-                <main className="flex-1 p-4 overflow-auto">
-                  {children}
-                </main>
+                <main className="flex-1 p-4 overflow-auto">{children}</main>
               </div>
             </NextIntlClientProvider>
           </GlobalProvider>

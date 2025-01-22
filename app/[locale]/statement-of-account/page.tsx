@@ -2,83 +2,188 @@
 import React, { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import StatementGenerator from "./StatementOfAccountsContainer"; // Import the StatementGenerator component
-import {
-  withCurrencyDataEn,
-  withCurrencyDataAr,
-  withCurrencyColumnsEn,
-  withCurrencyColumnsAr,
-} from "./data";
+import Form from "@/app/components/FormUI/Form";
+import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
+import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
+import SubmitButton from "@/app/components/FormUI/SubmitButton";
+import * as Yup from "yup";
+import { FaArrowRight } from "react-icons/fa";
+import { useFormikContext } from "formik";
+
+// Define the type for form values
+type StatementFormValues = {
+  accountNumber: string;
+  fromDate: string;
+  toDate: string;
+};
+
+type TableRow = {
+  date: string;
+  description: string;
+  transactionNumber: string;
+  debit: number;
+  credit: number;
+  balance: number;
+};
 
 const Page = () => {
   const locale = useLocale();
-  const [showTable, setShowTable] = useState(false); // State to toggle table visibility
-
-  // Determine which data and columns to use based on locale
-  const withCurrencyData =
-    locale === "ar" ? withCurrencyDataAr : withCurrencyDataEn;
-  const withCurrencyColumns =
-    locale === "ar" ? withCurrencyColumnsAr : withCurrencyColumnsEn;
-
-  // Information to display in the header
-  const accountInfo =
-    locale === "ar" ? "الحساب: 01-4011-0001" : "Account: 01-4011-0001";
-  const fromDateInfo =
-    locale === "ar" ? "من التاريخ: 01/12/2024" : "From Date: 01/12/2024";
-  const toDateInfo =
-    locale === "ar" ? "إلى التاريخ: 30/12/2024" : "To Date: 30/12/2024";
-
-  // Handle the continue button click
-  const handleContinue = () => {
-    setShowTable(true); // Show the table below the form
-  };
-
-  const handlePrint = () => {
-    console.log("Print PDF functionality triggered");
-    // Implement your print logic here (e.g., generating PDF using jsPDF or other libraries)
-  };
-
   const t = useTranslations("statementOfAccount");
+  const [tableData, setTableData] = useState<TableRow[]>([]);
+  const withCurrencyColumns =
+    locale === "ar"
+      ? [
+          { key: "date", label: "التاريخ" },
+          { key: "description", label: "الشرح" },
+          { key: "transactionNumber", label: "رقم العملية" },
+          { key: "credit", label: "دائن" },
+          { key: "debit", label: "مدين" },
+          { key: "balance", label: "الرصيد" },
+        ]
+      : [
+          { key: "date", label: "Date" },
+          { key: "description", label: "Description" },
+          { key: "transactionNumber", label: "Transaction Number" },
+          { key: "credit", label: "Credit" },
+          { key: "debit", label: "Debit" },
+          { key: "balance", label: "Balance" },
+        ];
+
+  const handleFormSubmit = (values: StatementFormValues) => {
+    console.log("Form Submitted:", values);
+
+    // Simulate fetching data based on form inputs
+    const fetchedData: TableRow[] = [
+      {
+        date: "2024-12-01",
+        description: "شرح 1",
+        transactionNumber: "T001",
+        credit: 1000,
+        debit: 0,
+        balance: 2000,
+      },
+      {
+        date: "2024-12-02",
+        description: "شرح 2",
+        transactionNumber: "T002",
+        credit: 500,
+        debit: 0,
+        balance: 2500,
+      },
+      {
+        date: "2024-12-03",
+        description: "شرح 3",
+        transactionNumber: "T003",
+        credit: 0,
+        debit: 100,
+        balance: 2400,
+      },
+    ];
+
+    setTableData(fetchedData);
+  };
+
+  // Component to display account name beside input
+  const AccountNameDisplay = () => {
+    const { values } = useFormikContext<StatementFormValues>();
+    const [accountName, setAccountName] = useState("");
+
+    React.useEffect(() => {
+      if (values.accountNumber === "01-4011-0001") {
+        setAccountName(locale === "ar" ? "عصمت العياش" : "Ismat Alayash");
+      } else {
+        setAccountName("");
+      }
+    }, [values.accountNumber]); // Removed 'locale' from the dependency array
+
+    return accountName ? (
+      <div className="text-white text-sm font-semibold whitespace-nowrap mb-3">
+        {accountName}
+      </div>
+    ) : null;
+  };
+
+  const initialValues: StatementFormValues = {
+    accountNumber: "",
+    fromDate: "",
+    toDate: "",
+  };
+
+  const validationSchema = Yup.object({
+    accountNumber: Yup.string().required(t("account") + " is required"),
+    fromDate: Yup.string().required(t("from") + " is required"),
+    toDate: Yup.string().required(t("to") + " is required"),
+  });
 
   return (
     <div className="p-8 flex flex-col items-center space-y-12">
-      {/* Statement Generator */}
-      <div className="bg-white p-6 rounded-md w-full">
-        <h2 className="text-2xl font-bold text-center bg-info-dark w-3/4 m-auto h-14 text-white rounded-t-lg flex items-center justify-center">
-          {t("title")}
-        </h2>
-        <StatementGenerator onContinue={handleContinue} />
-      </div>
+      <div className="bg-white p-6 rounded-md w-full space-y-6">
+        <CrudDataGrid
+          data={tableData}
+          columns={withCurrencyColumns}
+          showSearchBar={false}
+          showAddButton={false}
+          haveChildrens={true}
+          childrens={
+            <Form
+              initialValues={initialValues}
+              onSubmit={handleFormSubmit}
+              validationSchema={validationSchema}
+            >
+              <div className="flex items-center gap-2 w-full">
+                <div className=" w-1/4">
+                  <FormInputIcon
+                    name="accountNumber"
+                    label={t("account")}
+                    type="text"
+                    titlePosition="side"
+                    textColor=" text-white"
+                  />
+                </div>
+                <AccountNameDisplay />
 
-      {/* With Currency Data Grid - Display below the form */}
-      {showTable && (
-        <div className="bg-white p-6 rounded-md w-full space-y-6">
-          <CrudDataGrid
-            data={withCurrencyData}
-            columns={withCurrencyColumns}
-            showSearchBar={false}
-            showAddButton={false}
-            haveChildrens={true} // Enable custom children
-            childrens={
-              <div className="flex justify-between text-sm text-white w-full">
-                <div>{accountInfo}</div>
-                <div>{fromDateInfo}</div>
-                <div>{toDateInfo}</div>
+                <div className="w-1/4">
+                  <DatePickerValue
+                    name="fromDate"
+                    label={t("from")}
+                    titlePosition="side"
+                    textColor=" text-white"
+                  />
+                </div>
+
+                <div className="w-1/5">
+                  <DatePickerValue
+                    name="toDate"
+                    label={t("to")}
+                    titlePosition="side"
+                    textColor=" text-white"
+                  />
+                </div>
+
+                <div className="m-auto mb-4">
+                  <SubmitButton
+                    title={t("continue")}
+                    Icon={FaArrowRight}
+                    color="info-dark"
+                    fullWidth={false}
+                  />
+                </div>
               </div>
-            }
-          />
+            </Form>
+          }
+        />
 
-          {/* Print Button */}
+        {tableData.length > 0 && (
           <div className="flex justify-end">
             <button
-              onClick={handlePrint}
+              onClick={() => console.log("Print functionality")}
               className="bg-info-dark hover:bg-warning-light text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300"
             >
               {locale === "ar" ? "طباعة PDF" : "Print PDF"}
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

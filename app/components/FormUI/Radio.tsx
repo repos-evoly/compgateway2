@@ -11,6 +11,7 @@ type Props = {
   options: DropdownType[];
   flexDir?: string[];
   t: (key: string) => string; // Properly typed translation function
+  textColor?: string; // New prop for setting label text color
 };
 
 // Define the form values interface
@@ -24,6 +25,7 @@ const RadiobuttonWrapper = ({
   options,
   flexDir = ["row", "row"],
   t,
+  textColor = "text-gray-700", // Default text color
 }: Props): JSX.Element => {
   const pathname = usePathname();
 
@@ -69,7 +71,7 @@ const RadiobuttonWrapper = ({
         {options.map((option) => (
           <label
             key={option.value}
-            className="flex items-center space-x-2 rtl: space-x-reverse cursor-pointer"
+            className={`flex items-center space-x-2 rtl:space-x-reverse cursor-pointer`}
           >
             <input
               type="radio"
@@ -79,7 +81,7 @@ const RadiobuttonWrapper = ({
               onChange={() => handleChange(option.value)}
               className="form-radio h-4 w-4 text-green-500 focus:ring focus:ring-green-300"
             />
-            <span className="text-gray-700">{t(option.label)}</span>
+            <span className={`${textColor}`}>{t(option.label)}</span>
           </label>
         ))}
       </div>

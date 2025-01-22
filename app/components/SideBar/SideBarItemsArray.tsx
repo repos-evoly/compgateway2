@@ -172,13 +172,13 @@ export const sidebarItems = [
     icon: () => null,
     children: [],
   },
-  // {
-  //   id: 22,
-  //   label: "customizations",
-  //   path: "/customizations",
-  //   icon: FaCog,
-  //   children: [],
-  // },
+  {
+    id: 22,
+    label: "customizations",
+    path: "/customizations",
+    icon: FaCog,
+    children: [],
+  },
   {
     id: 23,
     label: "settings",

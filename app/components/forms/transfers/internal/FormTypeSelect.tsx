@@ -2,15 +2,13 @@ import { FormTypeSelectProps } from "@/types";
 import { useTranslations } from "next-intl";
 import React from "react";
 
-
-
 const FormTypeSelect: React.FC<FormTypeSelectProps> = ({
   selectedFormType,
   onFormTypeChange,
 }) => {
   const t = useTranslations("formTypeSelect");
   return (
-    <div className="flex items-center gap-4 mb-4">
+    <div className="flex items-center gap-4 text-white">
       <label className="flex items-center gap-2">
         <input
           type="radio"

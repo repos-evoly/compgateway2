@@ -6,12 +6,16 @@ type Props = {
   name: string;
   label: string;
   titlePosition?: "top" | "side"; // Optional prop: 'top' or 'side'
+  textColor?: string; // Additional prop to control label text color
+  width?: string; // New prop to control width
 };
 
 export default function DatePickerValue({
   name,
   label,
   titlePosition = "top",
+  textColor = "text-gray-700", // Default text color
+  width = "w-full", // Default width
 }: Props) {
   const [field] = useField(name);
   const { setFieldValue } = useFormikContext();
@@ -26,52 +30,40 @@ export default function DatePickerValue({
 
   return (
     <div
-      className={`mb-4 ${
+      className={`mb-4 ${width} ${
         titlePosition === "side"
-          ? ` flex items-center gap-2 ${
+          ? `flex items-center gap-2 ${
               document.documentElement.dir === "rtl"
-                ? "order-last text-right"
-                : "text-left"
+                ? "rtl:ml-2 text-right"
+                : "ltr:mr-2 text-left"
             }`
           : "flex flex-col"
       }`}
     >
       {/* Conditional order for RTL and LTR */}
       {titlePosition === "side" ? (
-        <>
-          {/* Label comes BEFORE the input in RTL */}
-          <label
-            htmlFor={name}
-            className={`text-sm font-medium text-gray-700 whitespace-nowrap `}
-          >
-            {label}
-          </label>
-          <input
-            id={name}
-            type="date"
-            value={value}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm"
-          />
-        </>
+        <label
+          htmlFor={name}
+          className={`text-sm font-medium ${textColor} whitespace-nowrap`}
+        >
+          {label}
+        </label>
       ) : (
-        <>
-          {/* Label on Top */}
-          <label
-            htmlFor={name}
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            {label}
-          </label>
-          <input
-            id={name}
-            type="date"
-            value={value}
-            onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm"
-          />
-        </>
+        <label
+          htmlFor={name}
+          className={`block text-sm font-medium ${textColor} mb-1`}
+        >
+          {label}
+        </label>
       )}
+
+      <input
+        id={name}
+        type="date"
+        value={value}
+        onChange={handleChange}
+        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm"
+      />
     </div>
   );
 }

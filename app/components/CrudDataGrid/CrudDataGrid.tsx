@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import CrudDataGridHeader from "./CrudDataGridHeader";
 import CrudDataGridBody from "./CrudDataGridBody";

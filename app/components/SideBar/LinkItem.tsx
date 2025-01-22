@@ -7,21 +7,21 @@ import { useGlobalContext } from "@/app/context/GlobalContext";
 
 type SidebarItem = {
   id: number;
-  path: string; // Navigation path
-  label: string; // Translation key for the label
-  icon: React.FC<React.SVGProps<SVGSVGElement>>; // Icon component
-  children?: SidebarItem[]; // Submenu items (if any)
-  isLocaleToggle?: boolean; // Marks the item as a locale toggle
+  path: string;
+  label: string;
+  icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  children?: SidebarItem[];
+  isLocaleToggle?: boolean;
 };
 
 type LinkItemProps = {
-  item: SidebarItem; // Sidebar item object
-  t: (key: string) => string; // Translation function
-  sidebarOpen: boolean; // Sidebar state (open or collapsed)
-  submenuOpen: number | null; // Currently open submenu ID
-  toggleSubmenu: (id: number) => void; // Function to toggle submenu
-  currentLocale: string; // Current locale
-  toggleLocale?: () => void; // Function to toggle locale
+  item: SidebarItem;
+  t: (key: string) => string;
+  sidebarOpen: boolean;
+  submenuOpen: number | null;
+  toggleSubmenu: (id: number) => void;
+  currentLocale: string;
+  toggleLocale?: () => void;
 };
 
 const LinkItem: React.FC<LinkItemProps> = ({
@@ -34,15 +34,13 @@ const LinkItem: React.FC<LinkItemProps> = ({
   toggleLocale,
 }) => {
   const pathname = usePathname();
-  const { setHeaderTitleLabel } = useGlobalContext();
+  const { setHeaderInfo } = useGlobalContext();
 
   const isActive = pathname === `/${currentLocale}${item.path}`;
   const hasChildren = item.children && item.children.length > 0;
 
-  // Render Divider
   if (item.label === "divider") return <Divider key={item.id} />;
 
-  // Locale Toggle
   if (item.isLocaleToggle) {
     return (
       <div
@@ -65,7 +63,6 @@ const LinkItem: React.FC<LinkItemProps> = ({
     );
   }
 
-  // Parent Item
   if (hasChildren) {
     return (
       <>
@@ -102,7 +99,6 @@ const LinkItem: React.FC<LinkItemProps> = ({
           )}
         </div>
 
-        {/* Submenu Items */}
         {submenuOpen === item.id && (
           <div className="flex flex-col">
             {item.children?.map((child) => {
@@ -117,7 +113,12 @@ const LinkItem: React.FC<LinkItemProps> = ({
                       ? "bg-info-dark text-white"
                       : "hover:bg-info-dark hover:text-white"
                   }`}
-                  onClick={() => setHeaderTitleLabel(child.label)}
+                  onClick={() =>
+                    setHeaderInfo({
+                      label: child.label,
+                      icon: <child.icon />,
+                    })
+                  }
                 >
                   <div className="w-6 h-6 flex items-center justify-center shrink-0">
                     <child.icon className="w-5 h-5" />
@@ -142,7 +143,6 @@ const LinkItem: React.FC<LinkItemProps> = ({
     );
   }
 
-  // Non-parent Item (Direct Link)
   return (
     <Link
       href={`/${currentLocale}${item.path}`}
@@ -151,7 +151,12 @@ const LinkItem: React.FC<LinkItemProps> = ({
           ? "bg-info-dark text-white"
           : "hover:bg-info-dark hover:text-white"
       }`}
-      onClick={() => setHeaderTitleLabel(item.label)}
+      onClick={() =>
+        setHeaderInfo({
+          label: item.label,
+          icon: <item.icon />,
+        })
+      }
     >
       <div className="w-6 h-6 flex items-center justify-center shrink-0">
         <item.icon className="w-5 h-5 rounded-md" />

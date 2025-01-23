@@ -89,7 +89,7 @@ const Page = () => {
     const [accountName, setAccountName] = useState("");
 
     React.useEffect(() => {
-      if (values.accountNumber === "01-4011-0001") {
+      if (values.accountNumber === "0015978000001") {
         setAccountName(locale === "ar" ? "عصمت العياش" : "Ismat Alayash");
       } else {
         setAccountName("");

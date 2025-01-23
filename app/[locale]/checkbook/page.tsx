@@ -98,6 +98,23 @@ const Page = () => {
             ))}
           </div>
 
+          {/* File Upload Input */}
+          <div className="mt-4">
+            <label
+              htmlFor="representativePassport"
+              className="block text-sm font-medium text-gray-700"
+            >
+              صورة جواز المندوب
+            </label>
+            <input
+              id="representativePassport"
+              name="representativePassport"
+              type="file"
+              accept=".jpg,.jpeg,.png,.pdf"
+              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700"
+            />
+          </div>
+
           {/* Book Containing (Radio Buttons) */}
           <div className="mt-4">
             <RadiobuttonWrapper

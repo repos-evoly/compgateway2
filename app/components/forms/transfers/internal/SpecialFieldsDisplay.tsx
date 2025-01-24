@@ -9,6 +9,7 @@ const SpecialFieldsDisplay = ({
   field,
   displayType,
   t,
+  disabled,
 }: SpecialFieldsDisplayProps) => {
   const { values } = useFormikContext<InternalFormValues>();
   let content = null;
@@ -59,6 +60,7 @@ const SpecialFieldsDisplay = ({
           label={t(field.name)}
           startIcon={field.startIcon}
           type={field.type}
+          disabled={disabled}
         />
       </div>
       {content}

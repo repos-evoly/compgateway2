@@ -47,3 +47,6 @@ export const formFields = [
     width: "w-full", // Full width
   },
 ];
+
+
+export const commissionValue = 1.5; 

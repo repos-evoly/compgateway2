@@ -104,6 +104,7 @@ export type FormItemsProps = {
     };
     displayType: "account" | "commission";
     t: (key: string) => string;
+    disabled?:boolean;
   };
 
   export type FormTypeSelectProps = {

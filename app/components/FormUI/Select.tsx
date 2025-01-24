@@ -10,12 +10,14 @@ type SelectWrapperType = {
   name: string;
   label: string;
   options: OptionType[];
+  disabled?: boolean; // Add the disabled prop
 };
 
 export default function SelectWrapper({
   name,
   label,
   options,
+  disabled = false, // Default value for disabled is false
 }: SelectWrapperType): JSX.Element {
   const pathname = usePathname();
   const { setFieldValue } = useFormikContext();
@@ -55,7 +57,7 @@ export default function SelectWrapper({
         htmlFor={name}
         className={`block text-sm font-medium ${
           currentLocale === "ar" ? "text-right" : "text-left"
-        } text-gray-700 mb-2`}
+        } text-gray-700 mb-2 ${disabled ? "text-gray-400" : ""}`} // Add disabled styling
       >
         {label}
       </label>
@@ -66,8 +68,11 @@ export default function SelectWrapper({
         name={name}
         value={selectedValue}
         onChange={handleChange}
+        disabled={disabled} // Pass the disabled prop to the select element
         className={`block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring ${
-          meta.touched && meta.error
+          disabled
+            ? "bg-gray-200 cursor-not-allowed"
+            : meta.touched && meta.error
             ? "border-red-500 focus:ring-red-500"
             : "focus:ring-blue-500"
         }`}

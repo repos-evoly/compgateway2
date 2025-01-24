@@ -39,16 +39,16 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         <div className="flex justify-end gap-4 p-4 border-t">
           <button
             onClick={() => handleClose(false)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+            className="px-4 py-2 text-sm font-medium text-white bg-info-dark rounded hover:bg-warning-light hover:text-info-dark"
           >
             {t("cancel")}
           </button>
-          <button
+          {/* <button
             onClick={() => handleClose(true)}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
           >
             {t("confirm")}
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

@@ -26,12 +26,17 @@
       },
       "documentary":"اعتمادات مستندية",
       "followUp":"متابعة الطلبات",
+      "customizations": {
+        "label": "تعريفات",
+        "banks": "البنوك",
+        "commissions": "العمولات",
+        "limits": "الحدود"
+      },      
       "settings":"الإعدادات",
       "currRate":"اسعار صرف العملات",
   
       "logout":"تسجيل الخروج",
-      "defaultTitle":"",
-      "customizations":"تعريفات"
+      "defaultTitle":""
 
 
     },
@@ -319,6 +324,45 @@
           "to": "إلى",
           "checker": "المدقق"
         }
-      }
+      },
+
+        "global": {
+          "dialogTitle": "ملاحظة",
+          "delmessage": "هل أنت متأكد أنك تريد المتابعة؟",
+          "cancel": "أغلق",
+          "confirm": "تأكيد"
+        },
+
+
+        "descriptions": {
+          "statementOfAccountDescription": "عرض وتنزيل كشوف الحساب",
+          "transferDescription": "إدارة جميع تحويلات الأموال",
+          "transferInDescription": "تحويل الأموال إلى حسابك",
+          "transferOutDescription": "إرسال الأموال إلى حسابات أخرى",
+          "requestsDescription": "طلب الخدمات المصرفية",
+          "checkBookDescription": "طلب دفتر شيكات جديد",
+          "certifiedCheckDescription": "التقدم بطلب للحصول على شيك معتمد",
+          "guaranteeLetterDescription": "طلب خطاب ضمان",
+          "creditFacilityDescription": "التقدم بطلب تسهيلات ائتمانية",
+          "visaDescription": "إدارة طلبات الفيزا الخاصة بك",
+          "rtgsDescription": "تنفيذ معاملات RTGS",
+          "foreignRequestsDescription": "طلب معاملات العملة الأجنبية",
+          "cblDescription": "عرض التفاصيل المتعلقة بمصرف ليبيا المركزي",
+          "salaryLocalizationDescription": "إدارة إعدادات توطين الرواتب",
+          "salariesDescription": "معالجة وتحويل رواتب الموظفين",
+          "uploadFilesDescription": "تحميل الملفات للتوطين",
+          "salariesTransferDescription": "تحويل الرواتب إلى الموظفين",
+          "documentaryDescription": "الوصول إلى التفاصيل الوثائقية وإدارتها",
+          "followUpDescription": "متابعة العمليات والطلبات",
+          "settingsDescription": "تكوين إعدادات التطبيق",
+          "customizationsDescription": "تخصيص تفضيلاتك المصرفية",
+          "banksDescription": "إدارة وعرض تفاصيل البنوك",
+          "commissionsDescription": "إدارة البيانات المتعلقة بالعمولات",
+          "limitsDescription": "تعيين وإدارة الحدود التشغيلية",
+          "defaultDescription":""
+
+        }
+        
+      
       
   }

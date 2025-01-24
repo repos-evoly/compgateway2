@@ -172,12 +172,38 @@ export const sidebarItems = [
     icon: () => null,
     children: [],
   },
+  // {
+  //   id: 22,
+  //   label: "customizations",
+  //   path: "/customizations",
+  //   icon: FaCog,
+  //   children: [],
+  // },
   {
     id: 22,
-    label: "customizations",
-    path: "/customizations",
-    icon: FaCog,
-    children: [],
+    label: "customizations.label",
+    path: "",
+    icon: HiOutlineCurrencyDollar,
+    children: [
+      {
+        id: 26,
+        label: "customizations.banks",
+        path: "/customizations/banks",
+        icon: BiDollarCircle, // Icon representing salaries/money
+      },
+      {
+        id: 27,
+        label: "customizations.commissions",
+        path: "/customizations/commissions",
+        icon: BiUpload, // Icon for file uploads
+      },
+      {
+        id: 28,
+        label: "customizations.limits",
+        path: "/customizations/limits",
+        icon: BiTransferAlt, // Icon representing salary transfers
+      },
+    ],
   },
   {
     id: 23,

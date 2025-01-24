@@ -1,9 +1,7 @@
-import React from 'react'
+import React from "react";
 
 const BetweenForm = () => {
-  return (
-    <div>BetweenForm</div>
-  )
-}
+  return <div>سيتم برمجة هذه الصفحة في وقت لاحق</div>;
+};
 
-export default BetweenForm
+export default BetweenForm;

@@ -27,12 +27,17 @@
       },
       "documentary":"Documentary Credits",
       "followUp":"Follow Up Requests",
+      "customizations":{
+        "label":"Customizations",
+        "banks":"Banks",
+        "commissions":"Commissions",
+        "limits":"Limist"
+      },
       "settings":"Settings",
       "currRate":"Currency exchange rates",
   
       "logout":"Logout",
-      "defaultTitle":"",
-      "customizations":"Customizations"
+      "defaultTitle":""
     
     },
     "mainHeader":{
@@ -323,6 +328,42 @@
           "to":"To",
           "checker":"Checker"
         }
+      },
+
+      "global": {
+        "dialogTitle": "Confirmation",
+        "delmessage": "Are you sure you want to proceed?",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
+      },
+
+      "descriptions": {
+        "statementOfAccountDescription": "View and download account statements",
+        "transferDescription": "Manage all fund transfers",
+        "transferInDescription": "Transfer funds into your account",
+        "transferOutDescription": "Send funds to other accounts",
+        "requestsDescription": "Request banking services",
+        "checkBookDescription": "Request a new checkbook",
+        "certifiedCheckDescription": "Apply for a certified check",
+        "guaranteeLetterDescription": "Request a guarantee letter",
+        "creditFacilityDescription": "Apply for credit facilities",
+        "visaDescription": "Manage your visa requests",
+        "rtgsDescription": "Initiate RTGS transactions",
+        "foreignRequestsDescription": "Request foreign currency transactions",
+        "cblDescription": "View details related to CBL",
+        "salaryLocalizationDescription": "Manage salary localization settings",
+        "salariesDescription": "Process and transfer employee salaries",
+        "uploadFilesDescription": "Upload files for localization",
+        "salariesTransferDescription": "Transfer salaries to employees",
+        "documentaryDescription": "Access and manage documentary details",
+        "followUpDescription": "Follow up on processes and requests",
+        "settingsDescription": "Configure your application settings",
+        "customizationsDescription": "Customize your banking preferences",
+        "banksDescription": "Manage and view your bank details",
+        "commissionsDescription": "Handle commission-related data",
+        "limitsDescription": "Set and manage operational limits",
+        "defaultDescription":""
       }
+      
       
   }

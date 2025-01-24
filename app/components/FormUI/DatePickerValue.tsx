@@ -8,6 +8,7 @@ type Props = {
   titlePosition?: "top" | "side"; // Optional prop: 'top' or 'side'
   textColor?: string; // Additional prop to control label text color
   width?: string; // New prop to control width
+  disabled?: boolean; // Add disabled prop
 };
 
 export default function DatePickerValue({
@@ -16,6 +17,7 @@ export default function DatePickerValue({
   titlePosition = "top",
   textColor = "text-gray-700", // Default text color
   width = "w-full", // Default width
+  disabled = false, // Default disabled to false
 }: Props) {
   const [field] = useField(name);
   const { setFieldValue } = useFormikContext();
@@ -62,7 +64,12 @@ export default function DatePickerValue({
         type="date"
         value={value}
         onChange={handleChange}
-        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm"
+        disabled={disabled} // Pass the disabled prop here
+        className={`w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring text-sm ${
+          disabled
+            ? "bg-gray-200 cursor-not-allowed"
+            : "focus:ring-blue-500 focus:ring-opacity-50"
+        }`}
       />
     </div>
   );

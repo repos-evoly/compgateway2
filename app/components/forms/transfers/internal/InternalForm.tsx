@@ -7,7 +7,7 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import CheckboxWrapper from "@/app/components/FormUI/CheckboxWrapper";
 import ResetButton from "@/app/components/FormUI/ResetButton";
 import SelectWrapper from "@/app/components/FormUI/Select";
-import { formFields } from "./internalFormFields";
+import { formFields, commissionValue } from "./internalFormFields";
 import { FaTrash } from "react-icons/fa";
 import { useTranslations } from "next-intl";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
@@ -22,6 +22,7 @@ import ConfirmationModal from "@/app/components/reusable/ConfirmationModal";
 import ContinueButton from "./ContinueButton"; // Adjust path as necessary
 import { useFormikContext } from "formik";
 import SpecialFieldsDisplay from "./SpecialFieldsDisplay"; // Adjust path as necessary
+import EditButton from "@/app/components/FormUI/EditButton";
 
 interface ModalDataType {
   formikData?: InternalFormValues; // Ensure this is optional since initial state may not have it
@@ -32,9 +33,9 @@ const RecurringDateDisplay = ({
   t,
   isEditing,
   ends,
-}: RecurringDateDisplayProps) => {
+  disabled, // Add disabled prop
+}: RecurringDateDisplayProps & { disabled?: boolean }) => {
   const { values } = useFormikContext<InternalFormValues>();
-  console.log("is it editing: ", isEditing);
 
   if (isEditing) {
     return values.recurring ? (
@@ -45,19 +46,27 @@ const RecurringDateDisplay = ({
   } else {
     return values.recurring ? (
       <div className="w-1/3">
-        <DatePickerValue name="date" label={t("ends")} titlePosition="side" />
+        <DatePickerValue
+          name="date"
+          label={t("ends")}
+          titlePosition="side"
+          disabled={disabled} // Pass disabled to DatePickerValue
+        />
       </div>
     ) : null;
   }
 };
 
 const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
+  const [fieldsDisabled, setFieldsDisabled] = useState(true); // Controls whether all fields are disabled
+  const alwaysDisabledFields = ["commision"]; // Add fields here that should always remain disabled
+
   const isEditing = !initialData;
   const defaultValues: InternalFormValues = {
     from: "",
     to: "",
     value: 0,
-    commision: 0,
+    commision: commissionValue,
     description: "",
     selectField: "",
     recurring: false,
@@ -156,23 +165,43 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
                   options={field.options}
                   flexDir={["row", "row"]}
                   t={t}
+                  disabled={
+                    fieldsDisabled && !alwaysDisabledFields.includes(field.name)
+                  }
                 />
               ) : ["from", "to"].includes(field.name) ? (
                 <SpecialFieldsDisplay
                   field={field}
                   displayType="account"
                   t={t}
+                  disabled={
+                    fieldsDisabled && !alwaysDisabledFields.includes(field.name)
+                  }
                 />
               ) : field.name === "commision" ? (
                 <SpecialFieldsDisplay
                   field={field}
                   displayType="commission"
                   t={t}
+                  disabled={true} // Always disabled as it's in alwaysDisabledFields
                 />
               ) : field.type === "checkbox" ? (
-                <CheckboxWrapper name="recurring" label={t(field.name)} />
+                <CheckboxWrapper
+                  name="recurring"
+                  label={t(field.name)}
+                  disabled={
+                    fieldsDisabled &&
+                    !alwaysDisabledFields.includes("recurring")
+                  } // Apply the proper disabled logic
+                />
               ) : field.type === "date" ? (
-                <DatePickerValue name={field.name} label={t(field.name)} />
+                <DatePickerValue
+                  name={field.name}
+                  label={t(field.name)}
+                  disabled={
+                    fieldsDisabled && !alwaysDisabledFields.includes(field.name)
+                  }
+                />
               ) : (
                 <div className={`${field.width || "w-full"}`}>
                   <FormInputIcon
@@ -180,6 +209,10 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
                     label={t(field.name)}
                     startIcon={field.startIcon}
                     type={field.type}
+                    disabled={
+                      fieldsDisabled &&
+                      !alwaysDisabledFields.includes(field.name)
+                    }
                   />
                 </div>
               )}
@@ -195,6 +228,7 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
             t={t}
             isEditing={isEditing}
             ends={initialData?.date}
+            disabled={fieldsDisabled && !alwaysDisabledFields.includes("date")}
           />
         </div>
 
@@ -203,10 +237,16 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
             name="selectField"
             label={t("status")}
             options={selectOptions}
+            disabled={fieldsDisabled} // Add the `disabled` property
           />
         </div>
 
         <div className="flex justify-center gap-4 mt-6">
+          <EditButton
+            fieldsDisabled={fieldsDisabled}
+            setFieldsDisabled={setFieldsDisabled}
+          />
+
           <ContinueButton
             onClick={handleModalData}
             touchedFields={{

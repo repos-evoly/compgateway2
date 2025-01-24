@@ -29,10 +29,12 @@ const ResetButton = ({
   fullWidth = true,
   adminOff = false,
 }: ResetButtonPropsType): JSX.Element => {
-  const { resetForm } = useFormikContext();
+  const { resetForm, setValues } = useFormikContext();
 
   const handleClick = () => {
-    resetForm(); // Clear all form fields
+    // Explicitly clear all form values
+    setValues({});
+    resetForm(); // Reset touched and errors as well
   };
 
   // Map color prop to dynamic Tailwind color class

@@ -12,6 +12,7 @@ type Props = {
   flexDir?: string[];
   t: (key: string) => string; // Properly typed translation function
   textColor?: string; // New prop for setting label text color
+  disabled?: boolean; // Add a disabled prop
 };
 
 // Define the form values interface
@@ -26,6 +27,7 @@ const RadiobuttonWrapper = ({
   flexDir = ["row", "row"],
   t,
   textColor = "text-gray-700", // Default text color
+  disabled = false, // Default value for disabled is false
 }: Props): JSX.Element => {
   const pathname = usePathname();
 
@@ -50,7 +52,9 @@ const RadiobuttonWrapper = ({
   }
 
   const handleChange = (value: string | number) => {
-    formik.setFieldValue(name, value);
+    if (!disabled) {
+      formik.setFieldValue(name, value);
+    }
   };
 
   return (
@@ -71,7 +75,9 @@ const RadiobuttonWrapper = ({
         {options.map((option) => (
           <label
             key={option.value}
-            className={`flex items-center space-x-2 rtl:space-x-reverse cursor-pointer`}
+            className={`flex items-center space-x-2 rtl:space-x-reverse cursor-pointer ${
+              disabled ? "cursor-not-allowed" : ""
+            }`}
           >
             <input
               type="radio"
@@ -79,9 +85,16 @@ const RadiobuttonWrapper = ({
               value={option.value}
               checked={field.value === option.value}
               onChange={() => handleChange(option.value)}
-              className="form-radio h-4 w-4 text-green-500 focus:ring focus:ring-green-300"
+              disabled={disabled} // Pass the disabled prop to the input
+              className={`form-radio h-4 w-4 text-green-500 focus:ring ${
+                disabled
+                  ? "bg-gray-200 cursor-not-allowed"
+                  : "focus:ring-green-300"
+              }`}
             />
-            <span className={`${textColor}`}>{t(option.label)}</span>
+            <span className={`${textColor} ${disabled ? "text-gray-400" : ""}`}>
+              {t(option.label)}
+            </span>
           </label>
         ))}
       </div>

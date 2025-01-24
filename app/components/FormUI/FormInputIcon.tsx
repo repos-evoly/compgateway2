@@ -14,10 +14,12 @@ const FormInputIcon = ({
   titlePosition = "top", // New prop to control label position
   textColor = "text-gray-700", // New prop to control text color
   width = "w-full", // Add width prop with a default value
+  disabled = false, // New disabled prop with a default value
 }: FormInputIconProps & {
   titlePosition?: "top" | "side";
   textColor?: string;
   width?: string; // Add width prop type
+  disabled?: boolean; // Add disabled prop type
 }) => {
   const [field, meta] = useField(name);
 
@@ -56,8 +58,11 @@ const FormInputIcon = ({
           id={name}
           {...field}
           type={type}
-          className={`w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring ${
-            meta.touched && meta.error
+          disabled={disabled} // Add disabled prop here
+          className={`w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none ${
+            disabled
+              ? "bg-gray-200 cursor-not-allowed text-gray-500"
+              : meta.touched && meta.error
               ? "border-red-500 focus:ring-red-500"
               : "border-gray-300 focus:ring-blue-500"
           }`}

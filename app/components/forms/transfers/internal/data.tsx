@@ -24,8 +24,8 @@ export const dataEn = [
 export const dataAr = [
   {
     id: 1, // Added ID
-    from: "الحساب الأول",
-    to: "الحساب الثاني",
+    from: "0015798000",
+    to: "0015798123",
     value: 1000,
     commision: 1.5,
     description: "دفعة مقابل خدمات",
@@ -34,8 +34,8 @@ export const dataAr = [
   },
   {
     id: 2, // Added ID
-    from: "الحساب الثالث",
-    to: "الحساب الرابع",
+    from: "0015798000",
+    to: "0015798123",
     value: 2000,
     commision: 2,
     description: "اشتراك شهري",
@@ -67,3 +67,4 @@ export const columnsAr = [
 ];
 
 export const dropdownOptions = ["متكررة", "غير متكررة"];
+

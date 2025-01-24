@@ -9,6 +9,7 @@ import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import * as Yup from "yup";
 import { FaArrowRight } from "react-icons/fa";
 import { useFormikContext } from "formik";
+import ConfirmationDialog from "@/app/components/reusable/ConfirmationDialog";
 
 // Define the type for form values
 type StatementFormValues = {
@@ -30,6 +31,17 @@ const Page = () => {
   const locale = useLocale();
   const t = useTranslations("statementOfAccount");
   const [tableData, setTableData] = useState<TableRow[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const handleDialogClose = (confirmed: boolean) => {
+    setIsDialogOpen(false);
+    if (confirmed) {
+      console.log(
+        locale === "ar"
+          ? "هذا الزر مسؤول عن توليد ملف pdf وسيتم برمجته لاحقًا"
+          : "This button is responsible for generating a PDF and will be implemented later."
+      );
+    }
+  };
   const withCurrencyColumns =
     locale === "ar"
       ? [
@@ -116,8 +128,8 @@ const Page = () => {
   });
 
   return (
-    <div className="p-8 flex flex-col items-center space-y-12">
-      <div className="bg-white p-6 rounded-md w-full space-y-6">
+    <div className=" flex flex-col items-center space-y-12">
+      <div className="bg-white rounded-md w-full space-y-6">
         <CrudDataGrid
           data={tableData}
           columns={withCurrencyColumns}
@@ -136,7 +148,7 @@ const Page = () => {
                     name="accountNumber"
                     label={t("account")}
                     type="text"
-                    titlePosition="side"
+                    // titlePosition="side"
                     textColor=" text-white"
                   />
                 </div>
@@ -146,7 +158,7 @@ const Page = () => {
                   <DatePickerValue
                     name="fromDate"
                     label={t("from")}
-                    titlePosition="side"
+                    // titlePosition="side"
                     textColor=" text-white"
                   />
                 </div>
@@ -155,7 +167,7 @@ const Page = () => {
                   <DatePickerValue
                     name="toDate"
                     label={t("to")}
-                    titlePosition="side"
+                    // titlePosition="side"
                     textColor=" text-white"
                   />
                 </div>
@@ -173,10 +185,20 @@ const Page = () => {
           }
         />
 
+        <ConfirmationDialog
+          openDialog={isDialogOpen}
+          message={
+            locale === "ar"
+              ? "هذا الزر مسؤول عن توليد ملف pdf وسيتم برمجته لاحقًا"
+              : "This button is responsible for generating a PDF and will be implemented later."
+          }
+          onClose={handleDialogClose}
+        />
+
         {tableData.length > 0 && (
           <div className="flex justify-end">
             <button
-              onClick={() => console.log("Print functionality")}
+              onClick={() => setIsDialogOpen(true)}
               className="bg-info-dark hover:bg-warning-light text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300"
             >
               {locale === "ar" ? "طباعة PDF" : "Print PDF"}

@@ -19,10 +19,10 @@
         "cbl":"طلب استفسار عن CBL"
       },
       "salaryLocalization":{
-        "title":"توطين المعاشات",
-        "salaries":"المعاشات",
+        "title":"توطين المرتبات",
+        "salaries":"المرتبات",
         "uploadFiles":"تحميل الملفات",
-        "salariesTransfer":"ترحيل المعاشات"
+        "salariesTransfer":"ترحيل المرتبات"
       },
       "documentary":"اعتمادات مستندية",
       "followUp":"متابعة الطلبات",
@@ -216,7 +216,9 @@
       "otherInfo":"",
       "customerInfo":"",
       "actions":"عمليات",
-      "amountTable":""
+      "amountTable":"",
+      "delegate":"المندوب"
+
 
   
     },

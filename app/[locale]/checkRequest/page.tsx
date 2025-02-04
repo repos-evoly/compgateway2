@@ -121,6 +121,13 @@ const Page = () => {
       component: FormInputIcon,
       width: "w-full",
     },
+    {
+      name: "delegate",
+      label: t("delegate"),
+      type: "text",
+      component: FormInputIcon,
+      width: "w-full",
+    },
   ];
 
   return (

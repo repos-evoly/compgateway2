@@ -219,7 +219,8 @@
       "otherInfo":"",
       "customerInfo":"",
       "actions":"Actions",
-      "amountTable":""
+      "amountTable":"",
+      "delegate":"Delegate"
   
   
     },

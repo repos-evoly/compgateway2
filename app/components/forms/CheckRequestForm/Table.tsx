@@ -1,6 +1,6 @@
 import React from "react";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import { FaDollarSign, FaMoneyBillWave, FaCalculator } from "react-icons/fa";
+import { FaMoneyBillWave, FaCalculator } from "react-icons/fa";
 import { useTranslations } from "next-intl";
 
 const CheckRequestTable = () => {
@@ -26,7 +26,7 @@ const CheckRequestTable = () => {
               name="tableData[0].dirham"
               label=""
               type="text"
-              startIcon={<FaDollarSign />}
+              startIcon={<FaMoneyBillWave />}
               width="w-full"
             />
           </div>
@@ -51,7 +51,7 @@ const CheckRequestTable = () => {
               name="tableData[1].dirham"
               label=""
               type="text"
-              startIcon={<FaDollarSign />}
+              startIcon={<FaMoneyBillWave />}
               width="w-full"
             />
           </div>

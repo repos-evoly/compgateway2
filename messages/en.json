@@ -300,7 +300,8 @@
             "date": "Date",
             "month": "Month",
             "total": "Total",
-            "submittingDate": "Submitting Date"
+            "submittingDate": "Submitting Date",
+            "accountNumber": "Account Number"
           }
         }
       },

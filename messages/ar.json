@@ -298,7 +298,9 @@
             "date": "التاريخ",
             "month": "الشهر",
             "total": "الإجمالي",
-            "submittingDate": "تاريخ التقديم"
+            "submittingDate": "تاريخ التقديم",
+            "accountNumber": "رقم الحساب"
+
           }
         }
       },

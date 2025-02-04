@@ -10,6 +10,7 @@ export const salariesDataEn = [
     month: "January",
     total: 10000,
     submittingDate: "2024-01-05",
+    accountNumber: "1234567890",
   },
   {
     id: 2,
@@ -17,6 +18,7 @@ export const salariesDataEn = [
     month: "February",
     total: 12000,
     submittingDate: "2024-02-06",
+    accountNumber: "0987654321",
   },
   {
     id: 3,
@@ -24,6 +26,7 @@ export const salariesDataEn = [
     month: "March",
     total: 11000,
     submittingDate: "2024-03-07",
+    accountNumber: "1122334455",
   },
 ];
 
@@ -35,6 +38,7 @@ export const salariesDataAr = [
     month: "يناير",
     total: 10000,
     submittingDate: "2024-01-05",
+    accountNumber: "1234567890",
   },
   {
     id: 2,
@@ -42,6 +46,7 @@ export const salariesDataAr = [
     month: "فبراير",
     total: 12000,
     submittingDate: "2024-02-06",
+    accountNumber: "0987654321",
   },
   {
     id: 3,
@@ -49,11 +54,13 @@ export const salariesDataAr = [
     month: "مارس",
     total: 11000,
     submittingDate: "2024-03-07",
+    accountNumber: "1122334455",
   },
 ];
 
 // Columns (Dynamic)
 export const salariesColumns = (t: (key: string) => string) => [
+  { key: "accountNumber", label: t("salariesPage.columns.accountNumber") },
   { key: "date", label: t("salariesPage.columns.date") },
   { key: "month", label: t("salariesPage.columns.month") },
   { key: "total", label: t("salariesPage.columns.total") },

@@ -365,6 +365,12 @@
         "commissionsDescription": "Handle commission-related data",
         "limitsDescription": "Set and manage operational limits",
         "defaultDescription":""
+      },
+
+      "login":{
+        "email":"Email",
+        "pass":"Password",
+        "button":"Login"
       }
       
       

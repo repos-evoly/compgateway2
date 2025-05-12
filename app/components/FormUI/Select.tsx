@@ -4,20 +4,33 @@ import React, { JSX, useEffect, useState } from "react";
 import { useField, useFormikContext } from "formik";
 import { usePathname } from "next/navigation";
 
-type OptionType = { value: string | number; label: string };
+/**
+ * Option type for the <select> options
+ */
+type OptionType = {
+  value: string | number;
+  label: string;
+};
 
+/**
+ * Props for SelectWrapper, now including optional width/height
+ */
 type SelectWrapperType = {
   name: string;
   label: string;
   options: OptionType[];
-  disabled?: boolean; // Add the disabled prop
+  disabled?: boolean;
+  width?: string; // e.g. "200px" or "100%"
+  height?: string; // e.g. "2rem" or "40px"
 };
 
 export default function SelectWrapper({
   name,
   label,
   options,
-  disabled = false, // Default value for disabled is false
+  disabled = false,
+  width,
+  height,
 }: SelectWrapperType): JSX.Element {
   const pathname = usePathname();
   const { setFieldValue } = useFormikContext();
@@ -31,14 +44,14 @@ export default function SelectWrapper({
     setCurrentLocale(locale === "ar" ? "ar" : "en");
   }, [pathname]);
 
-  // Default value for the dropdown
-  const defaultValue =
-    options.find((x) => x.label === "ليبيا" || x.label === "Libya") ||
-    options[0];
-  const [selectedValue, setSelectedValue] = useState(
-    field.value || defaultValue?.value
-  );
+  // Placeholder text based on locale
+  const placeholder =
+    currentLocale === "ar" ? "الرجاء الاختيار" : "Please select";
 
+  // Initialize selected value from Formik field
+  const [selectedValue, setSelectedValue] = useState(field.value || "");
+
+  // Handle changes
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     setSelectedValue(value);
@@ -50,36 +63,49 @@ export default function SelectWrapper({
     a.label.localeCompare(b.label)
   );
 
-  return (
-    <div className="w-full">
-      {/* Label */}
-      <label
-        htmlFor={name}
-        className={`block text-sm font-medium ${
-          currentLocale === "ar" ? "text-right" : "text-left"
-        } text-gray-700 mb-2 ${disabled ? "text-gray-400" : ""}`} // Add disabled styling
-      >
-        {label}
-      </label>
+  // If the user sets a custom height, we reduce default padding & font size,
+  // so text won't be cropped inside the select.
+  const selectBaseClasses = [
+    "border border-gray-300 rounded-md focus:outline-none focus:ring",
+    meta.touched && meta.error
+      ? "border-red-500 focus:ring-red-500"
+      : "focus:ring-blue-500",
+    "disabled:bg-gray-200 disabled:border-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed",
+  ].join(" ");
 
-      {/* Select Dropdown */}
+  // If height is explicitly given, use smaller padding/font to avoid cropping
+  const selectCustomClasses = height ? "p-1 text-sm leading-tight" : "p-2";
+
+  return (
+    <div>
+      {/* If we have a non-empty label, show it. Otherwise omit. */}
+      {label && (
+        <label
+          htmlFor={name}
+          className={`block text-sm font-medium mb-2 ${
+            currentLocale === "ar" ? "text-right" : "text-left"
+          } text-gray-700`}
+        >
+          {label}
+        </label>
+      )}
+
       <select
         id={name}
         name={name}
         value={selectedValue}
         onChange={handleChange}
-        disabled={disabled} // Pass the disabled prop to the select element
-        className={`block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring ${
-          disabled
-            ? "bg-gray-200 cursor-not-allowed"
-            : meta.touched && meta.error
-            ? "border-red-500 focus:ring-red-500"
-            : "focus:ring-blue-500"
-        }`}
+        disabled={disabled}
+        style={{
+          width: width || "100%", // If none given, default is 100%
+          height: height || "auto", // If none given, default is auto
+        }}
+        className={`${selectBaseClasses} ${selectCustomClasses}`}
         dir={currentLocale === "ar" ? "rtl" : "ltr"}
       >
-        <option value={defaultValue?.value} className="text-gray-500">
-          {defaultValue?.label}
+        {/* Placeholder (unselectable) */}
+        <option value="" disabled>
+          {placeholder}
         </option>
         {sortedOptions.map((option: OptionType) => (
           <option key={option.value} value={option.value}>
@@ -88,7 +114,7 @@ export default function SelectWrapper({
         ))}
       </select>
 
-      {/* Error Message */}
+      {/* Error message */}
       {meta.touched && meta.error && (
         <p className="text-sm text-red-500 mt-1">{meta.error}</p>
       )}

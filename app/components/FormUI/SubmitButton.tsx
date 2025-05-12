@@ -1,11 +1,11 @@
 import React, { JSX } from "react";
 import { useFormikContext } from "formik";
 import { FC } from "react";
-import { FaSpinner } from "react-icons/fa"; // Import the spinner icon
+import { FaSpinner } from "react-icons/fa"; // spinner icon
 
 type SubmitButtonPropsType = {
   title: string;
-  Icon: FC<React.SVGProps<SVGSVGElement>>; // Use React's built-in SVGProps
+  Icon?: FC<React.SVGProps<SVGSVGElement>>; // Make Icon optional
   color?:
     | "success-main"
     | "success-light"
@@ -18,19 +18,21 @@ type SubmitButtonPropsType = {
     | "error-main"
     | "secondary-main"
     | "secondary-light"
-    | "secondary-dark"; // Define Tailwind dynamic colors
+    | "secondary-dark";
   fullWidth?: boolean;
   adminOff?: boolean;
-  isSubmitting?: boolean; // Pass as a prop to control submitting state
+  isSubmitting?: boolean; // pass as a prop to display spinner
+  disabled?: boolean; // NEW prop for forced disable
 };
 
 const SubmitButton = ({
   title,
   Icon,
-  color = "success-main", // Default to 'success-main'
+  color = "success-main", // default color
   fullWidth = true,
   adminOff = false,
   isSubmitting = false,
+  disabled = false,
 }: SubmitButtonPropsType): JSX.Element => {
   const { handleSubmit } = useFormikContext();
 
@@ -38,8 +40,16 @@ const SubmitButton = ({
     handleSubmit();
   };
 
-  // Map color prop to dynamic Tailwind color class
-  const colorClass = `bg-${color} text-white hover:bg-warning-light hover:text-info-dark`;
+  // Map color prop to Tailwind classes
+  const colorClass = `bg-${color} hover:bg-opacity-90 text-white`;
+
+  // Combine all disable conditions
+  const isButtonDisabled = isSubmitting || adminOff || disabled;
+
+  // If disabled, omit hover classes altogether
+  const buttonClass = isButtonDisabled
+    ? "bg-gray-300 text-gray-500 cursor-not-allowed border-white"
+    : `border border-white hover:border-transparent hover:bg-warning-light hover:text-info-dark ${colorClass}`;
 
   return (
     <div
@@ -50,12 +60,8 @@ const SubmitButton = ({
       <button
         type="submit"
         onClick={handleClick}
-        disabled={isSubmitting || adminOff}
-        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${
-          isSubmitting || adminOff
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-            : colorClass
-        }`}
+        disabled={isButtonDisabled}
+        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${buttonClass}`}
       >
         {isSubmitting ? (
           <span className="flex items-center gap-2">
@@ -65,7 +71,7 @@ const SubmitButton = ({
         ) : (
           <>
             {title}
-            <Icon className="h-5 w-5" />
+            {Icon && <Icon className="h-5 w-5" />}
           </>
         )}
       </button>

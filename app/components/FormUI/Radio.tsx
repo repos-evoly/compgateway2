@@ -1,24 +1,23 @@
 "use client";
 
-import React, { JSX } from "react";
+import React from "react";
 import { useField, useFormikContext } from "formik";
 import { usePathname } from "next/navigation";
 import { DropdownType } from "@/types";
 
-type Props = {
+type RadioButtonWrapperProps = {
   name: string;
   label: string;
   options: DropdownType[];
   flexDir?: string[];
-  t: (key: string) => string; // Properly typed translation function
-  textColor?: string; // New prop for setting label text color
-  disabled?: boolean; // Add a disabled prop
+  /** Optional translation function. If not provided, will display raw label. */
+  t?: (key: string) => string;
+  disabled?: boolean;
 };
 
-// Define the form values interface
-interface FormValues {
-  [key: string]: string | number; // Allows dynamic field names with string/number values
-}
+type FormValues = {
+  [key: string]: string | number; // Dynamic field names with string/number values
+};
 
 const RadiobuttonWrapper = ({
   name,
@@ -26,9 +25,8 @@ const RadiobuttonWrapper = ({
   options,
   flexDir = ["row", "row"],
   t,
-  textColor = "text-gray-700", // Default text color
-  disabled = false, // Default value for disabled is false
-}: Props): JSX.Element => {
+  disabled = false,
+}: RadioButtonWrapperProps) => {
   const pathname = usePathname();
 
   React.useEffect(() => {
@@ -40,10 +38,10 @@ const RadiobuttonWrapper = ({
   }, [pathname]);
 
   // Always call hooks at the top level
-  const formik = useFormikContext<FormValues>(); // Use the exact form values type
+  const formik = useFormikContext<FormValues>();
   const [field, meta] = useField(name);
 
-  // Conditional rendering, but hooks are called first
+  // If no Formik context found
   if (!formik) {
     console.error(
       "RadiobuttonWrapper must be used within a Formik context. Ensure it's inside a Formik component."
@@ -76,7 +74,7 @@ const RadiobuttonWrapper = ({
           <label
             key={option.value}
             className={`flex items-center space-x-2 rtl:space-x-reverse cursor-pointer ${
-              disabled ? "cursor-not-allowed" : ""
+              disabled ? "opacity-60 cursor-not-allowed" : ""
             }`}
           >
             <input
@@ -85,15 +83,11 @@ const RadiobuttonWrapper = ({
               value={option.value}
               checked={field.value === option.value}
               onChange={() => handleChange(option.value)}
-              disabled={disabled} // Pass the disabled prop to the input
-              className={`form-radio h-4 w-4 text-green-500 focus:ring ${
-                disabled
-                  ? "bg-gray-200 cursor-not-allowed"
-                  : "focus:ring-green-300"
-              }`}
+              className="form-radio h-4 w-4 text-green-500 focus:ring focus:ring-green-300"
+              disabled={disabled}
             />
-            <span className={`${textColor} ${disabled ? "text-gray-400" : ""}`}>
-              {t(option.label)}
+            <span className="text-gray-700">
+              {t ? t(option.label) : option.label}
             </span>
           </label>
         ))}

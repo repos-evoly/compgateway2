@@ -1,53 +1,56 @@
+"use client";
+
 import React from "react";
 import AddButton from "./AddButton";
 import SearchWithDropdown from "./SearchWithDropdown";
 import { useTranslations } from "next-intl";
-
-type CrudDataGridHeaderProps = {
-  onSearch?: (value: string) => void; // Optional
-  onDropdownSelect?: (value: string) => void; // Optional
-  dropdownOptions?: string[]; // Optional
-  showAddButton?: boolean;
-  onAddClick?: () => void;
-  showSearchBar?: boolean;
-  haveChildrens?: boolean; // New prop to determine custom children rendering
-  childrens?: React.ReactNode; // Optional custom children
-};
+import { CrudDataGridHeaderProps } from "@/types";
 
 const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
   onSearch,
   onDropdownSelect,
-  dropdownOptions = [], // Default empty array
+  dropdownOptions = [],
   showAddButton = true,
+  addButtonLabel,
   onAddClick,
   showSearchBar = true,
-  haveChildrens = false,
   childrens,
+  showDropdown,
+  showSearchInput,
 }) => {
   const t = useTranslations("crudDataGrid");
 
-  if (haveChildrens && childrens) {
-    return (
-      <div className="flex items-center justify-between bg-info-dark p-2 h-max rounded">
-        {childrens}
-      </div>
-    );
-  }
+  // Fallback to no-op functions to satisfy type requirements
+  const safeOnSearch = showSearchInput && onSearch ? onSearch : () => {};
+  const safeOnDropdownSelect =
+    showDropdown && onDropdownSelect ? onDropdownSelect : () => {};
+
+  const finalAddLabel = addButtonLabel ?? t("addButton");
 
   return (
-    <div className="flex items-center justify-between bg-info-dark p-2 h-16 rounded rounded-b-none">
-      {showAddButton && onAddClick && (
-        <AddButton onClick={onAddClick} label={t("addButton")} />
-      )}
-      {/* Conditional Search Bar */}
-      {showSearchBar && onSearch && onDropdownSelect && (
-        <SearchWithDropdown
-          placeholder={t("searchPlaceholder")}
-          dropdownOptions={dropdownOptions}
-          onSearch={onSearch}
-          onDropdownSelect={onDropdownSelect}
-        />
-      )}
+    <div
+      className={`flex items-center ${
+        !childrens ? "justify-between" : "gap-4 h-max"
+      } bg-info-dark p-2 h-16 rounded rounded-b-none`}
+    >
+      <div className="flex items-center gap-4 h-full">
+        {showAddButton && onAddClick && (
+          <AddButton onClick={onAddClick} label={finalAddLabel} />
+        )}
+
+        {showSearchBar && (
+          <SearchWithDropdown
+            placeholder={t("searchPlaceholder")}
+            dropdownOptions={showDropdown ? dropdownOptions : []}
+            onSearch={safeOnSearch}
+            onDropdownSelect={safeOnDropdownSelect}
+            showSearchInput={showSearchInput}
+            showDropdown={showDropdown}
+          />
+        )}
+      </div>
+
+      {childrens && childrens}
     </div>
   );
 };

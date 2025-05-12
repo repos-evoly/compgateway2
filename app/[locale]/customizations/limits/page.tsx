@@ -62,6 +62,9 @@ const Limits = () => {
         dropdownOptions={["Option 1", "Option 2"]}
         showAddButton={true}
         onAddClick={handleLimitAddClick}
+        totalPages={1}
+        currentPage={1}
+        onPageChange={() => {}}
       />
     </div>
   );

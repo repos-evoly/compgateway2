@@ -1,6 +1,5 @@
-// data.ts
-
 import { FiEdit, FiTrash2 } from "react-icons/fi";
+import type { Action } from "@/types"; // Make sure this path matches your actual types location
 
 // English Data
 export const salariesDataEn = [
@@ -58,7 +57,7 @@ export const salariesDataAr = [
   },
 ];
 
-// Columns (Dynamic)
+// Columns (Dynamic), receiving a translation function
 export const salariesColumns = (t: (key: string) => string) => [
   { key: "accountNumber", label: t("salariesPage.columns.accountNumber") },
   { key: "date", label: t("salariesPage.columns.date") },
@@ -67,22 +66,23 @@ export const salariesColumns = (t: (key: string) => string) => [
   { key: "submittingDate", label: t("salariesPage.columns.submittingDate") },
 ];
 
-// Actions
-export const salariesActions = [
+// Actions: updated onClick signature
+export const salariesActions: Action[] = [
   {
     name: "edit",
     icon: <FiEdit size={18} />,
     tip: "Edit",
-    onClick: (rowIndex: number) => {
-      console.log(`Edit action clicked for row ${rowIndex}`);
+    // Note: Must accept (row, rowIndex)
+    onClick: (row, rowIndex) => {
+      console.log(`Edit action clicked for row #${rowIndex}, row data:`, row);
     },
   },
   {
     name: "delete",
     icon: <FiTrash2 size={18} />,
     tip: "Delete",
-    onClick: (rowIndex: number) => {
-      console.log(`Delete action clicked for row ${rowIndex}`);
+    onClick: (row, rowIndex) => {
+      console.log(`Delete action clicked for row #${rowIndex}, row data:`, row);
     },
   },
 ];

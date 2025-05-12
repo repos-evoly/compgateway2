@@ -31,6 +31,9 @@ const UploadFiels = () => {
         actions={actions}
         showAddButton={true}
         onAddClick={handleAddClick}
+        currentPage={1}
+        totalPages={1}
+        onPageChange={() => {}}
       />
     </div>
   );

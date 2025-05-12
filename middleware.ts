@@ -1,17 +1,17 @@
-import createMiddleware from 'next-intl/middleware';
-import { NextRequest, NextResponse } from 'next/server';
+// middleware.ts
+import { NextRequest, NextResponse } from "next/server";
+import createMiddleware from "next-intl/middleware";
 
 const intlMiddleware = createMiddleware({
-  locales: ['en', 'ar'],
-  defaultLocale: 'ar',
+  locales: ["en", "ar"],
+  defaultLocale: "ar",
 });
 
 export default function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
 
-  // Force default locale for the root path (`/`)
-  if (url.pathname === '/') {
-    url.pathname = `/ar`;
+  if (url.pathname === "/") {
+    url.pathname = "/ar";
     return NextResponse.redirect(url);
   }
 
@@ -19,5 +19,14 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/(ar|en)/:path*'],
+  matcher: [
+    /*
+      match everything EXCEPT:
+       - api
+       - _next
+       - auth
+       - files with extensions (png, jpg, etc.)
+    */
+    "/((?!api|_next|auth|.*\\..*).*)",
+  ],
 };

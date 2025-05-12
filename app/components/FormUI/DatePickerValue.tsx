@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { useField, useFormikContext } from "formik";
 import dayjs from "dayjs";
@@ -5,19 +7,19 @@ import dayjs from "dayjs";
 type Props = {
   name: string;
   label: string;
-  titlePosition?: "top" | "side"; // Optional prop: 'top' or 'side'
-  textColor?: string; // Additional prop to control label text color
-  width?: string; // New prop to control width
-  disabled?: boolean; // Add disabled prop
+  titlePosition?: "top" | "side";
+  disabled?: boolean;
+  width?: string; // Optional width prop, e.g. "w-full", "w-1/2"
+  textColor?: string; // e.g. "text-white", "text-gray-700", etc.
 };
 
 export default function DatePickerValue({
   name,
   label,
   titlePosition = "top",
-  textColor = "text-gray-700", // Default text color
-  width = "w-full", // Default width
-  disabled = false, // Default disabled to false
+  disabled = false,
+  width = "w-full",
+  textColor = "text-gray-700", // default label color if none provided
 }: Props) {
   const [field] = useField(name);
   const { setFieldValue } = useFormikContext();
@@ -30,47 +32,55 @@ export default function DatePickerValue({
     setFieldValue(name, newValue);
   };
 
-  return (
-    <div
-      className={`mb-4 ${width} ${
-        titlePosition === "side"
-          ? `flex items-center gap-2 ${
-              document.documentElement.dir === "rtl"
-                ? "rtl:ml-2 text-right"
-                : "ltr:mr-2 text-left"
-            }`
-          : "flex flex-col"
-      }`}
-    >
-      {/* Conditional order for RTL and LTR */}
-      {titlePosition === "side" ? (
-        <label
-          htmlFor={name}
-          className={`text-sm font-medium ${textColor} whitespace-nowrap`}
-        >
-          {label}
-        </label>
-      ) : (
-        <label
-          htmlFor={name}
-          className={`block text-sm font-medium ${textColor} mb-1`}
-        >
-          {label}
-        </label>
-      )}
+  // Decide if the form is in RTL mode (based on document direction)
+  const isRtl = document.documentElement.dir === "rtl";
 
-      <input
-        id={name}
-        type="date"
-        value={value}
-        onChange={handleChange}
-        disabled={disabled} // Pass the disabled prop here
-        className={`w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring text-sm ${
-          disabled
-            ? "bg-gray-200 cursor-not-allowed"
-            : "focus:ring-blue-500 focus:ring-opacity-50"
-        }`}
-      />
+  // Build container classes with the width prop included
+  const containerClasses =
+    `${width} mb-4 ` +
+    (titlePosition === "side"
+      ? isRtl
+        ? "flex items-center gap-2 order-last text-right"
+        : "flex items-center gap-2 text-left"
+      : "flex flex-col");
+
+  // Label classes (where we apply the textColor)
+  const labelClasses = `text-sm font-medium whitespace-nowrap ${textColor}`;
+
+  // Input classes (note: removed textColor to keep default text styling)
+  const inputClasses = `w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm text-black`;
+
+  return (
+    <div className={containerClasses}>
+      {titlePosition === "side" ? (
+        <>
+          <label htmlFor={name} className={labelClasses}>
+            {label}
+          </label>
+          <input
+            id={name}
+            type="date"
+            value={value}
+            onChange={handleChange}
+            disabled={disabled}
+            className={inputClasses}
+          />
+        </>
+      ) : (
+        <>
+          <label htmlFor={name} className={`${labelClasses} mb-1`}>
+            {label}
+          </label>
+          <input
+            id={name}
+            type="date"
+            value={value}
+            onChange={handleChange}
+            disabled={disabled}
+            className={inputClasses}
+          />
+        </>
+      )}
     </div>
   );
 }

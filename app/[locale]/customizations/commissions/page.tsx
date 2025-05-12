@@ -66,6 +66,9 @@ const Commissions = () => {
         dropdownOptions={["Option 1", "Option 2"]}
         showAddButton={true}
         onAddClick={handleCommissionAddClick}
+        totalPages={1}
+        currentPage={1}
+        onPageChange={() => {}}
       />
     </div>
   );

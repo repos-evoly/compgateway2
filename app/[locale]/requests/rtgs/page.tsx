@@ -220,7 +220,7 @@ const Page = () => {
                 { value: "ach", label: "ach" },
               ]}
               t={t}
-              textColor="text-white"
+              // textColor="text-white"
               flexDir={["row", "row"]}
             />
           </div>

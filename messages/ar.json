@@ -14,6 +14,7 @@
         "guaranteeLetter":"طلب خطاب ضمان",
         "creditFacility":"طلب تسهيل ائتماني",
         "visa":"طلب بطاقة VISA",
+        "certifiedBankStatement":"طلب كشف حساب مصدق",
         "rtgs":"طلب حوالة RTGS",
         "foreign":"طلب اصدار رخصة للحوالات الخارجية",
         "cbl":"طلب استفسار عن CBL"
@@ -236,7 +237,8 @@
         "noItems":"لا يوجد عناصر متاحة",
         "yes":"نعم",
         "no":"لا",
-        "actions":"عمليات"
+        "actions":"عمليات",
+        "doubleClickToExpand":"انقر نقرًا مزدوجًا للتوسيع"
       },
 
 
@@ -365,8 +367,100 @@
           "limitsDescription": "تعيين وإدارة الحدود التشغيلية",
           "defaultDescription":""
 
-        }
-        
+        },
+
+
+      "login": {
+        "email": "البريد الإلكتروني",
+        "pass": "كلمة المرور",
+        "button":"تسجيل الدخول"
+      },
+      "foreignTransfers":{
+        "toBank":"إل مصرف",
+        "branch":"الفرع",
+        "residentSuppName":"اسم البائع أو الجهة",
+        "residentSuppNationality":"الجنسية",
+        "nonResidentPassport":"رقم البطاقة الشخصية أو جواز السفر للبائع (بالنسبة لغير المقيم)",
+        "placeOfIssue":"مكان الإصدار",
+        "dateOfIssue":"تاريخ الإصدار",
+        "nonResidentSuppNationality":"الجنسية",
+        "nonResidentSuppaddress":"المقيم في",
+
+        "trasnferAmount":"قيمة التحويل",
+        "destinationCountry":"الدولة",
+        "beneficiaryName":"اسم المستفيد",
+        "beneficiaryAddress":"عنوان المستفيد",
+        "externalBankName":"اسم المصرف الخارجي",
+        "externalBankAddress":"عنوان المصرف الخارجي",
+        "transferToAccount":"رقم حساب التحويل",
+        "transferToAddress":"عنوان التحويل",
+        "accountHolderName":"اسم صاحب الحساب",
+        "payementAddress":"عنوان الدفع",
+        "purpose":"الغرض من التحويل",
+        "documents":"المستندات المؤيدة للطلب في حالة تجاوز المبلغ المطلوب تحويله خمسة عشر ألف دولار أو ما يعادلها من العملات الأجنبية ( ترفق مع الطلب)",
+        "step1Title":"البيانات الأساسية للتحويل",
+        "step2Title":"تفاصيل الحساب المصرفي"
+      },
+      "tabsWizard":{
+        "review":"مراجعة و تقديم",
+        "next":"التالي",
+        "back":"رجوع",
+        "submit":"تقديم"
+      },
+      "visaRequest": {
+        "step1Title": "الخطوة الأولى",
+        "step2Title": "الخطوة الثانية",
+        "reviewStepTitle": "مراجعة وإرسال",
+    
+        "branch": "الفرع أو الوكالة",
+        "date": "التاريخ",
+        "accountHolderName": "اسم صاحب الحساب",
+        "accountNumber": "رقم الحساب",
+        "nationalId": "الرقم الوطني",
+        "phoneNumberLinkedToNationalId": "رقم الهاتف المرتبط بالرقم الوطني",
+    
+        "cbl": "رقم CBL",
+        "cardMovementApproval": "الموافقة على فحص حركة البطاقة",
+        "cardUsingAcknowledgment": "الإقرار بإستخدام البطاقة وفق الأحكام و منشورات مصرف ليبيا المركزي",
+        "foreignAmount": "المبلغ الأجنبي",
+        "localAmount": "المبلغ المحلي",
+        "pldedge": "تعهد بعدم المطالبة بالرسوم المفروضة من مصرف ليبيا المركزي",
+    
+        "isRequired": "مطلوب"
+      },
+      "bankStatement": {
+        "step1Title": "الخطوة الأولى",
+        "step2Title": "الخطوة الثانية",
+        "reviewStepTitle": "مراجعة وإرسال",
+    
+        "accountHolderName": "اسم صاحب الحساب",
+        "authorizedOnTheAccountName": "المصرح على الحساب",
+        "accountNumber": "رقم الحساب",
+        "serviceRequests": "طلبات الخدمة",
+    
+        "reactivateIdfaali": "إعادة تفعيل الدفع الفوري",
+        "deactivateIdfaali": "إيقاف الدفع الفوري",
+        "resetDigitalBankPassword": "إعادة تعيين كلمة مرور البنك الرقمي",
+        "resendMobileBankingPin": "إعادة إرسال رمز الخدمات المصرفية عبر الجوال",
+        "changePhoneNumber": "تغيير رقم الهاتف",
+    
+        "oldAccountNumber": "رقم الحساب القديم",
+        "newAccountNumber": "رقم الحساب الجديد",
+        "statementRequest": "طلبات كشف الحساب",
+    
+        "currentAccountStatement": "كشف الحساب الجاري",
+        "arabic": "عربي",
+        "english": "إنجليزي",
+        "visaAccountStatement": "كشف حساب الفيزا",
+        "fromDate": "من تاريخ",
+        "toDate": "إلى تاريخ",
+        "accountStatement": "كشف الحساب",
+        "journalMovement": "حركة اليومية",
+        "nonFinancialCommitment": "التزامات غير مالية",
+    
+        "isRequired": "مطلوب",
+        "mustBeNumber": "يجب أن يكون رقماً"
+      }
       
       
   }

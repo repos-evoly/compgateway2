@@ -1,0 +1,43 @@
+"use client";
+
+import React from "react";
+import { useTranslations } from "next-intl";
+import { step1VisaInputs } from "./visaInputs";
+
+// Reuse your custom inputs:
+import  FormInputIcon  from "@/app/components/FormUI/FormInputIcon";
+import  DatePickerValue  from "@/app/components/FormUI/DatePickerValue";
+// ^ Adjust the imports to match your actual file paths
+
+export function Step1VisaRequest() {
+  const t = useTranslations("visaRequest");
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {step1VisaInputs.map(({ name, label, icon, type }) => {
+        // If it's a date, use DatePickerValue:
+        if (type === "date") {
+          return (
+            <DatePickerValue
+              key={name}
+              name={name}
+              label={t(label)}
+              // You can pass other props as needed
+            />
+          );
+        }
+
+        // Otherwise use FormInputIcon
+        return (
+          <FormInputIcon
+            key={name}
+            name={name}
+            label={t(label)}
+            startIcon={icon}
+            type={type}
+          />
+        );
+      })}
+    </div>
+  );
+}

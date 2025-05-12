@@ -136,6 +136,9 @@ const Page = () => {
           showSearchBar={false}
           showAddButton={false}
           haveChildrens={true}
+          currentPage={1}
+          totalPages={1}
+          onPageChange={() => {}}
           childrens={
             <Form
               initialValues={initialValues}

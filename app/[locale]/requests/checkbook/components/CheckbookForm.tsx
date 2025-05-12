@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import * as Yup from "yup";
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
@@ -8,12 +9,30 @@ import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import { FaPaperPlane } from "react-icons/fa";
-import { useTranslations } from "next-intl";
 import Description from "@/app/components/FormUI/Description";
 
-const Page = () => {
+export type TCheckbookValues = {
+  fullName: string;
+  address: string;
+  accountNumber: string;
+  pleaseSend: string;
+  branch: string;
+  date: Date;
+  bookContaining: string;
+};
+
+type TCheckbookFormProps = {
+  onSubmit: (values: TCheckbookValues) => void;
+  onCancel: () => void;
+  // Optional: if provided, the form uses these as initial values for editing
+  initialData?: TCheckbookValues | null;
+};
+
+const CheckbookForm = ({ onSubmit, onCancel, initialData }: TCheckbookFormProps) => {
   const t = useTranslations("checkForm");
-  const initialValues = {
+
+  // Default initial values:
+  const defaultValues: TCheckbookValues = {
     fullName: "",
     address: "",
     accountNumber: "",
@@ -23,54 +42,56 @@ const Page = () => {
     bookContaining: "",
   };
 
-  const validationSchema = Yup.object({
-    fullName: Yup.string().required("Full name is required"),
-    address: Yup.string().required("Address is required"),
-    accountNumber: Yup.string().required("Account number is required"),
-    pleaseSend: Yup.string().required("Please send is required"),
-    branch: Yup.string().required("Branch is required"),
-    date: Yup.date().required("Date is required").typeError("Invalid date"), // Use Yup.date()
-    bookContaining: Yup.string().required("Select one option"),
-  });
+  // Merge defaultValues with any provided initialData
+  const initialValues: TCheckbookValues = initialData
+    ? { ...defaultValues, ...initialData }
+    : defaultValues;
 
-  const handleSubmit = (values: typeof initialValues) => {
-    console.log("Form submitted with values:", values);
-    // Handle form submission logic
-  };
+  const validationSchema = Yup.object({
+    fullName: Yup.string().required(`${t("name")} ${t("required")}`),
+    address: Yup.string().required(`${t("address")} ${t("required")}`),
+    accountNumber: Yup.string().required(`${t("accNum")} ${t("required")}`),
+    pleaseSend: Yup.string().required(`${t("sendTo")} ${t("required")}`),
+    branch: Yup.string().required(`${t("branch")} ${t("required")}`),
+    date: Yup.date()
+      .required(`${t("date")} ${t("required")}`)
+      .typeError(`${t("invalidDate")}`),
+    bookContaining: Yup.string().required(t("selectOneOption")),
+  });
 
   const formFields = [
     {
       name: "fullName",
       label: t("name"),
-      type: "text",
+      type: "text" as const,
       component: FormInputIcon,
       width: "w-full",
     },
     {
       name: "address",
       label: t("address"),
-      type: "text",
+      type: "text" as const,
       component: FormInputIcon,
       width: "w-full",
     },
     {
       name: "accountNumber",
       label: t("accNum"),
-      type: "text",
+      type: "text" as const,
       component: FormInputIcon,
       width: "w-full",
     },
     {
       name: "pleaseSend",
       label: t("sendTo"),
-      type: "text",
+      type: "text" as const,
       component: FormInputIcon,
       width: "w-full",
     },
     {
       name: "branch",
       label: t("branch"),
-      type: "text",
+      type: "text" as const,
       component: FormInputIcon,
       width: "w-full",
     },
@@ -81,6 +102,10 @@ const Page = () => {
       width: "w-full",
     },
   ];
+
+  const handleSubmit = (values: TCheckbookValues) => {
+    onSubmit(values);
+  };
 
   return (
     <div className="mt-2 rounded w-full bg-gray-100">
@@ -93,8 +118,8 @@ const Page = () => {
         >
           {/* Grid Layout for Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {formFields.map(({ component: Component, ...fieldProps }) => (
-              <Component key={fieldProps.name} {...fieldProps} />
+            {formFields.map(({ component: Component, ...props }) => (
+              <Component key={props.name} {...props} />
             ))}
           </div>
 
@@ -119,12 +144,12 @@ const Page = () => {
           <div className="mt-4">
             <RadiobuttonWrapper
               name="bookContaining"
-              label={t("book")} // Translated label for the group
+              label={t("book")} 
               options={[
-                { value: "24", label: "24" }, // Static label
-                { value: "48", label: "48" }, // Static label
+                { value: "24", label: "24" },
+                { value: "48", label: "48" },
               ]}
-              t={(key) => key} // Identity function for static labels
+              t={(key: string) => key}
             />
           </div>
 
@@ -132,13 +157,20 @@ const Page = () => {
             {t("agree")}
           </Description>
 
-          {/* Submit Button */}
-          <div className="mt-6">
+          {/* Buttons */}
+          <div className="mt-6 flex space-x-2">
             <SubmitButton
-              title="Submit"
+              title={t("submit")}
               Icon={FaPaperPlane}
               color="info-dark"
             />
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 bg-gray-300 text-black rounded"
+            >
+              {t("cancel")}
+            </button>
           </div>
         </Form>
       </div>
@@ -146,4 +178,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default CheckbookForm;

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Formik, Form, FormikHelpers } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { ValidationError } from "yup";
 import { useTranslations } from "next-intl";
@@ -9,101 +9,138 @@ import { useTranslations } from "next-intl";
 import { TabsWizard } from "@/app/components/reusable/TabsWizard";
 import { Step1TransferInfo } from "./Step1TransferInfo";
 import { Step2BankingDetails } from "./Step2BankingDetails";
-import { step1Inputs, step2Inputs } from "./formInputsArrays"; // <--- updated import
-import { ForeignTransfersFormValues } from "../types";
+import { step1Inputs, step2Inputs } from "./formInputsArrays";
 
-export default function ForeignTransfersForm() {
-  const t = useTranslations("foreignTransfers"); // i18n from next-intl
+// 1) The shape of all fields. Add "id" for row identification
+export type ForeignTransfersFormValues = {
+  id: number;
 
-  // Steps
+  // Step 1 fields
+  toBank: string;
+  branch: string;
+  residentSupplierName: string;
+  residentSupplierNationality: string;
+  nonResidentSupplierPassportNumber: number;
+  placeOfIssue: string;
+  dateOfIssue: string;
+  nonResidentSupplierNationality: string;
+  nonResidentAddress: string;
+
+  // Step 2 fields
+  transferAmount: number;
+  toCountry: string;
+  beneficiaryName: string;
+  beneficiaryAddress: string;
+  externalBankName: string;
+  externalBankAddress: string;
+  transferToAccountNumber: number;
+  transferToAddress: string;
+  accountholderName: string;
+  permenantAddress: string;
+  purposeOfTransfer: string;
+  //  uploadDocuments?: File[]; // example if needed
+};
+
+// 2) Props for the wizard.
+//    `initialValues` is partial => merges with defaults.
+type ForeignTransfersFormProps = {
+  initialValues?: Partial<ForeignTransfersFormValues>;
+  onSubmit: (values: ForeignTransfersFormValues) => void;
+};
+
+// 3) Default/empty fields for "Add" scenario
+const defaultValues: ForeignTransfersFormValues = {
+  id: 0,
+
+  toBank: "",
+  branch: "",
+  residentSupplierName: "",
+  residentSupplierNationality: "",
+  nonResidentSupplierPassportNumber: 0,
+  placeOfIssue: "",
+  dateOfIssue: "",
+  nonResidentSupplierNationality: "",
+  nonResidentAddress: "",
+
+  transferAmount: 0,
+  toCountry: "",
+  beneficiaryName: "",
+  beneficiaryAddress: "",
+  externalBankName: "",
+  externalBankAddress: "",
+  transferToAccountNumber: 0,
+  transferToAddress: "",
+  accountholderName: "",
+  permenantAddress: "",
+  purposeOfTransfer: "",
+  // uploadDocuments: [],
+};
+
+export default function ForeignTransfersForm({
+  initialValues,
+  onSubmit,
+}: ForeignTransfersFormProps) {
+  const t = useTranslations("foreignTransfers");
+
+  // Merge partial with defaults
+  const merged: ForeignTransfersFormValues = {
+    ...defaultValues,
+    ...initialValues,
+  };
+
+  // Steps for the wizard
   const steps = [
     {
-      title: t("step1Title"), // e.g. "Step 1"
+      title: t("step1Title"),
       component: <Step1TransferInfo />,
     },
     {
-      title: t("step2Title"), // e.g. "Step 2"
+      title: t("step2Title"),
       component: <Step2BankingDetails />,
     },
   ];
 
-  // Provide a translator function for the review step
-  // This uses the arrays from step1Inputs, step2Inputs
+  // Translate field name => label for the final review step
   function translateFieldName(fieldName: string): string {
     const allInputs = [...step1Inputs, ...step2Inputs];
-    const found = allInputs.find((input) => input.name === fieldName);
+    const found = allInputs.find((inp) => inp.name === fieldName);
     if (found) {
-      // Translate via t(found.label)
       return t(found.label);
     }
-    // Fallback if no match in your input arrays
-    return fieldName;
+    return fieldName; // fallback
   }
 
-  const initialValues: ForeignTransfersFormValues = {
-    // Step 1
-    toBank: "",
-    branch: "",
-    residentSupplierName: "",
-    residentSupplierNationality: "",
-    nonResidentSupplierPassportNumber: 0,
-    placeOfIssue: "",
-    dateOfIssue: "",
-    nonResidentSupplierNationality: "",
-    nonResidentAddress: "",
-
-    // Step 2
-    transferAmount: 0,
-    toCountry: "",
-    beneficiaryName: "",
-    beneficiaryAddress: "",
-    externalBankName: "",
-    externalBankAddress: "",
-    transferToAccountNumber: 0,
-    transferToAddress: "",
-    accountholderName: "",
-    permenantAddress: "",
-    purposeOfTransfer: "",
-    // uploadDocuments: undefined,
-  };
-
-  // Partial validations for each step
+  // We'll define step-based validations
   const stepValidations = [
-    // Step 1
+    // Step 1 partial schema
     Yup.object({
-      toBank: Yup.string().required("To Bank is required"),
-      // ... other fields ...
+      toBank: Yup.string().required(t("toBank") + " " + t("isRequired")),
+      // ... fill out other fields you want for Step1
     }),
-    // Step 2
+    // Step 2 partial
     Yup.object({
-      transferAmount: Yup.number().required("Transfer Amount is required"),
-      // ... other fields ...
+      transferAmount: Yup.number().required(
+        t("transferAmount") + " " + t("isRequired")
+      ),
+      // ... fill out other step2 validations
     }),
   ];
 
-  async function handleSubmit(
-    values: ForeignTransfersFormValues,
-    { resetForm, setSubmitting }: FormikHelpers<ForeignTransfersFormValues>
-  ) {
-    console.log("Form Submitted:", values);
-    // simulate API
-    setTimeout(() => {
-      alert("Transfer request submitted successfully!");
-      resetForm();
-      setSubmitting(false);
-    }, 1000);
+  async function handleFinalSubmit(values: ForeignTransfersFormValues) {
+    onSubmit(values);
   }
 
   return (
-    <div className="w-full p-4 bg-gray-50">
+    <div className="w-full p-4 bg-gray-50 rounded-md">
       <Formik
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        validationSchema={Yup.object({})} // We'll do step-by-step validation
+        initialValues={merged}
+        onSubmit={(vals) => handleFinalSubmit(vals)}
+        validationSchema={Yup.object({})}
         validateOnBlur
         validateOnChange={false}
       >
         {(formik) => {
+          // Step-based validation logic
           async function validateCurrentStep(stepIndex: number) {
             const currentSchema = stepValidations[stepIndex];
             try {

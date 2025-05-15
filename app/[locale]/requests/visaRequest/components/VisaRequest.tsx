@@ -1,72 +1,103 @@
 "use client";
 
 import React from "react";
-import { Formik, Form, FormikHelpers } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { ValidationError } from "yup";
 import { useTranslations } from "next-intl";
 
 import { TabsWizard } from "@/app/components/reusable/TabsWizard";
-// Adjust to your actual path
 import { Step1VisaRequest } from "./Step1VisaRequest";
 import { Step2VisaRequest } from "./Step2VisaRequest";
 import { step1VisaInputs, step2VisaInputs } from "./visaInputs";
-import { VisaRequestFormValues } from "../types";
 
 /**
- * The main 2-step Visa Request form,
- * plus a final "Review & Submit" step appended by TabsWizard.
+ * The shape of all fields needed across steps, plus "id" to identify the row
  */
-export default function VisaRequest() {
+export type VisaRequestFormValues = {
+  id: number; // For double-click/edit
+  branch: string;
+  date: string;
+  accountHolderName: string;
+  accountNumber: string;
+  nationalId: number | undefined;
+  phoneNumberLinkedToNationalId: string;
+
+  cbl: string;
+  cardMovementApproval: string;
+  cardUsingAcknowledgment: string;
+  foreignAmount?: number;
+  localAmount?: number;
+  pldedge: string;
+};
+
+/** Multi-step wizard logic.
+ *  We pass `initialValues` if we want to prefill.
+ *  If none, it's an Add scenario with empty fields.
+ */
+type VisaWizardFormProps = {
+  initialValues?: Partial<VisaRequestFormValues>;
+  onSubmit: (values: VisaRequestFormValues) => void;
+};
+
+export default function VisaWizardForm({
+  initialValues,
+  onSubmit,
+}: VisaWizardFormProps) {
   const t = useTranslations("visaRequest");
-  // e.g. if your namespace is "visaRequest" in ar.json
 
-  // Step titles (translated)
-  const steps = [
-    {
-      title: t("step1Title"), // e.g. "الخطوة الأولى"
-      component: <Step1VisaRequest />,
-    },
-    {
-      title: t("step2Title"), // e.g. "الخطوة الثانية"
-      component: <Step2VisaRequest />,
-    },
-  ];
-
-  /**
-   * We'll pass this to the final appended review step in TabsWizard.
-   * In the review, each field label is looked up in step1VisaInputs + step2VisaInputs.
-   * Then we call t() on the found label key.
-   * If not found, fallback to the raw fieldName.
-   */
-  function translateFieldName(fieldName: string): string {
-    const allInputs = [...step1VisaInputs, ...step2VisaInputs];
-    const found = allInputs.find((input) => input.name === fieldName);
-    if (found) {
-      // Translate the label key from ar.json
-      return t(found.label);
-    }
-    // fallback
-    return fieldName;
-  }
-
-  // initial form data
-  const initialValues: VisaRequestFormValues = {
+  // Merge default with partial
+  // Provide a default "id=0" if none is given
+  const mergedInitial: VisaRequestFormValues = {
+    id: 0,
     branch: "",
     date: "",
     accountHolderName: "",
     accountNumber: "",
     nationalId: undefined,
     phoneNumberLinkedToNationalId: "",
+
     cbl: "",
     cardMovementApproval: "",
     cardUsingAcknowledgment: "",
     foreignAmount: undefined,
     localAmount: undefined,
     pldedge: "",
+    ...initialValues,
   };
 
-  // Step-by-step validations
+  /** Steps config for `TabsWizard`.
+   *  We'll have 2 steps, plus a final "Review" step appended automatically.
+   */
+  const steps = [
+    {
+      title: t("step1Title"),
+      component: <Step1VisaRequest />,
+    },
+    {
+      title: t("step2Title"),
+      component: <Step2VisaRequest />,
+    },
+  ];
+
+  /**
+   * We unify the label translations from `step1VisaInputs` + `step2VisaInputs`.
+   * The ReviewStep calls `translateFieldName(fieldName)`.
+   */
+  function translateFieldName(fieldName: string): string {
+    const allInputs = [...step1VisaInputs, ...step2VisaInputs];
+    const found = allInputs.find((input) => input.name === fieldName);
+    if (found) {
+      return t(found.label);
+    }
+    // fallback
+    return fieldName;
+  }
+
+  /**
+   * We do step-based validations.
+   * - Step 1 => partial schema
+   * - Step 2 => partial schema
+   */
   const stepValidations = [
     // Step1
     Yup.object({
@@ -105,32 +136,23 @@ export default function VisaRequest() {
     }),
   ];
 
-  // Final form submission
-  async function handleSubmit(
-    values: VisaRequestFormValues,
-    { resetForm, setSubmitting }: FormikHelpers<VisaRequestFormValues>
-  ) {
-    console.log("Visa Request Form Submitted:", values);
-    // simulate API
-    setTimeout(() => {
-      alert("Visa request submitted successfully!");
-      resetForm();
-      setSubmitting(false);
-    }, 1000);
+  /** The final handleSubmit after the wizard's "Review & Submit" step. */
+  async function handleSubmit(values: VisaRequestFormValues) {
+    // Pass up to the parent
+    onSubmit(values);
   }
 
   return (
-    <div className="w-full p-4 bg-gray-50">
+    <div className="w-full p-4 bg-gray-50 rounded-md">
       <Formik
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        // We'll do step-based validations, so main schema can be empty
+        initialValues={mergedInitial}
+        onSubmit={(vals) => handleSubmit(vals)}
         validationSchema={Yup.object({})}
         validateOnBlur
         validateOnChange={false}
       >
         {(formik) => {
-          // Step-based validation
+          // Step-based validation logic
           async function validateCurrentStep(stepIndex: number) {
             const currentSchema = stepValidations[stepIndex];
             try {
@@ -140,7 +162,7 @@ export default function VisaRequest() {
               formik.setErrors({});
               return true;
             } catch (err) {
-              if (err instanceof ValidationError) {
+              if (err instanceof Yup.ValidationError) {
                 const errors: Record<string, string> = {};
                 const touched: Record<string, boolean> = {};
                 for (const e of err.inner) {

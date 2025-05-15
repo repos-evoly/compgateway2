@@ -1,13 +1,15 @@
+"use client";
+
 import React from "react";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import { FaMoneyBillWave, FaCalculator } from "react-icons/fa";
 import { useTranslations } from "next-intl";
 
-const CheckRequestTable = () => {
+const CheckRequestTable: React.FC = () => {
   const t = useTranslations("CheckRequest");
 
   return (
-    <div className="flex flex-col items-center p-8 bg-gray-100 rounded-lg ">
+    <div className="flex flex-col items-center p-8 bg-gray-100 rounded-lg">
       <div className="w-full max-w-5xl border border-gray-300 rounded-lg">
         {/* Table Header */}
         <div className="grid grid-cols-3 bg-info-dark text-white rounded-t-lg">
@@ -23,7 +25,7 @@ const CheckRequestTable = () => {
           </div>
           <div className="p-4">
             <FormInputIcon
-              name="tableData[0].dirham"
+              name="lineItems[0].dirham"
               label=""
               type="text"
               startIcon={<FaMoneyBillWave />}
@@ -32,7 +34,7 @@ const CheckRequestTable = () => {
           </div>
           <div className="p-4">
             <FormInputIcon
-              name="tableData[0].lyd"
+              name="lineItems[0].lyd"
               label=""
               type="text"
               startIcon={<FaMoneyBillWave />}
@@ -48,7 +50,7 @@ const CheckRequestTable = () => {
           </div>
           <div className="p-4">
             <FormInputIcon
-              name="tableData[1].dirham"
+              name="lineItems[1].dirham"
               label=""
               type="text"
               startIcon={<FaMoneyBillWave />}
@@ -57,7 +59,7 @@ const CheckRequestTable = () => {
           </div>
           <div className="p-4">
             <FormInputIcon
-              name="tableData[1].lyd"
+              name="lineItems[1].lyd"
               label=""
               type="text"
               startIcon={<FaMoneyBillWave />}
@@ -73,7 +75,7 @@ const CheckRequestTable = () => {
           </div>
           <div className="p-4">
             <FormInputIcon
-              name="tableData[2].dirham"
+              name="lineItems[2].dirham"
               label=""
               type="text"
               startIcon={<FaCalculator />}
@@ -82,7 +84,7 @@ const CheckRequestTable = () => {
           </div>
           <div className="p-4">
             <FormInputIcon
-              name="tableData[2].lyd"
+              name="lineItems[2].lyd"
               label=""
               type="text"
               startIcon={<FaCalculator />}

@@ -1,174 +1,139 @@
 "use client";
 
-import React from "react";
-import * as Yup from "yup";
-import Form from "@/app/components/FormUI/Form";
-import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
-import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import { FaPaperPlane } from "react-icons/fa";
-import CheckRequestTable from "@/app/components/forms/CheckRequestForm/Table";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import Description from "@/app/components/FormUI/Description";
-import { FormikHelpers } from "formik";
 
-const Page = () => {
+import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
+import CheckRequestForm from "./components/CheckRequestForm";
+
+// We import the *API* type for our local state
+import { TCheckRequestValues } from "./types";
+import { getCheckRequests, createCheckRequest } from "./services";
+
+// The *form* type
+import { TCheckRequestFormValues } from "./types";
+
+const CheckRequestPage: React.FC = () => {
   const t = useTranslations("CheckRequest");
-  const initialValues = {
-    branch: "",
-    branchNum: "",
-    date: new Date(),
-    customerName: "",
-    cardNum: "",
-    accountNum: "",
-    beneficiary: "",
-    tableData: Array(3).fill({ dirham: "", lyd: "" }), // For the dynamic table inputs
-  };
 
-  const validationSchema = Yup.object({
-    branch: Yup.string().required("Branch is required"),
-    branchNum: Yup.string().required("Branch number is required"),
-    date: Yup.date().required("Date is required").typeError("Invalid date"),
-    customerName: Yup.string().required("Customer name is required"),
-    cardNum: Yup.string()
-      .required("Card number is required")
-      .matches(/^\d{16}$/, "Card number must be 16 digits"),
-    accountNum: Yup.string().required("Account number is required"),
-    beneficiary: Yup.string().required("Beneficiary is required"),
-    tableData: Yup.array()
-      .of(
-        Yup.object().shape({
-          dirham: Yup.string().required("Dirham value is required"),
-          lyd: Yup.string().required("LYD value is required"),
-        })
-      )
-      .required()
-      .min(3, "Table must have at least 3 rows"),
-  });
+  // Data for the table
+  const [data, setData] = useState<TCheckRequestValues[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
 
-  const handleSubmit = (
-    values: typeof initialValues,
-    { setTouched }: FormikHelpers<typeof initialValues>
-  ) => {
-    // Manually construct the touched object
-    const touchedTableData = values.tableData.map(() => ({
-      dirham: true,
-      lyd: true,
-    }));
+  // Searching
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchBy, setSearchBy] = useState("");
 
-    const touchedFields = {
-      branch: true,
-      branchNum: true,
-      date: true,
-      customerName: true,
-      cardNum: true,
-      accountNum: true,
-      beneficiary: true,
-      tableData: touchedTableData,
+  // Toggle for "Add" form
+  const [showForm, setShowForm] = useState(false);
+
+  // Fetch on mount / page change / search change
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getCheckRequests(
+          currentPage,
+          limit,
+          searchTerm,
+          searchBy
+        );
+        setData(response.data);
+        setTotalPages(response.totalPages);
+      } catch (err) {
+        console.error("Failed to fetch check requests:", err);
+      }
     };
 
-    setTouched(touchedFields);
+    fetchData();
+  }, [currentPage, limit, searchTerm, searchBy]);
 
-    console.log("Form submitted with values:", values);
-  };
-
-  const formFields = [
-    {
-      name: "branch",
-      label: t("branch"),
-      type: "text",
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "branchNum",
-      label: t("branchNum"),
-      type: "text",
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "date",
-      label: t("date"),
-      component: DatePickerValue,
-      width: "w-full",
-    },
-    {
-      name: "customerName",
-      label: t("customerName"),
-      type: "text",
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "cardNum",
-      label: t("cardNum"),
-      type: "text",
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "accountNum",
-      label: t("accountNum"),
-      type: "text",
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "beneficiary",
-      label: t("beneficiary"),
-      type: "text",
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "delegate",
-      label: t("delegate"),
-      type: "text",
-      component: FormInputIcon,
-      width: "w-full",
-    },
+  // Columns
+  const columns = [
+    { key: "branch", label: t("branch") },
+    { key: "branchNum", label: t("branchNum") },
+    { key: "date", label: t("date") },
+    { key: "customerName", label: t("customerName") },
+    { key: "cardNum", label: t("cardNum") },
+    { key: "accountNum", label: t("accountNum") },
+    { key: "beneficiary", label: t("beneficiary") },
   ];
 
+  // "Add" => show form
+  const handleAddClick = () => {
+    setShowForm(true);
+  };
+
+  // Form submit => create new check request
+  const handleFormSubmit = async (formVals: TCheckRequestFormValues) => {
+    try {
+      // Convert Date -> ISO string
+      const isoDate = formVals.date.toISOString();
+
+      // Prepare body for the API
+      const payload = {
+        branch: formVals.branch,
+        branchNum: formVals.branchNum,
+        date: isoDate,
+        customerName: formVals.customerName,
+        cardNum: formVals.cardNum,
+        accountNum: formVals.accountNum,
+        beneficiary: formVals.beneficiary,
+        lineItems: formVals.lineItems,
+      };
+
+      // POST create
+      const newItem = await createCheckRequest(payload);
+      // Optionally, add to local data (so we don't re-fetch)
+      setData((prev) => [newItem, ...prev]);
+
+      setShowForm(false);
+    } catch (error) {
+      console.error("Failed to create check request:", error);
+      alert("Error creating check request. See console for details.");
+    }
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+  };
+
+  // Searching
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+  };
+  const handleDropdownSelect = (field: string) => {
+    setSearchBy(field);
+    setCurrentPage(1);
+  };
+
   return (
-    <div className="mt-10 rounded w-full bg-gray-100">
-      <div className="w-full bg-info-dark h-16 rounded-t-md"></div>
-      <div className="px-6 pb-6">
-        <Form
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          validationSchema={validationSchema}
-        >
-          {/* Grid Layout for Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {formFields.map(({ component: Component, ...fieldProps }) => (
-              <Component key={fieldProps.name} {...fieldProps} />
-            ))}
-          </div>
-
-          <div className="mt-6">
-            <CheckRequestTable />
-          </div>
-
-          <Description
-            variant="h3"
-            className="text-black font-bold text-center"
-          >
-            {t("note")}
-          </Description>
-
-          {/* Submit Button */}
-          <div className="mt-6">
-            <SubmitButton
-              title="Submit"
-              Icon={FaPaperPlane}
-              color="info-dark"
-            />
-          </div>
-        </Form>
-      </div>
+    <div className="p-4">
+      {showForm ? (
+        <CheckRequestForm
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+        />
+      ) : (
+        <CrudDataGrid
+          data={data}
+          columns={columns}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          showSearchBar
+          showSearchInput
+          showDropdown
+          onSearch={handleSearch}
+          onDropdownSelect={handleDropdownSelect}
+          showAddButton
+          onAddClick={handleAddClick}
+        />
+      )}
     </div>
   );
 };
 
-export default Page;
+export default CheckRequestPage;

@@ -1,214 +1,209 @@
 "use client";
-import React, { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+
+import React, { useState, useEffect } from "react";
+import Cookies from "js-cookie";
+import { Formik, Form as FormikForm, FormikProps } from "formik";
+import * as Yup from "yup";
+import { useTranslations } from "next-intl";
+
+import { FaSearch, FaDownload } from "react-icons/fa";
+import * as XLSX from "xlsx";
+
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import Form from "@/app/components/FormUI/Form";
-import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import * as Yup from "yup";
-import { FaArrowRight } from "react-icons/fa";
-import { useFormikContext } from "formik";
-import ConfirmationDialog from "@/app/components/reusable/ConfirmationDialog";
 
-// Define the type for form values
-type StatementFormValues = {
-  accountNumber: string;
+import { getStatement, StatementLine } from "./services";
+
+// --------------------
+// Types
+// --------------------
+type FilterValues = {
+  account: string; // stores the accountNumber
   fromDate: string;
   toDate: string;
 };
 
-type TableRow = {
-  date: string;
-  description: string;
-  transactionNumber: string;
-  debit: number;
-  credit: number;
-  balance: number;
+const defaultFilter: FilterValues = {
+  account: "",
+  fromDate: "",
+  toDate: "",
 };
 
-const Page = () => {
-  const locale = useLocale();
-  const t = useTranslations("statementOfAccount");
-  const [tableData, setTableData] = useState<TableRow[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const handleDialogClose = (confirmed: boolean) => {
-    setIsDialogOpen(false);
-    if (confirmed) {
-      console.log(
-        locale === "ar"
-          ? "هذا الزر مسؤول عن توليد ملف pdf وسيتم برمجته لاحقًا"
-          : "This button is responsible for generating a PDF and will be implemented later."
-      );
-    }
-  };
-  const withCurrencyColumns =
-    locale === "ar"
-      ? [
-          { key: "date", label: "التاريخ" },
-          { key: "description", label: "الشرح" },
-          { key: "transactionNumber", label: "رقم العملية" },
-          { key: "credit", label: "دائن" },
-          { key: "debit", label: "مدين" },
-          { key: "balance", label: "الرصيد" },
-        ]
-      : [
-          { key: "date", label: "Date" },
-          { key: "description", label: "Description" },
-          { key: "transactionNumber", label: "Transaction Number" },
-          { key: "credit", label: "Credit" },
-          { key: "debit", label: "Debit" },
-          { key: "balance", label: "Balance" },
-        ];
+const Page: React.FC = () => {
+  const t = useTranslations("statement");
+  const [lines, setLines] = useState<StatementLine[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isFetching, setIsFetching] = useState(false);
 
-  const handleFormSubmit = (values: StatementFormValues) => {
-    console.log("Form Submitted:", values);
-
-    // Simulate fetching data based on form inputs
-    const fetchedData: TableRow[] = [
-      {
-        date: "2024-12-01",
-        description: "شرح 1",
-        transactionNumber: "T001",
-        credit: 1000,
-        debit: 0,
-        balance: 2000,
-      },
-      {
-        date: "2024-12-02",
-        description: "شرح 2",
-        transactionNumber: "T002",
-        credit: 500,
-        debit: 0,
-        balance: 2500,
-      },
-      {
-        date: "2024-12-03",
-        description: "شرح 3",
-        transactionNumber: "T003",
-        credit: 0,
-        debit: 100,
-        balance: 2400,
-      },
-    ];
-
-    setTableData(fetchedData);
-  };
-
-  // Component to display account name beside input
-  const AccountNameDisplay = () => {
-    const { values } = useFormikContext<StatementFormValues>();
-    const [accountName, setAccountName] = useState("");
-
-    React.useEffect(() => {
-      if (values.accountNumber === "0015978000001") {
-        setAccountName(locale === "ar" ? "عصمت العياش" : "Ismat Alayash");
-      } else {
-        setAccountName("");
+  // Load accounts from cookie
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  useEffect(() => {
+    const raw = Cookies.get("statementAccounts") || "[]";
+    let list: string[] = [];
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      try {
+        list = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        list = [];
       }
-    }, [values.accountNumber]); // Removed 'locale' from the dependency array
+    }
+    setAccountOptions(list.map((acct) => ({ label: acct, value: acct })));
+  }, []);
 
-    return accountName ? (
-      <div className="text-white text-sm font-semibold whitespace-nowrap mb-3">
-        {accountName}
-      </div>
-    ) : null;
-  };
-
-  const initialValues: StatementFormValues = {
-    accountNumber: "",
-    fromDate: "",
-    toDate: "",
-  };
-
+  // Form validation
   const validationSchema = Yup.object({
-    accountNumber: Yup.string().required(t("account") + " is required"),
-    fromDate: Yup.string().required(t("from") + " is required"),
-    toDate: Yup.string().required(t("to") + " is required"),
+    account: Yup.string().required(t("required")),
+    fromDate: Yup.string().required(t("required")),
+    toDate: Yup.string().required(t("required")),
   });
 
+  // Fetch statement lines
+  const handleFilter = async (values: FilterValues) => {
+    setIsFetching(true);
+    try {
+      const data = await getStatement(values);
+      setLines(data);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error("Error fetching statement data:", err);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  // Excel download
+  const handleDownloadExcel = () => {
+    if (!lines.length) return;
+    const headerRow = [
+      t("postingDate"),
+      t("amount"),
+      t("drCr"),
+      t("narrative1"),
+      t("narrative2"),
+      t("narrative3"),
+    ];
+    const dataRows = lines.map((line) => [
+      line.postingDate,
+      line.amount,
+      line.drCr,
+      line.nr1,
+      line.nr2,
+      line.nr3,
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "StatementData");
+    XLSX.writeFile(wb, "Statement.xlsx");
+  };
+
+  // Grid columns & pagination
+  const columns = [
+    { key: "postingDate", label: t("postingDate") },
+    { key: "amount", label: t("amount") },
+    { key: "drCr", label: t("drCr") },
+    { key: "nr1", label: t("narrative1") },
+    { key: "nr2", label: t("narrative2") },
+    { key: "nr3", label: t("narrative3") },
+  ];
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(lines.length / pageSize));
+  const pagedData = lines.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
-    <div className=" flex flex-col items-center space-y-12">
-      <div className="bg-white rounded-md w-full space-y-6">
-        <CrudDataGrid
-          data={tableData}
-          columns={withCurrencyColumns}
-          showSearchBar={false}
-          showAddButton={false}
-          haveChildrens={true}
-          currentPage={1}
-          totalPages={1}
-          onPageChange={() => {}}
-          childrens={
-            <Form
-              initialValues={initialValues}
-              onSubmit={handleFormSubmit}
+    <div className="p-1 overflow-visible">
+      <CrudDataGrid
+        data={pagedData}
+        columns={columns}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        showSearchBar={false}
+        haveChildrens
+        childrens={
+          <div className="w-full">
+            <Formik
+              initialValues={defaultFilter}
               validationSchema={validationSchema}
+              onSubmit={handleFilter}
+              validateOnMount
             >
-              <div className="flex items-center gap-2 w-full">
-                <div className=" w-1/4">
-                  <FormInputIcon
-                    name="accountNumber"
-                    label={t("account")}
-                    type="text"
-                    // titlePosition="side"
-                    textColor=" text-white"
-                  />
-                </div>
-                <AccountNameDisplay />
+              {({ isValid, dirty }: FormikProps<FilterValues>) => (
+                <FormikForm className="flex flex-wrap w-full px-1 py-1">
+                  <div className="flex flex-wrap items-center w-full gap-2">
+                    {/* Account selector from cookie */}
+                    <div className="flex-grow min-w-[200px] max-w-xs">
+                      <InputSelectCombo
+                        name="account"
+                        label={t("account")}
+                        options={accountOptions}
+                        placeholder={t("selectAccount")}
+                        width="w-full"
+                        titleColor="text-white"
+                      />
+                    </div>
 
-                <div className="w-1/4">
-                  <DatePickerValue
-                    name="fromDate"
-                    label={t("from")}
-                    // titlePosition="side"
-                    textColor=" text-white"
-                  />
-                </div>
+                    {/* From Date */}
+                    <div className="flex-grow min-w-[140px] max-w-xs">
+                      <DatePickerValue
+                        name="fromDate"
+                        label={t("fromDate")}
+                        width="w-full"
+                        titlePosition="top"
+                        textColor="text-white"
+                      />
+                    </div>
 
-                <div className="w-1/5">
-                  <DatePickerValue
-                    name="toDate"
-                    label={t("to")}
-                    // titlePosition="side"
-                    textColor=" text-white"
-                  />
-                </div>
+                    {/* To Date */}
+                    <div className="flex-grow min-w-[140px] max-w-xs">
+                      <DatePickerValue
+                        name="toDate"
+                        label={t("toDate")}
+                        width="w-full"
+                        titlePosition="top"
+                        textColor="text-white"
+                      />
+                    </div>
 
-                <div className="m-auto mb-4">
-                  <SubmitButton
-                    title={t("continue")}
-                    Icon={FaArrowRight}
-                    color="info-dark"
-                    fullWidth={false}
-                  />
-                </div>
-              </div>
-            </Form>
-          }
-        />
-
-        <ConfirmationDialog
-          openDialog={isDialogOpen}
-          message={
-            locale === "ar"
-              ? "هذا الزر مسؤول عن توليد ملف pdf وسيتم برمجته لاحقًا"
-              : "This button is responsible for generating a PDF and will be implemented later."
-          }
-          onClose={handleDialogClose}
-        />
-
-        {tableData.length > 0 && (
-          <div className="flex justify-end">
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              className="bg-info-dark hover:bg-warning-light text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300"
-            >
-              {locale === "ar" ? "طباعة PDF" : "Print PDF"}
-            </button>
+                    {/* Buttons */}
+                    <div className="flex items-end self-end mb-4 gap-2">
+                      <SubmitButton
+                        title=""
+                        Icon={isFetching ? undefined : FaSearch}
+                        disabled={!isValid || !dirty || isFetching}
+                        isSubmitting={isFetching}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleDownloadExcel}
+                        disabled={!lines.length}
+                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300
+                          ${
+                            !lines.length
+                              ? "bg-gray-300 text-gray-500 cursor-not-allowed border border-white"
+                              : "border border-white bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
+                          }`}
+                      >
+                        <FaDownload className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                </FormikForm>
+              )}
+            </Formik>
           </div>
-        )}
-      </div>
+        }
+      />
     </div>
   );
 };

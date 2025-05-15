@@ -4,7 +4,7 @@ import React from "react";
 import AddButton from "./AddButton";
 import SearchWithDropdown from "./SearchWithDropdown";
 import { useTranslations } from "next-intl";
-import { CrudDataGridHeaderProps } from "@/types";
+import type { CrudDataGridHeaderProps } from "@/types";
 
 const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
   onSearch,
@@ -20,7 +20,7 @@ const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
 }) => {
   const t = useTranslations("crudDataGrid");
 
-  // Fallback to no-op functions to satisfy type requirements
+  // Fallback no-op functions
   const safeOnSearch = showSearchInput && onSearch ? onSearch : () => {};
   const safeOnDropdownSelect =
     showDropdown && onDropdownSelect ? onDropdownSelect : () => {};

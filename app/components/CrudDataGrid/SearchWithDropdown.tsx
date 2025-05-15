@@ -1,7 +1,7 @@
 "use client";
-import { SearchWithDropdownProps } from "@/types";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FiX, FiSearch, FiChevronDown } from "react-icons/fi";
+import type { SearchWithDropdownProps, DropdownOption } from "@/types";
 
 const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
   placeholder = "ابحث من خلال",
@@ -12,33 +12,43 @@ const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
   showSearchInput,
 }) => {
   const [searchValue, setSearchValue] = useState("");
-  const [selectedOption, setSelectedOption] = useState(dropdownOptions[0]); // Set initial value to the first option
+  // We'll store just the selected *value* (string | number) here
+  const [selectedValue, setSelectedValue] = useState<string>(
+    dropdownOptions?.[0]?.value ?? ""
+  );
 
+  // On mount or if `dropdownOptions` changes, we can notify parent about the default
   useEffect(() => {
-    if (showDropdown && onDropdownSelect) {
-      onDropdownSelect(selectedOption); // Trigger onDropdownSelect with initial value
+    if (showDropdown && onDropdownSelect && dropdownOptions?.length) {
+      onDropdownSelect(selectedValue);
     }
-  }, [showDropdown, onDropdownSelect, selectedOption]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDropdown]);
 
   const handleClear = () => setSearchValue("");
-  const handleSearch = () => onSearch(searchValue);
+
+  const handleSearch = () => {
+    onSearch(searchValue);
+  };
+
+  const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSelectedValue(value);
+    onDropdownSelect(value);
+  };
 
   return (
     <div className="flex items-center h-12 w-max bg-white/30 rounded px-1 text-gray-600">
       {showDropdown && (
         <div className="relative flex items-center h-full">
           <select
-            value={selectedOption}
-            onChange={(e) => {
-              const value = e.target.value;
-              setSelectedOption(value);
-              onDropdownSelect(value);
-            }}
+            value={selectedValue}
+            onChange={handleDropdownChange}
             className="appearance-none bg-transparent text-sm outline-none cursor-pointer pr-6 pl-2 h-full"
           >
-            {dropdownOptions.map((option, index) => (
-              <option key={index} value={option}>
-                {option}
+            {dropdownOptions.map((option: DropdownOption, index) => (
+              <option key={index} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -70,7 +80,7 @@ const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
           />
 
           <button
-            type="button" // Ensure this button doesn't submit a form
+            type="button"
             onClick={handleSearch}
             className="p-1 text-gray-500 hover:text-gray-700"
             aria-label="Search"

@@ -1,31 +1,29 @@
-// components/ContinueButton.tsx
+"use client";
 
 import React from "react";
 import { useFormikContext } from "formik";
-import { ContinueButtonProps, InternalFormValues } from "@/types";
+import { ContinueButtonProps } from "@/types";
 import { useTranslations } from "next-intl";
+import { InternalFormValues } from "../types";
 
 const ContinueButton = ({ onClick, touchedFields }: ContinueButtonProps) => {
   const { values, isValid, setTouched, validateForm } =
     useFormikContext<InternalFormValues>();
-
   const t = useTranslations("continueButton");
 
   console.log("values sent from the form are: ", values);
 
   const handleClick = async () => {
-    // Mark specified fields as touched to trigger validation error display
+    // Mark fields as touched => show any errors
     setTouched(touchedFields);
 
-    // Trigger form validation
+    // Validate now
     const errors = await validateForm();
 
     if (Object.keys(errors).length === 0) {
-      // Log the actual form values (user input data)
+      // If valid, log and pass values to parent's 'onClick'
       console.log("Form data values to be sent:", values);
-
-      // If the form is valid, proceed with the action
-      onClick(values); // Pass the data to modal via onClick
+      onClick(values);
     }
   };
 

@@ -42,7 +42,12 @@ export const initialValues = {
   specialistName: "", // Added
 };
 
+// data.ts (or equivalent file)
+
 export const validationSchema = Yup.object({
+  /** Add 'id' */
+  id: Yup.number().typeError("ID must be a number").required("ID is required"), // or .notRequired() if you prefer
+
   partyName: Yup.string().required("Party name is required"),
   capital: Yup.number().required("Capital is required"),
   foundingDate: Yup.date().required("Founding date is required"),
@@ -94,7 +99,7 @@ export const validationSchema = Yup.object({
       })
     )
     .required("Table 2 data is required"),
-  packingDate: Yup.date().required("Packing date is required"), // Added
+  packingDate: Yup.date().required("Packing date is required"),
   specialistName: Yup.string().required("Specialist name is required"),
 });
 

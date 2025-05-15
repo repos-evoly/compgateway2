@@ -1,173 +1,144 @@
 "use client";
 
-import React from "react";
-import Form from "@/app/components/FormUI/Form";
-import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
-import { FaUser, FaPaperPlane } from "react-icons/fa";
-import { useTranslations } from "use-intl";
-import Table from "@/app/components/forms/CBLForm/Table";
-import InfoBox from "@/app/components/forms/CBLForm/InfoBox";
-import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import { getColumns, initialValues, validationSchema, fields } from "./data";
+import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
+import CBLForm from "./components/CBLForm";
+import { getCblRequests } from "./service";
+import { TCBLValues } from "./types";
 
-const Page = () => {
+/**
+ * The main listing page for CBLs, including:
+ * - Pagination
+ * - Search input
+ * - Dropdown to select "search by" field
+ * - "Add" button that toggles the form
+ */
+const CBLListPage: React.FC = () => {
   const t = useTranslations("cblForm");
-  const columns = getColumns(t); // Assuming getColumns returns { table1, table2 }
-  const columns1 = columns.table1; // Ensure this is an array
-  const columns2 = columns.table2; // Ensure this is an array
-  const formFields = fields(t);
 
-  const handleSubmit = (values: typeof initialValues) => {
-    console.log("Form submitted with values:", values);
+  // -----------------------------------------
+  // 1) Local state for data, pagination, etc.
+  // -----------------------------------------
+  const [data, setData] = useState<TCBLValues[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const limit = 10; // or any desired page size
+
+  // Search
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchBy, setSearchBy] = useState<string>("partyName"); // default or "status"
+
+  // Add form toggle
+  const [showForm, setShowForm] = useState(false);
+
+  // -----------------------------------------
+  // 2) Fetch data whenever page/search changes
+  // -----------------------------------------
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getCblRequests(
+          currentPage,
+          limit,
+          searchTerm,
+          searchBy
+        );
+        // { data, page, limit, totalPages, totalRecords }
+        setData(response.data);
+        setTotalPages(response.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch CBL requests:", error);
+      }
+    };
+
+    fetchData();
+  }, [currentPage, limit, searchTerm, searchBy]);
+
+  // -----------------------------------------
+  // 3) Handle "Add" form submit
+  // -----------------------------------------
+  const handleFormSubmit = (values: TCBLValues) => {
+    console.log("CBLForm submitted with:", values);
+    // Normally you'd do an API call to create a new record, then refetch.
+    // For now, we just add it locally:
+    const newId = Math.random();
+    const newEntry = { ...values, id: newId };
+    setData((prev) => [newEntry, ...prev]);
+    setShowForm(false);
   };
 
+  const handleFormCancel = () => {
+    setShowForm(false);
+  };
+
+  const handleAddClick = () => {
+    setShowForm(true);
+  };
+
+  // -----------------------------------------
+  // 4) Grid columns
+  // -----------------------------------------
+  const columns = [
+    { key: "partyName", label: t("partyName") },
+    { key: "legalRepresentative", label: t("legalRepresentative") },
+    { key: "mobile", label: t("mobile") },
+    { key: "address", label: t("address") },
+  ];
+
+  // Data to pass to the grid
+  const fullDataForGrid = data.map((item) => ({
+    ...item,
+    partyName: item.partyName,
+    legalRepresentative: item.legalRepresentative,
+    mobile: item.mobile,
+    address: item.address,
+  }));
+
+  // -----------------------------------------
+  // 5) Dropdown options for "search by"
+  // -----------------------------------------
+  const dropdownOptions = [
+    { value: "partyName", label: t("partyName") },
+    { value: "status", label: t("status") },
+  ];
+
+  // -----------------------------------------
+  // 6) Render
+  // -----------------------------------------
   return (
-    <>
-      <div className="w-full bg-info-dark h-16 rounded-t-md mb-0"></div>
-
-      <div className="px-6 bg-gray-100 -mt-6 py-2">
-        {/* Header Section */}
-        <Form
-          initialValues={initialValues}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-        >
-          {/* General Information Section */}
-          {/* Dynamic Sections Rendering */}
-          {[
-            {
-              title: t("generalInformation"),
-              fields: formFields.slice(0, 5),
-              gridCols: "grid-cols-1 md:grid-cols-3",
-            },
-            {
-              title: t("financialInformation"),
-              fields: formFields.slice(5, 15),
-              gridCols: "grid-cols-1 md:grid-cols-4",
-            },
-            {
-              title: t("representativeInformation"),
-              fieldGroups: [
-                { fields: formFields.slice(15, 17), gridCols: "grid-cols-2" },
-                { fields: formFields.slice(17, 20), gridCols: "grid-cols-3" },
-                { fields: formFields.slice(20, 23), gridCols: "grid-cols-3" },
-                { fields: formFields.slice(23), gridCols: "grid-cols-2" },
-              ],
-            },
-          ].map((section, index) => (
-            <div className="mt-6" key={index}>
-              <h2 className="text-lg font-bold text-gray-800">
-                {section.title}
-              </h2>
-              {section.fieldGroups ? (
-                section.fieldGroups.map((group, groupIndex) => (
-                  <div
-                    key={groupIndex}
-                    className={`grid ${group.gridCols} gap-4 mt-4`}
-                  >
-                    {group.fields.map((field, fieldIndex) => {
-                      const FieldComponent = field.component;
-                      return (
-                        <div key={fieldIndex} className="w-full">
-                          <FieldComponent
-                            name={field.name}
-                            label={field.label}
-                            type={field.type}
-                            startIcon={field.icon || null}
-                            titlePosition={
-                              field.component === DatePickerValue
-                                ? "top"
-                                : undefined
-                            }
-                            textColor="text-gray-700"
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))
-              ) : (
-                <div className={`grid ${section.gridCols} gap-4 mt-4`}>
-                  {section.fields.map((field, fieldIndex) => {
-                    const FieldComponent = field.component;
-                    return (
-                      <div key={fieldIndex} className="w-full">
-                        <FieldComponent
-                          name={field.name}
-                          label={field.label}
-                          type={field.type}
-                          startIcon={field.icon || null}
-                          titlePosition={
-                            field.component === DatePickerValue
-                              ? "top"
-                              : undefined
-                          }
-                          textColor="text-gray-700"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* table and information section */}
-          <div className="flex w-full gap-6">
-            <div className="flex flex-col gap-6 flex-1">
-              {/* First Table */}
-              <Table title={t("table1.title")} columns={columns1} />
-
-              {/* Styled Filler Div */}
-              <div className="flex-grow bg-gray-100 rounded-lg shadow-sm border border-gray-300 flex items-center justify-center">
-                {/* Optional content can go here if needed */}
-              </div>
-
-              {/* Second Table */}
-              <Table title={t("table2.title")} columns={columns2} />
-            </div>
-
-            <div className="flex-1">
-              {/* InfoBox */}
-              <InfoBox />
-            </div>
-          </div>
-
-          {/* additional information section */}
-          <div className="mt-6">
-            <h2 className="text-lg font-bold text-gray-800">
-              {t("additionalInformation")}
-            </h2>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <DatePickerValue
-                name="packingDate"
-                label={t("packingDate")}
-                textColor="text-gray-700"
-              />
-              <FormInputIcon
-                name="specialistName"
-                label={t("specialistName")}
-                type="text"
-                textColor="text-gray-700"
-                startIcon={<FaUser />}
-              />
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="px-6 pb-6">
-            <SubmitButton
-              title="Submit"
-              Icon={FaPaperPlane}
-              color="info-dark"
-              fullWidth
-            />
-          </div>
-        </Form>
-      </div>
-    </>
+    <div className="p-4">
+      {showForm ? (
+        <CBLForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} />
+      ) : (
+        <CrudDataGrid
+          data={fullDataForGrid}
+          columns={columns}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          // Pass props for search & dropdown
+          showSearchInput
+          showDropdown
+          showSearchBar
+          dropdownOptions={dropdownOptions}
+          onDropdownSelect={(selected) => {
+            setSearchBy(selected);
+            setCurrentPage(1);
+          }}
+          onSearch={(term) => {
+            setSearchTerm(term);
+            setCurrentPage(1);
+          }}
+          // Show add button => local "Add"
+          showAddButton
+          onAddClick={handleAddClick}
+        />
+      )}
+    </div>
   );
 };
 
-export default Page;
+export default CBLListPage;

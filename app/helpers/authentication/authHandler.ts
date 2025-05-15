@@ -1,8 +1,8 @@
 // /app/helpers/authentication/authHandler.ts
 
 import Cookies from "js-cookie";
-import { parseJwt } from "../tokenHandler"; // Adjust path
-import { getUserById } from "@/app/helpers/authentication/getUserById"; // Adjust path as needed
+import { parseJwt } from "../tokenHandler"; // Adjust path if needed
+import { getUserById } from "@/app/helpers/authentication/getUserById"; // Adjust path if needed
 
 type SimpleRouter = {
   push: (url: string) => void;
@@ -66,32 +66,28 @@ export async function loginHandler(
         onTwoFactorRequired();
       }
     } else if (data.accessToken && data.refreshToken && data.kycToken) {
-      // Set accessToken
+      /**
+       * Now, we store them as raw tokens (no "Bearer " prefix).
+       * 
+       */
       Cookies.set("accessToken", data.accessToken, {
         expires: 7, // 7 days
         secure: false,
         httpOnly: false,
       });
 
-
-      // Set refreshToken
       Cookies.set("refreshToken", data.refreshToken, {
         expires: 7, // 7 days
         secure: false,
         httpOnly: false,
       });
 
+      Cookies.set("kycToken", data.kycToken, {
+        expires: 7,
+        secure: false,
+        httpOnly: false,
+      });
 
-      // If the API returns a KYC token, store it as well
-      if (data.kycToken) {
-        Cookies.set("kycToken", data.kycToken, {
-          expires: 7,
-          secure: false,
-          httpOnly: false,
-        });
-      }
-
-      // 1) Parse the JWT to get the user ID (usually "nameid" in the payload)
       const parsed = parseJwt(data.accessToken);
       if (!parsed || !parsed.nameid) {
         throw new Error("Failed to parse user ID from the access token.");
@@ -99,44 +95,23 @@ export async function loginHandler(
 
       const userId = parseInt(parsed.nameid, 10);
 
+
       // 2) Use getUserById to fetch roleId, branchId, etc.
       const userData = await getUserById(userId);
 
-      // 3) Store roleId, branchId, userId in cookies
-      Cookies.set("roleId", String(userData.roleId), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("branchId", String(userData.branchId), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("areaId", String(userData.areaId), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("userId", String(userData.userId), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("role", String(userData.role), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("permissions", JSON.stringify(userData.permissions), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
 
-      // 4) Finally, push to dashboard
-      router.push("/dashboard");
-    } else {
+      if (userData.accounts) {
+        Cookies.set("statementAccounts", JSON.stringify(userData.accounts), {
+          expires: 7, // or your desired expiration
+          secure: false,
+          httpOnly: false,
+        });
+      }
+      // 4) Finally, navigate to the desired page
+      console.log("Reached success condition, about to push");
+      router.push("/statement-of-account");
+      console.log("After router.push call");
+      } else {
       throw new Error("استجابة غير متوقعة من الخادم. يرجى المحاولة مرة أخرى.");
     }
   } catch (err: unknown) {

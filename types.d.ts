@@ -56,22 +56,8 @@ export type FormItemsProps = {
     t: (key: string) => string;
   };
   
-  export type InternalFormValues = {
-    from: string;
-    to: string;
-    value: number;
-    commision: number;
-    description: string;
-    selectField: string;
-    recurring: boolean;
-    date?: string | null;
-    receiverOrSender: string;
-  };
-  
-  export type InternalFormProps = {
-    initialData?: Partial<InternalFormValues>;
-    onSubmit: (values: InternalFormValues) => void;
-  };
+
+
   
   export type RecurringDateDisplayProps = {
     t: (key: string) => string;
@@ -94,25 +80,20 @@ export type FormItemsProps = {
     };
   };
   
-  export type ConfirmationModalProps<T extends Record<string, unknown>> = {
-    isOpen: boolean;
-    onClose: () => void;
-    metadata: Metadata;
-    additionalData?: T; // Accepts any shape dynamically
-  };
+  // types.d.ts or wherever your types are:
+export interface ConfirmationModalProps<T extends Record<string, unknown>> {
+  isOpen: boolean;
+  onClose: () => void;
+  /** Add onConfirm so the parent can pass a callback */
+  onConfirm?: () => void;
+
+  // existing props:
+  metadata: Record<string, any>;
+  additionalData?: T;
+  excludedFields?: string[];
+}
 
 
-  export type SpecialFieldsDisplayProps = {
-    field: {
-      name: string;
-      startIcon?: JSX.Element;
-      type: string;
-      width?: string;
-    };
-    displayType: "account" | "commission";
-    t: (key: string) => string;
-    disabled?:boolean;
-  };
 
   export type FormTypeSelectProps = {
     selectedFormType: string;
@@ -126,13 +107,17 @@ export type FormItemsProps = {
   
 
 
-
+  export type DropdownOption = {
+    value: string ;
+    label: string;
+  };
+  
 
 
 export type CrudDataGridHeaderProps = {
   onSearch?: (value: string) => void;
-  onDropdownSelect?: (value: string) => void;
-  dropdownOptions?: string[];
+  onDropdownSelect?: (value: string ) => void;
+  dropdownOptions?: DropdownOption[];
   showAddButton?: boolean;
   onAddClick?: () => void;
   showSearchBar?: boolean;
@@ -196,8 +181,9 @@ export type SearchBarProps =
       showSearchBar?: true;
       onSearch?: (value: string) => void;
       onDropdownSelect?: (value: string) => void;
-      dropdownOptions?: string[];
-    }
+      onDropdownSelect?: (optionValue: string ) => void;
+      dropdownOptions?: DropdownOption[];
+        }
   | {
       showSearchBar?: false;
       onSearch?: never;
@@ -234,8 +220,8 @@ export type AddButtonProps =
       showAddButton?: boolean;
       onAddClick?: () => void;
       onSearch?: (searchValue: string) => void;
-      onDropdownSelect?: (optionValue: string) => void;
-      dropdownOptions?: string[];
+      onDropdownSelect?: (optionValue: string ) => void;
+      dropdownOptions?: DropdownOption[];
     } & ActionsProps & {
       isModal?: boolean;
       modalComponent?: React.ReactNode;
@@ -255,9 +241,11 @@ export type AddButtonProps =
 
   export type SearchWithDropdownProps = {
     placeholder?: string;
-    dropdownOptions: string[];
+    dropdownOptions: DropdownOption[];
+
+    // changed from (value: string) to (value: string | number)
     onSearch: (value: string) => void;
-    onDropdownSelect: (value: string) => void;
+    onDropdownSelect: (value: string ) => void;
     showSearchInput?: boolean; // Add this
     showDropdown?: boolean; // Add this
   };
@@ -298,6 +286,72 @@ export type User = {
   userId?: number;
   permissions?: string[];
   areaId?: number;
+};
+
+
+/**
+ * Represents the complete user object returned by /users/by-auth/{id}.
+ * Adjust field types (string vs. string|null, etc.) if needed.
+ */
+export type DetailedUser = {
+  userId: number;
+  authUserId: number;
+  username: string | null;
+  companyId: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  roleId: number;
+  areaId: number;
+  isTwoFactorEnabled: boolean;
+  passwordResetToken: string | null;
+  permissions: string[];
+  accounts: string[];
+  servicePackageId: number;
+
+  /** The 'role' object from the API. */
+  role: {
+    id: number;
+    nameAR: string;
+    nameLT: string;
+    description: string;
+    /** The nested 'users' array. Each item is basically a "sub-user" object. */
+    users: {
+      id: number;
+      authUserId: number;
+      companyId: string | null;
+      kycStatus: string | null;
+      kycBranchId: number | null;
+      kycLegalCompanyName: string | null;
+      kycLegalCompanyNameLt: string | null;
+      kycMobile: string | null;
+      kycNationality: string | null;
+      kycCity: string | null;
+      kycStatusMessage: string | null;
+      kycRequestedAt: string | null;
+      kycReviewedAt: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      email: string | null;
+      phone: string | null;
+      roleId: number;
+      role: unknown; // or null
+      isCompanyAdmin: boolean;
+      servicePackageId: number;
+      servicePackage: unknown; // or null
+      auditLogs: unknown[];
+      bankAccounts: unknown[];
+      userRolePermissions: unknown[];
+      transferRequests: unknown[];
+      createdAt: string;
+      updatedAt: string;
+    }[];
+    rolePermissions: unknown[];
+    userRolePermissions: unknown[];
+    createdAt: string;
+    updatedAt: string;
+  };
 };
 
 

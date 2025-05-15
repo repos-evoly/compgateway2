@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import * as Yup from "yup";
+
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
@@ -11,115 +12,120 @@ import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import { FaPaperPlane } from "react-icons/fa";
 import Description from "@/app/components/FormUI/Description";
 
-export type TCheckbookValues = {
-  fullName: string;
-  address: string;
-  accountNumber: string;
-  pleaseSend: string;
-  branch: string;
-  date: Date;
-  bookContaining: string;
-};
+import type { TCheckbookFormValues } from "../types";
+import { createCheckbookRequest } from "../services";
 
 type TCheckbookFormProps = {
-  onSubmit: (values: TCheckbookValues) => void;
+  onSubmit: (newItem: TCheckbookFormValues) => void;
   onCancel: () => void;
-  // Optional: if provided, the form uses these as initial values for editing
-  initialData?: TCheckbookValues | null;
+  initialData?: TCheckbookFormValues | null;
 };
 
-const CheckbookForm = ({ onSubmit, onCancel, initialData }: TCheckbookFormProps) => {
+const CheckbookForm: React.FC<TCheckbookFormProps> = ({
+  onSubmit,
+  onCancel,
+  initialData,
+}) => {
   const t = useTranslations("checkForm");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Default initial values:
-  const defaultValues: TCheckbookValues = {
+  // Default initial values
+  const defaultValues: TCheckbookFormValues = {
     fullName: "",
     address: "",
     accountNumber: "",
     pleaseSend: "",
     branch: "",
-    date: new Date(),
+    date: "",
     bookContaining: "",
   };
 
   // Merge defaultValues with any provided initialData
-  const initialValues: TCheckbookValues = initialData
+  const initialValues: TCheckbookFormValues = initialData
     ? { ...defaultValues, ...initialData }
     : defaultValues;
 
+  // Validation schema
   const validationSchema = Yup.object({
     fullName: Yup.string().required(`${t("name")} ${t("required")}`),
     address: Yup.string().required(`${t("address")} ${t("required")}`),
     accountNumber: Yup.string().required(`${t("accNum")} ${t("required")}`),
     pleaseSend: Yup.string().required(`${t("sendTo")} ${t("required")}`),
     branch: Yup.string().required(`${t("branch")} ${t("required")}`),
-    date: Yup.date()
-      .required(`${t("date")} ${t("required")}`)
-      .typeError(`${t("invalidDate")}`),
+    date: Yup.string().required(`${t("date")} ${t("required")}`),
     bookContaining: Yup.string().required(t("selectOneOption")),
   });
 
-  const formFields = [
-    {
-      name: "fullName",
-      label: t("name"),
-      type: "text" as const,
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "address",
-      label: t("address"),
-      type: "text" as const,
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "accountNumber",
-      label: t("accNum"),
-      type: "text" as const,
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "pleaseSend",
-      label: t("sendTo"),
-      type: "text" as const,
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "branch",
-      label: t("branch"),
-      type: "text" as const,
-      component: FormInputIcon,
-      width: "w-full",
-    },
-    {
-      name: "date",
-      label: t("date"),
-      component: DatePickerValue,
-      width: "w-full",
-    },
-  ];
+  // On form submit -> create new record
+  const handleSubmit = async (values: TCheckbookFormValues) => {
+    if (isSubmitting) return; // prevent double-click
+    setIsSubmitting(true);
 
-  const handleSubmit = (values: TCheckbookValues) => {
-    onSubmit(values);
+    try {
+      // 1) POST to server, get the newly created record
+      const newItem = await createCheckbookRequest(values);
+
+      // 2) Pass newItem to parent -> update grid
+      onSubmit(newItem);
+    } catch (error) {
+      console.error("Failed to create checkbook request:", error);
+      alert("Error creating checkbook request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="mt-2 rounded w-full bg-gray-100">
+      {/* Header styling */}
       <div className="w-full bg-info-dark h-16 rounded-t-md"></div>
+
       <div className="px-6 pb-6">
         <Form
           initialValues={initialValues}
           onSubmit={handleSubmit}
           validationSchema={validationSchema}
         >
-          {/* Grid Layout for Form Fields */}
+          {/* Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {formFields.map(({ component: Component, ...props }) => (
-              <Component key={props.name} {...props} />
+            {[
+              {
+                name: "fullName",
+                label: t("name"),
+                type: "text" as const,
+                component: FormInputIcon,
+              },
+              {
+                name: "address",
+                label: t("address"),
+                type: "text" as const,
+                component: FormInputIcon,
+              },
+              {
+                name: "accountNumber",
+                label: t("accNum"),
+                type: "text" as const,
+                component: FormInputIcon,
+              },
+              {
+                name: "pleaseSend",
+                label: t("sendTo"),
+                type: "text" as const,
+                component: FormInputIcon,
+              },
+              {
+                name: "branch",
+                label: t("branch"),
+                type: "text" as const,
+                component: FormInputIcon,
+              },
+              {
+                name: "date",
+                label: t("date"),
+                component: DatePickerValue,
+              },
+            ].map(({ component: Comp, ...field }) => (
+              <Comp key={field.name} {...field} width="w-full" />
             ))}
           </div>
 
@@ -140,11 +146,11 @@ const CheckbookForm = ({ onSubmit, onCancel, initialData }: TCheckbookFormProps)
             />
           </div>
 
-          {/* Book Containing (Radio Buttons) */}
+          {/* Radio buttons */}
           <div className="mt-4">
             <RadiobuttonWrapper
               name="bookContaining"
-              label={t("book")} 
+              label={t("book")}
               options={[
                 { value: "24", label: "24" },
                 { value: "48", label: "48" },
@@ -153,7 +159,7 @@ const CheckbookForm = ({ onSubmit, onCancel, initialData }: TCheckbookFormProps)
             />
           </div>
 
-          <Description variant="h1" className=" text-black m-auto mt-4">
+          <Description variant="h1" className="text-black m-auto mt-4">
             {t("agree")}
           </Description>
 
@@ -163,6 +169,7 @@ const CheckbookForm = ({ onSubmit, onCancel, initialData }: TCheckbookFormProps)
               title={t("submit")}
               Icon={FaPaperPlane}
               color="info-dark"
+              disabled={isSubmitting}
             />
             <button
               type="button"

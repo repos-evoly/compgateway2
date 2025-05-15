@@ -3,7 +3,7 @@
 import React from "react";
 import { useSearchParams, useParams, useRouter } from "next/navigation";
 import InternalForm from "../components/InternalForm";
-import { InternalFormValues } from "@/types";
+import { InternalFormValues } from "../types";
 
 /**
  * The detail page: /transfers/internal/[id]

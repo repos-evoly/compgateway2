@@ -1,109 +1,118 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import CheckbookForm, { TCheckbookValues } from "./components/CheckbookForm";
+import CheckbookForm from "./components/CheckbookForm";
+import { getCheckbookRequests } from "./services";
+import type { TCheckbookFormValues } from "./types";
 
+/**
+ * Demonstration of listing checkbook requests with pagination & search.
+ */
 const CheckbookPage: React.FC = () => {
+  const t = useTranslations("checkForm");
 
+  // Local state for table data
+  const [data, setData] = useState<TCheckbookFormValues[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
-  // 1) Dummy checkbook data (local)
-  const [data, setData] = useState<TCheckbookValues[]>([
-    {
-      fullName: "John Doe",
-      address: "123 Elm Street",
-      accountNumber: "ACC-1001",
-      pleaseSend: "Home",
-      branch: "Central",
-      date: new Date(2023, 7, 1),
-      bookContaining: "24",
-    },
-    {
-      fullName: "Jane Smith",
-      address: "456 Oak Avenue",
-      accountNumber: "ACC-2002",
-      pleaseSend: "Office",
-      branch: "Downtown",
-      date: new Date(2023, 6, 15),
-      bookContaining: "48",
-    },
-  ]);
-
-  // For pagination
+  // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const totalPages = 1;
+  const limit = 10;
 
-  // Toggle local Add form
-  const [showForm, setShowForm] = useState<boolean>(false);
+  // Searching
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchBy, setSearchBy] = useState("");
 
-  // If we wanted local editing in the same page
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  // Toggle Add form
+  const [showForm, setShowForm] = useState(false);
 
-  // Columns for the grid
+  // Fetch data whenever page or search changes
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const result = await getCheckbookRequests(
+          currentPage,
+          limit,
+          searchTerm,
+          searchBy
+        );
+        // result => { data, totalPages, etc. }
+        setData(result.data);
+        setTotalPages(result.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch checkbooks:", error);
+      }
+    };
+
+    fetchData();
+  }, [currentPage, limit, searchTerm, searchBy]);
+
+  // Table columns
   const columns = [
-    { key: "fullName", label: "Name" },
-    { key: "address", label: "Address" },
-    { key: "accountNumber", label: "Account Number" },
-    { key: "branch", label: "Branch" },
-    { key: "date", label: "Date" },
-    { key: "pleaseSend", label: "Send To" },
+    { key: "fullName", label: t("name") },
+    { key: "address", label: t("address") },
+    { key: "accountNumber", label: t("accNum") },
+    { key: "branch", label: t("branch") },
+    { key: "date", label: t("date") },
+    { key: "pleaseSend", label: t("sendTo") },
   ];
 
-  // Transform data for the grid
+  // Data for the grid
   const rowData = data.map((item) => ({
-    fullName: item.fullName,
-    address: item.address,
-    accountNumber: item.accountNumber,
-    branch: item.branch,
-    date: item.date.toLocaleDateString("en-GB"),
-    pleaseSend: item.pleaseSend,
+    ...item,
+    date: item.date,
   }));
 
+  // "Add" button => open form
   const handleAddClick = () => {
-    setEditingIndex(null);
     setShowForm(true);
   };
 
-  const handleFormSubmit = (values: TCheckbookValues) => {
-    if (editingIndex !== null) {
-      // local in-page editing
-      setData((prev) => {
-        const updated = [...prev];
-        updated[editingIndex] = values;
-        return updated;
-      });
-    } else {
-      // Add new
-      setData((prev) => [...prev, values]);
-    }
+  // Form submit => add new item locally
+  const handleFormSubmit = (newItem: TCheckbookFormValues) => {
+    setData((prev) => [newItem, ...prev]);
     setShowForm(false);
-    setEditingIndex(null);
   };
 
   const handleFormCancel = () => {
     setShowForm(false);
-    setEditingIndex(null);
   };
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl mb-4">Checkbook List</h1>
-
       {showForm ? (
         <CheckbookForm
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
-          initialData={editingIndex !== null ? data[editingIndex] : undefined}
         />
       ) : (
         <CrudDataGrid
           data={rowData}
           columns={columns}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          showSearchInput
+          showDropdown
+          showSearchBar
+          dropdownOptions={[
+            { value: "fullName", label: t("name") },
+            { value: "status", label: t("status") },
+          ]}
+          onDropdownSelect={(selected) => {
+            if (selected) {
+              setSearchBy(String(selected));
+              setCurrentPage(1);
+            }
+          }}
+          onSearch={(term) => {
+            setSearchTerm(term);
+            setCurrentPage(1);
+          }}
           showAddButton
           onAddClick={handleAddClick}
-          totalPages={totalPages}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
         />
       )}
     </div>

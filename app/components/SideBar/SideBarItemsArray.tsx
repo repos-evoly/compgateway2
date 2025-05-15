@@ -185,31 +185,38 @@ export const sidebarItems = [
   //   icon: FaCog,
   //   children: [],
   // },
+  // {
+  //   id: 22,
+  //   label: "customizations.label",
+  //   path: "",
+  //   icon: HiOutlineCurrencyDollar,
+  //   children: [
+  //     {
+  //       id: 26,
+  //       label: "customizations.banks",
+  //       path: "/customizations/banks",
+  //       icon: BiDollarCircle, // Icon representing salaries/money
+  //     },
+  //     {
+  //       id: 27,
+  //       label: "customizations.commissions",
+  //       path: "/customizations/commissions",
+  //       icon: BiUpload, // Icon for file uploads
+  //     },
+  //     {
+  //       id: 28,
+  //       label: "customizations.limits",
+  //       path: "/customizations/limits",
+  //       icon: BiTransferAlt, // Icon representing salary transfers
+  //     },
+  //   ],
+  // },
   {
-    id: 22,
-    label: "customizations.label",
-    path: "",
-    icon: HiOutlineCurrencyDollar,
-    children: [
-      {
-        id: 26,
-        label: "customizations.banks",
-        path: "/customizations/banks",
-        icon: BiDollarCircle, // Icon representing salaries/money
-      },
-      {
-        id: 27,
-        label: "customizations.commissions",
-        path: "/customizations/commissions",
-        icon: BiUpload, // Icon for file uploads
-      },
-      {
-        id: 28,
-        label: "customizations.limits",
-        path: "/customizations/limits",
-        icon: BiTransferAlt, // Icon representing salary transfers
-      },
-    ],
+    id: 30,
+    label: "currencies",
+    path: "/currencies",
+    icon: FaCog,
+    children: [],
   },
   {
     id: 23,
@@ -229,7 +236,7 @@ export const sidebarItems = [
   {
     id: 25,
     label: "logout",
-    path: "/logout",
+    path: "",
     icon: FaSignOutAlt,
     children: [],
   },

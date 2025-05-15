@@ -3,13 +3,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useField, useFormikContext } from "formik";
 import { FaChevronDown } from "react-icons/fa";
+import IMask, { InputMask } from "imask";
 
-/**
- * InputSelectComboOption:
- *   - label: user-facing text
- *   - value: string | number
- *   - meta?: optional extra data
- */
+/** Your existing type definitions */
 export type InputSelectComboOption = {
   label: string;
   value: string | number;
@@ -22,19 +18,22 @@ export type InputSelectComboProps = {
   options: InputSelectComboOption[];
   placeholder?: string;
   disabled?: boolean;
-  /**
-   * If you want to keep the old behavior of filtering only by label or value,
-   * you could do so with an additional prop. But here we're always searching "both".
-   */
   width?: string;
   titleColor?: string;
+
+  /**
+   * If provided, we treat the input as text and apply IMask with the given format.
+   * Example: "0000-0000" for phone-like formatting.
+   * The unmasked value is stored in Formik, while the user sees the masked text.
+   */
+  maskingFormat?: string;
 };
 
 /**
  * A Formik-driven text+dropdown combo:
- *   - The user sees option.label in the text input.
- *   - Submits option.value when an option is selected.
- *   - The partial filter includes BOTH label & value with "includes".
+ *   - The user sees either typed or selected option in the text input.
+ *   - If maskingFormat is provided, iMask is applied (unmasked stored in Formik).
+ *   - The partial filter includes the displayed (masked) text or typed text.
  */
 const InputSelectCombo: React.FC<InputSelectComboProps> = ({
   name,
@@ -43,59 +42,165 @@ const InputSelectCombo: React.FC<InputSelectComboProps> = ({
   placeholder = "Please select or type...",
   disabled = false,
   width = "w-full",
-  titleColor = "text-black", // Default to black text
+  titleColor = "text-black",
+  maskingFormat,
 }) => {
   const formik = useFormikContext();
   const [field, meta, helpers] = useField(name);
 
+  /**
+   * We store the user-facing text in displayText.
+   * If maskingFormat is used, we set it from iMask (the masked text).
+   */
   const [displayText, setDisplayText] = useState("");
+
+  // Controls the dropdown
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [hasSelected, setHasSelected] = useState(false);
   const [openedByArrow, setOpenedByArrow] = useState(false);
 
   const dropdownRef = useRef<HTMLUListElement>(null);
-  const inputRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync display text from Formik’s field.value on mount and whenever field.value changes
+  // iMask reference
+  const maskRef = useRef<InputMask | null>(null);
+
+  /**
+   * 1) Setup/destroy iMask if maskingFormat is given
+   */
   useEffect(() => {
-    const currentValue = field.value;
-    if (currentValue !== null && currentValue !== undefined) {
-      const matched = options.find(
-        (opt) => String(opt.value) === String(currentValue)
-      );
-      if (matched) {
-        setDisplayText(matched.label);
+    if (!maskingFormat || !inputRef.current) {
+      // No mask => destroy any existing instance
+      if (maskRef.current) {
+        maskRef.current.destroy();
+        maskRef.current = null;
+      }
+      return;
+    }
+
+    // iMask setup
+    maskRef.current = IMask(inputRef.current, { mask: maskingFormat });
+
+    // On accept => store unmasked in Formik, masked in displayText
+    maskRef.current.on("accept", () => {
+      const unmasked = maskRef.current?.unmaskedValue || "";
+      const masked = maskRef.current?.value || "";
+      helpers.setValue(unmasked);
+      setDisplayText(masked);
+    });
+
+    return () => {
+      if (maskRef.current) {
+        maskRef.current.destroy();
+        maskRef.current = null;
+      }
+    };
+  }, [maskingFormat, helpers]);
+
+  /**
+   * 2) Keep iMask in sync if Formik changes the value externally
+   */
+  useEffect(() => {
+    // If we have a mask, we rely on iMask to do the formatting
+    if (maskingFormat && maskRef.current) {
+      const currentUnmasked = maskRef.current.unmaskedValue;
+      const desiredUnmasked = String(field.value ?? "");
+
+      if (currentUnmasked !== desiredUnmasked) {
+        maskRef.current.unmaskedValue = desiredUnmasked;
+        setDisplayText(maskRef.current.value); // masked
+      }
+    }
+    // If NO mask => normal approach
+    else if (!maskingFormat) {
+      const currentValue = field.value;
+      if (currentValue != null) {
+        // See if matches an option
+        const matched = options.find(
+          (opt) => String(opt.value) === String(currentValue)
+        );
+        if (matched) {
+          setDisplayText(matched.label);
+        } else {
+          // If no match => it's typed text? Then we show raw
+          setDisplayText(String(currentValue));
+        }
       } else {
         setDisplayText("");
       }
-    } else {
-      setDisplayText("");
     }
-  }, [field.value, options]);
+  }, [field.value, options, maskingFormat]);
 
+  /**
+   * Filter logic: uses the displayed text
+   * If user clicked arrow or just selected, we skip filtering and show all.
+   */
+  const filteredOptions = useMemo(() => {
+    if (openedByArrow || hasSelected) {
+      return options;
+    }
+    const searchText = displayText.toLowerCase().trim();
+    if (!searchText) {
+      return options;
+    }
+    return options.filter((opt) => {
+      const lab = opt.label.toLowerCase();
+      const val = String(opt.value).toLowerCase();
+      // Return true if search text is in label or value
+      return lab.includes(searchText) || val.includes(searchText);
+    });
+  }, [options, displayText, openedByArrow, hasSelected]);
+
+  /**
+   * Normal onChange => if no mask, we update displayText
+   * If we do have a mask, iMask handles user input events for us
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (maskingFormat) {
+      // do nothing, iMask is in charge
+      return;
+    }
     setIsDropdownVisible(true);
     setHasSelected(false);
     setOpenedByArrow(false);
     setDisplayText(e.target.value);
   };
 
+  /**
+   * Close on blur
+   */
   const handleBlur = () => {
     helpers.setTouched(true);
+
+    // If mask => check completeness
+    if (maskingFormat && maskRef.current) {
+      if (!maskRef.current.masked.isComplete) {
+        helpers.setError(`Input should match format: ${maskingFormat}`);
+      } else {
+        helpers.setError(undefined);
+      }
+    }
   };
 
+  /**
+   * Option click => store the option's .value in Formik, show .label
+   */
   const handleOptionClick = (option: InputSelectComboOption) => {
-    // If there's meta to store in other fields, do so:
     if (option.meta?.definitionId) {
       formik.setFieldValue("definitionId", option.meta.definitionId);
     }
-
-    helpers.setValue(option.value); // The actual submitted value
-    setDisplayText(option.label); // The text shown to the user
+    // If we have a mask, do we forcibly remove it? We'll skip that logic here,
+    // because typically picking an option means you want that exact value.
+    // We'll set Formik to the raw string, display the label as typed
+    helpers.setValue(option.value);
+    setDisplayText(option.label);
     setHasSelected(true);
     setIsDropdownVisible(false);
   };
 
+  /**
+   * Toggle the dropdown when user clicks the arrow button
+   */
   const toggleDropdown = () => {
     if (!disabled) {
       setIsDropdownVisible(!isDropdownVisible);
@@ -104,27 +209,9 @@ const InputSelectCombo: React.FC<InputSelectComboProps> = ({
     }
   };
 
-  // Filter logic: includes check on BOTH label + value
-  const filteredOptions = useMemo(() => {
-    // If user clicked arrow to open or just selected,
-    // skip filtering. Show all options:
-    if (openedByArrow || hasSelected) return options;
-
-    const searchText = displayText.toLowerCase().trim();
-    if (!searchText) {
-      return options;
-    }
-
-    return options.filter((opt) => {
-      // Convert label and value to lower-case strings
-      const lab = opt.label.toLowerCase();
-      const val = String(opt.value).toLowerCase();
-      // Return true if the search text is found in EITHER
-      return lab.includes(searchText) || val.includes(searchText);
-    });
-  }, [options, displayText, openedByArrow, hasSelected]);
-
-  // Close the dropdown if user clicks outside
+  /**
+   * Close dropdown if user clicks outside
+   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -142,10 +229,12 @@ const InputSelectCombo: React.FC<InputSelectComboProps> = ({
     };
   }, []);
 
+  // Decide which error to display
   const showError = meta.touched && meta.error ? meta.error : "";
 
   return (
-    <div className={`relative ${width} mb-4`} ref={inputRef}>
+    <div className={`relative ${width} mb-4`} style={{ minWidth: "180px" }}>
+      {/* Label */}
       <label
         htmlFor={name}
         className={`block text-sm font-medium ${titleColor} mb-1`}
@@ -158,7 +247,9 @@ const InputSelectCombo: React.FC<InputSelectComboProps> = ({
           autoComplete="off"
           id={name}
           name={name}
-          type="text"
+          ref={inputRef}
+          type={maskingFormat ? "text" : "text"}
+          // we do "text" if there's a mask or not (the mask won't function as "number" input)
           placeholder={placeholder}
           disabled={disabled}
           value={displayText}
@@ -207,6 +298,7 @@ const InputSelectCombo: React.FC<InputSelectComboProps> = ({
         )}
       </div>
 
+      {/* Error */}
       {showError && <p className="text-sm text-red-500 mt-1">{showError}</p>}
     </div>
   );

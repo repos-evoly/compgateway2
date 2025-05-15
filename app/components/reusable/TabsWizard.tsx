@@ -5,6 +5,8 @@ import type { FormikProps } from "formik";
 import { FiChevronLeft, FiChevronRight, FiCheck } from "react-icons/fi";
 import { ReviewStep } from "./ReviewStep";
 import { useTranslations } from "next-intl";
+import SubmitButton from "@/app/components/FormUI/SubmitButton";
+// ^ Path to your new SubmitButton file. Adjust if needed.
 
 // 1) A type describing each step of the wizard.
 type WizardStep = {
@@ -27,17 +29,18 @@ type TabsWizardProps<FormValues extends Record<string, unknown>> = {
 export function TabsWizard<FormValues extends Record<string, unknown>>({
   steps: userSteps,
   formik,
-  onSubmit,
+  // onSubmit,
   validateCurrentStep,
   translateFieldName,
 }: TabsWizardProps<FormValues>) {
   const t = useTranslations("tabsWizard"); // i18n from next-intl
+
   // We create an extra final step for "Review & Submit"
   const allSteps: WizardStep[] = [
     ...userSteps,
     {
-      // CHANGED: Localize this title if desired
-      title: t("review"), // <--- You can pass i18n translation here
+      // Localized title for the review step
+      title: t("review"),
       component: (
         <ReviewStep
           formik={formik}
@@ -99,18 +102,18 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
     }
   }
 
-  async function handleSubmit() {
-    // Possibly do final validation on the review step:
-    const valid = await validateCurrentStep(currentStep);
-    if (!valid) return;
+  // async function handleSubmit() {
+  //   // Possibly do final validation on the review step
+  //   const valid = await validateCurrentStep(currentStep);
+  //   if (!valid) return;
 
-    if (!completedSteps.includes(currentStep)) {
-      setCompletedSteps([...completedSteps, currentStep]);
-    }
-    onSubmit();
-  }
+  //   if (!completedSteps.includes(currentStep)) {
+  //     setCompletedSteps([...completedSteps, currentStep]);
+  //   }
+  //   onSubmit();
+  // }
 
-  // The progress line spans 0..90% as we go from step 0..(allSteps.length - 1).
+  // The progress line from 0..90% as we go from step 0..(allSteps.length - 1).
   const progressWidth =
     currentStep === 0 ? "0" : `${(currentStep / (allSteps.length - 1)) * 90}%`;
 
@@ -207,13 +210,9 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
         </div>
       </div>
 
-      {/* Footer controls */}
-      <div
-        className={`flex justify-between mt-6 ${
-          isRTL ? "flex-row-reverse" : ""
-        }`}
-      >
-        {/* Back */}
+      {/* Footer controls => both on the LEFT */}
+      <div className="flex items-center gap-4 mt-6 justify-end">
+        {/* Back button (if not first step) */}
         {!isFirstStep && (
           <button
             type="button"
@@ -222,7 +221,6 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
               px-4 py-2 border border-info-main text-info-dark rounded-md 
               hover:bg-info-main hover:text-white transition-colors duration-300 
               flex items-center gap-2
-              ${isRTL ? "flex-row-reverse" : ""}
             `}
           >
             <BackIcon />
@@ -230,7 +228,7 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
           </button>
         )}
 
-        {/* Next or Submit */}
+        {/* Next or Submit (side by side with Back) */}
         {!isLastStep ? (
           <button
             type="button"
@@ -238,21 +236,23 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
             className={`
               px-6 py-2 bg-info-dark text-white rounded-md hover:opacity-90 
               transition-colors duration-300 flex items-center gap-2
-              ${isRTL ? "flex-row-reverse" : ""}
             `}
           >
             {t("next")}
             <NextIcon />
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="px-6 py-2 bg-info-dark text-white rounded-md hover:opacity-90 transition-colors duration-300 flex items-center gap-2"
-          >
-            {t("submit")}
-            <FiCheck />
-          </button>
+          /**
+           * Final step => Use your SubmitButton
+           * We'll pass `isSubmitting={formik.isSubmitting}` to show spinner
+           */
+          <SubmitButton
+            title={t("submit")}
+            color="info-dark"
+            fullWidth={false}
+            isSubmitting={formik.isSubmitting}
+            Icon={FiCheck}
+          />
         )}
       </div>
     </div>

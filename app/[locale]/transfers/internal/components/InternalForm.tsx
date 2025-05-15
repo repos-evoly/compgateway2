@@ -1,251 +1,276 @@
-// InternalForm.tsx
 "use client";
-import React, { useState } from "react";
+
+import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 import * as Yup from "yup";
+import { useTranslations } from "next-intl";
+import { FaTrash } from "react-icons/fa";
+import { useFormikContext } from "formik";
+
+import { getCurrencies } from "@/app/[locale]/currencies/services"; // Adjust path
+import { createTransfer } from "../services"; // <-- Our new createTransfer function
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import CheckboxWrapper from "@/app/components/FormUI/CheckboxWrapper";
 import ResetButton from "@/app/components/FormUI/ResetButton";
-import SelectWrapper from "@/app/components/FormUI/Select";
-import { formFields, commissionValue } from "./internalFormFields";
-import { FaTrash } from "react-icons/fa";
-import { useTranslations } from "next-intl";
-import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
-import {
-  InternalFormValues,
-  InternalFormProps,
-  RecurringDateDisplayProps,
-  AdditionalData,
-} from "@/types";
-import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import ConfirmationModal from "@/app/components/reusable/ConfirmationModal";
-import ContinueButton from "./ContinueButton"; // Adjust path as necessary
-import { useFormikContext } from "formik";
-import SpecialFieldsDisplay from "./SpecialFieldsDisplay"; // Adjust path as necessary
+import ContinueButton from "./ContinueButton";
 import EditButton from "@/app/components/FormUI/EditButton";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 
-interface ModalDataType {
-  formikData?: InternalFormValues; // Ensure this is optional since initial state may not have it
-  additionalData?: AdditionalData; // Ensure this is optional for the same reason
-}
+import type {
+  InternalFormProps,
+  InternalFormValues,
+  AdditionalData,
+} from "../types";
 
-const RecurringDateDisplay = ({
-  t,
-  isEditing,
-  ends,
-  disabled, // Add disabled prop
-}: RecurringDateDisplayProps & { disabled?: boolean }) => {
-  const { values } = useFormikContext<InternalFormValues>();
+/** Ensures 'from' and 'to' share last 3 digits */
+const FormValidator = () => {
+  const { values, setFieldError, validateForm } =
+    useFormikContext<InternalFormValues>();
+  const [isValid, setIsValid] = useState(true);
+  console.log("FormValidator =>", isValid);
 
-  if (isEditing) {
-    return values.recurring ? (
-      <span className="text-sm mb-4 mx-4 text-gray-700">
-        {t("ends")}: {ends || ""}
-      </span>
-    ) : null;
-  } else {
-    return values.recurring ? (
-      <div className="w-1/3">
-        <DatePickerValue
-          name="date"
-          label={t("ends")}
-          titlePosition="side"
-          disabled={disabled} // Pass disabled to DatePickerValue
-        />
-      </div>
-    ) : null;
-  }
+  useEffect(() => {
+    const validateCurrencyCodes = () => {
+      const { from, to } = values;
+      if (!from || !to) {
+        setIsValid(true);
+        return;
+      }
+      // Compare last 3 digits
+      const fromCurrency = from.slice(-3);
+      const toCurrency = to.slice(-3);
+
+      if (fromCurrency !== toCurrency) {
+        setFieldError("from", "Currency codes must match");
+        setFieldError("to", "Currency codes must match");
+        setIsValid(false);
+      } else {
+        // Clear errors if they match
+        validateForm();
+        setIsValid(true);
+      }
+    };
+
+    validateCurrencyCodes();
+  }, [values.from, values.to, setFieldError, validateForm, values]);
+
+  return null;
 };
 
 const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
-  const [fieldsDisabled, setFieldsDisabled] = useState(true); // Controls whether all fields are disabled
-  const alwaysDisabledFields = ["commision"]; // Add fields here that should always remain disabled
+  const t = useTranslations("internalTransferForm");
 
-  const isEditing = !initialData;
+  // If new => fields enabled
+  const isNewRecord = !initialData || Object.keys(initialData).length === 0;
+  const [fieldsDisabled, setFieldsDisabled] = useState(!isNewRecord);
+
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    formikData?: InternalFormValues;
+    additionalData?: AdditionalData;
+  }>({});
+
+  // from-accounts from cookies
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+
+  useEffect(() => {
+    const rawCookie = Cookies.get("statementAccounts") || "[]";
+    let accounts: string[] = [];
+    try {
+      accounts = JSON.parse(rawCookie);
+    } catch {
+      try {
+        accounts = JSON.parse(decodeURIComponent(rawCookie));
+      } catch {
+        accounts = [];
+      }
+    }
+
+    const opts = accounts.map((acct) => ({
+      label: acct,
+      value: acct,
+    }));
+    setAccountOptions(opts);
+  }, []);
+
+  // Default + merges with any initialData
   const defaultValues: InternalFormValues = {
     from: "",
     to: "",
     value: 0,
-    commision: commissionValue,
     description: "",
-    selectField: "",
-    recurring: false,
-    date: "",
-    receiverOrSender: "sender",
   };
+  const transformedData = initialData
+    ? { ...defaultValues, ...initialData }
+    : defaultValues;
+  const initialValues: InternalFormValues = { ...transformedData };
 
-  const [modalData, setModalData] = useState<ModalDataType>({
-    additionalData: { fromName: "", toName: "", fromBalance: "" }, // Default empty strings or appropriate defaults
+  // Yup => check currency
+  const validationSchema = Yup.object({
+    from: Yup.string().required(t("requiredFromAccount")),
+    to: Yup.string()
+      .required(t("requiredToAccount"))
+      .test(
+        "currency-match",
+        t("currencyMismatch") || "Currency codes must match",
+        function (value) {
+          const { from } = this.parent;
+          if (!from || !value) return true;
+          return from.slice(-3) === value.slice(-3);
+        }
+      ),
+    value: Yup.number()
+      .typeError(t("valueMustBeNumber"))
+      .required(t("requiredValue"))
+      .positive(t("valueMustBePositive")),
+    description: Yup.string().required(t("requiredDescription")),
   });
 
-  // Define the handleModalData function here
+  // Called by Continue => store data => open modal
   const handleModalData = (formikData: InternalFormValues) => {
-    // Compute additional data based on formikData conditions
-    const additionalData: AdditionalData = {
-      fromName: formikData.from === "test" ? "عصمت العياش" : undefined,
-      toName: formikData.to === "test" ? "نادر خداج" : undefined,
-      fromBalance: formikData.from === "test" ? "1000" : undefined,
-    };
+    let fromName: string | undefined;
+    let toName: string | undefined;
+    let fromBalance: string | undefined;
 
-    // Always include additional data, default to undefined if conditions aren't met
-    setModalData({ formikData, additionalData });
+    if (formikData.from === "test") {
+      fromName = "عصمت العياش";
+      fromBalance = "1000";
+    }
+    if (formikData.to === "test") {
+      toName = "نادر خداج";
+    }
+
+    setModalData({
+      formikData,
+      additionalData: { fromName, toName, fromBalance },
+    });
     setIsModalOpen(true);
   };
 
-  const transformedData = initialData
-    ? {
-        ...initialData,
-        recurring: initialData.recurring,
-        date: initialData.date,
-      }
-    : {};
+  /**
+   * Called from the modal "submit" => fetch currency => call createTransfer => log
+   */
+  const handleModalConfirm = async () => {
+    if (!modalData?.formikData) {
+      setIsModalOpen(false);
+      return;
+    }
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const initialValues = { ...defaultValues, ...transformedData };
+    const { from, to, value, description } = modalData.formikData;
+    const currencyCode = from.slice(-3);
 
-  const validationSchema = Yup.object({
-    from: Yup.string().required("From account is required"),
-    to: Yup.string().required("To account is required"),
-    value: Yup.number()
-      .typeError("Value must be a number")
-      .required("Value is required")
-      .positive("Value must be greater than 0"),
-    commision: Yup.number()
-      .typeError("Value must be a number")
-      .required("Value is required")
-      .positive("Value must be greater than 0"),
-    description: Yup.string().required("Description is required"),
-    selectField: Yup.string().required("Please select an option"),
-    recurring: Yup.boolean().default(false),
-    receiverOrSender: Yup.string()
-      .oneOf(["sender", "receiver"])
-      .required("Please select Sender or Receiver"),
-    date: Yup.string().nullable().notRequired(),
-  });
+    try {
+      // get currency ID
+      const response = await getCurrencies(1, 1, currencyCode, "code");
+      const found = response.data[0];
+      const currencyId = found?.id || 0;
 
-  const t = useTranslations("internalTransferForm");
+      // final payload for /transfers
+      const finalPayload = {
+        transactionCategoryId: 1,
+        fromAccount: from,
+        toAccount: to,
+        amount: value,
+        currencyId,
+        description,
+      };
 
-  const selectOptions = [
-    { value: "onhold", label: t("onhold") },
-    { value: "inactive", label: t("inactive") },
-  ];
+      // call the new createTransfer function
+      const createdTransfer = await createTransfer(finalPayload);
+      console.log("Created Transfer =>", createdTransfer);
 
-  const metadata = {
-    ...formFields.reduce(
-      (acc, field) => ({
-        ...acc,
-        [field.name]: {
-          label: t(field.name),
-          type: field.type,
-          options: field.options,
-        },
-      }),
-      {}
-    ),
-    fromName: { label: "from account name", type: "text" },
-    fromBalance: { label: t("balance"), type: "text" },
-    toName: { label: "to account name" },
+      // Optionally call onSubmit to keep old local logic
+      onSubmit({
+        ...modalData.formikData,
+        transactionCategoryId: 1,
+        currencyId,
+      });
+    } catch (error) {
+      console.error("Error creating transfer =>", error);
+
+      // fallback
+      onSubmit({
+        ...modalData.formikData,
+        transactionCategoryId: 1,
+        currencyId: null,
+      });
+    }
+
+    setIsModalOpen(false);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
   };
 
   return (
-    <div className="p-6 bg-gray-100">
+    <div className="p-6">
       <Form
         initialValues={initialValues}
-        onSubmit={onSubmit}
+        onSubmit={onSubmit} // possibly not used, but let's keep it
         validationSchema={validationSchema}
         enableReinitialize
       >
-        <div className="grid grid-cols-1 gap-y-6">
-          {formFields.map((field) => (
-            <div key={field.name}>
-              {field.name === "receiverOrSender" && field.options ? (
-                <RadiobuttonWrapper
-                  name={field.name}
-                  label={t(field.label)}
-                  options={field.options}
-                  flexDir={["row", "row"]}
-                  t={t}
-                  disabled={
-                    fieldsDisabled && !alwaysDisabledFields.includes(field.name)
-                  }
-                />
-              ) : ["from", "to"].includes(field.name) ? (
-                <SpecialFieldsDisplay
-                  field={field}
-                  displayType="account"
-                  t={t}
-                  disabled={
-                    fieldsDisabled && !alwaysDisabledFields.includes(field.name)
-                  }
-                />
-              ) : field.name === "commision" ? (
-                <SpecialFieldsDisplay
-                  field={field}
-                  displayType="commission"
-                  t={t}
-                  disabled={true} // Always disabled as it's in alwaysDisabledFields
-                />
-              ) : field.type === "checkbox" ? (
-                <CheckboxWrapper
-                  name="recurring"
-                  label={t(field.name)}
-                  disabled={
-                    fieldsDisabled &&
-                    !alwaysDisabledFields.includes("recurring")
-                  } // Apply the proper disabled logic
-                />
-              ) : field.type === "date" ? (
-                <DatePickerValue
-                  name={field.name}
-                  label={t(field.name)}
-                  disabled={
-                    fieldsDisabled && !alwaysDisabledFields.includes(field.name)
-                  }
-                />
-              ) : (
-                <div className={`${field.width || "w-full"}`}>
-                  <FormInputIcon
-                    name={field.name}
-                    label={t(field.name)}
-                    startIcon={field.startIcon}
-                    type={field.type}
-                    disabled={
-                      fieldsDisabled &&
-                      !alwaysDisabledFields.includes(field.name)
-                    }
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <FormValidator />
 
-        <div className="flex items-center gap-4 mt-4">
-          <div>
-            <CheckboxWrapper name="recurring" label={t("rec")} />
-          </div>
-          <RecurringDateDisplay
-            t={t}
-            isEditing={isEditing}
-            ends={initialData?.date}
-            disabled={fieldsDisabled && !alwaysDisabledFields.includes("date")}
+        {/* Row 1: from, to, value */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <InputSelectCombo
+            name="from"
+            label={t("from")}
+            options={accountOptions}
+            disabled={fieldsDisabled}
+            maskingFormat="0000-000000-000"
+          />
+
+          <FormInputIcon
+            name="to"
+            label={t("to")}
+            type="text"
+            maskingFormat="0000-000000-000"
+            disabled={fieldsDisabled}
+          />
+
+          <FormInputIcon
+            name="value"
+            label={t("value")}
+            type="number"
+            disabled={fieldsDisabled}
           />
         </div>
 
-        <div className="w-1/3 mt-4">
-          <SelectWrapper
-            name="selectField"
-            label={t("status")}
-            options={selectOptions}
-            disabled={fieldsDisabled} // Add the `disabled` property
+        {/* Row 2: description */}
+        <div className="grid grid-cols-1 gap-4 mt-4">
+          <FormInputIcon
+            name="description"
+            label={t("description")}
+            type="text"
+            disabled={fieldsDisabled}
           />
         </div>
 
+        {/* Bottom Buttons */}
         <div className="flex justify-center gap-4 mt-6">
-          <EditButton
-            fieldsDisabled={fieldsDisabled}
-            setFieldsDisabled={setFieldsDisabled}
-          />
+          {!isNewRecord && (
+            <>
+              <EditButton
+                fieldsDisabled={fieldsDisabled}
+                setFieldsDisabled={setFieldsDisabled}
+              />
+              <ResetButton
+                title={t("delete")}
+                Icon={FaTrash}
+                color="warning-light"
+                fullWidth={false}
+              />
+            </>
+          )}
 
           <ContinueButton
             onClick={handleModalData}
@@ -253,30 +278,21 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
               from: true,
               to: true,
               value: true,
-              commision: true,
               description: true,
-              selectField: true,
-              recurring: true,
-              date: true,
-              receiverOrSender: true,
             }}
-          />
-
-          <ResetButton
-            title={t("delete")}
-            Icon={FaTrash}
-            color="warning-light"
-            fullWidth={false}
           />
         </div>
 
+        {/* Confirmation Modal */}
         {isModalOpen && (
           <ConfirmationModal
             isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            metadata={metadata}
-            additionalData={modalData.additionalData} // Make sure this matches state structure
-            excludedFields={["recurring", "date", "selectField"]} // Fields to exclude
+            onClose={handleModalClose}
+            onConfirm={handleModalConfirm}
+            formData={modalData.formikData || {}}
+            additionalData={modalData.additionalData}
+            metadata={{}}
+            excludedFields={["someField", "anotherField"]}
           />
         )}
       </Form>

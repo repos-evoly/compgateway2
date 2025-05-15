@@ -37,7 +37,8 @@
       "currRate":"اسعار صرف العملات",
   
       "logout":"تسجيل الخروج",
-      "defaultTitle":""
+      "defaultTitle":"",
+      "currencies":"العملات"
 
 
     },
@@ -186,7 +187,12 @@
       "signature":"التوقيع",
       "note":"ملاحظة لا يقبل الطلب الا بالتوقيع المصرفي المعتمد و توقيع مزدوج للحسابات مزدوجة التوقيع" ,
       "checkDetails":"تفاصيل الصك",
-      "checkboxSection":""
+      "checkboxSection":"",
+      "cancel":"أغلق",
+      "submit":"تقديم",
+      "required":"مطلوب",
+      "invalidDate":"تاريخ غير صالح",
+      "selectOneOption":"الرجاء اختيار خيار واحد على الأقل"
     },
   
     "CheckRequest":{
@@ -238,7 +244,14 @@
         "yes":"نعم",
         "no":"لا",
         "actions":"عمليات",
-        "doubleClickToExpand":"انقر نقرًا مزدوجًا للتوسيع"
+        "doubleClickToExpand":"انقر نقرًا مزدوجًا للتوسيع",
+        "goTo":"اذهب إلى",
+        "of":"من",
+        "page":"صفحة",
+        "goFirst":"اذهب إلى الصفحة الأولى",
+        "goPrevious":"اذهب إلى الصفحة السابقة",
+        "goNext":"اذهب إلى الصفحة التالية",
+        "goLast":"اذهب إلى الصفحة الأخيرة"
       },
 
 

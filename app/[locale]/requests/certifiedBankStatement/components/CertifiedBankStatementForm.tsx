@@ -7,7 +7,6 @@ import { ValidationError } from "yup";
 import { useTranslations } from "next-intl";
 
 import { TabsWizard } from "@/app/components/reusable/TabsWizard";
-// Adjust path to your existing TabsWizard
 import { Step1StatementForm } from "./Step1StatementForm";
 import { Step2StatementForm } from "./Step2StatementForm";
 import {
@@ -17,10 +16,67 @@ import {
 } from "./statementInputs";
 
 /**
- * This is the main 2-step form for CertifiedBankStatementRequest.
+ * Add an index signature so it matches Record<string, unknown>:
+ *   interface CertifiedBankStatementRequestWithID
+ *     extends CertifiedBankStatementRequest, Record<string, unknown> { ... }
  */
-export default function CertifiedBankStatementForm() {
+export interface CertifiedBankStatementRequestWithID
+  extends CertifiedBankStatementRequest,
+    Record<string, unknown> {
+  id: number;
+}
+
+/** Props for the multi-step wizard form */
+type CertifiedBankStatementFormProps = {
+  /** If provided => editing; otherwise => new form with default data. */
+  initialValues?: Partial<CertifiedBankStatementRequestWithID>;
+  /** Called on final submit of the wizard */
+  onSubmit: (values: CertifiedBankStatementRequestWithID) => void;
+};
+
+/** Default object for "Add" scenario (no initialValues) */
+const defaultValues: CertifiedBankStatementRequestWithID = {
+  id: 0,
+  accountHolderName: "",
+  authorizedOnTheAccountName: "",
+  accountNumber: undefined,
+  serviceRequests: {
+    reactivateIdfaali: false,
+    deactivateIdfaali: false,
+    resetDigitalBankPassword: false,
+    resendMobileBankingPin: false,
+    changePhoneNumber: false,
+  },
+  oldAccountNumber: undefined,
+  newAccountNumber: undefined,
+  statementRequest: {
+    currentAccountStatement: {
+      arabic: false,
+      english: false,
+    },
+    visaAccountStatement: false,
+    fromDate: "",
+    toDate: "",
+    accountStatement: false,
+    journalMovement: false,
+    nonFinancialCommitment: false,
+  },
+};
+
+/**
+ * Main 2-step form for CertifiedBankStatementRequest
+ */
+export default function CertifiedBankStatementForm({
+  initialValues,
+  onSubmit,
+}: CertifiedBankStatementFormProps) {
   const t = useTranslations("bankStatement");
+
+  // Merge partial => "Add" vs "Edit"
+  const mergedValues: CertifiedBankStatementRequestWithID = {
+    ...defaultValues,
+    ...initialValues,
+  };
 
   // Steps array
   const steps = [
@@ -34,50 +90,19 @@ export default function CertifiedBankStatementForm() {
     },
   ];
 
-  // We'll provide a translator function for the final review.
+  // For the final review step's translations
   function translateFieldName(fieldName: string): string {
-    // Combine step1 + step2
     const allInputs = [...step1StatementInputs, ...step2StatementInputs];
-    // Try to match name
     const found = allInputs.find((input) => input.name === fieldName);
     if (found) {
       return t(found.label);
     }
-    // If none, fallback
     return fieldName;
   }
 
-  // Initial values
-  const initialValues: CertifiedBankStatementRequest = {
-    accountHolderName: "",
-    authorizedOnTheAccountName: "",
-    accountNumber: undefined,
-    serviceRequests: {
-      reactivateIdfaali: false,
-      deactivateIdfaali: false,
-      resetDigitalBankPassword: false,
-      resendMobileBankingPin: false,
-      changePhoneNumber: false,
-    },
-    oldAccountNumber: undefined,
-    newAccountNumber: undefined,
-    statementRequest: {
-      currentAccountStatement: {
-        arabic: false,
-        english: false,
-      },
-      visaAccountStatement: false,
-      fromDate: "",
-      toDate: "",
-      accountStatement: false,
-      journalMovement: false,
-      nonFinancialCommitment: false,
-    },
-  };
-
-  // Step-based validations
+  // Step-based validation schemas
   const stepValidations = [
-    // Step 1
+    // Step 1 partial
     Yup.object({
       accountHolderName: Yup.string().required(
         t("accountHolderName") + " " + t("isRequired")
@@ -88,15 +113,8 @@ export default function CertifiedBankStatementForm() {
       accountNumber: Yup.number()
         .typeError(t("accountNumber") + " " + t("mustBeNumber"))
         .required(t("accountNumber") + " " + t("isRequired")),
-
-      // serviceRequests can be partially validated. For example, you can require at least one to be true, if business logic requires it.
-      // We'll skip for brevity. Example:
-      // serviceRequests: Yup.object().test("at-least-one", "Select at least one service", (value) => {
-      //   return Object.values(value || {}).some(val => val === true);
-      // }),
     }),
-
-    // Step 2
+    // Step 2 partial
     Yup.object({
       oldAccountNumber: Yup.number()
         .typeError(t("oldAccountNumber") + " " + t("mustBeNumber"))
@@ -104,28 +122,23 @@ export default function CertifiedBankStatementForm() {
       newAccountNumber: Yup.number()
         .typeError(t("newAccountNumber") + " " + t("mustBeNumber"))
         .required(t("newAccountNumber") + " " + t("isRequired")),
-      // statementRequest can also have partial validations, if needed
     }),
   ];
 
-  async function handleSubmit(
-    values: CertifiedBankStatementRequest,
-    { resetForm, setSubmitting }: FormikHelpers<CertifiedBankStatementRequest>
+  // Final submit => pass up
+  async function handleFinalSubmit(
+    values: CertifiedBankStatementRequestWithID,
+    { setSubmitting }: FormikHelpers<CertifiedBankStatementRequestWithID>
   ) {
-    console.log("Certified Bank Statement Form Submitted =>", values);
-    // simulate API
-    setTimeout(() => {
-      alert("Certified Bank Statement form submitted successfully!");
-      resetForm();
-      setSubmitting(false);
-    }, 1000);
+    onSubmit(values);
+    setSubmitting(false);
   }
 
   return (
     <div className="w-full p-4 bg-gray-50">
       <Formik
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
+        initialValues={mergedValues}
+        onSubmit={handleFinalSubmit}
         validationSchema={Yup.object({})}
         validateOnBlur
         validateOnChange={false}
@@ -159,7 +172,7 @@ export default function CertifiedBankStatementForm() {
 
           return (
             <Form>
-              <TabsWizard
+              <TabsWizard<CertifiedBankStatementRequestWithID>
                 steps={steps}
                 formik={formik}
                 onSubmit={() => formik.handleSubmit()}

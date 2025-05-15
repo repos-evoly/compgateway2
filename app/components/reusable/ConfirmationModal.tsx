@@ -1,25 +1,55 @@
-import React from "react";
-import { useFormikContext } from "formik";
-import { useTranslations } from "next-intl";
-import { ConfirmationModalProps, InternalFormValues } from "@/types"; // Adjust path as necessary
-import { FaPrint, FaTimes } from "react-icons/fa";
-import SubmitButton from "@/app/components/FormUI/SubmitButton"; // Adjust path as necessary
-import { FaCheck } from "react-icons/fa";
+"use client";
 
-const ConfirmationModal = <T extends Record<string, unknown>>({
+import React, { useState } from "react";
+import { useTranslations } from "next-intl";
+import { FaPrint, FaTimes, FaCheck, FaSpinner } from "react-icons/fa";
+
+/** Optional type for each metadata object. Extend if needed. */
+type FieldMetadata = {
+  label?: string;
+  // Add other properties if your metadata includes them
+};
+
+type ReusableConfirmationModalProps<T extends Record<string, unknown>> = {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm?: () => Promise<void> | void; // We'll call this when user presses "Submit"
+  /** If your metadata has different structure, adjust FieldMetadata as needed. */
+  metadata: Record<string, FieldMetadata>;
+  formData: T; // The data to display in the modal
+  excludedFields?: string[];
+  /** Currently unused in this component, but typed to avoid `any`. */
+  additionalData?: Record<string, unknown>;
+};
+
+function ConfirmationModal<T extends Record<string, unknown>>({
   isOpen,
   onClose,
+  onConfirm,
   metadata,
-  additionalData,
-  excludedFields = [], // Optional prop to exclude fields
-}: ConfirmationModalProps<T> & { excludedFields?: string[] }) => {
-  const { values } = useFormikContext<InternalFormValues>();
+  formData,
+  excludedFields = [],
+}: ReusableConfirmationModalProps<T>) {
   const t = useTranslations("confirmationModal");
 
-  console.log("Values received in ConfirmationModal:", values);
-  console.log("Additional data:", additionalData);
+  // Local loading state for the "submit" button
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
+
+  /**
+   * Called when user clicks "Submit" => set loading => run onConfirm => revert
+   */
+  const handleSubmitClick = async () => {
+    if (!onConfirm) return; // if there's no callback, do nothing
+    try {
+      setIsSubmitting(true);
+      // If onConfirm is async => await it
+      await onConfirm();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
@@ -40,12 +70,11 @@ const ConfirmationModal = <T extends Record<string, unknown>>({
 
         {/* Scrollable Content */}
         <div className="p-6">
-          {/* Form Values */}
-          {Object.keys(values as InternalFormValues)
-            .filter((fieldName) => !excludedFields.includes(fieldName)) // Exclude fields
+          {Object.keys(formData)
+            .filter((fieldName) => !excludedFields.includes(fieldName))
             .map((fieldName) => {
+              const fieldValue = formData[fieldName];
               const fieldMeta = metadata[fieldName] || {};
-              const fieldType = fieldMeta.type || "text";
               const fieldLabel = fieldMeta.label || fieldName;
 
               return (
@@ -53,60 +82,11 @@ const ConfirmationModal = <T extends Record<string, unknown>>({
                   <label className="text-sm font-medium text-gray-700 mb-1">
                     {fieldLabel}
                   </label>
-                  {fieldType === "checkbox" ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={
-                          !!values[fieldName as keyof InternalFormValues]
-                        }
-                        disabled
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                      />
-                      <span>
-                        {values[fieldName as keyof InternalFormValues]
-                          ? "Yes"
-                          : "No"}
-                      </span>
-                    </div>
-                  ) : fieldType === "select" || fieldType === "radio" ? (
-                    <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
-                      {fieldMeta.options?.find(
-                        (opt) =>
-                          opt.value ===
-                          values[fieldName as keyof InternalFormValues]
-                      )?.label || "—"}
-                    </div>
-                  ) : fieldType === "date" ? (
-                    <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
-                      {values[fieldName as keyof InternalFormValues] || "—"}
-                    </div>
-                  ) : fieldType === "multiselect" ? (
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        values[fieldName as keyof InternalFormValues]
-                          ?.toString()
-                          .split(",") || []
-                      ).map((selectedValue) => (
-                        <span
-                          key={selectedValue}
-                          className="inline-block bg-gray-200 px-2 py-1 rounded"
-                        >
-                          {
-                            fieldMeta.options?.find(
-                              (opt) => opt.value.toString() === selectedValue
-                            )?.label
-                          }
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
-                      {fieldMeta.value ||
-                        values[fieldName as keyof InternalFormValues] ||
-                        "—"}
-                    </div>
-                  )}
+                  <div className="p-2 border border-gray-300 rounded-md bg-gray-100">
+                    {fieldValue !== undefined && fieldValue !== null
+                      ? String(fieldValue)
+                      : "—"}
+                  </div>
                 </div>
               );
             })}
@@ -114,12 +94,29 @@ const ConfirmationModal = <T extends Record<string, unknown>>({
 
         {/* Footer Buttons */}
         <div className="flex justify-center gap-4 mt-6 mb-4">
-          <SubmitButton
-            title={t("submit")}
-            Icon={FaCheck}
-            color="info-dark"
-            fullWidth={false}
-          />
+          {/* "Confirm" button => calls onConfirm => shows spinner if isSubmitting */}
+          <button
+            type="button"
+            onClick={handleSubmitClick}
+            disabled={isSubmitting}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 bg-info-dark hover:bg-opacity-90 text-white ${
+              isSubmitting ? "cursor-not-allowed opacity-90" : ""
+            }`}
+          >
+            {isSubmitting ? (
+              <>
+                <FaSpinner className="animate-spin h-5 w-5" />
+                <span>{t("submitting")}</span>
+              </>
+            ) : (
+              <>
+                {t("submit")}
+                <FaCheck className="h-5 w-5" />
+              </>
+            )}
+          </button>
+
+          {/* Print Button */}
           <button
             type="button"
             className="flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 bg-warning-light hover:bg-opacity-90 text-white"
@@ -131,6 +128,6 @@ const ConfirmationModal = <T extends Record<string, unknown>>({
       </div>
     </div>
   );
-};
+}
 
 export default ConfirmationModal;

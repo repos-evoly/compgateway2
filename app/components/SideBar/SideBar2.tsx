@@ -86,22 +86,35 @@ const Sidebar = () => {
     window.location.assign(newPath);
   };
 
+  // ----------------------
+  // LOGOUT HANDLER
+  // ----------------------
+  function handleLogout() {
+    // Remove cookies by setting Max-Age=0 or expires in the past
+    document.cookie = "accessToken=; max-age=0; path=/;";
+    document.cookie = "refreshToken=; max-age=0; path=/;";
+    document.cookie = "kycToken=; max-age=0; path=/;";
+
+    // Refresh the page (or redirect, up to you)
+    window.location.reload();
+  }
+
   // Mobile menu button (hamburger / X)
-  const mobileMenuButton = (
-    <button
-      onClick={toggleSidebar}
-      className={`md:hidden fixed z-50 top-4 ${
-        isRtl ? "right-4" : "left-4"
-      } bg-secondary-dark p-2 rounded-md text-white`}
-      aria-label="Toggle menu"
-    >
-      {mobileMenuOpen ? (
-        <FaTimes className="w-5 h-5" />
-      ) : (
-        <FaBars className="w-5 h-5" />
-      )}
-    </button>
-  );
+  // const mobileMenuButton = (
+  //   <button
+  //     onClick={toggleSidebar}
+  //     className={`md:hidden fixed z-50 top-4 ${
+  //       isRtl ? "right-4" : "left-4"
+  //     } bg-secondary-dark p-2 rounded-md text-white`}
+  //     aria-label="Toggle menu"
+  //   >
+  //     {mobileMenuOpen ? (
+  //       <FaTimes className="w-5 h-5" />
+  //     ) : (
+  //       <FaBars className="w-5 h-5" />
+  //     )}
+  //   </button>
+  // );
 
   // Desktop sidebar
   const desktopSidebar = (
@@ -134,19 +147,48 @@ const Sidebar = () => {
 
       {/* Sidebar Items */}
       <nav className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
-        {sidebarItems.map((item, idx) => (
-          <div key={`sidebar-item-${idx}`}>
-            <LinkItem
-              item={item}
-              t={t}
-              sidebarOpen={sidebarOpen}
-              submenuOpen={submenuOpen}
-              toggleSubmenu={toggleSubmenu}
-              currentLocale={currentLocale}
-              toggleLocale={item.isLocaleToggle ? toggleLocale : undefined}
-            />
-          </div>
-        ))}
+        {sidebarItems.map((item, idx) => {
+          if (item.label === "logout") {
+            // Render a custom button for logout
+            return (
+              <div key={`sidebar-item-${idx}`} className="py-1">
+                <button
+                  onClick={handleLogout}
+                  className={`
+                    flex items-center gap-2 w-full py-2 px-3 rounded-md 
+                    text-sm font-medium text-gray-300 hover:text-white 
+                    hover:bg-secondary-light transition-colors
+                  `}
+                >
+                  {/* item.icon can be a React component function or null */}
+                  {item.icon && <item.icon className="w-4 h-4" />}
+                  <span
+                    className={`whitespace-nowrap ${
+                      sidebarOpen ? "opacity-100" : "opacity-0 invisible w-0"
+                    } transition-all duration-300`}
+                  >
+                    {t(item.label)}
+                  </span>
+                </button>
+              </div>
+            );
+          } else {
+            // Normal link item
+            return (
+              <div key={`sidebar-item-${idx}`}>
+                <LinkItem
+                  item={item}
+                  t={t}
+                  sidebarOpen={sidebarOpen}
+                  submenuOpen={submenuOpen}
+                  toggleSubmenu={toggleSubmenu}
+                  currentLocale={currentLocale}
+                  toggleLocale={item.isLocaleToggle ? toggleLocale : undefined}
+                />
+              </div>
+            );
+          }
+        })}
       </nav>
     </div>
   );
@@ -180,19 +222,41 @@ const Sidebar = () => {
 
       {/* Sidebar Items */}
       <nav className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
-        {sidebarItems.map((item, idx) => (
-          <div key={`mobile-sidebar-item-${idx}`}>
-            <LinkItem
-              item={item}
-              t={t}
-              sidebarOpen={true}
-              submenuOpen={submenuOpen}
-              toggleSubmenu={toggleSubmenu}
-              currentLocale={currentLocale}
-              toggleLocale={item.isLocaleToggle ? toggleLocale : undefined}
-            />
-          </div>
-        ))}
+        {sidebarItems.map((item, idx) => {
+          if (item.label === "logout") {
+            // Custom button for logout
+            return (
+              <div key={`mobile-sidebar-item-${idx}`} className="py-1">
+                <button
+                  onClick={handleLogout}
+                  className={`
+                    flex items-center gap-2 w-full py-2 px-3 rounded-md 
+                    text-sm font-medium text-gray-300 hover:text-white 
+                    hover:bg-secondary-light transition-colors
+                  `}
+                >
+                  {item.icon && <item.icon className="w-4 h-4" />}
+                  <span className="whitespace-nowrap">{t(item.label)}</span>
+                </button>
+              </div>
+            );
+          } else {
+            // Normal link item
+            return (
+              <div key={`mobile-sidebar-item-${idx}`}>
+                <LinkItem
+                  item={item}
+                  t={t}
+                  sidebarOpen={true}
+                  submenuOpen={submenuOpen}
+                  toggleSubmenu={toggleSubmenu}
+                  currentLocale={currentLocale}
+                  toggleLocale={item.isLocaleToggle ? toggleLocale : undefined}
+                />
+              </div>
+            );
+          }
+        })}
       </nav>
     </div>
   );
@@ -208,7 +272,21 @@ const Sidebar = () => {
   return (
     <>
       {/* Mobile Burger Button */}
-      {mobileView && mobileMenuButton}
+      {mobileView && (
+        <button
+          onClick={toggleSidebar}
+          className={`md:hidden fixed z-50 top-4 ${
+            isRtl ? "right-4" : "left-4"
+          } bg-secondary-dark p-2 rounded-md text-white`}
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? (
+            <FaTimes className="w-5 h-5" />
+          ) : (
+            <FaBars className="w-5 h-5" />
+          )}
+        </button>
+      )}
       {mobileView && mobileOverlay}
 
       {/* Choose which sidebar to render */}

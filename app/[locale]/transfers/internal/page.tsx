@@ -1,59 +1,83 @@
 "use client";
 
-import React, { useState } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import React, { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import FormTypeSelect from "./components/FormTypeSelect";
 import InternalForm from "./components/InternalForm";
 import BetweenForm from "./components/BetweenForm";
+import { TransfersApiResponse } from "./types";
 
-// Data & columns
-import {
-  dataEn,
-  dataAr,
-  columnsEn,
-  columnsAr,
-  dropdownOptions,
-} from "./components/data";
-import { InternalFormValues } from "./types";
+// The new API function
+import { getTransfers } from "./services";
 
 const Page = () => {
-  const locale = useLocale();
   const t = useTranslations("internalTransferForm");
 
-  // locale-based data
-  const data = locale === "ar" ? dataAr : dataEn;
-  const columns = locale === "ar" ? columnsAr : columnsEn;
+  // Table/pagination states
+  const [data, setData] = useState<TransfersApiResponse["data"]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const limit = 10; // or whichever page size
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Convert your dropdownOptions (string[]) to array of { label, value } objects
-  const refinedDropdownOptions = dropdownOptions.map((opt) => ({
-    label: opt,
-    value: opt,
-  }));
-
-  // State for showing the add/edit form
+  // Show/hide form
   const [showForm, setShowForm] = useState(false);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const [formType, setFormType] = useState("internal");
 
-  // Searching & dropdown (just dummy handlers)
-  const handleSearch = (val: string) => console.log("Search:", val);
-  const handleDropdownSelect = (val: string) => console.log("Dropdown:", val);
+  // We'll create a function to fetch data
+  const fetchTransfers = useCallback(async () => {
+    try {
+      const result = await getTransfers(currentPage, limit, searchTerm);
+      setData(result.data);
+      setTotalPages(result.totalPages);
+    } catch (err) {
+      console.error("Failed to fetch transfers:", err);
+    }
+  }, [currentPage, limit, searchTerm]);
+
+  // On mount / whenever page or searchTerm changes => fetch data
+  useEffect(() => {
+    fetchTransfers();
+  }, [fetchTransfers]);
+
+  // columns => minimal example
+  const columns = [
+    { key: "id", label: "ID" },
+    { key: "categoryName", label: "Category" },
+    { key: "fromAccount", label: "From" },
+    { key: "toAccount", label: "To" },
+    { key: "amount", label: "Amount" },
+    { key: "status", label: "Status" },
+    { key: "requestedAt", label: "RequestedAt" },
+  ];
+
+  // Searching & dropdown
+  const handleSearch = (val: string) => {
+    setSearchTerm(val);
+    setCurrentPage(1);
+  };
+  const handleDropdownSelect = (val: string) => {
+    console.log("Dropdown:", val);
+  };
 
   // Show/hide form
   const handleAddClick = () => {
     setSelectedRowIndex(null);
-    setShowForm(true); // Because selectedRowIndex === null => new record
+    setShowForm(true);
   };
-  const handleFormClose = () => setShowForm(false);
-
-  // Submitting the form
-  const handleFormSubmit = (formValues: InternalFormValues) => {
-    console.log("Submitted Data Locally:", formValues, "FormType:", formType);
-    alert("Form submitted locally!");
+  const handleFormClose = () => {
     setShowForm(false);
-    setSelectedRowIndex(null);
+  };
+
+  // Called after the transfer is successfully created in InternalForm
+  const handleTransferCreated = () => {
+    // Hide form
+    setShowForm(false);
+    // Re-fetch data
+    fetchTransfers();
   };
 
   return (
@@ -62,16 +86,21 @@ const Page = () => {
         <CrudDataGrid
           data={data}
           columns={columns}
+          // pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+          // Searching
           showSearchBar
+          showSearchInput
           onSearch={handleSearch}
+          // Example dropdown
+          showDropdown
+          dropdownOptions={[{ label: "Category", value: "categoryName" }]}
           onDropdownSelect={handleDropdownSelect}
-          dropdownOptions={refinedDropdownOptions}
+          // Add button
           showAddButton
           onAddClick={handleAddClick}
-          // Provide pagination props
-          totalPages={1}
-          currentPage={1}
-          onPageChange={() => {}}
         />
       ) : (
         <div className="bg-white rounded">
@@ -89,13 +118,11 @@ const Page = () => {
             />
           </div>
 
-          <div className="">
+          <div>
             {formType === "internal" ? (
               <InternalForm
-                initialData={
-                  selectedRowIndex !== null ? data[selectedRowIndex] : {}
-                }
-                onSubmit={handleFormSubmit}
+                initialData={selectedRowIndex !== null ? {} : {}}
+                onSuccess={handleTransferCreated}
               />
             ) : (
               <BetweenForm />

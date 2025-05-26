@@ -21,6 +21,13 @@ import { BiDollarCircle, BiUpload, BiTransferAlt } from "react-icons/bi"; // New
 
 export const sidebarItems = [
   {
+    id: 31,
+    label: "dashboard",
+    path: "/dashboard",
+    icon: FaCog,
+    children: [],
+  },
+  {
     id: 1,
     label: "statementOfAccount",
     path: "/statement-of-account",

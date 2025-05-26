@@ -8,7 +8,7 @@ import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import { FaPaperPlane, FaUser } from "react-icons/fa";
+import { FaTimes, FaUser } from "react-icons/fa";
 
 import Table from "@/app/components/forms/CBLForm/Table";
 import InfoBox from "@/app/components/forms/CBLForm/InfoBox";
@@ -17,6 +17,7 @@ import { getColumns, fields, initialValues as defaultVals } from "../data";
 import { CBLFormProps, TCBLValues } from "../types";
 
 import { addCblRequest } from "../service";
+import CancelButton from "@/app/components/FormUI/CancelButton";
 
 const CBLForm: React.FC<CBLFormProps> = ({
   initialValues,
@@ -193,23 +194,22 @@ const CBLForm: React.FC<CBLFormProps> = ({
           </div>
 
           {/* Buttons */}
-          <div className="px-6 pb-6 flex gap-2">
+          <div className="px-6 pb-6 flex justify-center items-center gap-2">
             <SubmitButton
               title="Submit"
-              Icon={FaPaperPlane}
               color="info-dark"
-              fullWidth
-              // Disable if isSubmitting
+              // Icon defaults to FaPaperPlane now, so no need to pass Icon
+              fullWidth={false}
               disabled={isSubmitting}
             />
             {onCancel && (
-              <button
-                type="button"
+              <CancelButton
+                title="Cancel"
+                Icon={FaTimes}
                 onClick={onCancel}
-                className="px-4 py-2 bg-gray-300 text-black rounded"
-              >
-                Cancel
-              </button>
+                disabled={isSubmitting}
+                fullWidth={false}
+              />
             )}
           </div>
         </Form>

@@ -309,6 +309,8 @@ export type DetailedUser = {
   permissions: string[];
   accounts: string[];
   servicePackageId: number;
+  companyStatus?: string;
+  companyStatusMessage?: string;
 
   /** The 'role' object from the API. */
   role: {

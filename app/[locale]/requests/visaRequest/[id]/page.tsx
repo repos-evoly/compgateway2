@@ -1,49 +1,68 @@
+// app/visarequests/[id]/page.tsx
 "use client";
 
-import React from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
-import VisaWizardForm, {
-  VisaRequestFormValues,
-} from "../components/VisaRequest";
+import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 
-export default function VisaRequestDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const searchParams = useSearchParams();
+import { getVisaRequestById } from "../services";
+import type { VisaRequestApiItem, VisaRequestFormValues } from "../types";
+import VisaWizardForm from "../components/VisaRequest";
 
-  // e.g. "1" or "2"
-  const rowId = params.id;
-  const encodedRow = searchParams.get("row");
+export default function SingleVisaRequestPage() {
+  const { id } = useParams(); // e.g. "123"
+  const numericId = Number(id);
 
-  let rowData: VisaRequestFormValues | null = null;
-  if (encodedRow) {
-    try {
-      rowData = JSON.parse(decodeURIComponent(encodedRow));
-    } catch (err) {
-      console.error("Failed to parse row data:", err);
-    }
+  // We'll store the fetched single item in state
+  const [requestData, setRequestData] = useState<VisaRequestApiItem | null>(
+    null
+  );
+
+  // Fetch on mount (or if `id` changes)
+  useEffect(() => {
+    if (Number.isNaN(numericId)) return; // or handle invalid id
+    getVisaRequestById(numericId)
+      .then((data) => {
+        setRequestData(data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch single visa request:", err);
+      });
+  }, [numericId]);
+
+  if (!requestData) {
+    return <div>Loading...</div>;
   }
 
-  if (!rowData) {
-    return (
-      <div className="p-4">
-        <h2>No row data found in query param!</h2>
-      </div>
-    );
-  }
+  // Convert the fetched item to the shape for our form
+  const initialValues: VisaRequestFormValues = {
+    branch: requestData.branch,
+    date: requestData.date,
+    accountHolderName: requestData.accountHolderName,
+    accountNumber: requestData.accountNumber,
+    nationalId: requestData.nationalId,
+    phoneNumberLinkedToNationalId: requestData.phoneNumberLinkedToNationalId,
+    cbl: requestData.cbl,
+    cardMovementApproval: requestData.cardMovementApproval,
+    cardUsingAcknowledgment: requestData.cardUsingAcknowledgment,
+    foreignAmount: requestData.foreignAmount,
+    localAmount: requestData.localAmount,
+    pldedge: requestData.pldedge,
+  };
 
-  // Final submit => just log or do an API call, then navigate back
-  function handleSubmit(values: VisaRequestFormValues) {
-    console.log(`Editing Visa row #${rowId}`, values);
-    alert("Visa request updated! (dummy example)");
-    router.push("/requests/visarequest");
+  // If you want to handle "edit" or "update" logic, pass an onSubmit that calls
+  // an "updateVisaRequest" function. For now, we can just console.log or do nothing.
+  function handleSubmit(vals: VisaRequestFormValues) {
+    console.log("Submitted form with updated data => ", vals);
+    // Potentially call an updateVisaRequest(numericId, vals) here...
   }
 
   return (
     <div className="p-4">
-      <h2 className="text-xl mb-4">Editing Visa Request Row #{rowId}</h2>
+      <h1 className="text-xl font-semibold mb-4">
+        Visa Request Details (ID: {numericId})
+      </h1>
 
-      <VisaWizardForm initialValues={rowData} onSubmit={handleSubmit} />
+      <VisaWizardForm initialValues={initialValues} onSubmit={handleSubmit} />
     </div>
   );
 }

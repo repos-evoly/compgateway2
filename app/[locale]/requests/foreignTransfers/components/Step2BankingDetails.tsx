@@ -10,20 +10,22 @@ import { useTranslations } from "next-intl";
 /**
  * Desired row distribution:
  *
- * 1) Transfer Amount, Destination Country, Beneficiary Name
- * 2) Beneficiary Address, External Bank Name, External Bank Address
- * 3) Transfer To Account #, Transfer To Address, Account Holder Name
- * 4) Permanent Address, Purpose of Transfer (with Purpose bigger)
- * 5) Upload Documents (we will place this in a row by itself or with the disclaimer)
+ * 1) transferAmount, toCountry, beneficiaryName
+ * 2) beneficiaryAddress, externalBankName, externalBankAddress
+ * 3) transferToAccountNumber, transferToAddress, accountHolderName
+ * 4) permanentAddress, purposeOfTransfer (with Purpose bigger)
+ * 5) uploadDocuments (if used)
  */
 export function Step2BankingDetails() {
   const t = useTranslations("foreignTransfers");
-  // Based on the array order, define each row explicitly by index:
-  const row1 = [step2Inputs[0], step2Inputs[1], step2Inputs[2]]; // (0,1,2)
-  const row2 = [step2Inputs[3], step2Inputs[4], step2Inputs[5]]; // (3,4,5)
-  const row3 = [step2Inputs[6], step2Inputs[7], step2Inputs[8]]; // (6,7,8)
-  const row4 = [step2Inputs[9], step2Inputs[10]]; // (9,10) => permanentAddress, purposeOfTransfer
-  const rowUpload = [step2Inputs[11]]; // (11) => uploadDocuments
+
+  // Make sure your step2Inputs array uses the NEW field names:
+  // (transferAmount, toCountry, beneficiaryName, beneficiaryAddress, externalBankName, externalBankAddress, transferToAccountNumber, transferToAddress, accountHolderName, permanentAddress, purposeOfTransfer, uploadDocuments?)
+  const row1 = [step2Inputs[0], step2Inputs[1], step2Inputs[2]];
+  const row2 = [step2Inputs[3], step2Inputs[4], step2Inputs[5]];
+  const row3 = [step2Inputs[6], step2Inputs[7], step2Inputs[8]];
+  const row4 = [step2Inputs[9], step2Inputs[10]];
+  // const rowUpload = [step2Inputs[11]]; // if you have file uploads
 
   // Helper to render normal input vs file upload
   function renderField(field: (typeof step2Inputs)[0]) {
@@ -35,12 +37,11 @@ export function Step2BankingDetails() {
           name={field.name}
           label={t(field.label)}
           multiple={field.multiple}
-          accept=".pdf,.jpg,.png" // example accept, or pass from field
+          accept=".pdf,.jpg,.png"
         />
       );
     }
 
-    // Otherwise => FormInputIcon
     return (
       <FormInputIcon
         key={field.name}
@@ -71,7 +72,7 @@ export function Step2BankingDetails() {
         {row3.map((field) => renderField(field))}
       </div>
 
-      {/* Row 4: 2 columns -> 1fr for the first field, 2fr for the second (making purpose bigger) */}
+      {/* Row 4: 2 columns -> 1fr for the first field, 2fr for the second */}
       <div className="grid grid-cols-[1fr_2fr] gap-4">
         {row4.map((field) => renderField(field))}
       </div>
@@ -80,12 +81,6 @@ export function Step2BankingDetails() {
         <FiInfo className="text-blue-600 mt-1" />
         <p>{t("documents")}</p>
       </div>
-      {/* Row for file upload (single column or multiple columns as you want) */}
-      <div className="grid grid-cols-1">
-        {rowUpload.map((field) => renderField(field))}
-      </div>
-
-      {/* Disclaimer box */}
     </div>
   );
 }

@@ -10,10 +10,11 @@ import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import Description from "@/app/components/FormUI/Description";
 import CheckRequestTable from "../components/Table";
-import { FaPaperPlane } from "react-icons/fa";
+import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
 // We'll use the "form type," not the API type
 import { TCheckRequestFormValues } from "../types";
+import CancelButton from "@/app/components/FormUI/CancelButton";
 
 type CheckRequestFormProps = {
   initialValues?: Partial<TCheckRequestFormValues>;
@@ -163,22 +164,22 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
             {t("note")}
           </Description>
 
-          <div className="mt-6 flex gap-2">
+          <div className="mt-4 flex justify-center items-center gap-3 ">
             <SubmitButton
               title="Submit"
               Icon={FaPaperPlane}
               color="info-dark"
-              // Disable button while submitting
               disabled={submitting}
+              fullWidth={false}
             />
             {onCancel && (
-              <button
-                type="button"
+              <CancelButton
+                title={t("cancel")}
+                Icon={FaTimes}
                 onClick={onCancel}
-                className="px-4 py-2 bg-gray-300 text-black rounded"
-              >
-                {t("cancel")}
-              </button>
+                disabled={submitting}
+                fullWidth={false}
+              />
             )}
           </div>
         </Form>

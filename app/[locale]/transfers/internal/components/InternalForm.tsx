@@ -7,8 +7,8 @@ import { useTranslations } from "next-intl";
 import { FaTrash } from "react-icons/fa";
 import { useFormikContext } from "formik";
 
-import { getCurrencies } from "@/app/[locale]/currencies/services"; // Adjust path
-import { createTransfer } from "../services"; // <-- Our new createTransfer function
+import { getCurrencies } from "@/app/[locale]/currencies/services";
+import { createTransfer } from "../services";
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import ResetButton from "@/app/components/FormUI/ResetButton";
@@ -25,18 +25,20 @@ import type {
   AdditionalData,
 } from "../types";
 
-/** Ensures 'from' and 'to' share last 3 digits */
+/**
+ * A small helper that ensures 'from' and 'to' have matching last 3 digits
+ * (matching currency codes).
+ */
 const FormValidator = () => {
   const { values, setFieldError, validateForm } =
     useFormikContext<InternalFormValues>();
-  const [isValid, setIsValid] = useState(true);
-  console.log("FormValidator =>", isValid);
+  // const [isValid, setIsValid] = useState(true);
 
   useEffect(() => {
     const validateCurrencyCodes = () => {
       const { from, to } = values;
       if (!from || !to) {
-        setIsValid(true);
+        // setIsValid(true);
         return;
       }
       // Compare last 3 digits
@@ -46,11 +48,11 @@ const FormValidator = () => {
       if (fromCurrency !== toCurrency) {
         setFieldError("from", "Currency codes must match");
         setFieldError("to", "Currency codes must match");
-        setIsValid(false);
+        // setIsValid(false);
       } else {
         // Clear errors if they match
         validateForm();
-        setIsValid(true);
+        // setIsValid(true);
       }
     };
 
@@ -60,14 +62,22 @@ const FormValidator = () => {
   return null;
 };
 
-const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
+type InternalFormExtendedProps = InternalFormProps & {
+  /** Called by the form after a successful creation so the parent can refetch. */
+  onSuccess?: () => void;
+};
+
+const InternalForm = ({
+  initialData,
+  onSuccess,
+}: InternalFormExtendedProps) => {
   const t = useTranslations("internalTransferForm");
 
   // If new => fields enabled
   const isNewRecord = !initialData || Object.keys(initialData).length === 0;
   const [fieldsDisabled, setFieldsDisabled] = useState(!isNewRecord);
 
-  // Modal
+  // Confirmation Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState<{
     formikData?: InternalFormValues;
@@ -132,12 +142,13 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
     description: Yup.string().required(t("requiredDescription")),
   });
 
-  // Called by Continue => store data => open modal
+  // Called by "Continue" => fill modalData => show modal
   const handleModalData = (formikData: InternalFormValues) => {
     let fromName: string | undefined;
     let toName: string | undefined;
     let fromBalance: string | undefined;
 
+    // Example: if certain account === "test"
     if (formikData.from === "test") {
       fromName = "عصمت العياش";
       fromBalance = "1000";
@@ -154,7 +165,7 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
   };
 
   /**
-   * Called from the modal "submit" => fetch currency => call createTransfer => log
+   * Called from the modal "Confirm" => fetch currency => create transfer => if success => onSuccess
    */
   const handleModalConfirm = async () => {
     if (!modalData?.formikData) {
@@ -164,12 +175,16 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
 
     const { from, to, value, description } = modalData.formikData;
     const currencyCode = from.slice(-3);
+    console.log("Fetching currency for code =>", currencyCode);
 
     try {
-      // get currency ID
+      // get currency ID from getCurrencies
       const response = await getCurrencies(1, 1, currencyCode, "code");
+      console.log("Received currency response =>", response);
+
       const found = response.data[0];
       const currencyId = found?.id || 0;
+      console.log("Using currencyId =>", currencyId);
 
       // final payload for /transfers
       const finalPayload = {
@@ -180,26 +195,19 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
         currencyId,
         description,
       };
+      console.log("Creating transfer with payload =>", finalPayload);
 
-      // call the new createTransfer function
+      // call createTransfer function
       const createdTransfer = await createTransfer(finalPayload);
       console.log("Created Transfer =>", createdTransfer);
 
-      // Optionally call onSubmit to keep old local logic
-      onSubmit({
-        ...modalData.formikData,
-        transactionCategoryId: 1,
-        currencyId,
-      });
+      // If successful => call parent's onSuccess() to re-fetch & hide form
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error("Error creating transfer =>", error);
-
-      // fallback
-      onSubmit({
-        ...modalData.formikData,
-        transactionCategoryId: 1,
-        currencyId: null,
-      });
+      // Optionally show an error message or modal
     }
 
     setIsModalOpen(false);
@@ -213,7 +221,7 @@ const InternalForm = ({ initialData, onSubmit }: InternalFormProps) => {
     <div className="p-6">
       <Form
         initialValues={initialValues}
-        onSubmit={onSubmit} // possibly not used, but let's keep it
+        onSubmit={() => {}}
         validationSchema={validationSchema}
         enableReinitialize
       >

@@ -1,7 +1,7 @@
 import React from "react";
 import { FiSmartphone } from "react-icons/fi";
-import QRCodeDisplay from "@/app/components/login/Qr"; // Adjust the path if needed
-import AuthHeader from "@/app/components/login/AuthHeader"; // Import the new header component
+import QRCodeDisplay from "@/app/auth/login/components/Qr"; // Adjust the path if needed
+import AuthHeader from "@/app/auth/components/AuthHeader"; // Import the new header component
 
 const QRPage = () => {
   return (

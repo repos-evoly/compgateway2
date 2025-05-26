@@ -58,7 +58,7 @@ const SubmitButton = ({
       } items-center justify-center`}
     >
       <button
-        type="submit"
+        type="button"
         onClick={handleClick}
         disabled={isButtonDisabled}
         className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${buttonClass}`}

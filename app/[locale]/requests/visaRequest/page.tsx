@@ -1,108 +1,101 @@
+// app/visarequests/page.tsx (or wherever your list page is)
+
 "use client";
 
-import React, { useState } from "react";
-import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 
-import VisaWizardForm, {
-  VisaRequestFormValues,
-} from "./components/VisaRequest";
+import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
+import { getVisaRequests, createVisaRequest } from "./services";
+import VisaWizardForm from "./components/VisaRequest";
+
+import type { VisaRequestApiItem, VisaRequestFormValues } from "./types";
 
 export default function VisaRequestListPage() {
   const t = useTranslations("visaRequest");
 
-  // 1) Dummy data with full fields, including id
-  const [data, setData] = useState<VisaRequestFormValues[]>([
-    {
-      id: 1,
-      branch: "Main Branch",
-      date: "2023-09-01",
-      accountHolderName: "John Doe",
-      accountNumber: "ACC-1001",
-      nationalId: 1234567890,
-      phoneNumberLinkedToNationalId: "0912345678",
-      cbl: "CBL123",
-      cardMovementApproval: "Yes",
-      cardUsingAcknowledgment: "Aware",
-      foreignAmount: 2000,
-      localAmount: 5000,
-      pldedge: "Agreed",
-    },
-    {
-      id: 2,
-      branch: "Downtown",
-      date: "2023-09-15",
-      accountHolderName: "Alice Smith",
-      accountNumber: "ACC-2002",
-      nationalId: 9876543210,
-      phoneNumberLinkedToNationalId: "0923456789",
-      cbl: "CBL456",
-      cardMovementApproval: "No",
-      cardUsingAcknowledgment: "Yes",
-      foreignAmount: 1000,
-      localAmount: 3000,
-      pldedge: "Signed",
-    },
-  ]);
+  // Store the fetched API items
+  const [apiData, setApiData] = useState<VisaRequestApiItem[]>([]);
 
-  /**
-   * 2) We transform each row to ensure no fields are `undefined`.
-   *    If any field is `undefined`, we convert it to `null`.
-   *    This keeps CrudDataGridProps<T> happy (T can't have `undefined`).
-   */
-  const gridData = data.map((item) => ({
-    // Spread all
-    ...item,
-    // Convert any `undefined` => `null`. Examples:
-    nationalId: item.nationalId ?? null,
-    foreignAmount: item.foreignAmount ?? null,
-    localAmount: item.localAmount ?? null,
-    // Add or convert other fields if they can be undefined as well
+  // Pagination
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const limit = 10;
+
+  // Search
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Toggle form
+  const [showForm, setShowForm] = useState<boolean>(false);
+
+  // Fetch data on mount / whenever page or search changes
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTerm]);
+
+  // 1) Fetch from API
+  async function fetchData() {
+    try {
+      const response = await getVisaRequests(currentPage, limit, searchTerm);
+      setApiData(response.data);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error("Failed to fetch visa requests:", error);
+    }
+  }
+
+  // 2) Handle "Add" => open wizard
+  function handleAddClick() {
+    setShowForm(true);
+  }
+
+  // 3) Wizard form submit => create item, re-fetch, close wizard
+  async function handleFormSubmit(values: VisaRequestFormValues) {
+    try {
+      await createVisaRequest(values);
+      await fetchData();
+      setShowForm(false);
+    } catch (err) {
+      console.error("Failed to create visa request:", err);
+    }
+  }
+
+  // 4) Prepare data for CrudDataGrid => convert any undefined to null
+  const gridData = apiData.map((item) => ({
+    id: item.id, // the grid needs an "id"
+    branch: item.branch ?? null,
+    date: item.date ?? null,
+    accountHolderName: item.accountHolderName ?? null,
   }));
 
-  // 3) Columns for the grid
+  // 5) Define columns
   const columns = [
     { key: "branch", label: t("branch") },
     { key: "date", label: t("date") },
     { key: "accountHolderName", label: t("accountHolderName") },
-    { key: "accountNumber", label: t("accountNumber") },
   ];
 
-  // Local "Add" form toggle
-  const [showForm, setShowForm] = useState(false);
-
-  // "Add" => open empty wizard
-  const handleAddClick = () => {
-    setShowForm(true);
-  };
-
-  // On wizard submit => add to local array
-  const handleFormSubmit = (values: VisaRequestFormValues) => {
-    console.log("Submitted data (ADD):", values);
-    // Generate a new id
-    const newId = data.length > 0 ? Math.max(...data.map((d) => d.id)) + 1 : 1;
-    const newRow: VisaRequestFormValues = { ...values, id: newId };
-    setData((prev) => [...prev, newRow]);
-    setShowForm(false);
-  };
-
-  // Simple pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 1;
-
+  // 6) Render
   return (
     <div className="p-4">
       {showForm ? (
-        // Render the multi-step wizard for "Add"
+        // Show wizard form
         <VisaWizardForm onSubmit={handleFormSubmit} />
       ) : (
-        // Otherwise show the grid
+        // Show data grid
         <CrudDataGrid
-          data={gridData} // Now no `undefined` values
+          data={gridData}
           columns={columns}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          showSearchBar
+          showSearchInput
+          onSearch={(term) => {
+            setSearchTerm(term);
+            setCurrentPage(1);
+          }}
           showAddButton
           onAddClick={handleAddClick}
         />

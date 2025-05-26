@@ -1,19 +1,34 @@
-import { useTranslations } from "next-intl";
+"use client";
+
 import React from "react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa";
 
-const BackButton = () => {
+type BackButtonProps = {
+  /** Optional path to go to instead of just “back” */
+  fallbackPath?: string;
+};
+
+const BackButton: React.FC<BackButtonProps> = ({ fallbackPath }) => {
   const t = useTranslations("backButton");
+  const router = useRouter();
+
   const handleBack = () => {
-    if (typeof window !== "undefined") {
-      window.location.reload();
+    if (fallbackPath) {
+      router.push(fallbackPath);
+    } else {
+      router.back();
     }
   };
+
   return (
     <button
       type="button"
-      className="flex items-center gap-2 text-white border border-white rounded px-3 mx-4 py-1 transition-all duration-300 hover:bg-warning-light hover:text-info-dark hover:border-transparent "
       onClick={handleBack}
+      className="flex items-center gap-2 text-white border border-white
+                 rounded px-3 mx-4 py-1 transition-all duration-300
+                 hover:bg-warning-light hover:text-info-dark hover:border-transparent"
     >
       <FaArrowLeft /> {t("back")}
     </button>

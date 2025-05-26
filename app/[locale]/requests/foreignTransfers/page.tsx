@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 
@@ -8,96 +8,133 @@ import ForeignTransfersForm, {
   ForeignTransfersFormValues,
 } from "./components/ForeignTransfersForm";
 
+import { getForeignTransfers, createForeignTransfer } from "./services"; 
+
 export default function ForeignTransfersListPage() {
   const t = useTranslations("foreignTransfers");
 
-  // 1) Local dummy data with full fields
-  const [data, setData] = useState<ForeignTransfersFormValues[]>([
-    {
-      id: 1,
-      toBank: "Bank A",
-      branch: "Main Branch",
-      residentSupplierName: "John Supplier",
-      residentSupplierNationality: "Libyan",
-      nonResidentSupplierPassportNumber: 9876543,
-      placeOfIssue: "Tripoli",
-      dateOfIssue: "2023-08-01",
-      nonResidentSupplierNationality: "Egyptian",
-      nonResidentAddress: "Cairo Street",
+  // We'll store the full array of foreign transfers
+  const [data, setData] = useState<ForeignTransfersFormValues[]>([]);
 
-      transferAmount: 10000,
-      toCountry: "Egypt",
-      beneficiaryName: "Ali Person",
-      beneficiaryAddress: "Somewhere in Cairo",
-      externalBankName: "Cairo Bank",
-      externalBankAddress: "Cairo Main St",
-      transferToAccountNumber: 123456789,
-      transferToAddress: "Same as above",
-      accountholderName: "Ali Person",
-      permenantAddress: "Permanent Street 1",
-      purposeOfTransfer: "Business Payment",
-    },
-    {
-      id: 2,
-      toBank: "Bank B",
-      branch: "Downtown",
-      residentSupplierName: "Alice Supplier",
-      residentSupplierNationality: "Libyan",
-      nonResidentSupplierPassportNumber: 1234567,
-      placeOfIssue: "Benghazi",
-      dateOfIssue: "2023-07-15",
-      nonResidentSupplierNationality: "Tunisian",
-      nonResidentAddress: "Tunis City",
+  // For pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-      transferAmount: 5000,
-      toCountry: "Tunisia",
-      beneficiaryName: "Tunis Person",
-      beneficiaryAddress: "Tunis Street",
-      externalBankName: "Tunis Bank",
-      externalBankAddress: "Tunis Av",
-      transferToAccountNumber: 987654321,
-      transferToAddress: "Another place",
-      accountholderName: "Tunis Person",
-      permenantAddress: "Permanent Street 2",
-      purposeOfTransfer: "Personal Payment",
-    },
-  ]);
+  // Searching
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchBy, setSearchBy] = useState("");
 
-  // 2) We transform or pass entire data so double-click has all fields
-  //    If some fields can be undefined, convert them to null so CrudDataGrid won't complain
+  // Toggle form
+  const [showForm, setShowForm] = useState(false);
+
+  // Each page => limit=10
+  const limit = 10;
+
+  // On mount or whenever page/search changes => fetch from API
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTerm, searchBy]);
+
+  async function fetchData() {
+    try {
+      const response = await getForeignTransfers(
+        currentPage,
+        limit,
+        searchTerm,
+        searchBy
+      );
+      // Transform the API data => array of ForeignTransfersFormValues
+      const mapped: ForeignTransfersFormValues[] = response.data.map(
+        (item) => ({
+          id: item.id,
+          toBank: item.toBank,
+          branch: item.branch,
+          residentSupplierName: item.residentSupplierName,
+          residentSupplierNationality: item.residentSupplierNationality,
+          nonResidentPassportNumber: Number(item.nonResidentPassportNumber),
+          placeOfIssue: item.placeOfIssue,
+          dateOfIssue: item.dateOfIssue,
+          nonResidentNationality: item.nonResidentNationality,
+          nonResidentAddress: item.nonResidentAddress,
+          transferAmount: item.transferAmount,
+          toCountry: item.toCountry,
+          beneficiaryName: item.beneficiaryName,
+          beneficiaryAddress: item.beneficiaryAddress,
+          externalBankName: item.externalBankName,
+          externalBankAddress: item.externalBankAddress,
+          transferToAccountNumber: Number(item.transferToAccountNumber),
+          transferToAddress: item.transferToAddress,
+          accountHolderName: item.accountHolderName,
+          permanentAddress: item.permanentAddress,
+          purposeOfTransfer: item.purposeOfTransfer,
+        })
+      );
+
+      setData(mapped);
+      setTotalPages(response.totalPages || 1);
+    } catch (err) {
+      console.error("Failed to fetch foreign transfers:", err);
+    }
+  }
+
+  function handleAddClick() {
+    setShowForm(true);
+  }
+
+  /**
+   * When form is submitted, call createForeignTransfer, then re-fetch the data.
+   */
+  async function handleFormSubmit(values: ForeignTransfersFormValues) {
+    try {
+      // Convert needed fields to string if your API requires them:
+      await createForeignTransfer({
+        toBank: values.toBank,
+        branch: values.branch,
+        residentSupplierName: values.residentSupplierName,
+        residentSupplierNationality: values.residentSupplierNationality,
+        nonResidentPassportNumber: values.nonResidentPassportNumber.toString(),
+        placeOfIssue: values.placeOfIssue,
+        dateOfIssue: values.dateOfIssue,
+        nonResidentNationality: values.nonResidentNationality,
+        nonResidentAddress: values.nonResidentAddress,
+        transferAmount: values.transferAmount,
+        toCountry: values.toCountry,
+        beneficiaryName: values.beneficiaryName,
+        beneficiaryAddress: values.beneficiaryAddress,
+        externalBankName: values.externalBankName,
+        externalBankAddress: values.externalBankAddress,
+        transferToAccountNumber: values.transferToAccountNumber.toString(),
+        transferToAddress: values.transferToAddress,
+        accountHolderName: values.accountHolderName,
+        permanentAddress: values.permanentAddress,
+        purposeOfTransfer: values.purposeOfTransfer,
+      });
+
+      // After successful creation, re-fetch data so new entry is shown
+      await fetchData();
+
+      // Hide the form => back to listing
+      setShowForm(false);
+    } catch (error) {
+      console.error("Failed to create foreign transfer:", error);
+    }
+  }
+
+  // We'll create a smaller "gridData" with just a few columns displayed
   const gridData = data.map((item) => ({
-    ...item,
-    // The columns we want to display in the grid
-    branch: item.branch,
-    toBank: item.toBank,
-    transferAmount: item.transferAmount,
+    id: item.id,
+    toBank: item.toBank ?? "",
+    branch: item.branch ?? "",
+    transferAmount: item.transferAmount ?? 0,
   }));
 
-  // 3) Grid columns
+  // The columns we want to show
   const columns = [
     { key: "branch", label: t("branch") },
     { key: "toBank", label: t("toBank") },
     { key: "transferAmount", label: t("transferAmount") },
   ];
-
-  // local "Add" toggle
-  const [showForm, setShowForm] = useState(false);
-
-  // On wizard submit => add new row
-  function handleFormSubmit(values: ForeignTransfersFormValues) {
-    console.log("ForeignTransfers Add =>", values);
-    // Assign a new ID
-    const newId = data.length > 0 ? Math.max(...data.map((d) => d.id)) + 1 : 1;
-    const newRow = { ...values, id: newId };
-    setData((prev) => [...prev, newRow]);
-    setShowForm(false);
-  }
-
-
-
-  // For pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 1;
 
   return (
     <div className="p-4">
@@ -107,11 +144,28 @@ export default function ForeignTransfersListPage() {
         <CrudDataGrid
           data={gridData}
           columns={columns}
-          showAddButton
-          onAddClick={() => setShowForm(true)}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          // Searching props
+          showSearchBar
+          showSearchInput
+          showDropdown
+          onSearch={(term) => {
+            setSearchTerm(term);
+            setCurrentPage(1);
+          }}
+          onDropdownSelect={(val) => {
+            setSearchBy(val);
+            setCurrentPage(1);
+          }}
+          dropdownOptions={[
+            { value: "branch", label: t("branch") },
+            { value: "toBank", label: t("toBank") },
+          ]}
+          // Show "Add" button => open form wizard
+          showAddButton
+          onAddClick={handleAddClick}
         />
       )}
     </div>

@@ -32,11 +32,12 @@ type LoginHandlerOptions = {
   router: SimpleRouter;
   onTwoFactorRequired?: () => void;
   onError?: (msg: string) => void;
+  onCompanyNotApproved?: (status: string, msg: string) => void;
 };
 
 export async function loginHandler(
   values: LoginFormValues,
-  { router, onTwoFactorRequired, onError }: LoginHandlerOptions
+  { router, onTwoFactorRequired, onError, onCompanyNotApproved }: LoginHandlerOptions
 ) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_API}/login`, {
@@ -46,9 +47,7 @@ export async function loginHandler(
     });
 
     if (!response.ok) {
-      throw new Error(
-        "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك."
-      );
+      throw new Error("فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
     }
 
     const data = await response.json();
@@ -60,28 +59,27 @@ export async function loginHandler(
     if (data.requiresTwoFactorEnable) {
       // If user must enable 2FA, redirect to /auth/qr
       router.push("/auth/qr");
+      return;
     } else if (data.requiresTwoFactor) {
       // If user must do 2FA, invoke callback or handle it
       if (onTwoFactorRequired) {
         onTwoFactorRequired();
       }
-    } else if (data.accessToken && data.refreshToken && data.kycToken) {
-      /**
-       * Now, we store them as raw tokens (no "Bearer " prefix).
-       * 
-       */
+      return;
+    }
+
+    // If we have tokens, parse them
+    if (data.accessToken && data.refreshToken && data.kycToken) {
       Cookies.set("accessToken", data.accessToken, {
-        expires: 7, // 7 days
+        expires: 7,
         secure: false,
         httpOnly: false,
       });
-
       Cookies.set("refreshToken", data.refreshToken, {
-        expires: 7, // 7 days
+        expires: 7,
         secure: false,
         httpOnly: false,
       });
-
       Cookies.set("kycToken", data.kycToken, {
         expires: 7,
         secure: false,
@@ -95,23 +93,33 @@ export async function loginHandler(
 
       const userId = parseInt(parsed.nameid, 10);
 
-
-      // 2) Use getUserById to fetch roleId, branchId, etc.
+      // 2) Fetch user data (role, companyStatus, etc.)
       const userData = await getUserById(userId);
+      console.log("User data fetched:", userData);
 
-
+      // If userData.accounts, store them
       if (userData.accounts) {
         Cookies.set("statementAccounts", JSON.stringify(userData.accounts), {
-          expires: 7, // or your desired expiration
+          expires: 7,
           secure: false,
           httpOnly: false,
         });
       }
-      // 4) Finally, navigate to the desired page
-      console.log("Reached success condition, about to push");
-      router.push("/statement-of-account");
-      console.log("After router.push call");
+
+      // 3) Check companyStatus => "approved" => go to statement-of-account
+      if (userData.companyStatus === "approved") {
+        router.push("/statement-of-account");
       } else {
+        // If not approved => call onCompanyNotApproved callback
+        if (onCompanyNotApproved) {
+          onCompanyNotApproved(
+            userData.companyStatus!,
+            userData.companyStatusMessage || "حالة الشركة غير مقبولة"
+          );
+        }
+      }
+    } else {
+      // Missing tokens => error
       throw new Error("استجابة غير متوقعة من الخادم. يرجى المحاولة مرة أخرى.");
     }
   } catch (err: unknown) {
@@ -121,7 +129,7 @@ export async function loginHandler(
       }
     } else {
       if (onError) {
-        onError("An unexpected error occurred");
+        onError("حدث خطأ غير متوقع");
       }
     }
   }

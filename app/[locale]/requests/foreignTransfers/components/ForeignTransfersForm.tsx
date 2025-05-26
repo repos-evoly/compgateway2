@@ -11,7 +11,10 @@ import { Step1TransferInfo } from "./Step1TransferInfo";
 import { Step2BankingDetails } from "./Step2BankingDetails";
 import { step1Inputs, step2Inputs } from "./formInputsArrays";
 
-// 1) The shape of all fields. Add "id" for row identification
+/**
+ * 1) The shape of all fields.
+ * Add "id" for row identification (if needed).
+ */
 export type ForeignTransfersFormValues = {
   id: number;
 
@@ -20,10 +23,10 @@ export type ForeignTransfersFormValues = {
   branch: string;
   residentSupplierName: string;
   residentSupplierNationality: string;
-  nonResidentSupplierPassportNumber: number;
+  nonResidentPassportNumber: number; // CHANGED
   placeOfIssue: string;
   dateOfIssue: string;
-  nonResidentSupplierNationality: string;
+  nonResidentNationality: string; // CHANGED
   nonResidentAddress: string;
 
   // Step 2 fields
@@ -35,20 +38,21 @@ export type ForeignTransfersFormValues = {
   externalBankAddress: string;
   transferToAccountNumber: number;
   transferToAddress: string;
-  accountholderName: string;
-  permenantAddress: string;
+  accountHolderName: string; // CHANGED
+  permanentAddress: string; // CHANGED
   purposeOfTransfer: string;
-  //  uploadDocuments?: File[]; // example if needed
 };
 
-// 2) Props for the wizard.
-//    `initialValues` is partial => merges with defaults.
+/**
+ * 2) Props for the wizard.
+ *    `initialValues` is partial => merges with defaults.
+ */
 type ForeignTransfersFormProps = {
   initialValues?: Partial<ForeignTransfersFormValues>;
   onSubmit: (values: ForeignTransfersFormValues) => void;
 };
 
-// 3) Default/empty fields for "Add" scenario
+/** 3) Default/empty fields for "Add" scenario */
 const defaultValues: ForeignTransfersFormValues = {
   id: 0,
 
@@ -56,10 +60,10 @@ const defaultValues: ForeignTransfersFormValues = {
   branch: "",
   residentSupplierName: "",
   residentSupplierNationality: "",
-  nonResidentSupplierPassportNumber: 0,
+  nonResidentPassportNumber: 0, // CHANGED
   placeOfIssue: "",
   dateOfIssue: "",
-  nonResidentSupplierNationality: "",
+  nonResidentNationality: "", // CHANGED
   nonResidentAddress: "",
 
   transferAmount: 0,
@@ -70,10 +74,9 @@ const defaultValues: ForeignTransfersFormValues = {
   externalBankAddress: "",
   transferToAccountNumber: 0,
   transferToAddress: "",
-  accountholderName: "",
-  permenantAddress: "",
+  accountHolderName: "", // CHANGED
+  permanentAddress: "", // CHANGED
   purposeOfTransfer: "",
-  // uploadDocuments: [],
 };
 
 export default function ForeignTransfersForm({
@@ -117,12 +120,12 @@ export default function ForeignTransfersForm({
       toBank: Yup.string().required(t("toBank") + " " + t("isRequired")),
       // ... fill out other fields you want for Step1
     }),
-    // Step 2 partial
+    // Step 2 partial schema
     Yup.object({
       transferAmount: Yup.number().required(
         t("transferAmount") + " " + t("isRequired")
       ),
-      // ... fill out other step2 validations
+      // ... fill out other fields for Step2
     }),
   ];
 

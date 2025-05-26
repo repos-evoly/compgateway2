@@ -4,9 +4,9 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import RTGSForm, { TRTGSFormValues } from "../components/RTGSForm";
+import RTGSForm from "../components/RTGSForm";
 import { getRtgsRequestById } from "../services";
-import { TRTGSValues } from "../types";
+import { TRTGSFormValues, TRTGSValues } from "../types";
 
 /**
  * RTGS Detail page => /rtgs/[id]

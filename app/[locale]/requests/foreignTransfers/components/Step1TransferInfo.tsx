@@ -11,12 +11,18 @@ import { useTranslations } from "next-intl";
  */
 export function Step1TransferInfo() {
   const t = useTranslations("foreignTransfers");
+
   // For convenience, reference each field by index
-  const row1 = [step1Inputs[0], step1Inputs[1], step1Inputs[2]]; // toBank, branch, residentSupplierName
+  // Make sure your step1Inputs array uses the NEW field names:
+  // (toBank, branch, residentSupplierName, residentSupplierNationality, nonResidentPassportNumber, placeOfIssue, dateOfIssue, nonResidentNationality, nonResidentAddress)
+  const row1 = [step1Inputs[0], step1Inputs[1], step1Inputs[2]];
+  // e.g. toBank, branch, residentSupplierName
+
   const row2 = [step1Inputs[3], step1Inputs[4], step1Inputs[5], step1Inputs[6]];
-  // residentSupplierNationality, nonResidentSupplierPassportNumber, placeOfIssue, dateOfIssue
+  // e.g. residentSupplierNationality, nonResidentPassportNumber, placeOfIssue, dateOfIssue
+
   const row3 = [step1Inputs[7], step1Inputs[8]];
-  // nonResidentSupplierNationality, nonResidentAddress
+  // e.g. nonResidentNationality, nonResidentAddress
 
   // Helper function to render either FormInputIcon or DatePickerValue
   function renderField(field: (typeof step1Inputs)[0]) {

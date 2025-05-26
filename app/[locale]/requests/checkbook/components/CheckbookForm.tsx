@@ -9,11 +9,12 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import { FaPaperPlane } from "react-icons/fa";
+import { FaPaperPlane, FaTimes } from "react-icons/fa";
 import Description from "@/app/components/FormUI/Description";
 
 import type { TCheckbookFormValues } from "../types";
 import { createCheckbookRequest } from "../services";
+import CancelButton from "@/app/components/FormUI/CancelButton";
 
 type TCheckbookFormProps = {
   onSubmit: (newItem: TCheckbookFormValues) => void;
@@ -164,20 +165,21 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
           </Description>
 
           {/* Buttons */}
-          <div className="mt-6 flex space-x-2">
+          <div className="mt-4 flex justify-center items-center gap-3 ">
             <SubmitButton
               title={t("submit")}
               Icon={FaPaperPlane}
               color="info-dark"
               disabled={isSubmitting}
+              fullWidth={false}
             />
-            <button
-              type="button"
+            <CancelButton
+              title={t("cancel")}
               onClick={onCancel}
-              className="px-4 py-2 bg-gray-300 text-black rounded"
-            >
-              {t("cancel")}
-            </button>
+              disabled={isSubmitting}
+              fullWidth={false}
+              Icon={FaTimes}
+            />
           </div>
         </Form>
       </div>

@@ -19,27 +19,10 @@ import {
   FaDollarSign,
   FaInfoCircle,
   FaPaperPlane,
+  FaTimes,
 } from "react-icons/fa";
-
-/** Type for the RTGS form fields (no string for date fields) */
-export type TRTGSFormValues = {
-  refNum: Date;
-  date: Date;
-  paymentType: string;
-  accountNo: string;
-  applicantName: string;
-  address: string;
-  beneficiaryName: string;
-  beneficiaryAccountNo: string;
-  beneficiaryBank: string;
-  branchName: string;
-  amount: string;
-  remittanceInfo: string;
-  invoice: boolean;
-  contract: boolean;
-  claim: boolean;
-  otherDoc: boolean;
-};
+import { TRTGSFormValues } from "../types";
+import CancelButton from "@/app/components/FormUI/CancelButton";
 
 /** Props for the RTGSForm component */
 type RTGSFormProps = {
@@ -310,16 +293,20 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         ))}
 
         {/* Submit + optional Cancel */}
-        <div className="px-6 pb-6 flex gap-2">
-          <SubmitButton title="Submit" Icon={FaPaperPlane} color="info-dark" />
+        <div className="px-6 pb-6 flex justify-center items-center gap-2">
+          <SubmitButton
+            title="Submit"
+            color="info-dark"
+            Icon={FaPaperPlane}
+            fullWidth={false}
+          />
           {onCancel && (
-            <button
-              type="button"
+            <CancelButton
+              title={t("cancel")}
+              Icon={FaTimes}
               onClick={onCancel}
-              className="px-4 py-2 bg-gray-300 text-black rounded"
-            >
-              {t("cancel")}
-            </button>
+              fullWidth={false}
+            />
           )}
         </div>
       </Form>

@@ -18,7 +18,7 @@ export type InternalFormValues = {
 
 export type InternalFormProps = {
   initialData?: Partial<InternalFormValues>;
-  onSubmit: (values: InternalFormValues) => void;
+  onSubmit?: (values: InternalFormValues) => void;
 };
 
 // For the confirmation modal data
@@ -66,4 +66,25 @@ export interface TransferResponse {
   description: string;
   createdAt: string;
   updatedAt: string;
+}
+
+
+export interface TransfersApiResponse {
+  data: Array<{
+    id: number;
+    userId: number;
+    categoryName: string;
+    fromAccount: string;
+    toAccount: string;
+    amount: number;
+    currencyCode: string;
+    packageName: string;
+    status: string;
+    description: string;
+    requestedAt: string;
+  }>;
+  page: number;
+  limit: number;
+  totalPages: number;
+  totalRecords: number;
 }

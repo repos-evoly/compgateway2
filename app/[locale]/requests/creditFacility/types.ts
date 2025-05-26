@@ -83,9 +83,56 @@ export type CreditFacilityFormValues = {
     nameOfClient?: string;
 
     // check the attachemnts no upload they will be submitted in person at the bank
-
-
-
-
 }
 
+// this type is only for the request in phase 1 the above are the actual fields that will be filled in the bank
+export type CreditFacilityRequest = {
+    accountNumber: string;
+    date: string;
+    amount: number;
+    purpose: string;
+    additionalInfo: string;
+    curr: string;
+    refferenceNumber: string;
+    type: string;
+  }
+
+  export type TCreditFacility = {
+    id?: number; // optional for new records
+    accountNumber: string;
+    date: string; // e.g. "2023-10-05"
+    amount: number;
+    purpose: string;
+    additionalInfo: string;
+    curr: string;
+    refferenceNumber: string;
+    type: string;
+  };
+
+
+  export type CreditFacilityApiItem = {
+    id: number;
+    userId: number;
+    accountNumber: string;
+    date: string;
+    amount: number;
+    purpose: string;
+    additionalInfo: string;
+    curr: string;
+    referenceNumber: string;
+    type: string;
+    status: string;
+    reason: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+  
+  // The shape returned by the API
+  export type CreditFacilitiesApiResponse = {
+    data: CreditFacilityApiItem[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalRecords: number;
+  }
+  

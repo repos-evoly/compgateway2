@@ -9,7 +9,7 @@ import { getCreditFacilityById } from "../services";
 
 /**
  * Detail/Edit page for a single credit facility:
- * GET /creditfacilities/{id} -> Display in form -> onSubmit pretend update
+ * GET /creditfacilities/{id} -> Display in form -> (pretend) update
  */
 export default function CreditFacilityDetailPage() {
   const params = useParams();
@@ -81,7 +81,7 @@ export default function CreditFacilityDetailPage() {
     );
   }
 
-  // 3) On form submit => pretend update or do real update
+  // 3) On form submit => pretend update
   const handleUpdate = (updatedItem: TCreditFacility) => {
     console.log("Updated item:", updatedItem);
     alert("تم تحديث التسهيل بنجاح!");
@@ -93,13 +93,14 @@ export default function CreditFacilityDetailPage() {
     router.push("/creditfacility");
   };
 
-  // 5) Render the form with the fetched data
+  // 5) Render the form with the fetched data, in read-only mode
   return (
     <div className="p-4">
       <CreditFacilityForm
         initialData={facilityData}
         onSubmit={handleUpdate}
         onCancel={handleCancel}
+        readOnly // <--- Make the form read-only
       />
     </div>
   );

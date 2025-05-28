@@ -2,32 +2,35 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import CheckboxWrapper from "@/app/components/FormUI/CheckboxWrapper";
-import { ServicesOptions, step1StatementInputs } from "./statementInputs";
+import { step1StatementInputs, ServicesOptions } from "./statementInputs";
 
-// This array maps each ServicesOptions key to a translation label
-const allServiceOptions: { value: ServicesOptions; labelKey: string }[] = [
-  { value: "reactivateIdfaali", labelKey: "reactivateIdfaali" },
-  { value: "deactivateIdfaali", labelKey: "deactivateIdfaali" },
-  { value: "resetDigitalBankPassword", labelKey: "resetDigitalBankPassword" },
-  { value: "resendMobileBankingPin", labelKey: "resendMobileBankingPin" },
-  { value: "changePhoneNumber", labelKey: "changePhoneNumber" },
-];
+type Props = {
+  readOnly?: boolean;
+};
 
-export function Step1StatementForm() {
+export function Step1StatementForm({ readOnly = false }: Props) {
   const t = useTranslations("bankStatement");
+
+  // This array maps each ServicesOptions key to a translation label
+  const allServiceOptions: { value: ServicesOptions; labelKey: string }[] = [
+    { value: "reactivateIdfaali", labelKey: "reactivateIdfaali" },
+    { value: "deactivateIdfaali", labelKey: "deactivateIdfaali" },
+    { value: "resetDigitalBankPassword", labelKey: "resetDigitalBankPassword" },
+    { value: "resendMobileBankingPin", labelKey: "resendMobileBankingPin" },
+    { value: "changePhoneNumber", labelKey: "changePhoneNumber" },
+  ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {step1StatementInputs.map(({ name, label, icon, type }) => {
-        // If it's the serviceRequests object => render multiple CheckboxWrapper
+        // If it's the serviceRequests object => multiple checkboxes
         if (type === "serviceRequests") {
           return (
             <div key={name} className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t(label)} {/* e.g. "serviceRequests" */}
+                {t(label)}
               </label>
               <div className="border border-gray-300 rounded-md p-4">
                 {allServiceOptions.map((option) => {
@@ -37,6 +40,7 @@ export function Step1StatementForm() {
                       key={option.value}
                       name={checkboxName}
                       label={t(option.labelKey)}
+                      disabled={readOnly}
                     />
                   );
                 })}
@@ -45,7 +49,7 @@ export function Step1StatementForm() {
           );
         }
 
-        // Otherwise it's a standard text/number field => FormInputIcon
+        // Normal field => FormInputIcon
         return (
           <FormInputIcon
             key={name}
@@ -53,6 +57,7 @@ export function Step1StatementForm() {
             label={t(label)}
             startIcon={icon}
             type={type}
+            disabled={readOnly}
           />
         );
       })}

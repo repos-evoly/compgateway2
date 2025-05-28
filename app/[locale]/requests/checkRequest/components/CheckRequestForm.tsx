@@ -16,6 +16,7 @@ import { FaPaperPlane, FaTimes } from "react-icons/fa";
 import { TCheckRequestFormValues } from "../types";
 import CancelButton from "@/app/components/FormUI/CancelButton";
 
+/** Extended props to allow a readOnly mode */
 type CheckRequestFormProps = {
   initialValues?: Partial<TCheckRequestFormValues>;
   onSubmit: (
@@ -23,12 +24,15 @@ type CheckRequestFormProps = {
     helpers: FormikHelpers<TCheckRequestFormValues>
   ) => void;
   onCancel?: () => void;
+  /** If true, all inputs are disabled and submit is hidden */
+  readOnly?: boolean;
 };
 
 const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
   initialValues,
   onSubmit,
   onCancel,
+  readOnly = false, // defaults to editable
 }) => {
   const t = useTranslations("CheckRequest");
 
@@ -149,12 +153,17 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {formFields.map(({ component: FieldComp, ...props }) => (
-              <FieldComp key={props.name} {...props} />
+              <FieldComp
+                key={props.name}
+                {...props}
+                disabled={readOnly} // Disable if in read-only mode
+              />
             ))}
           </div>
 
           <div className="mt-6">
-            <CheckRequestTable />
+            {/* Pass readOnly down so row inputs are disabled */}
+            <CheckRequestTable readOnly={readOnly} />
           </div>
 
           <Description
@@ -165,13 +174,16 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
           </Description>
 
           <div className="mt-4 flex justify-center items-center gap-3 ">
-            <SubmitButton
-              title="Submit"
-              Icon={FaPaperPlane}
-              color="info-dark"
-              disabled={submitting}
-              fullWidth={false}
-            />
+            {/* Hide the submit button if read-only */}
+            {!readOnly && (
+              <SubmitButton
+                title="Submit"
+                Icon={FaPaperPlane}
+                color="info-dark"
+                disabled={submitting}
+                fullWidth={false}
+              />
+            )}
             {onCancel && (
               <CancelButton
                 title={t("cancel")}

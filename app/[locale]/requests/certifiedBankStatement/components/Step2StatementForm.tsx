@@ -3,16 +3,18 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { Field, useFormikContext } from "formik";
-import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 
+import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import {
   CertifiedBankStatementRequest,
   step2StatementInputs,
 } from "./statementInputs";
 
-// Example: For statementRequest, we might have these checkboxes
-// (like "currentAccountStatement.arabic", "currentAccountStatement.english", etc.)
-export function Step2StatementForm() {
+type Props = {
+  readOnly?: boolean;
+};
+
+export function Step2StatementForm({ readOnly = false }: Props) {
   const t = useTranslations("bankStatement");
   const { values, setFieldValue } =
     useFormikContext<CertifiedBankStatementRequest>();
@@ -21,20 +23,20 @@ export function Step2StatementForm() {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {step2StatementInputs.map(({ name, label, icon, type }) => {
         if (type === "statementRequest") {
-          // We'll show a group of checkboxes + date fields for fromDate/toDate
           const statementVal = values.statementRequest || {};
-
           return (
             <div key={name} className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t(label)} {/* e.g. "طلبات كشف الحساب" */}
+                {t(label)}
               </label>
               <div className="border border-gray-300 rounded-md p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Current Account statement (arabic/english) */}
+                {/* Current Account statement => arabic/english */}
                 <div className="flex flex-col mb-2">
                   <span className="text-sm font-semibold text-gray-700">
                     {t("currentAccountStatement")}
                   </span>
+
+                  {/* Arabic checkbox */}
                   <label className="flex items-center space-x-1 ml-2">
                     <Field
                       type="checkbox"
@@ -42,6 +44,7 @@ export function Step2StatementForm() {
                       checked={
                         statementVal.currentAccountStatement?.arabic || false
                       }
+                      disabled={readOnly}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setFieldValue(
                           "statementRequest.currentAccountStatement.arabic",
@@ -51,6 +54,8 @@ export function Step2StatementForm() {
                     />
                     <span className="text-sm text-gray-700">{t("arabic")}</span>
                   </label>
+
+                  {/* English checkbox */}
                   <label className="flex items-center space-x-1 ml-2">
                     <Field
                       type="checkbox"
@@ -58,6 +63,7 @@ export function Step2StatementForm() {
                       checked={
                         statementVal.currentAccountStatement?.english || false
                       }
+                      disabled={readOnly}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setFieldValue(
                           "statementRequest.currentAccountStatement.english",
@@ -77,6 +83,7 @@ export function Step2StatementForm() {
                     type="checkbox"
                     name="statementRequest.visaAccountStatement"
                     checked={statementVal.visaAccountStatement || false}
+                    disabled={readOnly}
                     onChange={() =>
                       setFieldValue(
                         "statementRequest.visaAccountStatement",
@@ -89,7 +96,7 @@ export function Step2StatementForm() {
                   </span>
                 </label>
 
-                {/* fromDate, toDate */}
+                {/* fromDate, toDate => disable if readOnly */}
                 <div className="flex flex-col">
                   <label className="text-sm text-gray-700 mb-1">
                     {t("fromDate")}
@@ -97,6 +104,7 @@ export function Step2StatementForm() {
                   <Field
                     type="date"
                     name="statementRequest.fromDate"
+                    disabled={readOnly}
                     className="w-full p-2 border border-gray-300 rounded"
                   />
                 </div>
@@ -107,16 +115,18 @@ export function Step2StatementForm() {
                   <Field
                     type="date"
                     name="statementRequest.toDate"
+                    disabled={readOnly}
                     className="w-full p-2 border border-gray-300 rounded"
                   />
                 </div>
 
-                {/* More checkboxes: accountStatement, journalMovement, nonFinancialCommitment */}
+                {/* accountStatement, journalMovement, nonFinancialCommitment */}
                 <label className="flex items-center space-x-2">
                   <Field
                     type="checkbox"
                     name="statementRequest.accountStatement"
                     checked={statementVal.accountStatement || false}
+                    disabled={readOnly}
                     onChange={() =>
                       setFieldValue(
                         "statementRequest.accountStatement",
@@ -128,12 +138,12 @@ export function Step2StatementForm() {
                     {t("accountStatement")}
                   </span>
                 </label>
-
                 <label className="flex items-center space-x-2">
                   <Field
                     type="checkbox"
                     name="statementRequest.journalMovement"
                     checked={statementVal.journalMovement || false}
+                    disabled={readOnly}
                     onChange={() =>
                       setFieldValue(
                         "statementRequest.journalMovement",
@@ -145,12 +155,12 @@ export function Step2StatementForm() {
                     {t("journalMovement")}
                   </span>
                 </label>
-
                 <label className="flex items-center space-x-2">
                   <Field
                     type="checkbox"
                     name="statementRequest.nonFinancialCommitment"
                     checked={statementVal.nonFinancialCommitment || false}
+                    disabled={readOnly}
                     onChange={() =>
                       setFieldValue(
                         "statementRequest.nonFinancialCommitment",
@@ -167,7 +177,7 @@ export function Step2StatementForm() {
           );
         }
 
-        // If normal fields (like oldAccountNumber or newAccountNumber)
+        // Normal fields => e.g. oldAccountNumber, newAccountNumber
         return (
           <FormInputIcon
             key={name}
@@ -175,6 +185,7 @@ export function Step2StatementForm() {
             label={t(label)}
             startIcon={icon}
             type={type}
+            disabled={readOnly}
           />
         );
       })}

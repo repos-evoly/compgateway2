@@ -15,6 +15,7 @@ import { MdError } from "react-icons/md";
 
 // Our new InfoBox component
 import InfoBox from "./components/InfoBox";
+import { useTranslations } from "next-intl";
 
 export default function DashboardPage(): JSX.Element {
   const [accountData, setAccountData] = useState<AccountInfo[] | null>(null);
@@ -23,6 +24,8 @@ export default function DashboardPage(): JSX.Element {
   if (loading) {
     console.log("loading", loading);
   }
+
+  const t = useTranslations("dashboard");
 
   useEffect(() => {
     (async () => {
@@ -47,7 +50,7 @@ export default function DashboardPage(): JSX.Element {
         <div className="bg-red-600 text-white p-3 rounded shadow-md">
           <div className="flex items-center mb-2">
             <MdError className="text-xl mr-2" />
-            <p className="font-bold text-sm">Failed to fetch account data:</p>
+            <p className="font-bold text-sm">{t("failedToFetchData")}</p>
           </div>
           <p className="text-sm">{error}</p>
         </div>
@@ -60,7 +63,7 @@ export default function DashboardPage(): JSX.Element {
       <div className="p-3">
         <div className="bg-info-dark text-white p-3 rounded shadow-md flex items-center">
           <FiInfo className="text-xl mr-2" />
-          <p className="font-bold text-sm">No account data found.</p>
+          <p className="font-bold text-sm">{t("noDataAvailable")}</p>
         </div>
       </div>
     );

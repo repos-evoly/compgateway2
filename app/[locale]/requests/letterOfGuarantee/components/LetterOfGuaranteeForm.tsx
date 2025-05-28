@@ -21,24 +21,29 @@ import type { TLetterOfGuarantee } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
 
+/** Props for the top-level form component */
 type Props = {
   initialData?: TLetterOfGuarantee | null; // if editing existing
   onSubmit: (vals: TLetterOfGuarantee) => void;
   onCancel: () => void;
+  /** If true, form fields are disabled and submit is hidden */
+  readOnly?: boolean;
 };
 
-/**
- * Reusable child component recognized as a valid function component
- * so that we can use Hooks without ESLint complaining.
- */
+/** Additional props for the inner Form component */
 type InnerFormProps = FormikProps<TLetterOfGuarantee> & {
   onCancel: () => void;
   initialData?: TLetterOfGuarantee | null;
   availableBalance: number | null;
   setAvailableBalance: React.Dispatch<React.SetStateAction<number | null>>;
   currencyOptions: Array<{ label: string; value: string }>;
+  readOnly?: boolean;
 };
 
+/**
+ * Reusable child component recognized as a valid function component
+ * so we can use Hooks without ESLint complaining.
+ */
 function InnerForm({
   isSubmitting,
   isValid,
@@ -50,8 +55,9 @@ function InnerForm({
   availableBalance,
   setAvailableBalance,
   currencyOptions,
+  readOnly = false,
 }: InnerFormProps) {
-  // We'll watch for changes in "accountNumber" => fetch balance
+  // Watch for changes in "accountNumber" => fetch balance
   useEffect(() => {
     if (!values.accountNumber) {
       setAvailableBalance(null);
@@ -88,53 +94,74 @@ function InnerForm({
           name="accountNumber"
           label="رقم الحساب"
           type="text"
-          // If we have a balance, show it in helper text
           helpertext={
             availableBalance != null
               ? `الرصيد المتاح: ${availableBalance.toLocaleString()}`
               : undefined
           }
+          disabled={readOnly} // <--- Disable if readOnly
         />
 
         {/* Date */}
-        <DatePickerValue name="date" label="التاريخ" />
+        <DatePickerValue name="date" label="التاريخ" disabled={readOnly} />
 
-        {/* Amount => validated in the schema */}
-        <FormInputIcon name="amount" label="المبلغ" type="number" />
+        {/* Amount */}
+        <FormInputIcon
+          name="amount"
+          label="المبلغ"
+          type="number"
+          disabled={readOnly} // <--- Disable if readOnly
+        />
 
         {/* Purpose */}
-        <FormInputIcon name="purpose" label="الغرض" type="text" />
+        <FormInputIcon
+          name="purpose"
+          label="الغرض"
+          type="text"
+          disabled={readOnly}
+        />
 
         {/* Additional Info */}
         <FormInputIcon
           name="additionalInfo"
           label="معلومات إضافية"
           type="text"
+          disabled={readOnly}
         />
 
-        {/* Currency => from getCurrencies */}
+        {/* Currency */}
         <InputSelectCombo
           name="curr"
           label="العملة"
           options={currencyOptions}
           placeholder="اختر العملة"
           width="w-full"
+          disabled={readOnly} // <--- Disable if readOnly
         />
 
         {/* Reference Number */}
-        <FormInputIcon name="refferenceNumber" label="رقم المرجع" type="text" />
+        <FormInputIcon
+          name="refferenceNumber"
+          label="رقم المرجع"
+          type="text"
+          disabled={readOnly}
+        />
       </div>
 
       {/* Buttons */}
       <div className="mt-4 flex justify-center items-center gap-3">
-        <SubmitButton
-          title={initialData ? "حفظ التغييرات" : "إضافة"}
-          color="info-dark"
-          Icon={FaPaperPlane}
-          isSubmitting={isSubmitting}
-          disabled={!isValid || !dirty || isSubmitting}
-          fullWidth={false}
-        />
+        {/* Hide Submit if readOnly */}
+        {!readOnly && (
+          <SubmitButton
+            title={initialData ? "حفظ التغييرات" : "إضافة"}
+            color="info-dark"
+            Icon={FaPaperPlane}
+            isSubmitting={isSubmitting}
+            disabled={!isValid || !dirty || isSubmitting}
+            fullWidth={false}
+          />
+        )}
+
         <CancelButton
           onClick={onCancel}
           disabled={isSubmitting}
@@ -146,10 +173,14 @@ function InnerForm({
   );
 }
 
+/**
+ * LetterOfGuaranteeForm is the main export that uses Formik
+ */
 export default function LetterOfGuaranteeForm({
   initialData,
   onSubmit,
   onCancel,
+  readOnly = false,
 }: Props) {
   // We'll fetch real currencies from the API
   const [currencyOptions, setCurrencyOptions] = useState<
@@ -175,7 +206,7 @@ export default function LetterOfGuaranteeForm({
     })();
   }, []);
 
-  // default blank form => always type="letterOfGuarantee"
+  // Default blank form => always type="letterOfGuarantee"
   const defaultValues: TLetterOfGuarantee = {
     id: undefined,
     accountNumber: "",
@@ -185,7 +216,7 @@ export default function LetterOfGuaranteeForm({
     additionalInfo: "",
     curr: "",
     refferenceNumber: "",
-    type: "letterOfGuarantee", // Hard-coded
+    type: "letterOfGuarantee",
   };
 
   // Merge incoming data => ensure type is "letterOfGuarantee"
@@ -211,12 +242,13 @@ export default function LetterOfGuaranteeForm({
     refferenceNumber: Yup.string().required("حقل رقم المرجع مطلوب"),
   });
 
+  // onSubmit => call parent's handler
   async function handleSubmit(
     values: TLetterOfGuarantee,
     { setSubmitting, resetForm }: FormikHelpers<TLetterOfGuarantee>
   ) {
     try {
-      // Final submission => type remains letterOfGuarantee
+      // Final => type remains letterOfGuarantee
       const finalVals = { ...values, type: "letterOfGuarantee" };
       onSubmit(finalVals);
       resetForm();
@@ -244,6 +276,7 @@ export default function LetterOfGuaranteeForm({
             availableBalance={availableBalance}
             setAvailableBalance={setAvailableBalance}
             currencyOptions={currencyOptions}
+            readOnly={readOnly}
           />
         )}
       </Formik>

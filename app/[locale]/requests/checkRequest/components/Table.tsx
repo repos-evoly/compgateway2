@@ -5,7 +5,12 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import { FaMoneyBillWave, FaCalculator } from "react-icons/fa";
 import { useTranslations } from "next-intl";
 
-const CheckRequestTable: React.FC = () => {
+type TCheckRequestTableProps = {
+  /** If true, inputs are disabled */
+  readOnly?: boolean;
+};
+
+const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
   const t = useTranslations("CheckRequest");
 
   return (
@@ -30,6 +35,7 @@ const CheckRequestTable: React.FC = () => {
               type="text"
               startIcon={<FaMoneyBillWave />}
               width="w-full"
+              disabled={readOnly} // Disable if readOnly
             />
           </div>
           <div className="p-4">
@@ -39,6 +45,7 @@ const CheckRequestTable: React.FC = () => {
               type="text"
               startIcon={<FaMoneyBillWave />}
               width="w-full"
+              disabled={readOnly} // Disable if readOnly
             />
           </div>
         </div>
@@ -55,6 +62,7 @@ const CheckRequestTable: React.FC = () => {
               type="text"
               startIcon={<FaMoneyBillWave />}
               width="w-full"
+              disabled={readOnly}
             />
           </div>
           <div className="p-4">
@@ -64,6 +72,7 @@ const CheckRequestTable: React.FC = () => {
               type="text"
               startIcon={<FaMoneyBillWave />}
               width="w-full"
+              disabled={readOnly}
             />
           </div>
         </div>
@@ -80,6 +89,7 @@ const CheckRequestTable: React.FC = () => {
               type="text"
               startIcon={<FaCalculator />}
               width="w-full"
+              disabled={readOnly}
             />
           </div>
           <div className="p-4">
@@ -89,6 +99,7 @@ const CheckRequestTable: React.FC = () => {
               type="text"
               startIcon={<FaCalculator />}
               width="w-full"
+              disabled={readOnly}
             />
           </div>
         </div>

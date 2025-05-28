@@ -294,6 +294,7 @@ export type User = {
  * Adjust field types (string vs. string|null, etc.) if needed.
  */
 export type DetailedUser = {
+  companyCode?: string | null;
   userId: number;
   authUserId: number;
   username: string | null;

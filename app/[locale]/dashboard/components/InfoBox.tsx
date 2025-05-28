@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import React from "react";
 import { IconType } from "react-icons";
 
@@ -25,6 +26,8 @@ export default function InfoBox({
   availableBalance,
   debitBalance,
 }: InfoBoxProps) {
+  const t = useTranslations("dashboard");
+
   return (
     <div className="bg-info-main rounded shadow-sm overflow-hidden text-sm">
       {/* Header */}
@@ -37,14 +40,14 @@ export default function InfoBox({
       <div className="p-2">
         {/* accountString */}
         <div className="mb-2 text-center">
-          <p className="text-gray-600 font-medium">accountString</p>
+          <p className="text-gray-600 font-medium">{t("accountNb")}</p>
           <p className="text-gray-800 text-base font-bold">{accountString}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           {/* availableBalance */}
           <div className="bg-white p-2 rounded shadow-sm text-center">
-            <p className="text-gray-600 font-medium">availableBalance</p>
+            <p className="text-gray-600 font-medium">{t("availableBalance")}</p>
             <p className="text-info-dark font-semibold">
               {availableBalance.toLocaleString()}
             </p>
@@ -52,7 +55,7 @@ export default function InfoBox({
 
           {/* debitBalance */}
           <div className="bg-white p-2 rounded shadow-sm text-center">
-            <p className="text-gray-600 font-medium">debitBalance</p>
+            <p className="text-gray-600 font-medium">{t("debitBalance")}</p>
             <p className="text-info-dark font-semibold">
               {debitBalance.toLocaleString()}
             </p>

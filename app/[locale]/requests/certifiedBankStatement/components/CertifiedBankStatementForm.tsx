@@ -15,11 +15,7 @@ import {
   step2StatementInputs,
 } from "./statementInputs";
 
-/**
- * Add an index signature so it matches Record<string, unknown>:
- *   interface CertifiedBankStatementRequestWithID
- *     extends CertifiedBankStatementRequest, Record<string, unknown> { ... }
- */
+// With ID
 export interface CertifiedBankStatementRequestWithID
   extends CertifiedBankStatementRequest,
     Record<string, unknown> {
@@ -28,10 +24,10 @@ export interface CertifiedBankStatementRequestWithID
 
 /** Props for the multi-step wizard form */
 type CertifiedBankStatementFormProps = {
-  /** If provided => editing; otherwise => new form with default data. */
   initialValues?: Partial<CertifiedBankStatementRequestWithID>;
-  /** Called on final submit of the wizard */
   onSubmit: (values: CertifiedBankStatementRequestWithID) => void;
+  /** If true => disable fields & hide final wizard submission. */
+  readOnly?: boolean;
 };
 
 /** Default object for "Add" scenario (no initialValues) */
@@ -63,12 +59,10 @@ const defaultValues: CertifiedBankStatementRequestWithID = {
   },
 };
 
-/**
- * Main 2-step form for CertifiedBankStatementRequest
- */
 export default function CertifiedBankStatementForm({
   initialValues,
   onSubmit,
+  readOnly = false,
 }: CertifiedBankStatementFormProps) {
   const t = useTranslations("bankStatement");
 
@@ -78,15 +72,15 @@ export default function CertifiedBankStatementForm({
     ...initialValues,
   };
 
-  // Steps array
+  // Steps
   const steps = [
     {
-      title: t("step1Title"), // e.g. "الخطوة الأولى"
-      component: <Step1StatementForm />,
+      title: t("step1Title"),
+      component: <Step1StatementForm readOnly={readOnly} />,
     },
     {
-      title: t("step2Title"), // e.g. "الخطوة الثانية"
-      component: <Step2StatementForm />,
+      title: t("step2Title"),
+      component: <Step2StatementForm readOnly={readOnly} />,
     },
   ];
 
@@ -178,6 +172,7 @@ export default function CertifiedBankStatementForm({
                 onSubmit={() => formik.handleSubmit()}
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
+                readOnly={readOnly}
               />
             </Form>
           );

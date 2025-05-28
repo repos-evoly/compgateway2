@@ -105,9 +105,14 @@ export async function loginHandler(
           httpOnly: false,
         });
       }
+      Cookies.set("companyCode", JSON.stringify(userData.companyCode), {
+        expires: 7,
+        secure: false,
+        httpOnly: false,
+      });
 
       // 3) Check companyStatus => "approved" => go to statement-of-account
-      if (userData.companyStatus === "approved") {
+      if (userData.companyStatus === "approved" ) {
         router.push("/statement-of-account");
       } else {
         // If not approved => call onCompanyNotApproved callback

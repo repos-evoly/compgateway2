@@ -1,30 +1,31 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import { step1Inputs } from "./formInputsArrays";
-import { useTranslations } from "next-intl";
+
+type Step1TransferInfoProps = {
+  readOnly?: boolean;
+};
 
 /**
- * Step 1 component => 3 lines layout
+ * Step 1 => 3 "rows" layout
  */
-export function Step1TransferInfo() {
+export function Step1TransferInfo({
+  readOnly = false,
+}: Step1TransferInfoProps) {
   const t = useTranslations("foreignTransfers");
 
-  // For convenience, reference each field by index
-  // Make sure your step1Inputs array uses the NEW field names:
-  // (toBank, branch, residentSupplierName, residentSupplierNationality, nonResidentPassportNumber, placeOfIssue, dateOfIssue, nonResidentNationality, nonResidentAddress)
+  // Make sure your step1Inputs array has these fields:
+  //   toBank, branch, residentSupplierName
+  //   residentSupplierNationality, nonResidentPassportNumber, placeOfIssue, dateOfIssue
+  //   nonResidentNationality, nonResidentAddress
   const row1 = [step1Inputs[0], step1Inputs[1], step1Inputs[2]];
-  // e.g. toBank, branch, residentSupplierName
-
   const row2 = [step1Inputs[3], step1Inputs[4], step1Inputs[5], step1Inputs[6]];
-  // e.g. residentSupplierNationality, nonResidentPassportNumber, placeOfIssue, dateOfIssue
-
   const row3 = [step1Inputs[7], step1Inputs[8]];
-  // e.g. nonResidentNationality, nonResidentAddress
 
-  // Helper function to render either FormInputIcon or DatePickerValue
   function renderField(field: (typeof step1Inputs)[0]) {
     if (field.type === "datePicker") {
       return (
@@ -32,6 +33,7 @@ export function Step1TransferInfo() {
           key={field.name}
           name={field.name}
           label={t(field.label)}
+          disabled={readOnly}
         />
       );
     }
@@ -42,25 +44,26 @@ export function Step1TransferInfo() {
         label={t(field.label)}
         type={field.type}
         startIcon={field.icon}
+        disabled={readOnly}
       />
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Row 1: 3 columns */}
+      {/* Row 1 => 3 columns */}
       <div className="grid grid-cols-3 gap-4">
-        {row1.map((field) => renderField(field))}
+        {row1.map((f) => renderField(f))}
       </div>
 
-      {/* Row 2: 4 columns */}
+      {/* Row 2 => 4 columns */}
       <div className="grid grid-cols-4 gap-4">
-        {row2.map((field) => renderField(field))}
+        {row2.map((f) => renderField(f))}
       </div>
 
-      {/* Row 3: 2 columns */}
+      {/* Row 3 => 2 columns (1fr / 2fr or custom) */}
       <div className="grid grid-cols-[1fr_2fr] gap-4">
-        {row3.map((field) => renderField(field))}
+        {row3.map((f) => renderField(f))}
       </div>
     </div>
   );

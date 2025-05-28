@@ -1,37 +1,38 @@
 "use client";
 
-import React from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-import CertifiedBankStatementForm, {
-  CertifiedBankStatementRequestWithID,
-} from "../components/CertifiedBankStatementForm";
+import CertifiedBankStatementForm from "../components/CertifiedBankStatementForm";
+import { getCertifiedBankStatementById } from "../services";
+import type { CertifiedBankStatementRequestWithID } from "../types";
 
 export default function CertifiedBankStatementDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
+  const rowId = parseInt(params.id as string, 10);
 
-  // e.g. "1" or "2"
-  const rowId = params.id;
-  const encodedRow = searchParams.get("row");
+  const [rowData, setRowData] =
+    useState<CertifiedBankStatementRequestWithID | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  let rowData: CertifiedBankStatementRequestWithID | null = null;
-  if (encodedRow) {
-    try {
-      rowData = JSON.parse(decodeURIComponent(encodedRow));
-    } catch (err) {
-      console.error("Failed to parse row data:", err);
+  useEffect(() => {
+    if (!rowId) {
+      setLoading(false);
+      return;
     }
-  }
-
-  if (!rowData) {
-    return (
-      <div className="p-4">
-        <h2>No row data found in query param!</h2>
-      </div>
-    );
-  }
+    async function fetchStatement() {
+      try {
+        const result = await getCertifiedBankStatementById(rowId);
+        setRowData(result);
+      } catch (error) {
+        console.error("Failed to fetch statement by ID:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStatement();
+  }, [rowId]);
 
   function handleSubmit(values: CertifiedBankStatementRequestWithID) {
     console.log(`Editing statement row #${rowId}`, values);
@@ -39,11 +40,25 @@ export default function CertifiedBankStatementDetailPage() {
     router.push("/requests/certifiedBankStatement");
   }
 
+  if (loading) {
+    return <div className="p-4">Loading statement data...</div>;
+  }
+
+  if (!rowData) {
+    return (
+      <div className="p-4">
+        <h2>No record found for ID {rowId}!</h2>
+      </div>
+    );
+  }
+
+  // Pass readOnly => disables inputs & hides final submit
   return (
     <div className="p-4">
       <CertifiedBankStatementForm
         initialValues={rowData}
         onSubmit={handleSubmit}
+        readOnly
       />
     </div>
   );

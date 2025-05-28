@@ -5,11 +5,12 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import CheckbookForm from "../components/CheckbookForm";
-import type { TCheckbookValues, TCheckbookFormValues } from "../types";
+import { TCheckbookValues, TCheckbookFormValues } from "../types";
 import { getCheckbookRequestById } from "../services";
 
 /**
  * Detail/Edit page for a single checkbook request.
+ * When accessed by /checkbook/[id], we show the record in read-only mode.
  */
 const CheckbookDetailPage: React.FC = () => {
   const t = useTranslations("checkForm");
@@ -68,15 +69,12 @@ const CheckbookDetailPage: React.FC = () => {
     bookContaining: checkbookData.bookContaining ?? "",
   };
 
-  // For now, let's just console.log on form submit
+  // For demonstration, do nothing special on form submit/cancel.
   const handleFormSubmit = (updatedItem: TCheckbookFormValues) => {
     console.log("Submitted updated item:", updatedItem);
-    // Later you could do an "updateCheckbookRequest(updatedItem)" if needed
   };
 
-  // For now, just go back or something if you want to cancel
   const handleFormCancel = () => {
-    // Could router.back() if desired
     console.log("Cancelled form");
   };
 
@@ -86,6 +84,7 @@ const CheckbookDetailPage: React.FC = () => {
         initialData={initialValues}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
+        readOnly={true} // <---- Make the form read-only
       />
     </div>
   );

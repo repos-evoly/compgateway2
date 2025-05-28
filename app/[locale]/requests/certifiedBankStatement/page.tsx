@@ -1,111 +1,87 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 
-import CertifiedBankStatementForm, {
-  CertifiedBankStatementRequestWithID,
-} from "./components/CertifiedBankStatementForm";
+import CertifiedBankStatementForm from "./components/CertifiedBankStatementForm";
+import { getCertifiedBankStatements } from "./services";
+import { CertifiedBankStatementRequestWithID } from "./types"; // <-- from single source
 
 export default function CertifiedBankStatementPage() {
   const t = useTranslations("bankStatement");
 
-  // 1) Local dummy data
-  const [data, setData] = useState<CertifiedBankStatementRequestWithID[]>([
-    {
-      id: 1,
-      accountHolderName: "John Doe",
-      authorizedOnTheAccountName: "Jane Doe",
-      accountNumber: 123456789,
-      serviceRequests: {
-        reactivateIdfaali: false,
-        deactivateIdfaali: false,
-        resetDigitalBankPassword: true,
-        resendMobileBankingPin: false,
-        changePhoneNumber: false,
-      },
-      oldAccountNumber: 111111,
-      newAccountNumber: 222222,
-      statementRequest: {
-        currentAccountStatement: { arabic: true, english: false },
-        visaAccountStatement: false,
-        fromDate: "2023-08-01",
-        toDate: "2023-08-15",
-        accountStatement: false,
-        journalMovement: false,
-        nonFinancialCommitment: false,
-      },
-    },
-    {
-      id: 2,
-      accountHolderName: "Alice Smith",
-      authorizedOnTheAccountName: "Jack Smith",
-      accountNumber: undefined,
-      serviceRequests: {
-        reactivateIdfaali: false,
-        deactivateIdfaali: true,
-        resetDigitalBankPassword: false,
-        resendMobileBankingPin: false,
-        changePhoneNumber: false,
-      },
-      oldAccountNumber: 333333,
-      newAccountNumber: 444444,
-      statementRequest: {
-        currentAccountStatement: { arabic: false, english: true },
-        visaAccountStatement: true,
-        fromDate: "2023-09-01",
-        toDate: "2023-09-10",
-        accountStatement: true,
-        journalMovement: true,
-        nonFinancialCommitment: false,
-      },
-    },
-  ]);
+  // State for data from API
+  const [data, setData] = useState<CertifiedBankStatementRequestWithID[]>([]);
 
-  // 2) Convert any `undefined` => `null` for CrudDataGrid
-  const gridData = data.map((row) => ({
-    ...row,
-    // If some fields can be undefined, convert them:
-    accountHolderName: row.accountHolderName ?? null,
-    accountNumber: row.accountNumber ?? null,
-  }));
+  // Pagination
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
-  // 3) Grid columns
+  // "Add" form toggle
+  const [showForm, setShowForm] = useState(false);
+
+  const limit = 10;
+
+  // Fetch data on mount / currentPage change
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await getCertifiedBankStatements({
+          page: currentPage,
+          limit,
+        });
+        // e.g. res => { data, page, limit, totalPages, ... }
+        setData(res.data);
+        setTotalPages(res.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch certified bank statements:", error);
+      }
+    }
+    fetchData();
+  }, [currentPage]);
+
+  // Grid columns => Add more fields
+  // We'll display e.g. accountHolderName, accountNumber, authorizedOnTheAccountName,
+  // plus some of statementRequest fields. Adapt as needed.
   const columns = [
     { key: "accountHolderName", label: t("accountHolderName") },
     { key: "accountNumber", label: t("accountNumber") },
+    {
+      key: "authorizedOnTheAccountName",
+      label: t("authorizedOnTheAccountName"),
+    },
+    // For statementRequest, we can show e.g. "fromDate" or "toDate"
+    {
+      key: "statementRequest.fromDate",
+      label: t("fromDate"),
+    },
+    {
+      key: "statementRequest.toDate",
+      label: t("toDate"),
+    },
   ];
-
-  // local "Add" form toggle
-  const [showForm, setShowForm] = useState(false);
 
   function handleAddClick() {
     setShowForm(true);
   }
 
-  // On wizard submit => add new row
+  // On wizard submit => local add (no POST yet)
   function handleFormSubmit(values: CertifiedBankStatementRequestWithID) {
     console.log("Submitted data =>", values);
-    // generate new ID
+    // Generate new ID, or handle it differently if your API sets ID
     const newId = data.length > 0 ? Math.max(...data.map((d) => d.id)) + 1 : 1;
-    const newRow = { ...values, id: newId };
-    setData((prev) => [...prev, newRow]);
+    setData((prev) => [...prev, { ...values, id: newId }]);
     setShowForm(false);
   }
-
-  // For pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 1;
 
   return (
     <div className="p-6">
       {showForm ? (
-        // Render the wizard with empty data => Add
         <CertifiedBankStatementForm onSubmit={handleFormSubmit} />
       ) : (
         <CrudDataGrid
-          data={gridData}
+          data={data}
           columns={columns}
           currentPage={currentPage}
           totalPages={totalPages}

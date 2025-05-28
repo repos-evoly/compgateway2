@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslations } from "next-intl";
 import React from "react";
 
@@ -6,12 +8,11 @@ const InfoBox: React.FC = () => {
   const infoBox = t.raw("infoBox"); // Retrieve the raw "infoBox" object
 
   // Separate ordered and unordered lists
-  const orderedList = Object.entries(infoBox).filter(
-    ([key]) => /^[1-9]$|^10$/.test(key) // Matches keys 1 to 10
+  const orderedList = Object.entries(infoBox).filter(([key]) =>
+    /^[1-9]$|^10$/.test(key)
   );
-
-  const unorderedList = Object.entries(infoBox).filter(
-    ([key]) => /^n[1-4]$/.test(key) // Matches keys n1 to n4
+  const unorderedList = Object.entries(infoBox).filter(([key]) =>
+    /^n[1-4]$/.test(key)
   );
 
   return (

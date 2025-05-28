@@ -1,39 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
-// import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import type { Employee, EmployeesFormPayload } from "./types";
+import type {  EmployeesFormPayload } from "./types";
 import EmployeeForm from "./components/EmployeesForm";
 
-export default function EmployeesPage() {
-  // const router = useRouter();
+// Our service
+import { getEmployees, createEmployee } from "./services";
+import type { CompanyEmployee } from "./types";
 
-  // Dummy employees array
-  const [employees] = useState<Employee[]>([
-    {
-      authUserId: 101,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@example.com",
-      phone: "+1 555-1234",
-      roleId: 1,
-    },
-    {
-      authUserId: 102,
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane.smith@example.com",
-      phone: "+1 555-5678",
-      roleId: 2,
-    },
-  ]);
+/**
+ * The main listing page for employees => now fetches from the API.
+ */
+export default function EmployeesPage() {
+  // Real employees from API
+  const [employees, setEmployees] = useState<CompanyEmployee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+
+  // On mount => fetch employees
+  useEffect(() => {
+    async function fetchAll() {
+      try {
+        const data = await getEmployees();
+        setEmployees(data);
+      } catch (err) {
+        console.error("Failed to fetch employees:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAll();
+  }, []);
+
+  if (loading) {
+    return <div className="p-4">Loading employees...</div>;
+  }
 
   // Transform for CrudDataGrid
   const rowData = employees.map((emp) => ({
-    // The grid requires a field named "id"
-    id: emp.authUserId ?? 0, // fallback if undefined
-    fullName: [emp.firstName, emp.lastName].filter(Boolean).join(" "),
+    id: emp.id, // or emp.authUserId, but your API returns 'id'
+    fullName: `${emp.firstName} ${emp.lastName}`,
     email: emp.email ?? "",
     phone: emp.phone ?? "",
     role: emp.roleId ? `Role #${emp.roleId}` : "No role",
@@ -48,30 +55,32 @@ export default function EmployeesPage() {
     { key: "role", label: "Role" },
   ];
 
-  // State to show/hide the form
-  const [showForm, setShowForm] = useState(false);
-
-  // Hide grid and show blank form
+  // For "Add" => show blank form => after submit => createEmployee => re-fetch
   const handleAddClick = () => {
     setShowForm(true);
   };
 
-  // If form is submitted, handle the new employee
-  const handleFormSubmit = (values: EmployeesFormPayload) => {
-    console.log("New Employee Submitted:", values);
-    // TODO: Call your API or do any post-submission logic
-    setShowForm(false);
+  const handleFormSubmit = async (values: EmployeesFormPayload) => {
+    try {
+      const newEmployee = await createEmployee({
+        username: values.username || "",
+        firstName: values.firstName || "",
+        lastName: values.lastName || "",
+        email: values.email || "",
+        password: values.password || "",
+        phone: values.phone || "",
+        roleId: values.roleId || 0,
+      });
+      console.log("New Employee Submitted =>", newEmployee);
+      // Optionally re-fetch the entire list or push to local state
+      setEmployees((prev) => [...prev, newEmployee]);
+    } catch (err) {
+      console.error("Failed to create employee:", err);
+    } finally {
+      setShowForm(false);
+    }
   };
 
-  // Double-click => navigate to [id] page
-  // CrudDataGrid listens for doubleClick in your custom code or use the provided "onRowDoubleClick" if it exists.
-  // For this example, we'll assume you do a rowDoubleClick => router.push...
-  // const handleRowDoubleClick = (rowId: number) => {
-  //   router.push(`/employees/${rowId}`);
-  // };
-
-  // If not showing form, we render the grid
-  // If showing form, we hide the grid and display the form only
   return (
     <div className="p-4 space-y-8">
       {!showForm && (
@@ -84,7 +93,7 @@ export default function EmployeesPage() {
           showSearchBar={false}
           showSearchInput={false}
           showDropdown={false}
-          showAddButton={true}
+          showAddButton
           onAddClick={handleAddClick}
         />
       )}

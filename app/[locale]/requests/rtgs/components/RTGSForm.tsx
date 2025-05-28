@@ -21,8 +21,9 @@ import {
   FaPaperPlane,
   FaTimes,
 } from "react-icons/fa";
-import { TRTGSFormValues } from "../types";
 import CancelButton from "@/app/components/FormUI/CancelButton";
+
+import { TRTGSFormValues } from "../types";
 
 /** Props for the RTGSForm component */
 type RTGSFormProps = {
@@ -32,6 +33,8 @@ type RTGSFormProps = {
     helpers: FormikHelpers<TRTGSFormValues>
   ) => void;
   onCancel?: () => void;
+  /** If true, form fields are disabled and the submit button is hidden */
+  readOnly?: boolean;
 };
 
 /** Validation Schema */
@@ -61,6 +64,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
   initialValues,
   onSubmit,
   onCancel,
+  readOnly = false, // defaults to editable
 }) => {
   const t = useTranslations("RTGSForm");
 
@@ -109,8 +113,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "accountNo",
             label: t("accountNb"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaUniversity />,
+            disabled: readOnly,
           },
         },
         {
@@ -118,8 +123,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "applicantName",
             label: t("name"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaUser />,
+            disabled: readOnly,
           },
         },
         {
@@ -127,8 +133,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "address",
             label: t("address"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaMapMarkerAlt />,
+            disabled: readOnly,
           },
         },
       ],
@@ -141,8 +148,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "beneficiaryName",
             label: t("benName"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaUser />,
+            disabled: readOnly,
           },
         },
         {
@@ -150,8 +158,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "beneficiaryAccountNo",
             label: t("benAccNum"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaUniversity />,
+            disabled: readOnly,
           },
         },
         {
@@ -159,8 +168,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "beneficiaryBank",
             label: t("benBank"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaBuilding />,
+            disabled: readOnly,
           },
         },
         {
@@ -168,8 +178,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "branchName",
             label: t("branch"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaMapMarkerAlt />,
+            disabled: readOnly,
           },
         },
       ],
@@ -182,8 +193,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "amount",
             label: t("amount"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaDollarSign />,
+            disabled: readOnly,
           },
         },
         {
@@ -191,8 +203,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "remittanceInfo",
             label: t("reniInfo"),
-            type: "text",
+            type: "text" as const,
             startIcon: <FaInfoCircle />,
+            disabled: readOnly,
           },
         },
       ],
@@ -202,19 +215,35 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       fields: [
         {
           component: Checkbox,
-          props: { name: "invoice", label: t("invoice") },
+          props: {
+            name: "invoice",
+            label: t("invoice"),
+            disabled: readOnly,
+          },
         },
         {
           component: Checkbox,
-          props: { name: "contract", label: t("contract") },
+          props: {
+            name: "contract",
+            label: t("contract"),
+            disabled: readOnly,
+          },
         },
         {
           component: Checkbox,
-          props: { name: "claim", label: t("claim") },
+          props: {
+            name: "claim",
+            label: t("claim"),
+            disabled: readOnly,
+          },
         },
         {
           component: Checkbox,
-          props: { name: "otherDoc", label: t("otherDoc") },
+          props: {
+            name: "otherDoc",
+            label: t("otherDoc"),
+            disabled: readOnly,
+          },
         },
       ],
       note: t("note"),
@@ -243,6 +272,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               label={t("refNum")}
               titlePosition="side"
               textColor="text-white"
+              disabled={readOnly}
             />
           </div>
           <div className="mt-3 w-1/3">
@@ -251,6 +281,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               label={t("date")}
               titlePosition="side"
               textColor="text-white"
+              disabled={readOnly}
             />
           </div>
           <div className="mt-3 w-1/3">
@@ -263,6 +294,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               ]}
               t={t}
               flexDir={["row", "row"]}
+              disabled={readOnly}
             />
           </div>
         </div>
@@ -292,14 +324,17 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           </div>
         ))}
 
-        {/* Submit + optional Cancel */}
+        {/* Buttons */}
         <div className="px-6 pb-6 flex justify-center items-center gap-2">
-          <SubmitButton
-            title="Submit"
-            color="info-dark"
-            Icon={FaPaperPlane}
-            fullWidth={false}
-          />
+          {/* Hide the submit button if readOnly */}
+          {!readOnly && (
+            <SubmitButton
+              title="Submit"
+              color="info-dark"
+              Icon={FaPaperPlane}
+              fullWidth={false}
+            />
+          )}
           {onCancel && (
             <CancelButton
               title={t("cancel")}

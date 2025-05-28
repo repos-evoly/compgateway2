@@ -8,23 +8,24 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 interface TableProps {
   title: string; // Title of the table
   columns: string[]; // Column titles
+  /** If true => disable inputs, hide row-add/row-delete */
+  readOnly?: boolean;
 }
 
-const Table: React.FC<TableProps> = ({ title, columns }) => {
+const Table: React.FC<TableProps> = ({ title, columns, readOnly = false }) => {
   // State to manage rows in the table
-  const [rows, setRows] = useState<number[]>([0]); // Track the number of rows
+  const [rows, setRows] = useState<number[]>([0]);
 
   const t = useTranslations();
 
-  // Handler to add a new row
+  // Handler to add a new row => hide if readOnly
   const addRow = () => {
-    setRows([...rows, rows.length]);
+    setRows((prev) => [...prev, prev.length]);
   };
 
-  // Handler to delete a row
+  // Handler to delete a row => hide if readOnly
   const deleteRow = (rowIndex: number) => {
-    const updatedRows = rows.filter((_, index) => index !== rowIndex);
-    setRows(updatedRows);
+    setRows((prev) => prev.filter((_, index) => index !== rowIndex));
   };
 
   return (
@@ -32,13 +33,16 @@ const Table: React.FC<TableProps> = ({ title, columns }) => {
       {/* Title */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-center w-full">{title}</h2>
-        <button
-          onClick={addRow}
-          className="text-gray-500 hover:text-gray-700 transition-colors ml-auto"
-          aria-label="Add Row"
-        >
-          <FaPlus />
-        </button>
+        {/* Hide the + if readOnly */}
+        {!readOnly && (
+          <button
+            onClick={addRow}
+            className="text-gray-500 hover:text-gray-700 transition-colors ml-auto"
+            aria-label="Add Row"
+          >
+            <FaPlus />
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -55,9 +59,12 @@ const Table: React.FC<TableProps> = ({ title, columns }) => {
                   {col}
                 </th>
               ))}
-              <th className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300">
-                {t("actions")}
-              </th>
+              {/* Hide actions if readOnly */}
+              {!readOnly && (
+                <th className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300">
+                  {t("actions")}
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -72,18 +79,22 @@ const Table: React.FC<TableProps> = ({ title, columns }) => {
                       label=""
                       textColor="text-gray-700"
                       type="text"
+                      disabled={readOnly} // disable if readOnly
                     />
                   </td>
                 ))}
-                <td className="px-4 py-2 border text-center">
-                  <button
-                    onClick={() => deleteRow(rowIndex)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                    aria-label="Delete Row"
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
+
+                {!readOnly && (
+                  <td className="px-4 py-2 border text-center">
+                    <button
+                      onClick={() => deleteRow(rowIndex)}
+                      className="text-red-500 hover:text-red-700 transition-colors"
+                      aria-label="Delete Row"
+                    >
+                      <FaTrash />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

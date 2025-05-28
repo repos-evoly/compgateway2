@@ -11,21 +11,16 @@ import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 import Description from "@/app/components/FormUI/Description";
-
-import type { TCheckbookFormValues } from "../types";
-import { createCheckbookRequest } from "../services";
 import CancelButton from "@/app/components/FormUI/CancelButton";
 
-type TCheckbookFormProps = {
-  onSubmit: (newItem: TCheckbookFormValues) => void;
-  onCancel: () => void;
-  initialData?: TCheckbookFormValues | null;
-};
+import { createCheckbookRequest } from "../services";
+import { TCheckbookFormProps, TCheckbookFormValues } from "../types";
 
 const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   onSubmit,
   onCancel,
   initialData,
+  readOnly = false, // Defaults to editable (false)
 }) => {
   const t = useTranslations("checkForm");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,7 +52,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
     bookContaining: Yup.string().required(t("selectOneOption")),
   });
 
-  // On form submit -> create new record
+  // On form submit -> create or update record
   const handleSubmit = async (values: TCheckbookFormValues) => {
     if (isSubmitting) return; // prevent double-click
     setIsSubmitting(true);
@@ -66,7 +61,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
       // 1) POST to server, get the newly created record
       const newItem = await createCheckbookRequest(values);
 
-      // 2) Pass newItem to parent -> update grid
+      // 2) Pass newItem to parent -> update grid or handle
       onSubmit(newItem);
     } catch (error) {
       console.error("Failed to create checkbook request:", error);
@@ -126,7 +121,12 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
                 component: DatePickerValue,
               },
             ].map(({ component: Comp, ...field }) => (
-              <Comp key={field.name} {...field} width="w-full" />
+              <Comp
+                key={field.name}
+                {...field}
+                width="w-full"
+                disabled={readOnly} // <-- disable when readOnly
+              />
             ))}
           </div>
 
@@ -144,6 +144,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
               className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700"
+              disabled={readOnly} // <-- disable file input if readOnly
             />
           </div>
 
@@ -157,6 +158,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
                 { value: "48", label: "48" },
               ]}
               t={(key: string) => key}
+              disabled={readOnly} // <-- disable radio buttons if readOnly
             />
           </div>
 
@@ -166,13 +168,17 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
 
           {/* Buttons */}
           <div className="mt-4 flex justify-center items-center gap-3 ">
-            <SubmitButton
-              title={t("submit")}
-              Icon={FaPaperPlane}
-              color="info-dark"
-              disabled={isSubmitting}
-              fullWidth={false}
-            />
+            {/* Hide Submit button if readOnly is true */}
+            {!readOnly && (
+              <SubmitButton
+                title={t("submit")}
+                Icon={FaPaperPlane}
+                color="info-dark"
+                disabled={isSubmitting}
+                fullWidth={false}
+              />
+            )}
+            {/* Cancel/Back button (always visible, or you could conditionally hide) */}
             <CancelButton
               title={t("cancel")}
               onClick={onCancel}

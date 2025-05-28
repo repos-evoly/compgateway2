@@ -35,6 +35,13 @@ export const sidebarItems = [
     children: [],
   },
   {
+    id: 31,
+    label: "employees",
+    path: "/employees",
+    icon: FaCog,
+    children: [],
+  },
+  {
     id: 2, // Divider
     label: "divider",
     path: "",

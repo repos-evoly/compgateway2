@@ -81,7 +81,7 @@ export default function LoginForm(): JSX.Element {
         {/* Text above the image */}
         <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-info-dark">
-            الوحدة الفرعية للمعلومات المالية
+            منظومة بوابة الشركات
           </h1>
         </div>
 

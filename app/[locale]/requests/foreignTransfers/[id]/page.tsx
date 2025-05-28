@@ -80,6 +80,7 @@ export default function ForeignTransfersDetailPage() {
       <ForeignTransfersForm
         initialValues={initialValues}
         onSubmit={handleSubmit}
+        readOnly
       />
     </div>
   );

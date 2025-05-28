@@ -5,11 +5,15 @@ import { useTranslations } from "next-intl";
 import { step1VisaInputs } from "./visaInputs";
 
 // Reuse your custom inputs:
-import  FormInputIcon  from "@/app/components/FormUI/FormInputIcon";
-import  DatePickerValue  from "@/app/components/FormUI/DatePickerValue";
-// ^ Adjust the imports to match your actual file paths
+import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
+import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 
-export function Step1VisaRequest() {
+type Step1VisaRequestProps = {
+  /** If true, disable all inputs in this step */
+  readOnly?: boolean;
+};
+
+export function Step1VisaRequest({ readOnly = false }: Step1VisaRequestProps) {
   const t = useTranslations("visaRequest");
 
   return (
@@ -22,7 +26,7 @@ export function Step1VisaRequest() {
               key={name}
               name={name}
               label={t(label)}
-              // You can pass other props as needed
+              disabled={readOnly}
             />
           );
         }
@@ -35,6 +39,7 @@ export function Step1VisaRequest() {
             label={t(label)}
             startIcon={icon}
             type={type}
+            disabled={readOnly}
           />
         );
       })}

@@ -17,24 +17,34 @@ const CblDetailPage: React.FC = () => {
 
   const [cblData, setCblData] = useState<TCBLValues | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch the single CBL request on mount
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
 
     const fetchData = async () => {
       try {
         const response = await getCblRequestById(id.toString());
+        if (!response) {
+          setError(t("noItemFound"));
+          setLoading(false);
+          return;
+        }
         setCblData(response);
       } catch (err) {
         console.error("Failed to fetch CBL by ID:", err);
+        setError(t("noItemFound"));
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [id]);
+  }, [id, t]);
 
   // Show a loading indicator while fetching
   if (loading) {
@@ -42,36 +52,24 @@ const CblDetailPage: React.FC = () => {
   }
 
   // If no data found or fetch failed
-  if (!cblData) {
+  if (error || !cblData) {
     return (
       <div className="p-4">
-        <p className="text-red-500">{t("noItemFound")}</p>
+        <p className="text-red-500">{error || t("noItemFound")}</p>
       </div>
     );
   }
 
-  // Handler for form submit
-  const handleFormSubmit = (updatedValues: TCBLValues) => {
-    console.log("Form updated values:", updatedValues);
-    // You can call an "updateCblRequest" function if your API supports PUT/PATCH
-    // For now, we just log to console
-  };
-
   // Handler for form cancel
   const handleFormCancel = () => {
     console.log("Form cancelled");
-    // Possibly navigate back
-    // router.back();
+    // Possibly navigate back => e.g. router.back();
   };
 
-  // Render the form with prefilled data
+  // Render the form in read-only mode => fields disabled, no submit/cancel
   return (
     <div className="p-4">
-      <CBLForm
-        initialValues={cblData}
-        onSubmit={handleFormSubmit}
-        onCancel={handleFormCancel}
-      />
+      <CBLForm initialValues={cblData} onCancel={handleFormCancel} readOnly />
     </div>
   );
 };

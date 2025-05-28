@@ -13,7 +13,6 @@ import { step1Inputs, step2Inputs } from "./formInputsArrays";
 
 /**
  * 1) The shape of all fields.
- * Add "id" for row identification (if needed).
  */
 export type ForeignTransfersFormValues = {
   id: number;
@@ -23,10 +22,10 @@ export type ForeignTransfersFormValues = {
   branch: string;
   residentSupplierName: string;
   residentSupplierNationality: string;
-  nonResidentPassportNumber: number; // CHANGED
+  nonResidentPassportNumber: number;
   placeOfIssue: string;
   dateOfIssue: string;
-  nonResidentNationality: string; // CHANGED
+  nonResidentNationality: string;
   nonResidentAddress: string;
 
   // Step 2 fields
@@ -38,18 +37,19 @@ export type ForeignTransfersFormValues = {
   externalBankAddress: string;
   transferToAccountNumber: number;
   transferToAddress: string;
-  accountHolderName: string; // CHANGED
-  permanentAddress: string; // CHANGED
+  accountHolderName: string;
+  permanentAddress: string;
   purposeOfTransfer: string;
 };
 
 /**
  * 2) Props for the wizard.
- *    `initialValues` is partial => merges with defaults.
  */
 type ForeignTransfersFormProps = {
   initialValues?: Partial<ForeignTransfersFormValues>;
   onSubmit: (values: ForeignTransfersFormValues) => void;
+  /** If true, disable fields & remove final 'Submit' button. */
+  readOnly?: boolean;
 };
 
 /** 3) Default/empty fields for "Add" scenario */
@@ -60,10 +60,10 @@ const defaultValues: ForeignTransfersFormValues = {
   branch: "",
   residentSupplierName: "",
   residentSupplierNationality: "",
-  nonResidentPassportNumber: 0, // CHANGED
+  nonResidentPassportNumber: 0,
   placeOfIssue: "",
   dateOfIssue: "",
-  nonResidentNationality: "", // CHANGED
+  nonResidentNationality: "",
   nonResidentAddress: "",
 
   transferAmount: 0,
@@ -74,14 +74,15 @@ const defaultValues: ForeignTransfersFormValues = {
   externalBankAddress: "",
   transferToAccountNumber: 0,
   transferToAddress: "",
-  accountHolderName: "", // CHANGED
-  permanentAddress: "", // CHANGED
+  accountHolderName: "",
+  permanentAddress: "",
   purposeOfTransfer: "",
 };
 
 export default function ForeignTransfersForm({
   initialValues,
   onSubmit,
+  readOnly = false,
 }: ForeignTransfersFormProps) {
   const t = useTranslations("foreignTransfers");
 
@@ -95,15 +96,15 @@ export default function ForeignTransfersForm({
   const steps = [
     {
       title: t("step1Title"),
-      component: <Step1TransferInfo />,
+      component: <Step1TransferInfo readOnly={readOnly} />,
     },
     {
       title: t("step2Title"),
-      component: <Step2BankingDetails />,
+      component: <Step2BankingDetails readOnly={readOnly} />,
     },
   ];
 
-  // Translate field name => label for the final review step
+  // Translate field name => label for the final "Review"
   function translateFieldName(fieldName: string): string {
     const allInputs = [...step1Inputs, ...step2Inputs];
     const found = allInputs.find((inp) => inp.name === fieldName);
@@ -113,19 +114,20 @@ export default function ForeignTransfersForm({
     return fieldName; // fallback
   }
 
-  // We'll define step-based validations
+  // Step-based validations
   const stepValidations = [
     // Step 1 partial schema
     Yup.object({
       toBank: Yup.string().required(t("toBank") + " " + t("isRequired")),
-      // ... fill out other fields you want for Step1
+      branch: Yup.string().required(t("branch") + " " + t("isRequired")),
+      // ... etc
     }),
     // Step 2 partial schema
     Yup.object({
-      transferAmount: Yup.number().required(
-        t("transferAmount") + " " + t("isRequired")
-      ),
-      // ... fill out other fields for Step2
+      transferAmount: Yup.number()
+        .typeError(t("transferAmount") + " " + t("mustBeNumber"))
+        .required(t("transferAmount") + " " + t("isRequired")),
+      // ... etc
     }),
   ];
 
@@ -138,7 +140,7 @@ export default function ForeignTransfersForm({
       <Formik
         initialValues={merged}
         onSubmit={(vals) => handleFinalSubmit(vals)}
-        validationSchema={Yup.object({})}
+        validationSchema={Yup.object({})} // We'll do partial step schemas
         validateOnBlur
         validateOnChange={false}
       >
@@ -171,12 +173,13 @@ export default function ForeignTransfersForm({
 
           return (
             <Form>
-              <TabsWizard
+              <TabsWizard<ForeignTransfersFormValues>
                 steps={steps}
                 formik={formik}
                 onSubmit={() => formik.handleSubmit()}
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
+                readOnly={readOnly}
               />
             </Form>
           );

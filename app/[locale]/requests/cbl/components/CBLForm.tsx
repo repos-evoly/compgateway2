@@ -10,8 +10,8 @@ import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import { FaTimes, FaUser } from "react-icons/fa";
 
-import Table from "@/app/components/forms/CBLForm/Table";
-import InfoBox from "@/app/components/forms/CBLForm/InfoBox";
+import Table from "@/app/[locale]/requests/cbl/components/Table";
+import InfoBox from "@/app/[locale]/requests/cbl/components/InfoBox";
 
 import { getColumns, fields, initialValues as defaultVals } from "../data";
 import { CBLFormProps, TCBLValues } from "../types";
@@ -19,19 +19,21 @@ import { CBLFormProps, TCBLValues } from "../types";
 import { addCblRequest } from "../service";
 import CancelButton from "@/app/components/FormUI/CancelButton";
 
+/**
+ * A CBL form that, if readOnly => disables fields + hides buttons
+ */
 const CBLForm: React.FC<CBLFormProps> = ({
   initialValues,
   onSubmit,
   onCancel,
+  readOnly = false,
 }) => {
   const t = useTranslations("cblForm");
-
-  // Track if we're currently submitting to avoid double-submission
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Merge defaults with any partial values, then cast to TCBLValues
+  // Merge defaults + incoming
   const mergedValues: TCBLValues = {
-    id: 0, // default ID in case initialValues doesn't have one
+    id: 0,
     ...defaultVals,
     ...initialValues,
   };
@@ -44,7 +46,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
   // The dynamic field definitions
   const formFields = fields(t);
 
-  // We'll define the "sections" just like the original page
+  // We'll define the "sections" just like your original
   const sections = [
     {
       title: t("generalInformation"),
@@ -67,24 +69,22 @@ const CBLForm: React.FC<CBLFormProps> = ({
     },
   ];
 
-  // Handle form submission -> call API
+  // Handle form submission => do nothing if readOnly
   const handleSubmit = async (
     values: TCBLValues,
     helpers: FormikHelpers<TCBLValues>
   ) => {
-    // If already submitting, do nothing
+    if (readOnly) {
+      // do nothing
+      return;
+    }
     if (isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      // Call the API to create a new record
       await addCblRequest(values);
-
-      // Show success or handle success
       alert("CBL request created successfully!");
-
-      // Optionally call parent onSubmit
-      onSubmit(values, helpers);
+      onSubmit?.(values, helpers);
     } catch (error) {
       console.error("Failed to create CBL request:", error);
       alert("An error occurred while creating the CBL request.");
@@ -98,7 +98,6 @@ const CBLForm: React.FC<CBLFormProps> = ({
       <div className="w-full bg-info-dark h-16 rounded-t-md mb-0"></div>
 
       <div className="px-6 bg-gray-100 -mt-6 py-2">
-        {/* No validationSchema to allow testing */}
         <Form initialValues={mergedValues} onSubmit={handleSubmit}>
           {/* Dynamic sections */}
           {sections.map((section, index) => (
@@ -106,6 +105,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
               <h2 className="text-lg font-bold text-gray-800">
                 {section.title}
               </h2>
+
               {section.fieldGroups ? (
                 section.fieldGroups.map((group, groupIndex) => (
                   <div
@@ -127,6 +127,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
                                 : undefined
                             }
                             textColor="text-gray-700"
+                            disabled={readOnly} // DISABLE fields if readOnly
                           />
                         </div>
                       );
@@ -150,6 +151,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
                               : undefined
                           }
                           textColor="text-gray-700"
+                          disabled={readOnly} // DISABLE fields if readOnly
                         />
                       </div>
                     );
@@ -162,9 +164,18 @@ const CBLForm: React.FC<CBLFormProps> = ({
           {/* Table + InfoBox */}
           <div className="flex w-full gap-6">
             <div className="flex flex-col gap-6 flex-1">
-              <Table title={t("table1.title")} columns={columns1} />
+              <Table
+                title={t("table1.title")}
+                columns={columns1}
+                // Pass readOnly => table won't allow add/delete rows, fields disabled
+                readOnly={readOnly}
+              />
               <div className="flex-grow bg-gray-100 rounded-lg shadow-sm border border-gray-300 flex items-center justify-center" />
-              <Table title={t("table2.title")} columns={columns2} />
+              <Table
+                title={t("table2.title")}
+                columns={columns2}
+                readOnly={readOnly}
+              />
             </div>
 
             <div className="flex-1">
@@ -182,6 +193,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
                 name="packingDate"
                 label={t("packingDate")}
                 textColor="text-gray-700"
+                disabled={readOnly}
               />
               <FormInputIcon
                 name="specialistName"
@@ -189,29 +201,31 @@ const CBLForm: React.FC<CBLFormProps> = ({
                 type="text"
                 textColor="text-gray-700"
                 startIcon={<FaUser />}
+                disabled={readOnly}
               />
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="px-6 pb-6 flex justify-center items-center gap-2">
-            <SubmitButton
-              title="Submit"
-              color="info-dark"
-              // Icon defaults to FaPaperPlane now, so no need to pass Icon
-              fullWidth={false}
-              disabled={isSubmitting}
-            />
-            {onCancel && (
-              <CancelButton
-                title="Cancel"
-                Icon={FaTimes}
-                onClick={onCancel}
-                disabled={isSubmitting}
+          {/* Buttons => hidden if readOnly */}
+          {!readOnly && (
+            <div className="px-6 pb-6 flex justify-center items-center gap-2">
+              <SubmitButton
+                title="Submit"
+                color="info-dark"
                 fullWidth={false}
+                disabled={isSubmitting}
               />
-            )}
-          </div>
+              {onCancel && (
+                <CancelButton
+                  title="Cancel"
+                  Icon={FaTimes}
+                  onClick={onCancel}
+                  disabled={isSubmitting}
+                  fullWidth={false}
+                />
+              )}
+            </div>
+          )}
         </Form>
       </div>
     </>

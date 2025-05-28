@@ -1,4 +1,3 @@
-// app/visarequests/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -16,6 +15,10 @@ export default function SingleVisaRequestPage() {
   const [requestData, setRequestData] = useState<VisaRequestApiItem | null>(
     null
   );
+
+  // For demonstration, we'll show the form in read-only mode, so you can see
+  // all fields disabled. If you want it always editable, set this to `false`.
+  const [readOnly] = useState(true);
 
   // Fetch on mount (or if `id` changes)
   useEffect(() => {
@@ -49,8 +52,7 @@ export default function SingleVisaRequestPage() {
     pldedge: requestData.pldedge,
   };
 
-  // If you want to handle "edit" or "update" logic, pass an onSubmit that calls
-  // an "updateVisaRequest" function. For now, we can just console.log or do nothing.
+  // If you want to handle "edit" logic, pass an onSubmit that calls update:
   function handleSubmit(vals: VisaRequestFormValues) {
     console.log("Submitted form with updated data => ", vals);
     // Potentially call an updateVisaRequest(numericId, vals) here...
@@ -62,7 +64,12 @@ export default function SingleVisaRequestPage() {
         Visa Request Details (ID: {numericId})
       </h1>
 
-      <VisaWizardForm initialValues={initialValues} onSubmit={handleSubmit} />
+      {/* Pass readOnly to see disabled fields and modified wizard buttons */}
+      <VisaWizardForm
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        readOnly={readOnly}
+      />
     </div>
   );
 }

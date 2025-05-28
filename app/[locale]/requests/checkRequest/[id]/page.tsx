@@ -76,6 +76,7 @@ const CheckRequestDetailPage = () => {
         initialValues={initialFormValues}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
+        readOnly // <<< Make the form read-only
       />
     </div>
   );

@@ -1,5 +1,6 @@
 {
     "sidebarItems": {
+      "dashboard":"لوحة التحكم",
       "statementOfAccount":"كشف حساب",
       "title":"منظومة بوابة الشركات",
       "transfer":{
@@ -473,7 +474,13 @@
     
         "isRequired": "مطلوب",
         "mustBeNumber": "يجب أن يكون رقماً"
+      },
+      "dashboard":{
+        "accountNb":" رقم الحساب",
+        "debitBalance":"الرصيد المدين",
+        "availableBalance":"الرصيد المتاح",
+        "failedToFetchData":"فشل في جلب البيانات",
+        "noDataAvailable":"لا توجد بيانات متاحة"
       }
-      
       
   }

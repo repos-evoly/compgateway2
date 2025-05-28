@@ -2,43 +2,43 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { Employee, EmployeesFormPayload } from "../types";
+import type { EmployeesFormPayload } from "../types";
 import EmployeeForm from "../components/EmployeesForm";
-
-// Dummy data, matching your list
-const DUMMY_EMPLOYEES: Employee[] = [
-  {
-    authUserId: 101,
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+1 555-1234",
-    roleId: 1,
-  },
-  {
-    authUserId: 102,
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@example.com",
-    phone: "+1 555-5678",
-    roleId: 2,
-  },
-  // Add more...
-];
+import { getEmployeeById } from "../services"; // Import your getEmployeeById function
+import type { CompanyEmployee } from "../types";
 
 export default function SingleEmployeePage() {
-  const { id } = useParams();
   const router = useRouter();
+  const { id } = useParams(); // e.g. /employees/123
   const numericId = Number(id);
 
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [employee, setEmployee] = useState<CompanyEmployee | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // On mount, find the employee in DUMMY_EMPLOYEES
+  // 1) On mount => fetch the employee by ID from the API
   useEffect(() => {
-    if (Number.isNaN(numericId)) return;
-    const found = DUMMY_EMPLOYEES.find((e) => e.authUserId === numericId);
-    setEmployee(found || null);
+    if (Number.isNaN(numericId)) {
+      setLoading(false);
+      return;
+    }
+
+    async function fetchEmployee() {
+      try {
+        const data = await getEmployeeById(numericId);
+        setEmployee(data);
+      } catch (err) {
+        console.error("Failed to fetch employee by ID:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchEmployee();
   }, [numericId]);
+
+  if (loading) {
+    return <div className="p-4">Loading employee...</div>;
+  }
 
   if (!employee) {
     return (
@@ -55,21 +55,22 @@ export default function SingleEmployeePage() {
     );
   }
 
-  // Transform the employee => EmployeesFormPayload shape
-  // For fields not in Employee, we’ll pass empty or placeholders
+  // 2) Convert the API shape => EmployeesFormPayload
+  // For fields not in your API response, pass defaults
   const initialValues: EmployeesFormPayload = {
-    firstName: employee.firstName ?? "",
-    lastName: employee.lastName ?? "",
-    username: employee.username ?? "",
-    email: employee.email ?? "",
-    password: "", // We can’t retrieve the password from DB for security reasons
-    phone: employee.phone ?? "",
-    roleId: employee.roleId,
+    firstName: employee.firstName || "",
+    lastName: employee.lastName || "",
+    username: employee.username || "", // if your API returns 'username' or else blank
+    email: employee.email || "",
+    password: "", // can't retrieve the password from DB
+    phone: employee.phone || "",
+    roleId: employee.roleId || 0,
   };
 
+  // 3) On form submit => do an "updateEmployee" or temporarily log
   const handleSubmit = (values: EmployeesFormPayload) => {
     console.log("Updated Employee data:", values);
-    // e.g. call your API to update the employee
+    // In a real app => call an update function, e.g. updateEmployee(numericId, values)
     // then router.push("/employees");
   };
 

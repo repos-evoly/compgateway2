@@ -1,5 +1,3 @@
-// app/visarequests/components/VisaRequest.tsx
-// (Your same code, unchanged)
 "use client";
 
 import React from "react";
@@ -16,11 +14,14 @@ import { VisaRequestFormValues } from "../types";
 type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
   onSubmit: (values: VisaRequestFormValues) => void;
+  /** If true, disable all inputs and remove the last-step button */
+  readOnly?: boolean;
 };
 
 export default function VisaWizardForm({
   initialValues,
   onSubmit,
+  readOnly = false,
 }: VisaWizardFormProps) {
   const t = useTranslations("visaRequest");
 
@@ -44,11 +45,11 @@ export default function VisaWizardForm({
   const steps = [
     {
       title: t("step1Title"),
-      component: <Step1VisaRequest />,
+      component: <Step1VisaRequest readOnly={readOnly} />,
     },
     {
       title: t("step2Title"),
-      component: <Step2VisaRequest />,
+      component: <Step2VisaRequest readOnly={readOnly} />,
     },
   ];
 
@@ -59,6 +60,7 @@ export default function VisaWizardForm({
     return fieldName;
   }
 
+  // Each step's schema
   const stepValidations = [
     Yup.object({
       branch: Yup.string().required(t("branch") + " " + t("isRequired")),
@@ -141,6 +143,7 @@ export default function VisaWizardForm({
                 onSubmit={() => formik.handleSubmit()}
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
+                readOnly={readOnly} // Pass down to handle last-step button removal
               />
             </Form>
           );

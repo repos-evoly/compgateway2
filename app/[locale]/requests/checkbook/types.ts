@@ -1,41 +1,44 @@
-// /checkbook/types.ts
-
-/**
- * The shape of a single checkbook record returned by the API.
- */
 export type TCheckbookValues = {
-    id?: number;
-    userId?: number;
-    fullName: string;
-    address: string;
-    accountNumber: string;
-    pleaseSend: string;
-    branch: string;
-    date: string;
-    bookContaining: string;
-    status?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  };
-  
+  id?: number;
+  userId?: number;
+  fullName: string;
+  address: string;
+  accountNumber: string;
+  pleaseSend: string;
+  branch: string;
+  date: string;
+  bookContaining: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
-  /**
-   * The shape of the API's paginated response.
+export type TCheckbookResponse = {
+  data: TCheckbookValues[];
+  page: number;
+  limit: number;
+  totalPages: number;
+  totalRecords: number;
+};
+
+export type TCheckbookFormValues = {
+  fullName: string;
+  address: string;
+  accountNumber: string;
+  pleaseSend: string;
+  branch: string;
+  date: string;
+  bookContaining: string;
+};
+
+/** Props for our CheckbookForm component */
+export type TCheckbookFormProps = {
+  onSubmit: (newItem: TCheckbookFormValues) => void;
+  onCancel: () => void;
+  initialData?: TCheckbookFormValues | null;
+  /** 
+   * If true, all inputs are disabled and no submit button is shown. 
+   * Used when displaying a record in read-only mode.
    */
-  export type TCheckbookResponse = {
-    data: TCheckbookValues[];
-    page: number;
-    limit: number;
-    totalPages: number;
-    totalRecords: number;
-  };
-  
-  export type TCheckbookFormValues = {
-    fullName: string;
-    address: string;
-    accountNumber: string;
-    pleaseSend: string;
-    branch: string;
-    date: string;
-    bookContaining: string;
-  };
+  readOnly?: boolean;
+};

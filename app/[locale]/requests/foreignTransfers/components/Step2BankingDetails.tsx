@@ -1,36 +1,40 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import FormFileUpload from "@/app/components/FormUI/FormFileUpload";
 import { FiInfo } from "react-icons/fi";
 import { step2Inputs } from "./formInputsArrays";
-import { useTranslations } from "next-intl";
+
+type Step2BankingDetailsProps = {
+  readOnly?: boolean;
+};
 
 /**
- * Desired row distribution:
- *
- * 1) transferAmount, toCountry, beneficiaryName
- * 2) beneficiaryAddress, externalBankName, externalBankAddress
- * 3) transferToAccountNumber, transferToAddress, accountHolderName
- * 4) permanentAddress, purposeOfTransfer (with Purpose bigger)
- * 5) uploadDocuments (if used)
+ * Step 2 => 5 "rows" layout example
  */
-export function Step2BankingDetails() {
+export function Step2BankingDetails({
+  readOnly = false,
+}: Step2BankingDetailsProps) {
   const t = useTranslations("foreignTransfers");
 
-  // Make sure your step2Inputs array uses the NEW field names:
-  // (transferAmount, toCountry, beneficiaryName, beneficiaryAddress, externalBankName, externalBankAddress, transferToAccountNumber, transferToAddress, accountHolderName, permanentAddress, purposeOfTransfer, uploadDocuments?)
+  // step2Inputs fields:
+  //   transferAmount, toCountry, beneficiaryName
+  //   beneficiaryAddress, externalBankName, externalBankAddress
+  //   transferToAccountNumber, transferToAddress, accountHolderName
+  //   permanentAddress, purposeOfTransfer
+  //   (maybe a file upload?)
+
   const row1 = [step2Inputs[0], step2Inputs[1], step2Inputs[2]];
   const row2 = [step2Inputs[3], step2Inputs[4], step2Inputs[5]];
   const row3 = [step2Inputs[6], step2Inputs[7], step2Inputs[8]];
   const row4 = [step2Inputs[9], step2Inputs[10]];
-  // const rowUpload = [step2Inputs[11]]; // if you have file uploads
+  // If you have an upload:
+  // const rowUpload = [step2Inputs[11]];
 
-  // Helper to render normal input vs file upload
   function renderField(field: (typeof step2Inputs)[0]) {
     if (field.type === "file") {
-      // We interpret 'multiple' from the field itself
       return (
         <FormFileUpload
           key={field.name}
@@ -38,6 +42,7 @@ export function Step2BankingDetails() {
           label={t(field.label)}
           multiple={field.multiple}
           accept=".pdf,.jpg,.png"
+          disabled={readOnly}
         />
       );
     }
@@ -49,6 +54,7 @@ export function Step2BankingDetails() {
         label={t(field.label)}
         type={field.type}
         startIcon={field.icon}
+        disabled={readOnly}
       />
     );
   }
@@ -57,25 +63,22 @@ export function Step2BankingDetails() {
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-gray-700">Step 2 Fields</h2>
 
-      {/* Row 1: 3 columns */}
-      <div className="grid grid-cols-3 gap-4">
-        {row1.map((field) => renderField(field))}
-      </div>
+      {/* Row 1 => 3 columns */}
+      <div className="grid grid-cols-3 gap-4">{row1.map(renderField)}</div>
 
-      {/* Row 2: 3 columns */}
-      <div className="grid grid-cols-3 gap-4">
-        {row2.map((field) => renderField(field))}
-      </div>
+      {/* Row 2 => 3 columns */}
+      <div className="grid grid-cols-3 gap-4">{row2.map(renderField)}</div>
 
-      {/* Row 3: 3 columns */}
-      <div className="grid grid-cols-3 gap-4">
-        {row3.map((field) => renderField(field))}
-      </div>
+      {/* Row 3 => 3 columns */}
+      <div className="grid grid-cols-3 gap-4">{row3.map(renderField)}</div>
 
-      {/* Row 4: 2 columns -> 1fr for the first field, 2fr for the second */}
+      {/* Row 4 => 2 columns -> (1fr, 2fr) */}
       <div className="grid grid-cols-[1fr_2fr] gap-4">
-        {row4.map((field) => renderField(field))}
+        {row4.map(renderField)}
       </div>
+
+      {/* If you have an upload row
+      <div>{rowUpload.map(renderField)}</div> */}
 
       <div className="p-4 bg-gray-50 border rounded-lg flex items-start gap-2 text-sm text-gray-600">
         <FiInfo className="text-blue-600 mt-1" />

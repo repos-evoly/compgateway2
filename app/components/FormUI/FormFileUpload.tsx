@@ -8,6 +8,7 @@ type FormFileUploadProps = {
   label: string;
   multiple?: boolean;
   accept?: string; // e.g. ".pdf,.jpg,.png"
+  disabled?: boolean; // if true, file input is disabled
 };
 
 export default function FormFileUpload({
@@ -15,6 +16,7 @@ export default function FormFileUpload({
   label,
   multiple = false,
   accept,
+  disabled = false,
 }: FormFileUploadProps) {
   // ignore the 'field' tuple element since we handle change/blur manually
   const [, meta, helpers] = useField<File[] | File | null>(name);
@@ -50,12 +52,14 @@ export default function FormFileUpload({
         accept={accept}
         onChange={handleChange}
         onBlur={handleBlur}
+        disabled={disabled}
         className="
           block w-full text-sm text-gray-900
           file:mr-4 file:py-2 file:px-4 file:rounded-full
           file:border-0 file:text-sm file:font-semibold
           file:bg-blue-50 file:text-blue-700
           hover:file:bg-blue-100
+          disabled:opacity-70 disabled:cursor-not-allowed
         "
       />
       {meta.touched && meta.error && (

@@ -9,29 +9,28 @@ import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 
-// Import the function that fetches currencies
 import { getCurrencies } from "@/app/[locale]/currencies/services";
 
-// Types
-import type { TCreditFacility } from "../types";
-import type { CurrenciesResponse } from "@/app/[locale]/currencies/types"; // Adjust path if needed
 import CancelButton from "@/app/components/FormUI/CancelButton";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
+
+import type { TCreditFacility } from "../types";
+import type { CurrenciesResponse } from "@/app/[locale]/currencies/types"; // Adjust path if needed
 
 type Props = {
   initialData?: TCreditFacility | null; // if editing existing
   onSubmit: (vals: TCreditFacility) => void;
   onCancel: () => void;
+  /** If true, all fields are disabled and submit is hidden */
+  readOnly?: boolean;
 };
 
 export default function CreditFacilityForm({
   initialData,
   onSubmit,
   onCancel,
+  readOnly = false,
 }: Props) {
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-
   // State for the currency dropdown => each item { label, value }
   const [currencyOptions, setCurrencyOptions] = useState<
     Array<{ label: string; value: string }>
@@ -41,7 +40,6 @@ export default function CreditFacilityForm({
   useEffect(() => {
     (async () => {
       try {
-        // For example, get the first 50 currencies
         const res: CurrenciesResponse = await getCurrencies(1, 50, "", "");
         // Map them => { label: description, value: code }
         const opts = res.data.map((c) => ({
@@ -51,13 +49,11 @@ export default function CreditFacilityForm({
         setCurrencyOptions(opts);
       } catch (err) {
         console.error("Failed to fetch currencies:", err);
-        // Could show a local error or fallback
       }
     })();
   }, []);
 
   // Default blank form
-  // Notice: we always set `type: "creditFacility"` instead of letting the user edit it
   const defaultValues: TCreditFacility = {
     id: undefined,
     accountNumber: "",
@@ -92,9 +88,8 @@ export default function CreditFacilityForm({
     values: TCreditFacility,
     { setSubmitting }: FormikHelpers<TCreditFacility>
   ) {
-    // setIsSubmitting(true);
     try {
-      // We ensure type is "creditFacility" in the final submitted values
+      // Force type to "creditFacility"
       const finalVals = { ...values, type: "creditFacility" };
       onSubmit(finalVals);
     } catch (err) {
@@ -102,7 +97,6 @@ export default function CreditFacilityForm({
       alert("خطأ أثناء إرسال البيانات");
     } finally {
       setSubmitting(false);
-    //   setIsSubmitting(false);
     }
   }
 
@@ -113,7 +107,7 @@ export default function CreditFacilityForm({
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ isSubmitting }) => (
+        {({ isSubmitting, isValid, dirty }) => (
           <Form>
             <h2 className="text-xl font-bold mb-4">
               {initialData ? "تعديل التسهيل الائتماني" : "إضافة تسهيل ائتماني"}
@@ -125,22 +119,34 @@ export default function CreditFacilityForm({
                 name="accountNumber"
                 label="رقم الحساب"
                 type="text"
+                disabled={readOnly}
               />
 
               {/* Date (using DatePickerValue) */}
-              <DatePickerValue name="date" label="التاريخ" />
+              <DatePickerValue name="date" label="التاريخ" disabled={readOnly} />
 
               {/* Amount */}
-              <FormInputIcon name="amount" label="المبلغ" type="number" />
+              <FormInputIcon
+                name="amount"
+                label="المبلغ"
+                type="number"
+                disabled={readOnly}
+              />
 
               {/* Purpose */}
-              <FormInputIcon name="purpose" label="الغرض" type="text" />
+              <FormInputIcon
+                name="purpose"
+                label="الغرض"
+                type="text"
+                disabled={readOnly}
+              />
 
               {/* Additional Info */}
               <FormInputIcon
                 name="additionalInfo"
                 label="معلومات إضافية"
                 type="text"
+                disabled={readOnly}
               />
 
               {/* Currency => dynamic from API */}
@@ -150,6 +156,7 @@ export default function CreditFacilityForm({
                 options={currencyOptions}
                 placeholder="اختر العملة"
                 width="w-full"
+                disabled={readOnly}
               />
 
               {/* Reference Number */}
@@ -157,18 +164,24 @@ export default function CreditFacilityForm({
                 name="refferenceNumber"
                 label="رقم المرجع"
                 type="text"
+                disabled={readOnly}
               />
             </div>
 
             {/* Buttons */}
             <div className="mt-4 flex justify-center items-center gap-3">
-              <SubmitButton
-                title={initialData ? "حفظ التغييرات" : "إضافة"}
-                color="info-dark"
-                Icon={FaPaperPlane}
-                isSubmitting={isSubmitting}
-                fullWidth={false}
-              />
+              {/* Hide the submit button if in read-only mode */}
+              {!readOnly && (
+                <SubmitButton
+                  title={initialData ? "حفظ التغييرات" : "إضافة"}
+                  color="info-dark"
+                  Icon={FaPaperPlane}
+                  isSubmitting={isSubmitting}
+                  disabled={!isValid || !dirty || isSubmitting}
+                  fullWidth={false}
+                />
+              )}
+
               <CancelButton
                 onClick={onCancel}
                 disabled={isSubmitting}

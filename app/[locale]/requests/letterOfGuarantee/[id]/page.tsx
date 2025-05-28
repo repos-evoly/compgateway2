@@ -93,13 +93,14 @@ export default function LetterOfGuaranteeDetailPage() {
     router.push("/letterofguarantee");
   };
 
-  // 5) Render the form with the fetched data
+  // 5) Render the form with the fetched data, in read-only mode
   return (
     <div className="p-4">
       <LetterOfGuaranteeForm
         initialData={guaranteeData}
         onSubmit={handleUpdate}
         onCancel={handleCancel}
+        readOnly // <--- This makes the form read-only
       />
     </div>
   );

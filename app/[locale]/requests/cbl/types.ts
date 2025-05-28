@@ -47,8 +47,9 @@ export type TCBLValues = {
     /** An optional partial set of the form's values for editing. */
     initialValues?: Partial<TCBLValues>;
     /** Called on form submit. */
-    onSubmit: (values: TCBLValues, helpers: FormikHelpers<TCBLValues>) => void;
+    onSubmit?: (values: TCBLValues, helpers: FormikHelpers<TCBLValues>) => void;
     /** If present, show a "Cancel" button that calls this. */
     onCancel?: () => void;
+    readOnly?: boolean; 
   };
   

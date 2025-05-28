@@ -81,6 +81,7 @@ const RtgsDetailPage: React.FC = () => {
         initialValues={initialValues}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
+        readOnly // <--- Make the form read-only
       />
     </div>
   );

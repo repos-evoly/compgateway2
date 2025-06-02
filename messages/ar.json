@@ -39,8 +39,8 @@
   
       "logout":"تسجيل الخروج",
       "defaultTitle":"",
-      "currencies":"العملات"
-
+      "currencies":"العملات",
+      "employees":"الموظفين"
 
     },
     "mainHeader":{

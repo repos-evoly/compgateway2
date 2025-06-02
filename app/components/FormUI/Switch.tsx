@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX } from "react";
+import React, { useEffect, useState, JSX } from "react";
 import { useField, useFormikContext } from "formik";
 import { usePathname } from "next/navigation";
 
@@ -8,62 +8,107 @@ type SwitchWrapperType = {
   name: string;
   label: string;
   legend?: string;
+  onToggle?: (value: boolean) => void;
 };
 
 const SwitchWrapper = ({
   name,
   label,
   legend,
+  onToggle,
 }: SwitchWrapperType): JSX.Element => {
   const { setFieldValue } = useFormikContext();
   const [field, meta] = useField(name);
   const pathname = usePathname();
 
   // Determine the locale based on the pathname
-  const [currentLocale, setCurrentLocale] = React.useState("en");
-  React.useEffect(() => {
+  const [currentLocale, setCurrentLocale] = useState("en");
+  useEffect(() => {
     const segments = pathname?.split("/") || [];
     const locale = segments[1];
     setCurrentLocale(locale === "ar" ? "ar" : "en");
   }, [pathname]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFieldValue(name, event.target.checked);
+    const newValue = event.target.checked;
+    setFieldValue(name, newValue);
+    if (onToggle) {
+      onToggle(newValue);
+    }
   };
 
+  // Use the field value to determine the checked state
+  const isChecked = field.value === true;
+
   return (
-    <div
-      className={`w-full ${
-        currentLocale === "ar" ? "text-right" : "text-left"
-      }`}
-    >
-      {/* Legend */}
+    <div className="w-full">
+      {/* Optional Legend */}
       {legend && (
-        <legend className="block text-sm font-medium text-gray-700 mb-2">
+        <legend
+          className={`block text-sm font-medium text-gray-700 mb-2 ${
+            currentLocale === "ar" ? "text-right" : "text-left"
+          }`}
+        >
           {legend}
         </legend>
       )}
 
-      {/* Switch with Label */}
-      <div className="flex items-center gap-3">
-        <label className="flex items-center cursor-pointer">
+      {/* Switch control with proper RTL/LTR support */}
+      <div
+        className={`flex items-center justify-between ${
+          currentLocale === "ar" ? "flex-row-reverse" : "flex-row"
+        }`}
+      >
+        {label && (
+          <span className="text-sm font-medium text-gray-700">{label}</span>
+        )}
+
+        <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"
-            {...field}
-            checked={typeof field.value === "boolean" ? field.value : false}
+            checked={isChecked}
             onChange={handleChange}
             className="sr-only peer"
           />
-          <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 relative transition duration-300">
-            <div className="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 peer-checked:translate-x-5 transition-transform duration-300"></div>
-          </div>
+          <div
+            className={`
+            w-11 h-6 
+            bg-gray-200 
+            peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 
+            rounded-full 
+            peer 
+            ${
+              isChecked
+                ? "peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+                : ""
+            }
+            peer-checked:after:border-white 
+            after:content-[''] 
+            after:absolute 
+            after:top-[2px] 
+            ${currentLocale === "ar" ? "after:right-[2px]" : "after:left-[2px]"}
+            after:bg-white 
+            after:border-gray-300 
+            after:border 
+            after:rounded-full 
+            after:h-5 
+            after:w-5 
+            after:transition-all 
+            peer-checked:bg-blue-600
+          `}
+          ></div>
         </label>
-        <span className="text-sm font-medium text-gray-700">{label}</span>
       </div>
 
       {/* Error Message */}
       {meta.touched && meta.error && (
-        <p className="text-sm text-red-500 mt-1">{meta.error}</p>
+        <p
+          className={`text-sm text-red-500 mt-1 ${
+            currentLocale === "ar" ? "text-right" : "text-left"
+          }`}
+        >
+          {meta.error}
+        </p>
       )}
     </div>
   );

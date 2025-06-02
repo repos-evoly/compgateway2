@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useState, useEffect } from "react";
 import type { FormikProps } from "formik";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { ReviewStep } from "./ReviewStep";
 import { useTranslations } from "next-intl";
+import BackButton from "./BackButton";
 
 type WizardStep = {
   title: string;
@@ -25,6 +27,8 @@ type TabsWizardProps<FormValues extends Record<string, unknown>> = {
    * but you can add it if needed.
    */
   readOnly?: boolean;
+  fallbackPath?: string;
+  isEditing?: boolean;
 };
 
 export function TabsWizard<FormValues extends Record<string, unknown>>({
@@ -33,6 +37,8 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
   // onSubmit,
   validateCurrentStep,
   translateFieldName,
+  fallbackPath,
+  isEditing,
 }: TabsWizardProps<FormValues>) {
   const t = useTranslations("tabsWizard");
 
@@ -113,76 +119,84 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
   return (
     <div className={`flex flex-col w-full ${isRTL ? "rtl" : "ltr"}`}>
       {/* Step header */}
-      <div className="flex items-center justify-center w-full mb-8 relative">
-        {/* Dashed line */}
-        <div
-          className="absolute border-t-2 border-dashed border-info-main z-0"
-          style={{
-            left: "5%",
-            right: "5%",
-            width: "90%",
-            top: "30%",
-            transform: "translateY(-30%)",
-          }}
-        />
-        {/* Filled progress line */}
-        <div
-          className="absolute border-t-2 border-dashed border-info-dark z-0 transition-all duration-300"
-          style={{
-            left: isRTL ? "auto" : "5%",
-            right: isRTL ? "5%" : "auto",
-            width: progressWidth,
-            top: "30%",
-            transform: "translateY(-30%)",
-          }}
-        />
+      <div className="flex flex-col w-full mb-8 relative">
+        <div className="flex items-center mb-4">
+          <BackButton fallbackPath={fallbackPath} isEditing={isEditing} />
+          <h2 className="text-lg font-medium text-info-dark ml-2">
+            {t("steps")}
+          </h2>
+        </div>
+        <div className="flex items-center justify-center w-full relative">
+          {/* Dashed line */}
+          <div
+            className="absolute border-t-2 border-dashed border-info-main z-0"
+            style={{
+              left: "5%",
+              right: "5%",
+              width: "90%",
+              top: "30%",
+              transform: "translateY(-30%)",
+            }}
+          />
+          {/* Filled progress line */}
+          <div
+            className="absolute border-t-2 border-dashed border-info-dark z-0 transition-all duration-300"
+            style={{
+              left: isRTL ? "auto" : "5%",
+              right: isRTL ? "5%" : "auto",
+              width: progressWidth,
+              top: "30%",
+              transform: "translateY(-30%)",
+            }}
+          />
 
-        <div className="flex justify-between items-center w-full relative z-10">
-          {allSteps.map((step, index) => {
-            const isActive = index === currentStep;
-            const isCompleted = completedSteps.includes(index);
-            const isClickable = isActive || isCompleted;
+          <div className="flex justify-between items-center w-full relative z-10">
+            {allSteps.map((step, index) => {
+              const isActive = index === currentStep;
+              const isCompleted = completedSteps.includes(index);
+              const isClickable = isActive || isCompleted;
 
-            let circleClasses = "";
-            if (isActive) {
-              circleClasses =
-                "bg-info-dark ring-4 ring-info-main ring-opacity-50";
-            } else if (isCompleted) {
-              circleClasses = "bg-warning-light";
-            } else {
-              circleClasses = "bg-info-main";
-            }
+              let circleClasses = "";
+              if (isActive) {
+                circleClasses =
+                  "bg-info-dark ring-4 ring-info-main ring-opacity-50";
+              } else if (isCompleted) {
+                circleClasses = "bg-warning-light";
+              } else {
+                circleClasses = "bg-info-main";
+              }
 
-            return (
-              <div key={index} className="flex flex-col items-center">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleStepClick(index);
-                  }}
-                  type="button"
-                  disabled={!isClickable}
-                  className={`
-                    flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10
-                    rounded-full text-white font-medium transition-all duration-300
-                    ${circleClasses}
-                    ${!isClickable ? "cursor-not-allowed" : ""}
-                  `}
-                >
-                  {index + 1}
-                </button>
-                <span
-                  className={`
-                    mt-2 text-xs sm:text-sm font-medium max-w-[90px] sm:max-w-none
-                    text-center
-                    ${isActive ? "text-info-dark" : "text-info-main"}
-                  `}
-                >
-                  {step.title}
-                </span>
-              </div>
-            );
-          })}
+              return (
+                <div key={index} className="flex flex-col items-center">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleStepClick(index);
+                    }}
+                    type="button"
+                    disabled={!isClickable}
+                    className={`
+                      flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10
+                      rounded-full text-white font-medium transition-all duration-300
+                      ${circleClasses}
+                      ${!isClickable ? "cursor-not-allowed" : ""}
+                    `}
+                  >
+                    {index + 1}
+                  </button>
+                  <span
+                    className={`
+                      mt-2 text-xs sm:text-sm font-medium max-w-[90px] sm:max-w-none
+                      text-center
+                      ${isActive ? "text-info-dark" : "text-info-main"}
+                    `}
+                  >
+                    {step.title}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

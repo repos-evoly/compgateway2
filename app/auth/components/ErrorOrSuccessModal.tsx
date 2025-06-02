@@ -9,6 +9,7 @@ type ErrorOrSuccessModalProps = {
   title: string;
   message: string;
   onClose: () => void;
+  onConfirm?: () => void; // Added for success scenario
 };
 
 export default function ErrorOrSuccessModal({
@@ -17,6 +18,7 @@ export default function ErrorOrSuccessModal({
   title,
   message,
   onClose,
+  onConfirm,
 }: ErrorOrSuccessModalProps) {
   if (!isOpen) return null;
 
@@ -54,16 +56,35 @@ export default function ErrorOrSuccessModal({
               )}
             </div>
             <p className="mb-6 text-gray-700 text-lg">{message}</p>
-            <button
-              onClick={onClose}
-              className={`rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md ${
-                isSuccess
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
-                  : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700"
-              }`}
-            >
-              حسناً
-            </button>
+
+            {/* If success => show 2 buttons (Ok, Confirm), else => show 1 */}
+            {isSuccess ? (
+              <div className="flex items-center justify-center gap-4">
+                {/* Ok => just close modal */}
+                {/* <button
+                  onClick={onClose}
+                  className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
+                >
+                  حسناً
+                </button> */}
+
+                {/* Confirm => call onConfirm if provided */}
+                <button
+                  onClick={onConfirm}
+                  className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
+                >
+                  تأكيد
+                </button>
+              </div>
+            ) : (
+              // Error => single button
+              <button
+                onClick={onClose}
+                className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700"
+              >
+                حسناً
+              </button>
+            )}
           </div>
         </div>
       </div>

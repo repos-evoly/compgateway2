@@ -2,20 +2,22 @@
 
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-
-import type { EmployeesFormPayload } from "../types"; // Adjust path if needed
-import FormInputIcon from "@/app/components/FormUI/FormInputIcon"; // Adjust if needed
-import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo"; // Adjust if needed
-import BackButton from "@/app/components/reusable/BackButton"; // Import your new back button
-import SubmitButton from "@/app/components/FormUI/SubmitButton"; // Import your revised SubmitButton
-
+import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 import { FaUser, FaKey, FaEnvelope, FaPhone } from "react-icons/fa";
 
-interface EmployeeFormProps {
+import type { EmployeesFormPayload, RoleOption } from "../types";
+import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
+import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
+import BackButton from "@/app/components/reusable/BackButton";
+import SubmitButton from "@/app/components/FormUI/SubmitButton";
+import { getRoles } from "../services";
+
+type EmployeeFormProps = {
   initialValues?: EmployeesFormPayload;
   onSubmit: (values: EmployeesFormPayload) => void;
   onCancel?: () => void;
-}
+};
 
 const EmployeeFormSchema = Yup.object().shape({
   firstName: Yup.string().required("Required"),
@@ -43,23 +45,35 @@ export default function EmployeeForm({
     email: "",
     password: "",
     phone: "",
-    roleId: undefined,
+    roleId: 0,
   };
 
   const formInitialValues = initialValues ?? defaultValues;
+  const locale = useLocale(); // "en" or "ar"
+  const [roles, setRoles] = useState<RoleOption[]>([]);
 
-  // 3) Dummy role data
-  const roleOptions = [
-    { value: 1, label: "Manager" },
-    { value: 2, label: "Assistant" },
-    { value: 3, label: "Accountant" },
-  ];
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const data = await getRoles();
+        setRoles(data);
+      } catch (err) {
+        console.error("Failed to fetch roles:", err);
+      }
+    };
+
+    fetchRoles();
+  }, []);
+
+  const roleOptions = roles.map((role) => ({
+    value: role.id,
+    label: locale === "ar" ? role.nameAR : role.nameLT,
+  }));
 
   return (
     <div className="rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl">
       {/* Header with back button (conditionally) + short height */}
       <div className="bg-info-dark py-8 h-10 flex items-center gap-4">
-        {/* If edit => pass fallbackPath, else no path => refresh */}
         <BackButton fallbackPath={isEditMode ? "/employees" : undefined} />
       </div>
 
@@ -95,6 +109,8 @@ export default function EmployeeForm({
                       name="username"
                       label="Username"
                       startIcon={<FaUser className="text-info-dark" />}
+                      /* Only disable if editing an existing employee */
+                      disabled={isEditMode}
                     />
                   </div>
                 </div>
@@ -110,12 +126,16 @@ export default function EmployeeForm({
                       label="Email Address"
                       type="email"
                       startIcon={<FaEnvelope className="text-info-dark" />}
+                      /* Only disable if editing an existing employee */
+                      disabled={isEditMode}
                     />
                     <FormInputIcon
                       name="password"
                       label="Password"
                       type="password"
                       startIcon={<FaKey className="text-info-dark" />}
+                      /* Only disable if editing an existing employee */
+                      disabled={isEditMode}
                     />
                   </div>
                 </div>

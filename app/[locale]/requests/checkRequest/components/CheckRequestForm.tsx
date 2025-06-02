@@ -10,11 +10,11 @@ import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import Description from "@/app/components/FormUI/Description";
 import CheckRequestTable from "../components/Table";
-import { FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaPaperPlane } from "react-icons/fa";
 
 // We'll use the "form type," not the API type
 import { TCheckRequestFormValues } from "../types";
-import CancelButton from "@/app/components/FormUI/CancelButton";
+import BackButton from "@/app/components/reusable/BackButton";
 
 /** Extended props to allow a readOnly mode */
 type CheckRequestFormProps = {
@@ -185,12 +185,9 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
               />
             )}
             {onCancel && (
-              <CancelButton
-                title={t("cancel")}
-                Icon={FaTimes}
-                onClick={onCancel}
-                disabled={submitting}
-                fullWidth={false}
+              <BackButton
+                fallbackPath="/requests/checkRequest"
+                isEditing={initialValues !== undefined}
               />
             )}
           </div>

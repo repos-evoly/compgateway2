@@ -324,14 +324,14 @@ export type DetailedUser = {
       id: number;
       authUserId: number;
       companyId: string | null;
-      kycStatus: string | null;
+      RegistrationStatus: string | null;
       kycBranchId: number | null;
       kycLegalCompanyName: string | null;
       kycLegalCompanyNameLt: string | null;
       kycMobile: string | null;
       kycNationality: string | null;
       kycCity: string | null;
-      kycStatusMessage: string | null;
+      RegistrationStatusMessage: string | null;
       kycRequestedAt: string | null;
       kycReviewedAt: string | null;
       firstName: string | null;

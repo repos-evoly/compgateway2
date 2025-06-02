@@ -9,16 +9,16 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import { FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaPaperPlane } from "react-icons/fa";
 import Description from "@/app/components/FormUI/Description";
-import CancelButton from "@/app/components/FormUI/CancelButton";
 
 import { createCheckbookRequest } from "../services";
 import { TCheckbookFormProps, TCheckbookFormValues } from "../types";
+import BackButton from "@/app/components/reusable/BackButton";
+import FormHeader from "@/app/components/reusable/FormHeader";
 
 const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   onSubmit,
-  onCancel,
   initialData,
   readOnly = false, // Defaults to editable (false)
 }) => {
@@ -74,7 +74,12 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   return (
     <div className="mt-2 rounded w-full bg-gray-100">
       {/* Header styling */}
-      <div className="w-full bg-info-dark h-16 rounded-t-md"></div>
+      <FormHeader>
+        <BackButton
+          fallbackPath="/requests/checkbook"
+          isEditing={initialData !== undefined}
+        />
+      </FormHeader>
 
       <div className="px-6 pb-6">
         <Form
@@ -178,14 +183,6 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
                 fullWidth={false}
               />
             )}
-            {/* Cancel/Back button (always visible, or you could conditionally hide) */}
-            <CancelButton
-              title={t("cancel")}
-              onClick={onCancel}
-              disabled={isSubmitting}
-              fullWidth={false}
-              Icon={FaTimes}
-            />
           </div>
         </Form>
       </div>

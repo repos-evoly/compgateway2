@@ -11,11 +11,11 @@ import SubmitButton from "@/app/components/FormUI/SubmitButton";
 
 import { getCurrencies } from "@/app/[locale]/currencies/services";
 
-import CancelButton from "@/app/components/FormUI/CancelButton";
-import { FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaPaperPlane } from "react-icons/fa";
 
 import type { TCreditFacility } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types"; // Adjust path if needed
+import BackButton from "@/app/components/reusable/BackButton";
 
 type Props = {
   initialData?: TCreditFacility | null; // if editing existing
@@ -28,7 +28,6 @@ type Props = {
 export default function CreditFacilityForm({
   initialData,
   onSubmit,
-  onCancel,
   readOnly = false,
 }: Props) {
   // State for the currency dropdown => each item { label, value }
@@ -123,7 +122,11 @@ export default function CreditFacilityForm({
               />
 
               {/* Date (using DatePickerValue) */}
-              <DatePickerValue name="date" label="التاريخ" disabled={readOnly} />
+              <DatePickerValue
+                name="date"
+                label="التاريخ"
+                disabled={readOnly}
+              />
 
               {/* Amount */}
               <FormInputIcon
@@ -182,11 +185,9 @@ export default function CreditFacilityForm({
                 />
               )}
 
-              <CancelButton
-                onClick={onCancel}
-                disabled={isSubmitting}
-                Icon={FaTimes}
-                fullWidth={false}
+              <BackButton
+                fallbackPath="/requests/creditFacility"
+                isEditing={initialData !== undefined}
               />
             </div>
           </Form>

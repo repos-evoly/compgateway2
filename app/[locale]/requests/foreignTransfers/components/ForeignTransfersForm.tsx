@@ -180,6 +180,8 @@ export default function ForeignTransfersForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
+                fallbackPath="/requests/foreignTransfers"
+                isEditing={initialValues !== undefined}
               />
             </Form>
           );

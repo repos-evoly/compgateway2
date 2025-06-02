@@ -144,6 +144,8 @@ export default function VisaWizardForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly} // Pass down to handle last-step button removal
+                fallbackPath="/requests/visaRequest"
+                isEditing={initialValues !== undefined}
               />
             </Form>
           );

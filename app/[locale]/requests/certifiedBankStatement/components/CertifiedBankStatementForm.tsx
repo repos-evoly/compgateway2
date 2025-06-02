@@ -173,6 +173,8 @@ export default function CertifiedBankStatementForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
+                fallbackPath="/requests/certifiedBankStatement"
+                isEditing={initialValues !== undefined}
               />
             </Form>
           );

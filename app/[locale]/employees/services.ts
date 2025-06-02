@@ -2,9 +2,17 @@
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import Cookies from "js-cookie";
-import type { CompanyEmployee, CreateEmployeePayload } from "./types";
+import type {
+  CompanyEmployee,
+  CompanyPermissions,
+  CreateEmployeePayload,
+  RoleOption,
+  UserPermissions,
+  EditEmployeePayload,
+} from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
+const token = getAccessTokenFromCookies();
 
 /**
  * Gets the company code from cookies, decoding any '%22' quotes at the start/end.
@@ -35,7 +43,6 @@ export async function getEmployees(): Promise<CompanyEmployee[]> {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
@@ -56,6 +63,7 @@ export async function getEmployees(): Promise<CompanyEmployee[]> {
   }
 
   const data = await res.json();
+  console.log("Fetched Employees Data:", data);
   return data as CompanyEmployee[];
 }
 
@@ -67,7 +75,6 @@ export async function getEmployeeById(userId: string | number): Promise<CompanyE
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
@@ -94,14 +101,11 @@ export async function getEmployeeById(userId: string | number): Promise<CompanyE
 /**
  * POST /companies/{companyCode}/users
  */
-export async function createEmployee(
-  payload: CreateEmployeePayload
-): Promise<CompanyEmployee> {
+export async function createEmployee(payload: CreateEmployeePayload): Promise<CompanyEmployee> {
   if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
@@ -124,4 +128,141 @@ export async function createEmployee(
 
   const data = await res.json();
   return data as CompanyEmployee;
+}
+
+/**
+ * PUT /companies/{companyCode}/users/{userId}
+ */
+export async function editEmployee(
+  userId: number,
+  payload: EditEmployeePayload
+): Promise<CompanyEmployee> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const companyCode = getCompanyCodeFromCookies();
+  const url = `${BASE_URL}/companies/${companyCode}/users/${userId}`;
+
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to update employee #${userId}. Status: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data as CompanyEmployee;
+}
+
+
+
+export async function getRoles(): Promise<RoleOption[]> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${BASE_URL}/users/roles?isGlobal=false`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch roles. Status: ${res.status}`);
+  }
+  const data = await res.json();
+
+  return data as RoleOption[];
+}
+
+
+export async function getPermissionsByUserId(userId: string): Promise<UserPermissions[]> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${BASE_URL}/users/${userId}/permissions`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch permissions for user ${userId}. Status: ${res.status}`);
+  }
+  const data = await res.json();
+  return data as UserPermissions[];
+}
+
+export async function getCompanyPermissions(): Promise<CompanyPermissions[]> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${BASE_URL}/users/permissions?isGlobal=false`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch company permissions. Status: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data as CompanyPermissions[];
+}
+
+export async function updateEmployeePermissions(
+  userId: string,
+  permissions: { permissionId: number; roleId: number }[]
+): Promise<void> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${BASE_URL}/users/edit-permissions/${userId}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ userId: Number(userId), permissions }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to update permissions for user ${userId}. Status: ${res.status}`);
+  }
 }

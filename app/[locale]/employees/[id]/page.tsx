@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { EmployeesFormPayload } from "../types";
 import EmployeeForm from "../components/EmployeesForm";
-import { getEmployeeById } from "../services"; // Import your getEmployeeById function
+import { getEmployeeById, editEmployee } from "../services";
 import type { CompanyEmployee } from "../types";
 
 export default function SingleEmployeePage() {
@@ -56,22 +56,32 @@ export default function SingleEmployeePage() {
   }
 
   // 2) Convert the API shape => EmployeesFormPayload
-  // For fields not in your API response, pass defaults
+  // The API doesn't return a password, so default it to "" for the form.
   const initialValues: EmployeesFormPayload = {
     firstName: employee.firstName || "",
     lastName: employee.lastName || "",
-    username: employee.username || "", // if your API returns 'username' or else blank
+    username: employee.username || "",
     email: employee.email || "",
-    password: "", // can't retrieve the password from DB
+    password: "",
     phone: employee.phone || "",
     roleId: employee.roleId || 0,
   };
 
-  // 3) On form submit => do an "updateEmployee" or temporarily log
-  const handleSubmit = (values: EmployeesFormPayload) => {
-    console.log("Updated Employee data:", values);
-    // In a real app => call an update function, e.g. updateEmployee(numericId, values)
-    // then router.push("/employees");
+  // 3) On form submit => call editEmployee, then redirect
+  const handleSubmit = async (values: EmployeesFormPayload) => {
+    try {
+      // The API requires only these fields in the body
+      await editEmployee(numericId, {
+        firstName: values.firstName!,
+        lastName: values.lastName!,
+        email: values.email!,
+        phone: values.phone!,
+        roleId: values.roleId!,
+      });
+      router.push("/employees");
+    } catch (error) {
+      console.error("Error updating employee:", error);
+    }
   };
 
   return (

@@ -1,24 +1,22 @@
+// app/employees/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import type {  EmployeesFormPayload } from "./types";
+import type { EmployeesFormPayload } from "./types";
 import EmployeeForm from "./components/EmployeesForm";
-
-// Our service
 import { getEmployees, createEmployee } from "./services";
 import type { CompanyEmployee } from "./types";
+import { FaLock } from "react-icons/fa";
+import type { Action } from "@/types";
+import { useRouter } from "next/navigation";
 
-/**
- * The main listing page for employees => now fetches from the API.
- */
 export default function EmployeesPage() {
-  // Real employees from API
   const [employees, setEmployees] = useState<CompanyEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
-  // On mount => fetch employees
+  const router = useRouter();
   useEffect(() => {
     async function fetchAll() {
       try {
@@ -37,25 +35,36 @@ export default function EmployeesPage() {
     return <div className="p-4">Loading employees...</div>;
   }
 
-  // Transform for CrudDataGrid
+  // Keep every field exactly as returned, but turn permissions[] into a comma string
   const rowData = employees.map((emp) => ({
-    id: emp.id, // or emp.authUserId, but your API returns 'id'
-    fullName: `${emp.firstName} ${emp.lastName}`,
-    email: emp.email ?? "",
-    phone: emp.phone ?? "",
-    role: emp.roleId ? `Role #${emp.roleId}` : "No role",
+    ...emp,
+    permissions: emp.permissions.join(", "),
   }));
 
-  // Columns
+  console.log("Employees Data =>", rowData);
+
   const columns = [
     { key: "id", label: "ID" },
-    { key: "fullName", label: "Name" },
+    { key: "firstName", label: "First Name" },
+    { key: "lastName", label: "Last Name" },
     { key: "email", label: "Email" },
     { key: "phone", label: "Phone" },
-    { key: "role", label: "Role" },
+    { key: "roleId", label: "Role ID" },
+    { key: "permissions", label: "Permissions" },
   ];
 
-  // For "Add" => show blank form => after submit => createEmployee => re-fetch
+  const actions: Action[] = [
+    {
+      name: "permissions",
+      tip: "Edit Permissions",
+      icon: <FaLock />,
+      onClick: (row) => {
+        // still pushing dynamic route to pick up params in the Permissions page
+        router.push(`/employees/permissions/${row.id}/${row.roleId}`);
+      },
+    },
+  ];
+
   const handleAddClick = () => {
     setShowForm(true);
   };
@@ -72,12 +81,9 @@ export default function EmployeesPage() {
         roleId: values.roleId || 0,
       });
       console.log("New Employee Submitted =>", newEmployee);
-      // Optionally re-fetch the entire list or push to local state
-      setEmployees((prev) => [...prev, newEmployee]);
+      // you can re-fetch or update local state here
     } catch (err) {
       console.error("Failed to create employee:", err);
-    } finally {
-      setShowForm(false);
     }
   };
 
@@ -95,6 +101,8 @@ export default function EmployeesPage() {
           showDropdown={false}
           showAddButton
           onAddClick={handleAddClick}
+          showActions
+          actions={actions}
         />
       )}
 

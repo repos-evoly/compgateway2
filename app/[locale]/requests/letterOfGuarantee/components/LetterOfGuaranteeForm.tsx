@@ -8,9 +8,8 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import CancelButton from "@/app/components/FormUI/CancelButton";
 
-import { FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaPaperPlane } from "react-icons/fa";
 
 // For fetching currencies
 import { getCurrencies } from "@/app/[locale]/currencies/services";
@@ -20,6 +19,7 @@ import { CheckAccount } from "@/app/helpers/checkAccount";
 import type { TLetterOfGuarantee } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
+import BackButton from "@/app/components/reusable/BackButton";
 
 /** Props for the top-level form component */
 type Props = {
@@ -51,7 +51,6 @@ function InnerForm({
   values,
   setFieldError,
   initialData,
-  onCancel,
   availableBalance,
   setAvailableBalance,
   currencyOptions,
@@ -162,11 +161,9 @@ function InnerForm({
           />
         )}
 
-        <CancelButton
-          onClick={onCancel}
-          disabled={isSubmitting}
-          fullWidth={false}
-          Icon={FaTimes}
+        <BackButton
+          fallbackPath="/requests/letterOfGuarantee"
+          isEditing={initialData !== undefined}
         />
       </div>
     </Form>

@@ -19,11 +19,10 @@ import {
   FaDollarSign,
   FaInfoCircle,
   FaPaperPlane,
-  FaTimes,
 } from "react-icons/fa";
-import CancelButton from "@/app/components/FormUI/CancelButton";
 
 import { TRTGSFormValues } from "../types";
+import BackButton from "@/app/components/reusable/BackButton";
 
 /** Props for the RTGSForm component */
 type RTGSFormProps = {
@@ -63,7 +62,6 @@ const validationSchema = Yup.object({
 const RTGSForm: React.FC<RTGSFormProps> = ({
   initialValues,
   onSubmit,
-  onCancel,
   readOnly = false, // defaults to editable
 }) => {
   const t = useTranslations("RTGSForm");
@@ -335,14 +333,10 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               fullWidth={false}
             />
           )}
-          {onCancel && (
-            <CancelButton
-              title={t("cancel")}
-              Icon={FaTimes}
-              onClick={onCancel}
-              fullWidth={false}
-            />
-          )}
+          <BackButton
+            fallbackPath="/requests/rtgs"
+            isEditing={initialValues !== undefined}
+          />
         </div>
       </Form>
     </div>

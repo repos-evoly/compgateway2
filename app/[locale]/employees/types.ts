@@ -87,3 +87,32 @@ export type CreateEmployeePayload = {
   phone: string;
   roleId: number;
 };
+
+export type RoleOption = {
+  id:number;
+  nameLT: string;
+  nameAR: string;
+  description: string;
+  isGlobal: boolean;
+}
+
+export type UserPermissions = {
+  permissionId: number;
+  permissionName:string;
+  hasPermission: number;
+}
+
+export type CompanyPermissions = {
+  id:number;
+  name:string;
+  description:string;
+  isGlobal: boolean;
+}
+
+export type EditEmployeePayload = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  roleId: number;
+};

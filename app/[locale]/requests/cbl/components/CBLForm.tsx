@@ -8,7 +8,7 @@ import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import { FaTimes, FaUser } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 
 import Table from "@/app/[locale]/requests/cbl/components/Table";
 import InfoBox from "@/app/[locale]/requests/cbl/components/InfoBox";
@@ -17,7 +17,8 @@ import { getColumns, fields, initialValues as defaultVals } from "../data";
 import { CBLFormProps, TCBLValues } from "../types";
 
 import { addCblRequest } from "../service";
-import CancelButton from "@/app/components/FormUI/CancelButton";
+import BackButton from "@/app/components/reusable/BackButton";
+import FormHeader from "@/app/components/reusable/FormHeader";
 
 /**
  * A CBL form that, if readOnly => disables fields + hides buttons
@@ -25,7 +26,6 @@ import CancelButton from "@/app/components/FormUI/CancelButton";
 const CBLForm: React.FC<CBLFormProps> = ({
   initialValues,
   onSubmit,
-  onCancel,
   readOnly = false,
 }) => {
   const t = useTranslations("cblForm");
@@ -95,8 +95,14 @@ const CBLForm: React.FC<CBLFormProps> = ({
 
   return (
     <>
-      <div className="w-full bg-info-dark h-16 rounded-t-md mb-0"></div>
-
+      <FormHeader>
+        <div className="pb-5">
+          <BackButton
+            fallbackPath="/requests/cbl"
+            isEditing={initialValues !== undefined}
+          />
+        </div>
+      </FormHeader>
       <div className="px-6 bg-gray-100 -mt-6 py-2">
         <Form initialValues={mergedValues} onSubmit={handleSubmit}>
           {/* Dynamic sections */}
@@ -215,15 +221,6 @@ const CBLForm: React.FC<CBLFormProps> = ({
                 fullWidth={false}
                 disabled={isSubmitting}
               />
-              {onCancel && (
-                <CancelButton
-                  title="Cancel"
-                  Icon={FaTimes}
-                  onClick={onCancel}
-                  disabled={isSubmitting}
-                  fullWidth={false}
-                />
-              )}
             </div>
           )}
         </Form>

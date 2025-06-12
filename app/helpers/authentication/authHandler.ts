@@ -8,13 +8,16 @@ type SimpleRouter = {
   push: (url: string) => void;
 };
 
+type OnCompanyNotApproved = (status: string, msg: string) => void;
+
+
 export type LoginFormValues = {
   login: string;
   password: string;
 };
 
 export type ForgotPasswordValues = {
-  email: string;
+  login: string;
 };
 
 export type ResetPasswordValues = {
@@ -34,7 +37,6 @@ type LoginHandlerOptions = {
   onError?: (msg: string) => void;
   onCompanyNotApproved?: (status: string, msg: string) => void;
 };
-
 export async function loginHandler(
   values: LoginFormValues,
   { router, onTwoFactorRequired, onError, onCompanyNotApproved }: LoginHandlerOptions
@@ -52,10 +54,10 @@ export async function loginHandler(
 
     const data = await response.json();
 
-    // Save email in local storage so the verification form can retrieve it
-    localStorage.setItem("auth_email", values.login);
+    // Save login in local storage so the verification form can retrieve it
+    localStorage.setItem("auth_login", values.login);
 
-    // Handle API response
+    // 1) 2FA checks
     if (data.requiresTwoFactorEnable) {
       // If user must enable 2FA, redirect to /auth/qr
       router.push("/auth/qr");
@@ -68,70 +70,15 @@ export async function loginHandler(
       return;
     }
 
-    // If we have tokens, parse them
+    // 2) If tokens exist => call helper function
     if (data.accessToken && data.refreshToken && data.kycToken) {
-      Cookies.set("accessToken", data.accessToken, {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("refreshToken", data.refreshToken, {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("kycToken", data.kycToken, {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-
-      const parsed = parseJwt(data.accessToken);
-      if (!parsed || !parsed.nameid) {
-        throw new Error("Failed to parse user ID from the access token.");
-      }
-
-      const userId = parseInt(parsed.nameid, 10);
-
-      // 2) Fetch user data (role, companyStatus, etc.)
-      const userData = await getUserById(userId);
-      console.log("User data fetched:", userData);
-
-      // If userData.accounts, store them
-      if (userData.accounts) {
-        Cookies.set("statementAccounts", JSON.stringify(userData.accounts), {
-          expires: 7,
-          secure: false,
-          httpOnly: false,
-        });
-      }
-      Cookies.set("companyCode", JSON.stringify(userData.companyCode), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-      Cookies.set("permissions", JSON.stringify(userData.permissions), {
-        expires: 7,
-        secure: false,
-        httpOnly: false,
-      });
-
-      // 3) Check companyStatus => "approved" => go to statement-of-account
-      if (userData.companyStatus === "approved" ) {
-        router.push("/statement-of-account");
-      }
-      else if(userData.companyStatus === "missingInformation") {
-        router.push(`/auth/register/${userData.companyCode}`);
-      }
-       else {
-        // If not approved => call onCompanyNotApproved callback
-        if (onCompanyNotApproved) {
-          onCompanyNotApproved(
-            userData.companyStatus!,
-            userData.companyStatusMessage || "حالة الشركة غير مقبولة"
-          );
-        }
-      }
+      await loginRoutingHandler(
+        data.accessToken,
+        data.refreshToken,
+        data.kycToken,
+        router,
+        onCompanyNotApproved
+      );
     } else {
       // Missing tokens => error
       throw new Error("استجابة غير متوقعة من الخادم. يرجى المحاولة مرة أخرى.");
@@ -150,7 +97,7 @@ export async function loginHandler(
 }
 
 type ForgotPasswordHandlerOptions = {
-  onSuccess?: (email: string) => void;
+  onSuccess?: (login: string) => void;
   onError?: (msg: string) => void;
 };
 
@@ -178,7 +125,7 @@ export async function forgotPasswordHandler(
     alert("يرجى التواصل مع الجهة المسؤولة للحصول على الرمز اللازم لتغيير كلمة المرور.");
 
     if (onSuccess) {
-      onSuccess(values.email);
+      onSuccess(values.login);
     }
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -242,6 +189,94 @@ export async function resetPasswordHandler(
       } else {
         alert("حدث خطأ غير متوقع.");
       }
+    }
+  }
+}
+
+
+
+
+
+export async function loginRoutingHandler(
+  accessToken: string,
+  refreshToken: string,
+  kycToken: string,
+  router: SimpleRouter,
+  onCompanyNotApproved?: OnCompanyNotApproved
+): Promise<void> {
+  // Store tokens in Cookies
+  Cookies.set("accessToken", accessToken, {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+  Cookies.set("refreshToken", refreshToken, {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+  Cookies.set("kycToken", kycToken, {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+
+  // Parse the token to get user ID
+  const parsed = parseJwt(accessToken);
+  if (!parsed || !parsed.nameid) {
+    throw new Error("Failed to parse user ID from the access token.");
+  }
+
+  const userId = parseInt(parsed.nameid, 10);
+
+  // Fetch user data (role, companyStatus, etc.)
+  const userData = await getUserById(userId);
+  console.log("User data fetched:", userData);
+
+  // If userData.accounts, store them
+  if (userData.accounts) {
+    Cookies.set("statementAccounts", JSON.stringify(userData.accounts), {
+      expires: 7,
+      secure: false,
+      httpOnly: false,
+    });
+  }
+
+  // Store other user data in cookies
+  Cookies.set("companyCode", JSON.stringify(userData.companyCode), {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+  Cookies.set("permissions", JSON.stringify(userData.permissions), {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+  Cookies.set("servicePackageId", JSON.stringify(userData.servicePackageId), {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+  
+
+  // Route based on companyStatus
+  if (userData.companyStatus === "approved") {
+    router.push("/statement-of-account");
+  } else if (userData.companyStatus === "missingInformation" && userData.isCompanyAdmin) {
+    const encodedMsg = encodeURIComponent(userData.companyStatusMessage || "");
+    router.push(`/auth/register/${userData.companyCode}?msg=${encodedMsg}`);
+  } else if (userData.companyStatus === "missingsDocuments" && userData.isCompanyAdmin) {
+    const encodedMsg = encodeURIComponent(userData.companyStatusMessage || "");
+    router.push(`/auth/register/uploadDocuments/${userData.companyCode}?msg=${encodedMsg}`);
+  } else {
+    console.log(" comany status not approved ", userData)
+    // If not approved => call onCompanyNotApproved callback
+    if (onCompanyNotApproved) {
+      onCompanyNotApproved(
+        userData.companyStatus!,
+        userData.companyStatusMessage || "حالة الشركة غير مقبولة"
+      );
     }
   }
 }

@@ -17,19 +17,52 @@ import type { TKycResponse, TRegisterFields } from "../types";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 
-type RegisterFormProps = {
-  /** The data object from KYC (already fetched). */
-  kycData: TKycResponse["data"] | undefined;
+/**
+ * We omit "roleId" from TRegisterFields (not needed here).
+ */
+type TFormValues = Omit<TRegisterFields, "roleId">;
 
-  /** The parent's handleSubmit logic is passed here */
+type RegisterFormProps = {
+  /**
+   * KYC data (optional if we haven't fetched yet).
+   */
+  kycData?: TKycResponse["data"];
+
+  /**
+   * Called upon form submission.
+   */
   onSubmit: (
-    values: Omit<TRegisterFields, "roleId">,
-    formikHelpers: FormikHelpers<Omit<TRegisterFields, "roleId">>
+    values: TFormValues,
+    formikHelpers: FormikHelpers<TFormValues>
   ) => void;
+
+  /**
+   * Whether to show only a limited set of fields
+   * (firstName, lastName, phone) or all fields.
+   */
+  showLimitedFields?: boolean;
+
+  /**
+   * Optionally pass pre-filled form values
+   * to override defaults (e.g. from adminContact).
+   */
+  initialValues?: Partial<TFormValues>;
+
+  /**
+   * The label to display on the submit button.
+   * Defaults to "تسجيل الحساب" if not provided.
+   */
+  submitButtonLabel?: string;
 };
 
-export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
-  // If we have no KYC data, display fallback
+export default function RegisterForm({
+  kycData,
+  onSubmit,
+  showLimitedFields = false,
+  initialValues,
+  submitButtonLabel,
+}: RegisterFormProps) {
+  // If KYC data doesn't exist, show fallback
   if (!kycData) {
     return (
       <div className="bg-white p-8 rounded-lg shadow-md" dir="rtl">
@@ -47,7 +80,7 @@ export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
     );
   }
 
-  // Extract read-only KYC data
+  // Destructure for display (left KYC panel)
   const {
     companyId,
     branchId,
@@ -58,9 +91,9 @@ export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
     city,
   } = kycData;
 
-  // Formik initial values
-  const initialValues: Omit<TRegisterFields, "roleId"> = {
-    companyCode: companyId, // disabled input
+  // Build default form values
+  const defaultValues: TFormValues = {
+    companyCode: companyId || "",
     username: "",
     firstName: "",
     lastName: "",
@@ -69,26 +102,37 @@ export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
     phone: "",
   };
 
-  // Validation schema
-  const validationSchema = Yup.object({
-    companyCode: Yup.string().required("حقل رمز الشركة مطلوب"),
-    username: Yup.string().required("اسم المستخدم مطلوب"),
+  // Merge any initialValues
+  const finalInitialValues: TFormValues = {
+    ...defaultValues,
+    ...initialValues,
+  };
+
+  // Validation schema changes if showLimitedFields = true
+  const validationSchema = Yup.object().shape({
+    ...(!showLimitedFields && {
+      companyCode: Yup.string().required("حقل رمز الشركة مطلوب"),
+      username: Yup.string().required("اسم المستخدم مطلوب"),
+      email: Yup.string()
+        .email("صيغة بريد إلكتروني غير صالحة")
+        .required("البريد الإلكتروني مطلوب"),
+      password: Yup.string().required("كلمة المرور مطلوبة"),
+    }),
     firstName: Yup.string().required("الاسم الأول مطلوب"),
     lastName: Yup.string().required("الاسم الأخير مطلوب"),
-    email: Yup.string()
-      .email("صيغة بريد إلكتروني غير صالحة")
-      .required("البريد الإلكتروني مطلوب"),
-    password: Yup.string().required("كلمة المرور مطلوبة"),
     phone: Yup.string().required("رقم الهاتف مطلوب"),
   });
 
+  // Pick a default label if none is specified
+  const buttonLabel = submitButtonLabel || "تسجيل الحساب";
+
   return (
     <div
-      className="w-full max-w-5xl bg-white shadow-xl rounded-2xl overflow-hidden"
+      className="w-full max-w-5xl m-auto bg-white shadow-xl rounded-2xl overflow-hidden"
       dir="rtl"
     >
       <div className="flex flex-col md:flex-row">
-        {/* Left: KYC Info */}
+        {/* Left panel: KYC info */}
         <div className="bg-info-dark text-white p-8 md:w-1/3">
           <div className="flex justify-center mb-6">
             <div className="bg-white p-3 rounded-full">
@@ -151,7 +195,7 @@ export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
           </div>
         </div>
 
-        {/* Right: Form Fields */}
+        {/* Right panel: Form fields */}
         <div className="p-8 md:w-2/3">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-1">
@@ -163,28 +207,34 @@ export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
           </div>
 
           <Formik
-            initialValues={initialValues}
+            initialValues={finalInitialValues}
             validationSchema={validationSchema}
-            onSubmit={onSubmit} // calls parent's function
+            onSubmit={onSubmit}
           >
             {({ isSubmitting }) => (
               <Form>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Column 1 */}
+                  {/* If NOT limited => show companyCode + username */}
+                  {!showLimitedFields && (
+                    <div>
+                      <FormInputIcon
+                        name="companyCode"
+                        label="رمز الشركة"
+                        type="text"
+                        startIcon={<FiHash />}
+                        disabled
+                      />
+                      <FormInputIcon
+                        name="username"
+                        label="اسم المستخدم"
+                        type="text"
+                        startIcon={<FiUser />}
+                      />
+                    </div>
+                  )}
+
+                  {/* firstName + lastName => always shown */}
                   <div>
-                    <FormInputIcon
-                      name="companyCode"
-                      label="رمز الشركة"
-                      type="text"
-                      startIcon={<FiHash />}
-                      disabled
-                    />
-                    <FormInputIcon
-                      name="username"
-                      label="اسم المستخدم"
-                      type="text"
-                      startIcon={<FiUser />}
-                    />
                     <FormInputIcon
                       name="firstName"
                       label="الاسم الأول"
@@ -199,20 +249,26 @@ export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
                     />
                   </div>
 
-                  {/* Column 2 */}
+                  {/* If NOT limited => show email + password */}
+                  {!showLimitedFields && (
+                    <div>
+                      <FormInputIcon
+                        name="email"
+                        label="البريد الإلكتروني"
+                        type="email"
+                        startIcon={<FiMail />}
+                      />
+                      <FormInputIcon
+                        name="password"
+                        label="كلمة المرور"
+                        type="password"
+                        startIcon={<FiLock />}
+                      />
+                    </div>
+                  )}
+
+                  {/* phone => always shown */}
                   <div>
-                    <FormInputIcon
-                      name="email"
-                      label="البريد الإلكتروني"
-                      type="email"
-                      startIcon={<FiMail />}
-                    />
-                    <FormInputIcon
-                      name="password"
-                      label="كلمة المرور"
-                      type="password"
-                      startIcon={<FiLock />}
-                    />
                     <FormInputIcon
                       name="phone"
                       label="رقم الهاتف"
@@ -222,10 +278,9 @@ export default function RegisterForm({ kycData, onSubmit }: RegisterFormProps) {
                   </div>
                 </div>
 
-                {/* Submit Button */}
                 <div className="mt-8">
                   <SubmitButton
-                    title="تسجيل الحساب"
+                    title={buttonLabel}
                     isSubmitting={isSubmitting}
                     color="info-dark"
                   />

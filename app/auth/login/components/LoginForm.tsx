@@ -11,7 +11,6 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import Image from "next/image";
 import VerificationForm from "@/app/auth/login/components/VerificationForm";
-import Modal from "@/app/components/reusable/Modal";
 import ForgotPasswordForm from "@/app/auth/login/components/ForgotPasswordForm";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -21,14 +20,21 @@ import {
 } from "@/app/helpers/authentication/authHandler";
 
 export default function LoginForm(): JSX.Element {
+  const router = useRouter();
+
+  // Show/Hide password
   const [showPassword, setShowPassword] = useState<boolean>(false);
+
+  // General login error
   const [error, setError] = useState<string | null>(null);
+
+  // Loading state for submit button
   const [loading, setLoading] = useState<boolean>(false);
 
-  // 2FA Modal
+  // 2FA Verification overlay
   const [show2FAModal, setShow2FAModal] = useState<boolean>(false);
 
-  // Forgot Password Modal
+  // Forgot Password overlay
   const [showForgotModal, setShowForgotModal] = useState<boolean>(false);
 
   // Company not approved modal
@@ -36,9 +42,7 @@ export default function LoginForm(): JSX.Element {
   const [modalTitle, setModalTitle] = useState<string>("");
   const [modalMessage, setModalMessage] = useState<string>("");
 
-  const router = useRouter();
-
-  // Login form initial values and validation schema
+  // Initial values and validation schema for login form
   const initialValues: LoginFormValues = {
     login: "",
     password: "",
@@ -49,7 +53,7 @@ export default function LoginForm(): JSX.Element {
     password: Yup.string().required("هذا الحقل مطلوب"),
   });
 
-  // onSubmit for login form
+  // Handle login form submission
   async function onLoginSubmit(values: LoginFormValues) {
     setLoading(true);
 
@@ -60,7 +64,6 @@ export default function LoginForm(): JSX.Element {
         setError(msg);
       },
       onCompanyNotApproved: (status, msg) => {
-        // Display a modal showing user must wait
         setModalTitle(`حالة الشركة: ${status}`);
         setModalMessage(msg);
         setModalOpen(true);
@@ -70,7 +73,7 @@ export default function LoginForm(): JSX.Element {
     setLoading(false);
   }
 
-  // Closes the "company not approved" modal
+  // Close "company not approved" modal
   const handleCloseModal = () => {
     setModalOpen(false);
   };
@@ -78,7 +81,7 @@ export default function LoginForm(): JSX.Element {
   return (
     <div className="flex justify-center items-center p-4 mt-6" dir="rtl">
       <div className="bg-white shadow-2xl rounded-3xl p-10 w-full max-w-md text-right">
-        {/* Text above the image */}
+        {/* Header */}
         <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-info-dark">
             منظومة بوابة الشركات
@@ -96,12 +99,12 @@ export default function LoginForm(): JSX.Element {
           />
         </div>
 
-        {/* Text below the image */}
+        {/* Subtitle */}
         <div className="text-center mb-8">
           <h2 className="text-xl font-semibold text-gray-700">الدخول</h2>
         </div>
 
-        {/* Display Error Message (general login error) */}
+        {/* General login error */}
         {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
         {/* Login Form */}
@@ -158,27 +161,31 @@ export default function LoginForm(): JSX.Element {
         </Form>
       </div>
 
-      {/* 2FA Verification Modal */}
+      {/* 2FA Verification Overlay (no separate Modal component) */}
       {show2FAModal && (
-        <Modal onClose={() => setShow2FAModal(false)}>
-          <VerificationForm
-            onClose={() => setShow2FAModal(false)}
-            sourcePage="login"
-          />
-        </Modal>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className=" rounded-3xl w-full max-w-sm p-4">
+            <VerificationForm
+              onClose={() => setShow2FAModal(false)}
+              sourcePage="login"
+            />
+          </div>
+        </div>
       )}
 
-      {/* Forgot Password Modal */}
+      {/* Forgot Password Overlay */}
       {showForgotModal && (
-        <Modal onClose={() => setShowForgotModal(false)}>
-          <ForgotPasswordForm onClose={() => setShowForgotModal(false)} />
-        </Modal>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-4">
+            <ForgotPasswordForm onClose={() => setShowForgotModal(false)} />
+          </div>
+        </div>
       )}
 
-      {/* Modal for "company not approved" */}
+      {/* Company not approved modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
-        isSuccess={false} // since it's not approved => error style
+        isSuccess={false} // not approved => use error style
         title={modalTitle || "حالة الشركة"}
         message={modalMessage || "الحساب غير معتمد بعد."}
         onClose={handleCloseModal}

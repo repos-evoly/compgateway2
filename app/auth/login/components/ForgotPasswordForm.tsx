@@ -36,11 +36,11 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
 
   // Forgot password step 1: initial values and validation
   const forgotInitialValues: ForgotPasswordValues = {
-    email: "",
+    login: "",
   };
 
   const forgotValidationSchema = Yup.object({
-    email: Yup.string()
+    login: Yup.string()
       .email("البريد الإلكتروني غير صالح")
       .required("هذا الحقل مطلوب"),
   });
@@ -71,7 +71,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
 
     try {
       // Store email for display in step 2
-      const emailToStore = values.email;
+      const emailToStore = values.login;
 
       await forgotPasswordHandler(values, {
         onSuccess: () => {

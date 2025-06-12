@@ -43,3 +43,49 @@ export type TKycResponse = {
     location: string;
     message: string;
   }
+
+
+  export type TCompanyRegistrationInfo = {
+    code: string;
+    name: string;
+    isActive: boolean;
+    registrationStatus: string;
+    registrationStatusMessage: string | null;
+    kycRequestedAt: string | null;
+    kycReviewedAt: string | null;
+    kycBranchId: string | null;
+    kycLegalCompanyName: string | null;
+    kycLegalCompanyNameLt: string | null;
+    kycMobile: string | null;
+    kycNationality: string | null;
+    kycCity: string | null;
+    attachments: TAttachment[];
+    adminContact: TAdminContact;
+  };
+  
+  export type TAttachment = {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    attSubject: string;
+    attFileName: string;
+    attMime: string;
+    attUrl: string;
+    attOriginalFileName: string;
+    createdBy: string;
+    description: string;
+    attSize: number;
+    companyId: string;
+  };
+  
+  export type TAdminContact = {
+    firstName: string;
+    lastName: string;
+    phone: string;
+  };
+  
+  export type TEditCompanyInfoPayload = {
+    firstName: string;
+    lastName: string;
+    phone: string;
+  };

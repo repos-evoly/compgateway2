@@ -1,9 +1,23 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { FiSmartphone } from "react-icons/fi";
 import QRCodeDisplay from "@/app/auth/login/components/Qr"; // Adjust the path if needed
 import AuthHeader from "@/app/auth/components/AuthHeader"; // Import the new header component
 
 const QRPage = () => {
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Retrieve email from cookies
+    const storedEmail = localStorage.getItem("auth_login");
+    if (storedEmail) {
+      setEmail(storedEmail);
+      // Clear the cookie after retrieval for security
+      document.cookie =
+        "auth_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    }
+  }, []);
+
   return (
     <div className="w-full flex flex-col items-center bg-gray-100 min-h-screen">
       {/* Auth Header with QR Icon, Title, and Subtitle */}
@@ -15,7 +29,7 @@ const QRPage = () => {
 
       {/* QR Code Display */}
       <div className="flex-grow flex items-center justify-center">
-        <QRCodeDisplay qrImagePath="/images/qr-code.png" />
+        {email ? <QRCodeDisplay /> : <p>جاري تحميل البريد الإلكتروني...</p>}
       </div>
     </div>
   );

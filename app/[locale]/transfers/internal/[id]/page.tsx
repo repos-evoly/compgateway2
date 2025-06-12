@@ -1,53 +1,68 @@
 "use client";
 
-import React from "react";
-import { useSearchParams, useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import InternalForm from "../components/InternalForm";
-import { InternalFormValues } from "../types";
+import { getTransferById } from "../services";
+import type { InternalFormValues } from "../types";
 
-/**
- * The detail page: /transfers/internal/[id]
- * We do NOT import from data.ts here.
- * Instead, we parse the "row" query param.
- */
 export default function InternalTransferDetailsPage() {
-  const router = useRouter();
-  const params = useParams(); // e.g. { id: "2" }
-  const searchParams = useSearchParams(); // For query string
+  const { id }     = useParams<{ id: string }>();
+  const router     = useRouter();
 
-  const rowId = params.id; // The "id" portion of the path
-  const rowParam = searchParams.get("row"); // The encoded JSON
+  const [loading, setLoading]       = useState(true);
+  const [initial, setInitial]       = useState<InternalFormValues | null>(null);
 
-  let rowData: InternalFormValues | null = null;
-  if (rowParam) {
-    try {
-      rowData = JSON.parse(decodeURIComponent(rowParam));
-    } catch (error) {
-      console.error("Failed to parse row from query:", error);
-    }
-  }
+  /* ---------------------- fetch by id --------------------- */
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getTransferById(Number(id));
+        /* map API response → InternalFormValues */
+        setInitial({
+          from: res.fromAccount,
+          to: res.toAccount,
+          value: res.amount,
+          description: res.description,
+        });
+      } catch (err) {
+        console.error("Fetch transfer failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id]);
 
-  if (!rowData) {
+  if (loading) {
     return (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">No Row Data Provided</h2>
-        <p>Could not find or parse row data in the URL query.</p>
+      <div className="flex items-center justify-center p-10">
+        <p className="text-gray-600">Loading transfer …</p>
       </div>
     );
   }
 
-  // When the form is submitted, handle saving or just log
-  const handleSubmit = (values: InternalFormValues) => {
-    console.log("Edited row ID =", rowId, " => New Values:", values);
-    alert("Row updated! (in your real app, do something else)");
-    // Return to the list
-    router.push("/transfers/internal");
-  };
+  if (!initial) {
+    return (
+      <div className="p-4">
+        <h2 className="text-xl font-bold">Transfer not found</h2>
+        <button
+          onClick={() => router.push("/transfers/internal")}
+          className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
+        >
+          Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
-      <h2 className="text-xl mb-4">Editing Transfer ID #{rowId}</h2>
-      <InternalForm initialData={rowData} onSubmit={handleSubmit} />
+      <h2 className="mb-4 text-xl font-semibold">
+        Transfer&nbsp;Details&nbsp;#{id}
+      </h2>
+
+      {/* viewOnly disables all inputs & buttons */}
+      <InternalForm initialData={initial} viewOnly />
     </div>
   );
 }

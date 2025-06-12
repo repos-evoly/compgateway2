@@ -312,6 +312,7 @@ export type DetailedUser = {
   servicePackageId: number;
   companyStatus?: string;
   companyStatusMessage?: string;
+  isCompanyAdmin?: boolean;
 
   /** The 'role' object from the API. */
   role: {

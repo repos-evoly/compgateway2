@@ -11,12 +11,22 @@ import { FaLock } from "react-icons/fa";
 import type { Action } from "@/types";
 import { useRouter } from "next/navigation";
 
+// Import the modal
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<CompanyEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
   const router = useRouter();
+
   useEffect(() => {
     async function fetchAll() {
       try {
@@ -35,7 +45,7 @@ export default function EmployeesPage() {
     return <div className="p-4">Loading employees...</div>;
   }
 
-  // Keep every field exactly as returned, but turn permissions[] into a comma string
+  // Convert permissions[] => comma-separated string for display
   const rowData = employees.map((emp) => ({
     ...emp,
     permissions: emp.permissions.join(", "),
@@ -59,7 +69,7 @@ export default function EmployeesPage() {
       tip: "Edit Permissions",
       icon: <FaLock />,
       onClick: (row) => {
-        // still pushing dynamic route to pick up params in the Permissions page
+        // push to dynamic route => /employees/permissions/[id]/[roleId]
         router.push(`/employees/permissions/${row.id}/${row.roleId}`);
       },
     },
@@ -81,10 +91,37 @@ export default function EmployeesPage() {
         roleId: values.roleId || 0,
       });
       console.log("New Employee Submitted =>", newEmployee);
-      // you can re-fetch or update local state here
+
+      // Show success modal
+      setModalTitle("Employee Created");
+      setModalMessage("The employee was created successfully.");
+      setModalSuccess(true);
+      setModalOpen(true);
     } catch (err) {
+      // Show error modal; do NOT hide the form or reset it
       console.error("Failed to create employee:", err);
+
+      const errorMsg =
+        err instanceof Error ? err.message : "An unknown error occurred.";
+
+      setModalTitle("Creation Error");
+      setModalMessage(errorMsg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+  };
+
+  const handleModalConfirm = () => {
+    if (modalSuccess) {
+      // If success => refresh page and hide form
+      router.refresh();
+      setShowForm(false);
+    }
+    setModalOpen(false);
   };
 
   return (
@@ -114,6 +151,16 @@ export default function EmployeesPage() {
           />
         </div>
       )}
+
+      {/* Render the modal */}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={handleModalClose}
+        onConfirm={handleModalConfirm}
+      />
     </div>
   );
 }

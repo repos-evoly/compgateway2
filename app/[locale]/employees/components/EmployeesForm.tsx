@@ -15,7 +15,7 @@ import { getRoles } from "../services";
 
 type EmployeeFormProps = {
   initialValues?: EmployeesFormPayload;
-  onSubmit: (values: EmployeesFormPayload) => void;
+  onSubmit: (values: EmployeesFormPayload) => Promise<void>;
   onCancel?: () => void;
 };
 
@@ -34,10 +34,10 @@ export default function EmployeeForm({
   onSubmit,
   onCancel,
 }: EmployeeFormProps) {
-  // 1) Decide if this is ADD or EDIT mode
+  // Check if we're editing
   const isEditMode = Boolean(initialValues);
 
-  // 2) If no initialValues passed, use empty defaults
+  // Default form values if none provided
   const defaultValues: EmployeesFormPayload = {
     firstName: "",
     lastName: "",
@@ -47,8 +47,8 @@ export default function EmployeeForm({
     phone: "",
     roleId: 0,
   };
-
   const formInitialValues = initialValues ?? defaultValues;
+
   const locale = useLocale(); // "en" or "ar"
   const [roles, setRoles] = useState<RoleOption[]>([]);
 
@@ -72,7 +72,7 @@ export default function EmployeeForm({
 
   return (
     <div className="rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl">
-      {/* Header with back button (conditionally) + short height */}
+      {/* Header with back button */}
       <div className="bg-info-dark py-8 h-10 flex items-center gap-4">
         <BackButton fallbackPath={isEditMode ? "/employees" : undefined} />
       </div>
@@ -81,9 +81,14 @@ export default function EmployeeForm({
         <Formik
           initialValues={formInitialValues}
           validationSchema={EmployeeFormSchema}
-          onSubmit={(values, { resetForm }) => {
-            onSubmit(values);
-            resetForm();
+          // Call parent onSubmit => manage loading state with setSubmitting
+          onSubmit={async (values, { setSubmitting }) => {
+            try {
+              await onSubmit(values);
+            } finally {
+              // Ensure loading is turned off even if there's an error
+              setSubmitting(false);
+            }
           }}
         >
           {({ isSubmitting }) => (
@@ -109,7 +114,6 @@ export default function EmployeeForm({
                       name="username"
                       label="Username"
                       startIcon={<FaUser className="text-info-dark" />}
-                      /* Only disable if editing an existing employee */
                       disabled={isEditMode}
                     />
                   </div>
@@ -126,7 +130,6 @@ export default function EmployeeForm({
                       label="Email Address"
                       type="email"
                       startIcon={<FaEnvelope className="text-info-dark" />}
-                      /* Only disable if editing an existing employee */
                       disabled={isEditMode}
                     />
                     <FormInputIcon
@@ -134,7 +137,6 @@ export default function EmployeeForm({
                       label="Password"
                       type="password"
                       startIcon={<FaKey className="text-info-dark" />}
-                      /* Only disable if editing an existing employee */
                       disabled={isEditMode}
                     />
                   </div>

@@ -1,3 +1,4 @@
+// app/[locale]/internalTransfer/components/InternalForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,19 +6,20 @@ import Cookies from "js-cookie";
 import * as Yup from "yup";
 import { useTranslations } from "next-intl";
 import { FaTrash } from "react-icons/fa";
-import { useFormikContext } from "formik";
+import { Formik, Form, useFormikContext } from "formik";
 
 import { getCurrencies } from "@/app/[locale]/currencies/services";
-import { createTransfer } from "../services";
-import Form from "@/app/components/FormUI/Form";
+import { getTransfersCommision, createTransfer } from "../services";
+
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import ResetButton from "@/app/components/FormUI/ResetButton";
-import ConfirmationModal from "@/app/components/reusable/ConfirmationModal";
 import ContinueButton from "./ContinueButton";
 import EditButton from "@/app/components/FormUI/EditButton";
 import InputSelectCombo, {
   InputSelectComboOption,
 } from "@/app/components/FormUI/InputSelectCombo";
+import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
+import ConfirmInfoModal from "./ConfirmInfoModal";
 
 import type {
   InternalFormProps,
@@ -25,73 +27,70 @@ import type {
   AdditionalData,
 } from "../types";
 
-/**
- * A small helper that ensures 'from' and 'to' have matching last 3 digits
- * (matching currency codes).
- */
+/* -------------------------------------------------------------------------- */
+/*                               Helper                                       */
+/* -------------------------------------------------------------------------- */
+
 const FormValidator = () => {
   const { values, setFieldError, validateForm } =
-    useFormikContext<InternalFormValues>();
-  // const [isValid, setIsValid] = useState(true);
+    useFormikContext<ExtendedValues>();
 
   useEffect(() => {
-    const validateCurrencyCodes = () => {
-      const { from, to } = values;
-      if (!from || !to) {
-        // setIsValid(true);
-        return;
-      }
-      // Compare last 3 digits
-      const fromCurrency = from.slice(-3);
-      const toCurrency = to.slice(-3);
+    const { from, to } = values;
 
-      if (fromCurrency !== toCurrency) {
-        setFieldError("from", "Currency codes must match");
-        setFieldError("to", "Currency codes must match");
-        // setIsValid(false);
-      } else {
-        // Clear errors if they match
-        validateForm();
-        // setIsValid(true);
-      }
-    };
+    if (!from || !to) return;
 
-    validateCurrencyCodes();
-  }, [values.from, values.to, setFieldError, validateForm, values]);
+    if (from.slice(-3) !== to.slice(-3)) {
+      setFieldError("from", "Currency codes must match");
+      setFieldError("to", "Currency codes must match");
+    } else {
+      validateForm();
+    }
+  }, [values, setFieldError, validateForm]);
 
   return null;
 };
 
-type InternalFormExtendedProps = InternalFormProps & {
-  /** Called by the form after a successful creation so the parent can refetch. */
-  onSuccess?: () => void;
+/* -------------------------------------------------------------------------- */
+/*                                 Types                                      */
+/* -------------------------------------------------------------------------- */
+
+type ExtendedValues = InternalFormValues & {
+  commissionOnRecipient: boolean;
+  transactionCategoryId?: number;
 };
 
-const InternalForm = ({
+interface ExtraProps {
+  /** When true form is read-only; no buttons or modal */
+  viewOnly?: boolean;
+  /** Callback fired after a successful create */
+  onSuccess?: () => void;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Component                                    */
+/* -------------------------------------------------------------------------- */
+
+function InternalForm({
   initialData,
+  onSubmit,
+  viewOnly = false,
   onSuccess,
-}: InternalFormExtendedProps) => {
+}: InternalFormProps & ExtraProps) {
   const t = useTranslations("internalTransferForm");
 
-  // If new => fields enabled
-  const isNewRecord = !initialData || Object.keys(initialData).length === 0;
-  const [fieldsDisabled, setFieldsDisabled] = useState(!isNewRecord);
+  const isNew = !initialData || Object.keys(initialData).length === 0;
+  const [fieldsDisabled, setFieldsDisabled] = useState(viewOnly || !isNew);
 
-  // Confirmation Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalData, setModalData] = useState<{
-    formikData?: InternalFormValues;
-    additionalData?: AdditionalData;
-  }>({});
-
-  // from-accounts from cookies
+  /* ---------------- account list from cookie ---------------- */
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
 
   useEffect(() => {
-    const rawCookie = Cookies.get("statementAccounts") || "[]";
+    const rawCookie = Cookies.get("statementAccounts") ?? "[]";
     let accounts: string[] = [];
+
     try {
       accounts = JSON.parse(rawCookie);
     } catch {
@@ -102,210 +101,214 @@ const InternalForm = ({
       }
     }
 
-    const opts = accounts.map((acct) => ({
-      label: acct,
-      value: acct,
-    }));
-    setAccountOptions(opts);
+    setAccountOptions(accounts.map((a) => ({ label: a, value: a })));
   }, []);
 
-  // Default + merges with any initialData
-  const defaultValues: InternalFormValues = {
+  /* ---------------- modal state (ignored in viewOnly) -------- */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    formikData: ExtendedValues;
+    additionalData?: AdditionalData;
+    commissionAmount: number;
+    commissionCurrency: string;
+  } | null>(null);
+
+  /* ---------------- values & schema ------------------------- */
+  const defaults: ExtendedValues = {
     from: "",
     to: "",
     value: 0,
     description: "",
+    commissionOnRecipient: false,
+    transactionCategoryId: 1,
   };
-  const transformedData = initialData
-    ? { ...defaultValues, ...initialData }
-    : defaultValues;
-  const initialValues: InternalFormValues = { ...transformedData };
+  const initialValues: ExtendedValues = { ...defaults, ...initialData };
 
-  // Yup => check currency
-  const validationSchema = Yup.object({
+  const schema = Yup.object({
     from: Yup.string().required(t("requiredFromAccount")),
     to: Yup.string()
       .required(t("requiredToAccount"))
-      .test(
-        "currency-match",
-        t("currencyMismatch") || "Currency codes must match",
-        function (value) {
-          const { from } = this.parent;
-          if (!from || !value) return true;
-          return from.slice(-3) === value.slice(-3);
-        }
-      ),
+      .test("match", t("currencyMismatch"), function (v) {
+        const f = (this.parent as ExtendedValues).from;
+        return !f || !v || f.slice(-3) === v.slice(-3);
+      }),
     value: Yup.number()
       .typeError(t("valueMustBeNumber"))
       .required(t("requiredValue"))
       .positive(t("valueMustBePositive")),
     description: Yup.string().required(t("requiredDescription")),
+    commissionOnRecipient: Yup.boolean().required(),
+    transactionCategoryId: Yup.number().required(),
   });
 
-  // Called by "Continue" => fill modalData => show modal
-  const handleModalData = (formikData: InternalFormValues) => {
-    let fromName: string | undefined;
-    let toName: string | undefined;
-    let fromBalance: string | undefined;
-
-    // Example: if certain account === "test"
-    if (formikData.from === "test") {
-      fromName = "عصمت العياش";
-      fromBalance = "1000";
-    }
-    if (formikData.to === "test") {
-      toName = "نادر خداج";
-    }
-
-    setModalData({
-      formikData,
-      additionalData: { fromName, toName, fromBalance },
-    });
-    setIsModalOpen(true);
-  };
-
-  /**
-   * Called from the modal "Confirm" => fetch currency => create transfer => if success => onSuccess
-   */
-  const handleModalConfirm = async () => {
-    if (!modalData?.formikData) {
-      setIsModalOpen(false);
-      return;
-    }
-
-    const { from, to, value, description } = modalData.formikData;
-    const currencyCode = from.slice(-3);
-    console.log("Fetching currency for code =>", currencyCode);
+  /* -------- open confirmation modal (skipped in viewOnly) --- */
+  const openModal = async (vals: ExtendedValues) => {
+    if (viewOnly) return;
 
     try {
-      // get currency ID from getCurrencies
-      const response = await getCurrencies(1, 1, currencyCode, "code");
-      console.log("Received currency response =>", response);
+      const currencyCode = vals.from.slice(-3);
+      const currResp = await getCurrencies(1, 1, currencyCode, "code");
+      const currencyId = currResp.data[0]?.id ?? 0;
+      const currencyDesc = currResp.data[0]?.description ?? currencyCode;
 
-      const found = response.data[0];
-      const currencyId = found?.id || 0;
-      console.log("Using currencyId =>", currencyId);
+      const servicePackageId = Number(Cookies.get("servicePackageId") ?? 0);
+      const commResp = await getTransfersCommision(
+        servicePackageId,
+        vals.transactionCategoryId ?? 1,
+        currencyId
+      );
 
-      // final payload for /transfers
-      const finalPayload = {
-        transactionCategoryId: 1,
+      const pctAmt = (commResp.commissionPct * vals.value) / 100;
+      const fee = Math.max(pctAmt, commResp.feeFixed);
+
+      setModalData({
+        formikData: vals,
+        commissionAmount: fee,
+        commissionCurrency: currencyDesc,
+      });
+      setModalOpen(true);
+    } catch (err) {
+      console.error("Modal prep failed:", err);
+    }
+  };
+
+  /* -------- confirm create (no-op in viewOnly) ------------ */
+  const confirmModal = async () => {
+    if (!modalData) return;
+    const {
+      from,
+      to,
+      value,
+      description,
+      commissionOnRecipient,
+      transactionCategoryId,
+    } = modalData.formikData;
+
+    try {
+      const currencyId = Number(from.slice(-3));
+      await createTransfer({
+        transactionCategoryId,
         fromAccount: from,
         toAccount: to,
         amount: value,
         currencyId,
         description,
-      };
-      console.log("Creating transfer with payload =>", finalPayload);
-
-      // call createTransfer function
-      const createdTransfer = await createTransfer(finalPayload);
-      console.log("Created Transfer =>", createdTransfer);
-
-      // If successful => call parent's onSuccess() to re-fetch & hide form
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error("Error creating transfer =>", error);
-      // Optionally show an error message or modal
+        commissionOnRecipient,
+      });
+      onSubmit?.(modalData.formikData);
+      onSuccess?.();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setModalOpen(false);
     }
-
-    setIsModalOpen(false);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-  };
-
+  /* --------------------------- JSX ------------------------- */
   return (
     <div className="p-6">
-      <Form
+      <Formik<ExtendedValues>
         initialValues={initialValues}
+        validationSchema={schema}
         onSubmit={() => {}}
-        validationSchema={validationSchema}
         enableReinitialize
       >
-        <FormValidator />
+        {({ values }) => (
+          <Form>
+            <FormValidator />
 
-        {/* Row 1: from, to, value */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <InputSelectCombo
-            name="from"
-            label={t("from")}
-            options={accountOptions}
-            disabled={fieldsDisabled}
-            maskingFormat="0000-000000-000"
-          />
-
-          <FormInputIcon
-            name="to"
-            label={t("to")}
-            type="text"
-            maskingFormat="0000-000000-000"
-            disabled={fieldsDisabled}
-          />
-
-          <FormInputIcon
-            name="value"
-            label={t("value")}
-            type="number"
-            disabled={fieldsDisabled}
-          />
-        </div>
-
-        {/* Row 2: description */}
-        <div className="grid grid-cols-1 gap-4 mt-4">
-          <FormInputIcon
-            name="description"
-            label={t("description")}
-            type="text"
-            disabled={fieldsDisabled}
-          />
-        </div>
-
-        {/* Bottom Buttons */}
-        <div className="flex justify-center gap-4 mt-6">
-          {!isNewRecord && (
-            <>
-              <EditButton
-                fieldsDisabled={fieldsDisabled}
-                setFieldsDisabled={setFieldsDisabled}
+            {/* Row 1 */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <InputSelectCombo
+                name="from"
+                label={t("from")}
+                options={accountOptions}
+                disabled={fieldsDisabled}
+                maskingFormat="0000-000000-000"
               />
-              <ResetButton
-                title={t("delete")}
-                Icon={FaTrash}
-                color="warning-light"
-                fullWidth={false}
+              <FormInputIcon
+                name="to"
+                label={t("to")}
+                maskingFormat="0000-000000-000"
+                disabled={fieldsDisabled}
               />
-            </>
-          )}
+              <FormInputIcon
+                name="value"
+                label={t("value")}
+                type="number"
+                disabled={fieldsDisabled}
+              />
+            </div>
 
-          <ContinueButton
-            onClick={handleModalData}
-            touchedFields={{
-              from: true,
-              to: true,
-              value: true,
-              description: true,
-            }}
-          />
-        </div>
+            {/* Row 2 */}
+            <div className="mt-4">
+              <FormInputIcon
+                name="description"
+                label={t("description")}
+                disabled={fieldsDisabled}
+              />
+            </div>
 
-        {/* Confirmation Modal */}
-        {isModalOpen && (
-          <ConfirmationModal
-            isOpen={isModalOpen}
-            onClose={handleModalClose}
-            onConfirm={handleModalConfirm}
-            formData={modalData.formikData || {}}
-            additionalData={modalData.additionalData}
-            metadata={{}}
-            excludedFields={["someField", "anotherField"]}
-          />
+            {/* Row 3 */}
+            <div className="mt-4">
+              <RadiobuttonWrapper
+                name="commissionOnRecipient"
+                label={t("commissionPaidBy")}
+                options={[
+                  { value: false, label: t("sender") },
+                  { value: true, label: t("recipient") },
+                ]}
+                disabled={fieldsDisabled}
+                flexDir={["row", "row"]}
+              />
+            </div>
+
+            {/* Buttons – hide in viewOnly */}
+            {!viewOnly && (
+              <div className="mt-6 flex justify-center gap-4">
+                {!isNew && (
+                  <>
+                    <EditButton
+                      fieldsDisabled={fieldsDisabled}
+                      setFieldsDisabled={setFieldsDisabled}
+                    />
+                    <ResetButton
+                      title={t("delete")}
+                      Icon={FaTrash}
+                      color="warning-light"
+                    />
+                  </>
+                )}
+                <ContinueButton
+                  onClick={() => openModal(values)}
+                  touchedFields={{
+                    from: true,
+                    to: true,
+                    value: true,
+                    description: true,
+                    commissionOnRecipient: true,
+                    transactionCategoryId: true,
+                  }}
+                />
+              </div>
+            )}
+          </Form>
         )}
-      </Form>
+      </Formik>
+
+      {/* Modal – disabled in viewOnly */}
+      {modalData && !viewOnly && (
+        <ConfirmInfoModal
+          isOpen={modalOpen}
+          formData={modalData.formikData}
+          commissionAmount={modalData.commissionAmount}
+          commissionCurrency={modalData.commissionCurrency}
+          onClose={() => setModalOpen(false)}
+          onConfirm={confirmModal}
+        />
+      )}
     </div>
   );
-};
+}
 
 export default InternalForm;

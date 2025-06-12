@@ -280,7 +280,9 @@
         "sender":"المرسل",
         "receiver":"المتلقي",
         "commisionSender": " تستقطع من المرسل",
-        "commisionReceiver": "تستقطع من المتلقي"
+        "commisionReceiver": "تستقطع من المتلقي",
+        "recipient": "المتلقي",
+        "commissionPaidBy": "العمولة مدفوعة من"
 
       },
       "statementOfAccount": {

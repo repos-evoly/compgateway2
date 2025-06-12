@@ -266,7 +266,9 @@
         "sender": "Sender",
         "receiver": "Receiver",
         "commisionSender":" deducted from Sender",
-        "commisionReceiver":" deducted from Receiver"
+        "commisionReceiver":" deducted from Receiver",
+        "recipient": "Recipient",
+        "commissionPaidBy":"Commission paid by"
 
       },
       "statementOfAccount":{

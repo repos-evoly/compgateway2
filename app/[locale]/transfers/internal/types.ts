@@ -44,12 +44,13 @@ export type SpecialFieldsDisplayProps = {
 // types.ts
 
 export interface TransferPayload {
-  transactionCategoryId: number;
+  transactionCategoryId?: number;
   fromAccount: string;
   toAccount: string;
   amount: number;
   currencyId: number; // or null if unknown
   description: string;
+  commissionOnRecipient?: boolean; // optional, if your API supports it
 }
 
 /**
@@ -87,4 +88,10 @@ export interface TransfersApiResponse {
   limit: number;
   totalPages: number;
   totalRecords: number;
+}
+
+
+export type TransfersCommision = {
+  commissionPct:number;
+  feeFixed:number;
 }

@@ -3,30 +3,27 @@
 import React from "react";
 import { useField, useFormikContext } from "formik";
 import { usePathname } from "next/navigation";
-import { DropdownType } from "@/types";
+
+type RadioOption = { value: string | number | boolean; label: string };
 
 type RadioButtonWrapperProps = {
   name: string;
   label: string;
-  options: DropdownType[];
-  flexDir?: string[];
-  /** Optional translation function. If not provided, will display raw label. */
+  options: RadioOption[];
+  flexDir?: string[]; // ["row" | "col", "row" | "col"]
+  /** Optional translation function */
   t?: (key: string) => string;
   disabled?: boolean;
 };
 
-type FormValues = {
-  [key: string]: string | number; // Dynamic field names with string/number values
-};
-
-const RadiobuttonWrapper = ({
+export default function RadiobuttonWrapper({
   name,
   label,
   options,
   flexDir = ["row", "row"],
   t,
   disabled = false,
-}: RadioButtonWrapperProps) => {
+}: RadioButtonWrapperProps) {
   const pathname = usePathname();
 
   React.useEffect(() => {
@@ -37,11 +34,9 @@ const RadiobuttonWrapper = ({
     }
   }, [pathname]);
 
-  // Always call hooks at the top level
-  const formik = useFormikContext<FormValues>();
+  const formik = useFormikContext<Record<string, unknown>>();
   const [field, meta] = useField(name);
 
-  // If no Formik context found
   if (!formik) {
     console.error(
       "RadiobuttonWrapper must be used within a Formik context. Ensure it's inside a Formik component."
@@ -49,22 +44,32 @@ const RadiobuttonWrapper = ({
     return <p className="text-red-500">Formik context not found</p>;
   }
 
-  const handleChange = (value: string | number) => {
+  const castValue = (
+    raw: string | number | boolean
+  ): string | number | boolean => {
+    if (typeof field.value === "boolean") {
+      return raw === 1 || raw === "1" || raw === true || raw === "true";
+    }
+    return raw;
+  };
+
+  const handleChange = (raw: string | number | boolean) => {
     if (!disabled) {
-      formik.setFieldValue(name, value);
+      formik.setFieldValue(name, castValue(raw));
     }
   };
 
+  const isChecked = (raw: string | number | boolean) =>
+    field.value === castValue(raw);
+
   return (
-    <div
+    <fieldset
       className={`flex ${
         flexDir[0] === "row" ? "flex-row" : "flex-col"
       } gap-4 items-start`}
     >
-      {/* Label */}
       <legend className="font-bold text-gray-700">{label}</legend>
 
-      {/* Radio Group */}
       <div
         className={`flex space-x-2 rtl:space-x-reverse ${
           flexDir[1] === "row" ? "flex-row" : "flex-col"
@@ -72,7 +77,7 @@ const RadiobuttonWrapper = ({
       >
         {options.map((option) => (
           <label
-            key={option.value}
+            key={String(option.value)}
             className={`flex items-center space-x-2 rtl:space-x-reverse cursor-pointer ${
               disabled ? "opacity-60 cursor-not-allowed" : ""
             }`}
@@ -80,8 +85,8 @@ const RadiobuttonWrapper = ({
             <input
               type="radio"
               name={name}
-              value={option.value}
-              checked={field.value === option.value}
+              value={String(option.value)}
+              checked={isChecked(option.value)}
               onChange={() => handleChange(option.value)}
               className="form-radio h-4 w-4 text-green-500 focus:ring focus:ring-green-300"
               disabled={disabled}
@@ -93,12 +98,9 @@ const RadiobuttonWrapper = ({
         ))}
       </div>
 
-      {/* Error Message */}
       {meta.touched && meta.error && (
-        <p className="text-sm text-red-500 mt-1">{meta.error}</p>
+        <p className="text-sm text-red-500 mt-1">{meta.error as string}</p>
       )}
-    </div>
+    </fieldset>
   );
-};
-
-export default RadiobuttonWrapper;
+}

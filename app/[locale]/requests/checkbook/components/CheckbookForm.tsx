@@ -136,7 +136,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
           </div>
 
           {/* File Upload Input */}
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <label
               htmlFor="representativePassport"
               className="block text-sm font-medium text-gray-700"
@@ -151,7 +151,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
               className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700"
               disabled={readOnly} // <-- disable file input if readOnly
             />
-          </div>
+          </div> */}
 
           {/* Radio buttons */}
           <div className="mt-4">

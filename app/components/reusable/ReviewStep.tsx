@@ -3,6 +3,7 @@
 import React from "react";
 import { FormikProps } from "formik";
 import { FiCheck } from "react-icons/fi";
+import { useTranslations } from "next-intl";
 
 // 1) Convert unknown values to a user-friendly string.
 function formatValue(value: unknown): string {
@@ -41,6 +42,7 @@ export function ReviewStep<FormValues extends Record<string, unknown>>({
   translateFieldName,
   fieldsPerRow = 3,
 }: ReviewStepProps<FormValues>) {
+  const t = useTranslations("reviewStep");
   // Convert form values into [key, value] pairs, filtering out empty or undefined
   const rawEntries = Object.entries(formik.values).filter(
     ([, val]) => val !== undefined && val !== ""
@@ -56,23 +58,15 @@ export function ReviewStep<FormValues extends Record<string, unknown>>({
         <div className="flex items-center space-x-2">
           <FiCheck className="h-5 w-5 text-white" />
           {/* You could also localize this title if desired */}
-          <h3 className="text-xl font-bold text-white">Review Information</h3>
+          <h3 className="text-xl font-bold text-white">{t("title")}</h3>
         </div>
-        <p className="mt-1 text-sm text-white">
-          Please confirm all details are correct before submitting
-        </p>
+        <p className="mt-1 text-sm text-white">{t("description")}</p>
       </div>
 
       {/* Body: chunked rows */}
       <div className="divide-y divide-gray-100 px-6 py-4">
         {chunkedEntries.map((group, groupIndex) => (
           <div key={groupIndex} className="py-3">
-            {/*
-              For a dynamic columns approach in Tailwind, you might need 
-              a custom utility. If you're sure you only want 3 columns,
-              you can replace `grid-cols-${fieldsPerRow}` with a fixed 
-              class like `grid-cols-3`. 
-            */}
             <div className={`grid grid-cols-${fieldsPerRow} gap-4`}>
               {group.map(([key, value]) => {
                 // Use the translation function to get the label

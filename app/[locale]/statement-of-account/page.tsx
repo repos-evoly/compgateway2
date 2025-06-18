@@ -34,7 +34,7 @@ const defaultFilter: FilterValues = {
 };
 
 const Page: React.FC = () => {
-  const t = useTranslations("statement");
+  const t = useTranslations("statementOfAccount");
   const [lines, setLines] = useState<StatementLine[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isFetching, setIsFetching] = useState(false);

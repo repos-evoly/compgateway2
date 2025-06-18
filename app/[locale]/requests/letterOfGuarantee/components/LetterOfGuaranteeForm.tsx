@@ -19,7 +19,8 @@ import { CheckAccount } from "@/app/helpers/checkAccount";
 import type { TLetterOfGuarantee } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
-import BackButton from "@/app/components/reusable/BackButton";
+import FormHeader from "@/app/components/reusable/FormHeader";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 /** Props for the top-level form component */
 type Props = {
@@ -83,11 +84,13 @@ function InnerForm({
 
   return (
     <Form>
-      <h2 className="text-xl font-bold mb-4">
-        {initialData ? "تعديل خطاب الضمان" : "إضافة خطاب ضمان"}
-      </h2>
+      <FormHeader
+        showBackButton
+        fallbackPath="/requests/letterOfGuarantee"
+        isEditing={readOnly}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         {/* Account Number */}
         <FormInputIcon
           name="accountNumber"
@@ -160,11 +163,6 @@ function InnerForm({
             fullWidth={false}
           />
         )}
-
-        <BackButton
-          fallbackPath="/requests/letterOfGuarantee"
-          isEditing={initialData !== undefined}
-        />
       </div>
     </Form>
   );
@@ -186,6 +184,10 @@ export default function LetterOfGuaranteeForm({
 
   // We'll store the availableBalance in local state for the "accountNumber"
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   // On mount => get currencies
   useEffect(() => {
@@ -245,13 +247,27 @@ export default function LetterOfGuaranteeForm({
     { setSubmitting, resetForm }: FormikHelpers<TLetterOfGuarantee>
   ) {
     try {
-      // Final => type remains letterOfGuarantee
       const finalVals = { ...values, type: "letterOfGuarantee" };
       onSubmit(finalVals);
+
       resetForm();
+
+      /* success modal */
+      setModalTitle("تم الحفظ");
+      setModalMessage("تم إنشاء خطاب الضمان بنجاح.");
+      setModalSuccess(true);
+      setModalOpen(true);
     } catch (err) {
       console.error("Error in form submission:", err);
-      alert("خطأ أثناء إرسال البيانات");
+
+      const msg =
+        err instanceof Error ? err.message : "حدث خطأ غير متوقع أثناء الإرسال.";
+
+      /* error modal */
+      setModalTitle("خطأ");
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     } finally {
       setSubmitting(false);
     }
@@ -277,6 +293,14 @@ export default function LetterOfGuaranteeForm({
           />
         )}
       </Formik>
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
+      />
     </div>
   );
 }

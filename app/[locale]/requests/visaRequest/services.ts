@@ -1,6 +1,8 @@
 // app/(wherever)/visarequests/services.ts
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { VisaRequestApiResponse, VisaRequestApiItem, VisaRequestFormValues } from "./types";
+import { throwApiError } from "@/app/helpers/handleApiError";
+
 
 const token = getAccessTokenFromCookies();
 
@@ -33,7 +35,7 @@ export const getVisaRequests = async (
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch visa requests. Status: ${response.status}`);
+    await throwApiError(response, "Failed to fetch visa requests");
   }
 
   const data = (await response.json()) as VisaRequestApiResponse;
@@ -60,8 +62,9 @@ export const getVisaRequestById = async (
     },
   });
 
+
   if (!response.ok) {
-    throw new Error(`Failed to fetch visa request by ID. Status: ${response.status}`);
+    await throwApiError(response, "Failed to fetch visa request by ID");
   }
 
   const data = (await response.json()) as VisaRequestApiItem;
@@ -103,9 +106,7 @@ export const createVisaRequest = async (
     });
   
     if (!response.ok) {
-      throw new Error(
-        `Failed to create visa request. Status: ${response.status}`
-      );
+      await throwApiError(response, "Failed to create visa request");
     }
   
     // The API might return the newly created item

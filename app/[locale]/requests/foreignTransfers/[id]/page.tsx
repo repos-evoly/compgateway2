@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import { getForeignTransferById } from "../services";
 import type {
@@ -23,6 +24,7 @@ export default function ForeignTransfersDetailPage() {
     useState<ForeignTransfersFormValues | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -47,7 +49,9 @@ export default function ForeignTransfersDetailPage() {
         setInitialValues(formData);
       } catch (err) {
         console.error("Failed to fetch foreign transfer detail:", err);
-        setError(t("fetchDetailError"));
+        const msg = err instanceof Error ? err.message : t("fetchDetailError");
+        setError(msg);
+        setModalOpen(true); // ← open modal
       } finally {
         setLoading(false);
       }
@@ -81,6 +85,16 @@ export default function ForeignTransfersDetailPage() {
         initialValues={initialValues}
         onSubmit={handleSubmit}
         readOnly
+      />
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={false}
+        title={t("error")}
+        message={error ?? t("fetchDetailError")}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => {
+          setModalOpen(false);
+        }}
       />
     </div>
   );

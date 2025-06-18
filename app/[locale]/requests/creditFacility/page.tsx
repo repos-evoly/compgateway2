@@ -9,50 +9,56 @@ import type {
   TCreditFacility,
 } from "./types";
 import { getCreditFacilities, addCreditFacility } from "./services";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
 
 export default function CreditFacilityPage() {
-
-  // Table data states
+  /* ─── Table state ─────────────────────────────────────────── */
   const [data, setData] = useState<CreditFacilityApiItem[]>([]);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
-  // Searching
+  /* ─── Search state ────────────────────────────────────────── */
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState("");
 
-  // Show/hide "Add" form
+  /* ─── Form toggle ─────────────────────────────────────────── */
   const [showForm, setShowForm] = useState(false);
 
-  /** Fetch data from server with (page, limit, searchTerm, searchBy)
-   * But only apply 'searchBy' if there's a non-empty searchTerm. */
+  /* ─── Modal state (NEW) ───────────────────────────────────── */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
+  /* ─── Fetch data helper ───────────────────────────────────── */
   async function fetchData() {
     try {
-      // If the user hasn't typed any searchTerm, don't pass searchBy
-      const actualSearchBy = searchTerm ? searchBy : "";
-      const actualSearchTerm = searchTerm ? searchTerm : "";
-
       const result: CreditFacilitiesApiResponse = await getCreditFacilities(
         currentPage,
         limit,
-        actualSearchTerm,
-        actualSearchBy
+        searchTerm || "",
+        searchTerm ? searchBy : ""
       );
       setData(result.data);
       setTotalPages(result.totalPages);
     } catch (error) {
-      console.error("Failed to fetch credit facilities:", error);
+      const msg =
+        error instanceof Error ? error.message : "فشل في جلب البيانات";
+      setModalTitle("خطأ");
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
   }
 
-  // On mount / whenever page or search changes => fetch
+  /* ─── Initial & reactive fetch ────────────────────────────── */
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, limit, searchTerm, searchBy]);
 
-  // Table columns
+  /* ─── Columns ─────────────────────────────────────────────── */
   const columns = [
     { key: "accountNumber", label: "رقم الحساب" },
     { key: "date", label: "التاريخ" },
@@ -64,52 +70,50 @@ export default function CreditFacilityPage() {
     { key: "createdAt", label: "تاريخ الإنشاء" },
   ];
 
-  // Searching handlers
+  /* ─── Search handlers ─────────────────────────────────────── */
   const handleSearch = (term: string) => {
-    // If user typed something => store it. If empty => also clear searchBy
     setSearchTerm(term);
-    if (!term) {
-      setSearchBy("");
-    }
+    if (!term) setSearchBy("");
     setCurrentPage(1);
   };
 
   const handleDropdownSelect = (val: string) => {
-    // Only set searchBy if there's already a searchTerm typed
     if (searchTerm) {
       setSearchBy(val);
       setCurrentPage(1);
     } else {
-      // If no searchTerm, ignore the dropdown or reset it
       setSearchBy("");
     }
   };
 
-  // Add form => actually posts to server
+  /* ─── Form submit (add) ───────────────────────────────────── */
+  /* ─── Form submit (add) ───────────────────────────────────── */
   const handleFormSubmit = async (newItem: TCreditFacility) => {
     try {
-      const { id, ...body } = newItem; // exclude "id"
-      console.log("Submitting new credit facility:", id);
+      // strip the placeholder id so it won’t be sent
+      const { id: _unused, ...body } = newItem;
+      void _unused; // ← counts as “used”
+
       await addCreditFacility(body);
-      // After success => re-fetch
-      fetchData();
+      await fetchData(); // refresh list
       setShowForm(false);
+
+      setModalTitle("تم");
+      setModalMessage("تمت إضافة التسهيل الائتماني بنجاح.");
+      setModalSuccess(true);
+      setModalOpen(true);
     } catch (error) {
-      console.error("Failed to create credit facility:", error);
-      alert("حدث خطأ أثناء إنشاء التسهيل الائتماني");
+      const msg = error instanceof Error ? error.message : "خطأ أثناء الإضافة";
+      setModalTitle("خطأ");
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
   };
 
   const handleFormCancel = () => setShowForm(false);
 
-  // Double-click => detail page
-  // const handleRowDoubleClick = (rowIndex: number) => {
-  //   const item = data[rowIndex];
-  //   if (item && item.id) {
-  //     router.push(`/creditfacility/${item.id}`);
-  //   }
-  // };
-
+  /* ─── Render ──────────────────────────────────────────────── */
   return (
     <div className="p-4">
       {showForm ? (
@@ -124,7 +128,6 @@ export default function CreditFacilityPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={(page) => setCurrentPage(page)}
-          // Searching
           showSearchBar
           showSearchInput
           onSearch={handleSearch}
@@ -134,11 +137,20 @@ export default function CreditFacilityPage() {
             { value: "type", label: "النوع" },
           ]}
           onDropdownSelect={handleDropdownSelect}
-          // Add button
           showAddButton
           onAddClick={() => setShowForm(true)}
         />
       )}
+
+      {/* Error / Success modal */}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
+      />
     </div>
   );
 }

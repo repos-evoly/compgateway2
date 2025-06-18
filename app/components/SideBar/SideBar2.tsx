@@ -134,13 +134,12 @@ const Sidebar = () => {
           >
             <FaBars className="w-6 h-6" />
           </button>
-          <span
-            className={`text-lg font-semibold whitespace-nowrap transition-all duration-300 ${
-              sidebarOpen ? "opacity-100" : "opacity-0 invisible w-0"
-            }`}
-          >
-            {t("title")}
-          </span>
+          {/* Sidebar Header title  (desktop) */}
+          {sidebarOpen && (
+            <span className="text-lg font-semibold leading-tight break-words max-w-[11rem]">
+              {t("title")}
+            </span>
+          )}
         </div>
       </div>
       <Divider />
@@ -157,7 +156,7 @@ const Sidebar = () => {
                   className={`
                     flex items-center gap-2 w-full py-2 px-3 rounded-md 
                     text-sm font-medium text-gray-300 hover:text-white 
-                    hover:bg-secondary-light transition-colors
+                    hover:bg-info-dark transition-colors
                   `}
                 >
                   {/* item.icon can be a React component function or null */}

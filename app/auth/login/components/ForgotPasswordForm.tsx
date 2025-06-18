@@ -134,7 +134,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
           key="forgot-form"
         >
           <FormInputIcon
-            name="email"
+            name="login"
             label="البريد الإلكتروني"
             type="email"
             startIcon={<FiMail />}

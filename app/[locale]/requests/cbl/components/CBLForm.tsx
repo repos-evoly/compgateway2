@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { FormikHelpers } from "formik";
 import { useTranslations } from "use-intl";
+// ⬇️ add with the other imports
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
@@ -30,6 +32,11 @@ const CBLForm: React.FC<CBLFormProps> = ({
 }) => {
   const t = useTranslations("cblForm");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // ⬇️ add right after: const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   // Merge defaults + incoming
   const mergedValues: TCBLValues = {
@@ -70,24 +77,34 @@ const CBLForm: React.FC<CBLFormProps> = ({
   ];
 
   // Handle form submission => do nothing if readOnly
+  // Handle form submission
   const handleSubmit = async (
     values: TCBLValues,
     helpers: FormikHelpers<TCBLValues>
   ) => {
-    if (readOnly) {
-      // do nothing
-      return;
-    }
-    if (isSubmitting) return;
+    if (readOnly || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       await addCblRequest(values);
-      alert("CBL request created successfully!");
+
+      /* ── success modal ── */
+      setModalTitle(t("createSuccessTitle")); // e.g. "Created!"
+      setModalMessage(t("createSuccessMessage")); // e.g. "CBL request saved."
+      setModalSuccess(true);
+      setModalOpen(true);
+
       onSubmit?.(values, helpers);
     } catch (error) {
       console.error("Failed to create CBL request:", error);
-      alert("An error occurred while creating the CBL request.");
+
+      /* ── error modal ── */
+      setModalTitle(t("createErrorTitle")); // e.g. "Error"
+      setModalMessage(
+        error instanceof Error ? error.message : t("unknownError")
+      );
+      setModalSuccess(false);
+      setModalOpen(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -225,6 +242,15 @@ const CBLForm: React.FC<CBLFormProps> = ({
           )}
         </Form>
       </div>
+      {/* ⬇️ paste just before the closing fragment */}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
+      />
     </>
   );
 };

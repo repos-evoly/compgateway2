@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 
 // Import the modal
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import { useTranslations } from "next-intl";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<CompanyEmployee[]>([]);
@@ -25,21 +26,30 @@ export default function EmployeesPage() {
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
-  const router = useRouter();
+  const t = useTranslations("employees");
 
+  const router = useRouter();
   useEffect(() => {
     async function fetchAll() {
       try {
         const data = await getEmployees();
         setEmployees(data);
       } catch (err) {
-        console.error("Failed to fetch employees:", err);
+        /* show the error instead of just console.error */
+        const msg =
+          err instanceof Error ? err.message : "An unknown error occurred.";
+  
+        setModalTitle("Fetch Error");
+        setModalMessage(msg);
+        setModalSuccess(false);
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
     }
     fetchAll();
   }, []);
+  
 
   if (loading) {
     return <div className="p-4">Loading employees...</div>;
@@ -54,19 +64,19 @@ export default function EmployeesPage() {
   console.log("Employees Data =>", rowData);
 
   const columns = [
-    { key: "id", label: "ID" },
-    { key: "firstName", label: "First Name" },
-    { key: "lastName", label: "Last Name" },
-    { key: "email", label: "Email" },
-    { key: "phone", label: "Phone" },
-    { key: "roleId", label: "Role ID" },
-    { key: "permissions", label: "Permissions" },
+    { key: "id", label: t("id") },
+    { key: "firstName", label: t("firstName") },
+    { key: "lastName", label: t("lastName") },
+    { key: "email", label: t("email") },
+    { key: "phone", label: t("phone") },
+    { key: "roleId", label: t("role") },
+    { key: "permissions", label: t("permissions") },
   ];
 
   const actions: Action[] = [
     {
       name: "permissions",
-      tip: "Edit Permissions",
+      tip: t("editPermissions"),
       icon: <FaLock />,
       onClick: (row) => {
         // push to dynamic route => /employees/permissions/[id]/[roleId]
@@ -99,7 +109,7 @@ export default function EmployeesPage() {
       setModalOpen(true);
     } catch (err) {
       // Show error modal; do NOT hide the form or reset it
-      console.error("Failed to create employee:", err);
+      // console.error("Failed to create employee:", err);
 
       const errorMsg =
         err instanceof Error ? err.message : "An unknown error occurred.";

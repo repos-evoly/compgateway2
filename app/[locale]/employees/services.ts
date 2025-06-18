@@ -10,6 +10,8 @@ import type {
   UserPermissions,
   EditEmployeePayload,
 } from "./types";
+import { throwApiError } from "@/app/helpers/handleApiError"; // adjust path if needed
+
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
 const token = getAccessTokenFromCookies();
@@ -59,9 +61,9 @@ export async function getEmployees(): Promise<CompanyEmployee[]> {
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch employees. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch employees.");
   }
-
+  
   const data = await res.json();
   console.log("Fetched Employees Data:", data);
   return data as CompanyEmployee[];
@@ -91,7 +93,7 @@ export async function getEmployeeById(userId: string | number): Promise<CompanyE
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch employee #${userId}. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch employees.");
   }
 
   const data = await res.json();
@@ -123,7 +125,7 @@ export async function createEmployee(payload: CreateEmployeePayload): Promise<Co
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to create employee. Status: ${res.status}`);
+    await throwApiError(res, "Failed to create employees.");
   }
 
   const data = await res.json();
@@ -158,7 +160,7 @@ export async function editEmployee(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to update employee #${userId}. Status: ${res.status}`);
+    await throwApiError(res, "Failed to edit employees.");
   }
 
   const data = await res.json();
@@ -184,7 +186,7 @@ export async function getRoles(): Promise<RoleOption[]> {
     },
   });
   if (!res.ok) {
-    throw new Error(`Failed to fetch roles. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch roles.");
   }
   const data = await res.json();
 
@@ -210,7 +212,7 @@ export async function getPermissionsByUserId(userId: string): Promise<UserPermis
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch permissions for user ${userId}. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch permissions.");
   }
   const data = await res.json();
   return data as UserPermissions[];
@@ -234,7 +236,7 @@ export async function getCompanyPermissions(): Promise<CompanyPermissions[]> {
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch company permissions. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch permissions.");
   }
 
   const data = await res.json();
@@ -263,6 +265,6 @@ export async function updateEmployeePermissions(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to update permissions for user ${userId}. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch permissions.");
   }
 }

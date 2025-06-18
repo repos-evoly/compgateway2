@@ -1,3 +1,4 @@
+// app/visarequests/[id]/page.tsx   ⇦ adjust the path if yours is different
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,36 +8,61 @@ import { getVisaRequestById } from "../services";
 import type { VisaRequestApiItem, VisaRequestFormValues } from "../types";
 import VisaWizardForm from "../components/VisaRequest";
 
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+
 export default function SingleVisaRequestPage() {
-  const { id } = useParams(); // e.g. "123"
+  const { id } = useParams(); // e.g. /visarequests/123  → id = "123"
   const numericId = Number(id);
 
-  // We'll store the fetched single item in state
+  /*──────────────────────────── Data + UI state ───────────────────────────*/
   const [requestData, setRequestData] = useState<VisaRequestApiItem | null>(
     null
   );
+  const [loading, setLoading] = useState(true);
+  const [readOnly] = useState(true); // render form in read-only mode
 
-  // For demonstration, we'll show the form in read-only mode, so you can see
-  // all fields disabled. If you want it always editable, set this to `false`.
-  const [readOnly] = useState(true);
+  /*──────────────────────────── Modal state ───────────────────────────────*/
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
-  // Fetch on mount (or if `id` changes)
+  /*──────────────────────────── Fetch single item ─────────────────────────*/
   useEffect(() => {
-    if (Number.isNaN(numericId)) return; // or handle invalid id
-    getVisaRequestById(numericId)
-      .then((data) => {
+    if (Number.isNaN(numericId)) {
+      setModalTitle("خطأ في الرابط");
+      setModalMessage("المعرّف غير صالح.");
+      setModalSuccess(false);
+      setModalOpen(true);
+      setLoading(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const data = await getVisaRequestById(numericId);
         setRequestData(data);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch single visa request:", err);
-      });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "حدث خطأ غير معروف.";
+        setModalTitle("فشل جلب الطلب");
+        setModalMessage(msg);
+        setModalSuccess(false);
+        setModalOpen(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [numericId]);
 
-  if (!requestData) {
-    return <div>Loading...</div>;
-  }
+  /*──────────────────────────── Modal handlers ────────────────────────────*/
+  const closeModal = () => setModalOpen(false);
+  const confirmModal = () => setModalOpen(false);
 
-  // Convert the fetched item to the shape for our form
+  /*──────────────────────────── Early states ──────────────────────────────*/
+  if (loading) return <div className="p-4">Loading…</div>;
+  if (!requestData) return null; // error already handled by modal
+
+  /*──────────────────────────── Map API → form shape ─────────────────────*/
   const initialValues: VisaRequestFormValues = {
     branch: requestData.branch,
     date: requestData.date,
@@ -52,23 +78,32 @@ export default function SingleVisaRequestPage() {
     pldedge: requestData.pldedge,
   };
 
-  // If you want to handle "edit" logic, pass an onSubmit that calls update:
-  function handleSubmit(vals: VisaRequestFormValues) {
-    console.log("Submitted form with updated data => ", vals);
-    // Potentially call an updateVisaRequest(numericId, vals) here...
-  }
+  /*──────────────────────────── Submit (edit) stub ───────────────────────*/
+  const handleSubmit = (vals: VisaRequestFormValues) => {
+    console.log("Edit not implemented. Values:", vals);
+  };
 
+  /*──────────────────────────── Render ────────────────────────────────────*/
   return (
     <div className="p-4">
       <h1 className="text-xl font-semibold mb-4">
-        Visa Request Details (ID: {numericId})
+        Visa Request Details — ID {numericId}
       </h1>
 
-      {/* Pass readOnly to see disabled fields and modified wizard buttons */}
       <VisaWizardForm
         initialValues={initialValues}
         onSubmit={handleSubmit}
         readOnly={readOnly}
+      />
+
+      {/*──────── Error / Success Modal ────────*/}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={closeModal}
+        onConfirm={confirmModal}
       />
     </div>
   );

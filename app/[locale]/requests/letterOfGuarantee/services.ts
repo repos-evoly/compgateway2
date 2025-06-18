@@ -7,6 +7,8 @@ import type {
   TLetterOfGuarantee,
 } from "./types";
 
+import { throwApiError } from "@/app/helpers/handleApiError";
+
 const BASE_API = process.env.NEXT_PUBLIC_BASE_API;
 const token = getAccessTokenFromCookies();
 
@@ -50,7 +52,7 @@ export async function getLetterOfGuarantees(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch letter of guarantee. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch letter of guarantee.");
   }
 
   const data: LetterOfGuaranteeApiResponse = await res.json();
@@ -92,7 +94,7 @@ export async function addLetterOfGuarantee(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to create letter of guarantee. Status: ${res.status}`);
+    await throwApiError(res, "Failed to create letter of guarantee.");
   }
 
   const data = await res.json();
@@ -123,7 +125,7 @@ export async function getLetterOfGuaranteeById(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch letterOfGuarantee ID=${id}. Status: ${res.status}`);
+    await throwApiError(res, `Failed to fetch letter of guarantee #${id}.`);
   }
 
   const data = await res.json();

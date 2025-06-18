@@ -1,43 +1,60 @@
+// File: FormHeader.tsx
 import React from "react";
-import BackButton from "./BackButton";
+import BackButton, { type BackButtonProps } from "./BackButton";
 
-type FormHeaderProps = {
+/**
+ * Inherits every prop that <BackButton/> understands (e.g. `fallbackPath`, `isEditing`)
+ * and adds layout-specific options for the header itself.
+ */
+export type FormHeaderProps = BackButtonProps & {
+  /** Title text shown next to the Back button */
   text?: string;
+  /** Extra content (typically buttons or switches) rendered on the right */
   children?: React.ReactNode;
   showBackButton?: boolean;
   className?: string;
-  /** If true, the header will be sticky at the top of the scrolling area */
+  /** Makes the header sticky at the top of the scroll container */
   isFixedOnScroll?: boolean;
 };
 
 const FormHeader: React.FC<FormHeaderProps> = ({
   text,
   children,
-  showBackButton,
   className = "",
   isFixedOnScroll = false,
+  showBackButton,
+  fallbackPath,
+  isEditing,
+  ...restBackButtonProps
 }) => {
-  // Check if both text and back button are missing
-  const hasLeftContent = showBackButton || text;
+  /* ---------------- logic ---------------- */
+  // Auto-display the Back button when navigation context exists
+  const displayBackButton =
+    showBackButton ?? (Boolean(fallbackPath) || Boolean(isEditing));
+
+  // Left area is rendered only when we have either text or a Back button
+  const hasLeftContent = displayBackButton || Boolean(text);
 
   return (
     <div
-      className={`
-        flex items-center bg-info-dark text-white p-4 rounded-md 
+      className={`flex items-center bg-info-dark text-white p-4 rounded-md
         ${hasLeftContent && children ? "justify-between" : "justify-start"}
-        ${className}
         ${isFixedOnScroll ? "sticky top-0 z-50" : ""}
-      `}
+        ${className}`}
     >
-      {/* Only render the left side container if there is content for it */}
       {hasLeftContent && (
         <div className="flex items-center gap-2">
-          {showBackButton && <BackButton />}
+          {displayBackButton && (
+            <BackButton
+              fallbackPath={fallbackPath}
+              isEditing={isEditing}
+              {...restBackButtonProps}
+            />
+          )}
           {text && <h2 className="text-lg font-semibold">{text}</h2>}
         </div>
       )}
 
-      {/* Children will take full width if no left content */}
       {children && (
         <div className={`${!hasLeftContent ? "w-fit" : ""}`}>{children}</div>
       )}

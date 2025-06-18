@@ -2,9 +2,12 @@
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import {
+  CertifiedBankStatementRequest,
   CertifiedBankStatementRequestWithID,
   ServicesRequest,
 } from "./types"; // <-- Import from the single source
+import { throwApiError } from "@/app/helpers/handleApiError";
+
 
 /**
  * The raw shape the API returns for each statement
@@ -91,8 +94,9 @@ export async function getCertifiedBankStatements(params?: {
   });
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch Certified Bank Statements. Status: ${response.status}`
+    await throwApiError(
+      response,
+      "Failed to fetch Certified Bank Statements."
     );
   }
 
@@ -131,8 +135,9 @@ export async function getCertifiedBankStatementById(
   );
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch Certified Bank Statement #${id}. Status: ${response.status}`
+    await throwApiError(
+      response,
+      `Failed to fetch Certified Bank Statement #${id}.`
     );
   }
 
@@ -144,41 +149,126 @@ export async function getCertifiedBankStatementById(
  * Transform the API shape to the shape the form needs.
  */
 function transformApiToFormShape(
-  apiItem: ApiCertifiedBankStatement
+  apiItem: ApiCertifiedBankStatement,
 ): CertifiedBankStatementRequestWithID {
+  /* ensure we always have a non-null object */
+  const srv = apiItem.serviceRequests ?? {
+    reactivateIdfaali: false,
+    deactivateIdfaali: false,
+    resetDigitalBankPassword: false,
+    resendMobileBankingPin: false,
+    changePhoneNumber: false,
+  };
+
+  const stmt = apiItem.statementRequest ?? {
+    currentAccountStatementArabic: false,
+    currentAccountStatementEnglish: false,
+    visaAccountStatement: false,
+    accountStatement: false,
+    journalMovement: false,
+    nonFinancialCommitment: false,
+    fromDate: "",
+    toDate: "",
+  };
+
   return {
-    // ID
     id: apiItem.id,
-    // Basic fields
     accountHolderName: apiItem.accountHolderName ?? "",
     authorizedOnTheAccountName: apiItem.authorizedOnTheAccountName ?? "",
     accountNumber: apiItem.accountNumber ?? undefined,
     oldAccountNumber: apiItem.oldAccountNumber ?? undefined,
     newAccountNumber: apiItem.newAccountNumber ?? undefined,
-    // serviceRequests (already typed)
+
+    /* safe serviceRequests */
     serviceRequests: {
-      reactivateIdfaali: apiItem.serviceRequests.reactivateIdfaali,
-      deactivateIdfaali: apiItem.serviceRequests.deactivateIdfaali,
-      resetDigitalBankPassword:
-        apiItem.serviceRequests.resetDigitalBankPassword,
-      resendMobileBankingPin: apiItem.serviceRequests.resendMobileBankingPin,
-      changePhoneNumber: apiItem.serviceRequests.changePhoneNumber,
+      reactivateIdfaali: srv.reactivateIdfaali,
+      deactivateIdfaali: srv.deactivateIdfaali,
+      resetDigitalBankPassword: srv.resetDigitalBankPassword,
+      resendMobileBankingPin: srv.resendMobileBankingPin,
+      changePhoneNumber: srv.changePhoneNumber,
     },
-    // statementRequest => mapped from "xxxArabic", "xxxEnglish", etc.
+
+    /* safe statementRequest */
     statementRequest: {
       currentAccountStatement: {
-        arabic: apiItem.statementRequest.currentAccountStatementArabic ?? false,
-        english:
-          apiItem.statementRequest.currentAccountStatementEnglish ?? false,
+        arabic:   stmt.currentAccountStatementArabic   ?? false,
+        english:  stmt.currentAccountStatementEnglish ?? false,
       },
-      visaAccountStatement:
-        apiItem.statementRequest.visaAccountStatement ?? false,
-      fromDate: apiItem.statementRequest.fromDate ?? "",
-      toDate: apiItem.statementRequest.toDate ?? "",
-      accountStatement: apiItem.statementRequest.accountStatement ?? false,
-      journalMovement: apiItem.statementRequest.journalMovement ?? false,
-      nonFinancialCommitment:
-        apiItem.statementRequest.nonFinancialCommitment ?? false,
+      visaAccountStatement:  stmt.visaAccountStatement  ?? false,
+      fromDate:              stmt.fromDate              ?? "",
+      toDate:                stmt.toDate                ?? "",
+      accountStatement:      stmt.accountStatement      ?? false,
+      journalMovement:       stmt.journalMovement       ?? false,
+      nonFinancialCommitment:stmt.nonFinancialCommitment?? false,
     },
   };
+}
+
+
+
+
+/**
+ * Create a new Certified Bank Statement.
+ * Converts the form-shape payload to the API shape, then maps the response
+ * back to the form/grid shape you work with elsewhere.
+ */
+export async function createCertifiedBankStatement(
+  payload: CertifiedBankStatementRequest
+): Promise<CertifiedBankStatementRequestWithID> {
+  // 1) Map form fields ➜ API fields
+  const apiBody = {
+    accountHolderName: payload.accountHolderName ?? null,
+    authorizedOnTheAccountName: payload.authorizedOnTheAccountName ?? null,
+    accountNumber: payload.accountNumber ?? null,
+    oldAccountNumber: payload.oldAccountNumber ?? null,
+    newAccountNumber: payload.newAccountNumber ?? null,
+    serviceRequests: {
+      reactivateIdfaali: payload.serviceRequests?.reactivateIdfaali ?? false,
+      deactivateIdfaali: payload.serviceRequests?.deactivateIdfaali ?? false,
+      resetDigitalBankPassword:
+        payload.serviceRequests?.resetDigitalBankPassword ?? false,
+      resendMobileBankingPin:
+        payload.serviceRequests?.resendMobileBankingPin ?? false,
+      changePhoneNumber: payload.serviceRequests?.changePhoneNumber ?? false,
+    },
+    statementRequest: {
+      currentAccountStatementArabic:
+        payload.statementRequest?.currentAccountStatement?.arabic ?? false,
+      currentAccountStatementEnglish:
+        payload.statementRequest?.currentAccountStatement?.english ?? false,
+      visaAccountStatement:
+        payload.statementRequest?.visaAccountStatement ?? false,
+      accountStatement: payload.statementRequest?.accountStatement ?? false,
+      journalMovement: payload.statementRequest?.journalMovement ?? false,
+      nonFinancialCommitment:
+        payload.statementRequest?.nonFinancialCommitment ?? false,
+      fromDate: payload.statementRequest?.fromDate ?? null,
+      toDate: payload.statementRequest?.toDate ?? null,
+    },
+  };
+
+  // 2) POST to the API
+  const response = await fetch(
+    `${baseUrl}/certifiedbankstatementrequests`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(apiBody),
+    }
+  );
+
+  // 3) Handle errors (throws on non-2xx)
+  if (!response.ok) {
+    await throwApiError(
+      response,
+      "Failed to create Certified Bank Statement."
+    );
+  }
+
+  // 4) Map API ➜ form shape and return
+  const apiResult = (await response.json()) as ApiCertifiedBankStatement;
+  return transformApiToFormShape(apiResult);
 }

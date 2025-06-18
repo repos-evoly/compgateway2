@@ -1,6 +1,8 @@
 "use client";
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // adjust path as needed
 import { TCblRequestsResponse, TCBLValues } from "./types";
+import { throwApiError } from "@/app/helpers/handleApiError";      // ← NEW
+
 
 /** Minimal shape of an "official" from the API */
 type TApiOfficial = {
@@ -89,9 +91,8 @@ export async function getCblRequests(
       Authorization: `Bearer ${token}`,
     },
   });
-
   if (!response.ok) {
-    throw new Error(`Failed to fetch CBL requests. Status: ${response.status}`);
+    await throwApiError(response, "Failed to fetch CBL requests.");
   }
 
   // The response shape matches TCblRequestsResponse exactly
@@ -167,7 +168,7 @@ export async function addCblRequest(values: TCBLValues) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create CBL. Status: ${response.status}`);
+    await throwApiError(response, "Failed to create CBL.");
   }
 
   // Return whatever your API returns (assuming it returns the newly-created resource).
@@ -197,8 +198,9 @@ export async function getCblRequestById(id: string | number): Promise<TCBLValues
   });
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch CBL request by ID ${id}. Status: ${response.status}`
+    await throwApiError(
+      response,
+      `Failed to fetch CBL request by ID ${id}.`
     );
   }
 

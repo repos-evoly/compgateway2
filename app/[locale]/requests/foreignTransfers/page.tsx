@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import ForeignTransfersForm, {
   ForeignTransfersFormValues,
 } from "./components/ForeignTransfersForm";
 
-import { getForeignTransfers, createForeignTransfer } from "./services"; 
+import { getForeignTransfers, createForeignTransfer } from "./services";
 
 export default function ForeignTransfersListPage() {
   const t = useTranslations("foreignTransfers");
@@ -26,6 +27,10 @@ export default function ForeignTransfersListPage() {
 
   // Toggle form
   const [showForm, setShowForm] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   // Each page => limit=10
   const limit = 10;
@@ -75,6 +80,11 @@ export default function ForeignTransfersListPage() {
       setTotalPages(response.totalPages || 1);
     } catch (err) {
       console.error("Failed to fetch foreign transfers:", err);
+      const msg = err instanceof Error ? err.message : t("genericError");
+      setModalTitle(t("errorTitle"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
   }
 
@@ -118,6 +128,11 @@ export default function ForeignTransfersListPage() {
       setShowForm(false);
     } catch (error) {
       console.error("Failed to create foreign transfer:", error);
+      const msg = error instanceof Error ? error.message : t("genericError");
+      setModalTitle(t("errorTitle"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
   }
 
@@ -168,6 +183,14 @@ export default function ForeignTransfersListPage() {
           onAddClick={handleAddClick}
         />
       )}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
+      />
     </div>
   );
 }

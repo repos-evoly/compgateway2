@@ -1,75 +1,78 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { TCBLValues } from "../types";
 import { getCblRequestById } from "../service";
 import CBLForm from "../components/CBLForm";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
-/**
- * Detail page for editing/viewing a single CBL request by ID.
- */
 const CblDetailPage: React.FC = () => {
-  const { id } = useParams(); // e.g. /cbl/123 => id = "123"
+  const { id } = useParams(); // e.g. /cbl/123
   const t = useTranslations("cblForm");
+  const router = useRouter();
 
+  /* data + ui state */
   const [cblData, setCblData] = useState<TCBLValues | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch the single CBL request on mount
+  /* modal state */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
+  /* fetch on mount */
   useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-
     const fetchData = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
       try {
         const response = await getCblRequestById(id.toString());
         if (!response) {
-          setError(t("noItemFound"));
-          setLoading(false);
-          return;
+          throw new Error(t("noItemFound"));
         }
         setCblData(response);
       } catch (err) {
-        console.error("Failed to fetch CBL by ID:", err);
-        setError(t("noItemFound"));
+        const msg = err instanceof Error ? err.message : t("genericError");
+
+        setModalTitle(t("errorTitle"));
+        setModalMessage(msg);
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [id, t]);
 
-  // Show a loading indicator while fetching
+  /* handle modal close / confirm */
+  const handleModalClose = () => setModalOpen(false);
+  const handleModalConfirm = () => {
+    setModalOpen(false);
+    router.back(); // optional: navigate user away
+  };
+
   if (loading) {
     return <div className="p-4">{t("loading")}</div>;
   }
 
-  // If no data found or fetch failed
-  if (error || !cblData) {
-    return (
-      <div className="p-4">
-        <p className="text-red-500">{error || t("noItemFound")}</p>
-      </div>
-    );
-  }
-
-  // Handler for form cancel
-  const handleFormCancel = () => {
-    console.log("Form cancelled");
-    // Possibly navigate back => e.g. router.back();
-  };
-
-  // Render the form in read-only mode => fields disabled, no submit/cancel
   return (
     <div className="p-4">
-      <CBLForm initialValues={cblData} onCancel={handleFormCancel} readOnly />
+      {cblData && <CBLForm initialValues={cblData} readOnly />}
+
+      {/* error modal */}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={false}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={handleModalClose}
+        onConfirm={handleModalConfirm}
+      />
     </div>
   );
 };

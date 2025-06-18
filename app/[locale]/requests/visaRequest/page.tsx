@@ -1,5 +1,4 @@
-// app/visarequests/page.tsx (or wherever your list page is)
-
+// app/visarequests/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,80 +9,99 @@ import { getVisaRequests, createVisaRequest } from "./services";
 import VisaWizardForm from "./components/VisaRequest";
 
 import type { VisaRequestApiItem, VisaRequestFormValues } from "./types";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 export default function VisaRequestListPage() {
   const t = useTranslations("visaRequest");
 
-  // Store the fetched API items
+  /*─────────────────────────── Table / pagination ───────────────────────────*/
   const [apiData, setApiData] = useState<VisaRequestApiItem[]>([]);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
 
-  // Search
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  /*─────────────────────────── Search input  ────────────────────────────────*/
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Toggle form
-  const [showForm, setShowForm] = useState<boolean>(false);
+  /*─────────────────────────── Form toggle  ─────────────────────────────────*/
+  const [showForm, setShowForm] = useState(false);
 
-  // Fetch data on mount / whenever page or search changes
+  /*─────────────────────────── Modal state  ─────────────────────────────────*/
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
+  /*─────────────────────────── Fetch list  ─────────────────────────────────*/
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchTerm]);
 
-  // 1) Fetch from API
   async function fetchData() {
     try {
-      const response = await getVisaRequests(currentPage, limit, searchTerm);
-      setApiData(response.data);
-      setTotalPages(response.totalPages);
-    } catch (error) {
-      console.error("Failed to fetch visa requests:", error);
+      const res = await getVisaRequests(currentPage, limit, searchTerm);
+      setApiData(res.data);
+      setTotalPages(res.totalPages);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t("unknownError");
+      setModalTitle(t("fetchError"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
   }
 
-  // 2) Handle "Add" => open wizard
-  function handleAddClick() {
-    setShowForm(true);
-  }
+  /*─────────────────────────── Add button  ─────────────────────────────────*/
+  const handleAddClick = () => setShowForm(true);
 
-  // 3) Wizard form submit => create item, re-fetch, close wizard
+  /*─────────────────────────── Form submit  ────────────────────────────────*/
   async function handleFormSubmit(values: VisaRequestFormValues) {
     try {
       await createVisaRequest(values);
       await fetchData();
       setShowForm(false);
+
+      setModalTitle(t("createSuccessTitle"));
+      setModalMessage(t("createSuccessMsg"));
+      setModalSuccess(true);
+      setModalOpen(true);
     } catch (err) {
-      console.error("Failed to create visa request:", err);
+      const msg = err instanceof Error ? err.message : t("unknownError");
+      setModalTitle(t("createErrorTitle"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
   }
 
-  // 4) Prepare data for CrudDataGrid => convert any undefined to null
+  /*─────────────────────────── Data for grid  ──────────────────────────────*/
   const gridData = apiData.map((item) => ({
-    id: item.id, // the grid needs an "id"
+    id: item.id,
     branch: item.branch ?? null,
     date: item.date ?? null,
     accountHolderName: item.accountHolderName ?? null,
   }));
 
-  // 5) Define columns
   const columns = [
     { key: "branch", label: t("branch") },
     { key: "date", label: t("date") },
     { key: "accountHolderName", label: t("accountHolderName") },
   ];
 
-  // 6) Render
+  /*─────────────────────────── Modal handlers  ─────────────────────────────*/
+  const closeModal = () => setModalOpen(false);
+  const confirmModal = () => {
+    if (modalSuccess) fetchData();
+    setModalOpen(false);
+  };
+
+  /*─────────────────────────── Render  ─────────────────────────────────────*/
   return (
     <div className="p-4">
       {showForm ? (
-        // Show wizard form
         <VisaWizardForm onSubmit={handleFormSubmit} />
       ) : (
-        // Show data grid
         <CrudDataGrid
           data={gridData}
           columns={columns}
@@ -100,6 +118,16 @@ export default function VisaRequestListPage() {
           onAddClick={handleAddClick}
         />
       )}
+
+      {/*──────────── Error / Success Modal ────────────*/}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={closeModal}
+        onConfirm={confirmModal}
+      />
     </div>
   );
 }

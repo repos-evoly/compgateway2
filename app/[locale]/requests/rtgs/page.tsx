@@ -1,45 +1,49 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import RTGSForm from "./components/RTGSForm";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
-// Types & services
-import { TRTGSValues, TRTGSFormValues } from "./types";
-import { getRtgsRequests } from "./services";
+import type { TRTGSValues, TRTGSFormValues } from "./types";
+import { getRtgsRequests, createRtgsRequest } from "./services";
 
 const RTGSListPage: React.FC = () => {
   const t = useTranslations("RTGSForm");
 
-  // Data from the API
+  /* ─────────────────────────── Grid / form state ────────────────────────── */
   const [data, setData] = useState<TRTGSValues[]>([]);
-  // Pagination
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [showForm, setShowForm] = useState(false);
   const limit = 10;
 
-  // Toggle to show/hide local "Add" form
-  const [showForm, setShowForm] = useState(false);
+  /* ─────────────────────────── Modal state ──────────────────────────────── */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
-  // Fetch /rtgsrequests on mount / page changes
+  /* ─────────────────────────── Fetch paginated data ─────────────────────── */
   useEffect(() => {
-    const fetchData = async () => {
+    (async () => {
       try {
-        const response = await getRtgsRequests(currentPage, limit);
-        // { data, page, limit, totalPages, totalRecords }
-        setData(response.data);
-        setTotalPages(response.totalPages);
-      } catch (error) {
-        console.error("Failed to fetch RTGS requests:", error);
+        const res = await getRtgsRequests(currentPage, limit);
+        setData(res.data);
+        setTotalPages(res.totalPages);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : t("unknownError");
+        setModalTitle(t("fetchError"));
+        setModalMessage(msg);
+        setModalSuccess(false);
+        setModalOpen(true);
       }
-    };
+    })();
+  }, [currentPage, limit, t]);
 
-    fetchData();
-  }, [currentPage, limit]);
-
-  // Columns we want to display in the grid
+  /* ─────────────────────────── Column defs ─────────────────────────────── */
   const columns = [
     { key: "refNum", label: t("refNum") },
     { key: "date", label: t("date") },
@@ -49,73 +53,50 @@ const RTGSListPage: React.FC = () => {
     { key: "amount", label: t("amount") },
   ];
 
-  /**
-   * Build row data:
-   *  - Copy all fields from the API item (so we keep `id`, etc.)
-   *  - Overwrite `refNum` and `date` with a user-friendly string
-   */
+  /* ─────────────────────────── Grid-friendly data ───────────────────────── */
   const rowData = data.map((item) => ({
-    ...item, // keeps id, userId, address, etc.
-    refNum: new Date(item.refNum).toLocaleDateString(), // display string
-    date: new Date(item.date).toLocaleDateString(), // display string
-    // paymentType, applicantName, beneficiaryName, amount, etc. remain as is
+    ...item,
+    refNum: new Date(item.refNum).toLocaleDateString(),
+    date: new Date(item.date).toLocaleDateString(),
   }));
 
-  // Show local RTGS form
-  const handleAddClick = () => {
-    setShowForm(true);
+  /* ─────────────────────────── Handlers ─────────────────────────────────── */
+  const handleAddClick = () => setShowForm(true);
+
+  const handleFormSubmit = async (values: TRTGSFormValues) => {
+    try {
+      const created = await createRtgsRequest(values as unknown as TRTGSValues);
+      setData((prev) => [created, ...prev]);
+
+      setModalTitle(t("createSuccessTitle"));
+      setModalMessage(t("createSuccessMsg"));
+      setModalSuccess(true);
+      setModalOpen(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t("unknownError");
+      setModalTitle(t("createErrorTitle"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
+    }
   };
 
-  // Handle form submit => local add
-  const handleFormSubmit = (values: TRTGSFormValues) => {
-    console.log("RTGS form submitted locally:", values);
+  const handleFormCancel = () => setShowForm(false);
 
-    // Convert from form's Date => API string
-    const newRecord: TRTGSValues = {
-      // You may generate a dummy ID or leave undefined
-      id: Math.floor(Math.random() * 100000),
-      refNum: values.refNum.toISOString(),
-      date: values.date.toISOString(),
-      paymentType: values.paymentType,
-      accountNo: values.accountNo,
-      applicantName: values.applicantName,
-      address: values.address,
-      beneficiaryName: values.beneficiaryName,
-      beneficiaryAccountNo: values.beneficiaryAccountNo,
-      beneficiaryBank: values.beneficiaryBank,
-      branchName: values.branchName,
-      amount: values.amount,
-      remittanceInfo: values.remittanceInfo,
-      invoice: values.invoice,
-      contract: values.contract,
-      claim: values.claim,
-      otherDoc: values.otherDoc,
-    };
-
-    // Just prepend to local array
-    setData((prev) => [newRecord, ...prev]);
-    setShowForm(false);
+  const closeModal = () => setModalOpen(false);
+  const confirmModal = () => {
+    if (modalSuccess) setShowForm(false);
+    setModalOpen(false);
   };
 
-  // Cancel => hide form
-  const handleFormCancel = () => {
-    setShowForm(false);
-  };
-
-  // Example double-click (if your CrudDataGrid calls an onRowDoubleClick):
-  // const handleRowDoubleClick = (rowIndex: number) => {
-  //   const row = rowData[rowIndex];
-  //   console.log("Double-clicked row with ID:", row.id);
-  //   // router.push(`/rtgs/${row.id}`);
-  // };
-
+  /* ─────────────────────────── Render ───────────────────────────────────── */
   return (
     <div className="p-4">
       {showForm ? (
         <RTGSForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} />
       ) : (
         <CrudDataGrid
-          data={rowData} // includes all fields, only columns are displayed
+          data={rowData}
           columns={columns}
           currentPage={currentPage}
           totalPages={totalPages}
@@ -124,6 +105,16 @@ const RTGSListPage: React.FC = () => {
           onAddClick={handleAddClick}
         />
       )}
+
+      {/*──────── Error / Success Modal ────────*/}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={closeModal}
+        onConfirm={confirmModal}
+      />
     </div>
   );
 };

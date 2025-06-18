@@ -6,32 +6,37 @@ import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CheckRequestForm from "./components/CheckRequestForm";
 
-// We import the *API* type for our local state
 import { TCheckRequestValues } from "./types";
 import { getCheckRequests, createCheckRequest } from "./services";
-
-// The *form* type
 import { TCheckRequestFormValues } from "./types";
+
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
 
 const CheckRequestPage: React.FC = () => {
   const t = useTranslations("CheckRequest");
 
-  // Data for the table
+  /* ─── Table state ─────────────────────────────────────────── */
   const [data, setData] = useState<TCheckRequestValues[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
 
-  // Searching
+  /* ─── Search state ────────────────────────────────────────── */
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState("");
 
-  // Toggle for "Add" form
+  /* ─── Form toggle ─────────────────────────────────────────── */
   const [showForm, setShowForm] = useState(false);
 
-  // Fetch on mount / page change / search change
+  /* ─── Modal state (NEW) ───────────────────────────────────── */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
+  /* ─── Fetch data ──────────────────────────────────────────── */
   useEffect(() => {
-    const fetchData = async () => {
+    async function fetchData() {
       try {
         const response = await getCheckRequests(
           currentPage,
@@ -43,13 +48,17 @@ const CheckRequestPage: React.FC = () => {
         setTotalPages(response.totalPages);
       } catch (err) {
         console.error("Failed to fetch check requests:", err);
+        const msg = err instanceof Error ? err.message : t("genericError");
+        setModalTitle(t("errorTitle"));
+        setModalMessage(msg);
+        setModalSuccess(false);
+        setModalOpen(true);
       }
-    };
-
+    }
     fetchData();
-  }, [currentPage, limit, searchTerm, searchBy]);
+  }, [currentPage, limit, searchTerm, searchBy, t]);
 
-  // Columns
+  /* ─── Columns ─────────────────────────────────────────────── */
   const columns = [
     { key: "branch", label: t("branch") },
     { key: "branchNum", label: t("branchNum") },
@@ -60,18 +69,12 @@ const CheckRequestPage: React.FC = () => {
     { key: "beneficiary", label: t("beneficiary") },
   ];
 
-  // "Add" => show form
-  const handleAddClick = () => {
-    setShowForm(true);
-  };
+  /* ─── Handlers ────────────────────────────────────────────── */
+  const handleAddClick = () => setShowForm(true);
 
-  // Form submit => create new check request
   const handleFormSubmit = async (formVals: TCheckRequestFormValues) => {
     try {
-      // Convert Date -> ISO string
       const isoDate = formVals.date.toISOString();
-
-      // Prepare body for the API
       const payload = {
         branch: formVals.branch,
         branchNum: formVals.branchNum,
@@ -83,23 +86,28 @@ const CheckRequestPage: React.FC = () => {
         lineItems: formVals.lineItems,
       };
 
-      // POST create
       const newItem = await createCheckRequest(payload);
-      // Optionally, add to local data (so we don't re-fetch)
       setData((prev) => [newItem, ...prev]);
-
       setShowForm(false);
+
+      /* success modal */
+      setModalTitle(t("successTitle"));
+      setModalMessage(t("successMessage"));
+      setModalSuccess(true);
+      setModalOpen(true);
     } catch (error) {
       console.error("Failed to create check request:", error);
-      alert("Error creating check request. See console for details.");
+      const msg = error instanceof Error ? error.message : t("genericError");
+      setModalTitle(t("errorTitle"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
     }
   };
 
-  const handleFormCancel = () => {
-    setShowForm(false);
-  };
+  const handleFormCancel = () => setShowForm(false);
 
-  // Searching
+  /* ─── Search helpers ──────────────────────────────────────── */
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     setCurrentPage(1);
@@ -109,6 +117,7 @@ const CheckRequestPage: React.FC = () => {
     setCurrentPage(1);
   };
 
+  /* ─── Render ──────────────────────────────────────────────── */
   return (
     <div className="p-4">
       {showForm ? (
@@ -132,6 +141,16 @@ const CheckRequestPage: React.FC = () => {
           onAddClick={handleAddClick}
         />
       )}
+
+      {/* Error / Success modal (NEW) */}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
+      />
     </div>
   );
 };

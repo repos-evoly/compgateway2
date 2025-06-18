@@ -2,9 +2,13 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import Tooltip from "@/app/components/reusable/Tooltip";
 import Divider from "./Divider";
 import { useGlobalContext } from "@/app/context/GlobalContext";
 
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
 type SidebarItem = {
   id: number;
   path: string;
@@ -22,8 +26,44 @@ type LinkItemProps = {
   toggleSubmenu: (id: number) => void;
   currentLocale: string;
   toggleLocale?: () => void;
+
+  labelClass?: string;
+  buttonBaseClass?: string;
 };
 
+/* ------------------------------------------------------------------ */
+/* Default shared styles                                              */
+/* ------------------------------------------------------------------ */
+const fallbackLabelCls = "break-words leading-tight text-[13px]"; // wrap-friendly, small
+const fallbackButtonCls = `
+  flex items-center gap-3 w-full p-2 rounded
+  text-gray-300 hover:text-white hover:bg-info-dark
+  transition-colors
+`;
+
+/* ------------------------------------------------------------------ */
+/* Helper to render icon (shows tooltip when sidebar is collapsed)    */
+/* ------------------------------------------------------------------ */
+const IconBox: React.FC<{
+  sidebarOpen: boolean;
+  tooltip: string;
+  isRtl: boolean;
+  children: React.ReactNode;
+}> = ({ sidebarOpen, tooltip, isRtl, children }) => (
+  <div className="w-6 h-6 flex items-center justify-center shrink-0">
+    {sidebarOpen ? (
+      children
+    ) : (
+      <Tooltip tooltip={tooltip} position={isRtl ? "left" : "right"}>
+        {children}
+      </Tooltip>
+    )}
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
 const LinkItem: React.FC<LinkItemProps> = ({
   item,
   t,
@@ -32,108 +72,105 @@ const LinkItem: React.FC<LinkItemProps> = ({
   toggleSubmenu,
   currentLocale,
   toggleLocale,
+  labelClass = fallbackLabelCls,
+  buttonBaseClass = fallbackButtonCls,
 }) => {
   const pathname = usePathname();
   const { setHeaderInfo } = useGlobalContext();
 
+  const isRtl = currentLocale === "ar";
   const isActive = pathname === `/${currentLocale}${item.path}`;
   const hasChildren = item.children && item.children.length > 0;
 
+  /* -------------------------------------------------------------- */
+  /* Early-exit for divider                                         */
+  /* -------------------------------------------------------------- */
   if (item.label === "divider") return <Divider key={item.id} />;
 
+  /* -------------------------------------------------------------- */
+  /* Locale toggle                                                  */
+  /* -------------------------------------------------------------- */
   if (item.isLocaleToggle) {
+    const localeText = isRtl ? "English" : "العربية";
+
     return (
       <div
-        className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-info-dark"
+        className={`${buttonBaseClass} cursor-pointer`}
         onClick={toggleLocale}
       >
-        <div className="w-6 h-6 flex items-center justify-center shrink-0">
+        <IconBox sidebarOpen={sidebarOpen} tooltip={localeText} isRtl={isRtl}>
           <item.icon className="w-5 h-5" />
-        </div>
-        <div
-          className={`transition-opacity duration-300 ${
-            sidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
-          }`}
-        >
-          <span className="text-sm">
-            {currentLocale === "ar" ? "English" : "العربية"}
-          </span>
-        </div>
+        </IconBox>
+
+        {sidebarOpen && <span className={labelClass}>{localeText}</span>}
       </div>
     );
   }
 
+  /* -------------------------------------------------------------- */
+  /* Parent item with children                                      */
+  /* -------------------------------------------------------------- */
   if (hasChildren) {
     return (
       <>
+        {/* Parent row -------------------------------------------- */}
         <div
-          className={`flex items-center justify-between p-2 rounded cursor-pointer ${
-            isActive
-              ? "bg-info-dark text-white"
-              : "hover:bg-info-dark hover:text-white"
-          }`}
+          className={`
+            ${buttonBaseClass} justify-between cursor-pointer
+            ${isActive ? "bg-info-dark text-white" : ""}
+          `}
           onClick={() => toggleSubmenu(item.id)}
         >
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 flex items-center justify-center shrink-0">
-              <item.icon className="w-5 h-5" />
-            </div>
-            <div
-              className={`transition-opacity duration-300 ${
-                sidebarOpen
-                  ? "opacity-100 w-auto"
-                  : "opacity-0 w-0 overflow-hidden"
-              }`}
+            <IconBox
+              sidebarOpen={sidebarOpen}
+              tooltip={t(item.label)}
+              isRtl={isRtl}
             >
-              <span className="text-sm whitespace-nowrap">{t(item.label)}</span>
-            </div>
+              <item.icon className="w-5 h-5" />
+            </IconBox>
+
+            {sidebarOpen && <span className={labelClass}>{t(item.label)}</span>}
           </div>
-          {sidebarOpen && (
-            <div>
-              {submenuOpen === item.id ? (
-                <FaChevronUp className="w-4 h-4" />
-              ) : (
-                <FaChevronDown className="w-4 h-4" />
-              )}
-            </div>
-          )}
+
+          {/* Chevron only while expanded sidebar */}
+          {sidebarOpen &&
+            (submenuOpen === item.id ? (
+              <FaChevronUp className="w-4 h-4 shrink-0" />
+            ) : (
+              <FaChevronDown className="w-4 h-4 shrink-0" />
+            ))}
         </div>
 
+        {/* Children list ---------------------------------------- */}
         {submenuOpen === item.id && (
           <div className="flex flex-col">
-            {item.children?.map((child) => {
-              const isChildActive =
-                pathname === `/${currentLocale}${child.path}`;
+            {item.children!.map((child) => {
+              const childActive = pathname === `/${currentLocale}${child.path}`;
+
               return (
                 <Link
                   key={child.id}
                   href={`/${currentLocale}${child.path}`}
-                  className={`flex items-center p-2 gap-3 rounded ${
-                    isChildActive
-                      ? "bg-info-dark text-white"
-                      : "hover:bg-info-dark hover:text-white"
-                  }`}
+                  className={`
+                    ${buttonBaseClass} pl-10
+                    ${childActive ? "bg-info-dark text-white" : ""}
+                  `}
                   onClick={() =>
-                    setHeaderInfo({
-                      label: child.label,
-                      icon: <child.icon />,
-                    })
+                    setHeaderInfo({ label: child.label, icon: <child.icon /> })
                   }
                 >
-                  <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                    <child.icon className="w-5 h-5" />
-                  </div>
-                  <div
-                    className={`transition-opacity duration-300 ${
-                      sidebarOpen
-                        ? "opacity-100 w-auto"
-                        : "opacity-0 w-0 overflow-hidden"
-                    }`}
+                  <IconBox
+                    sidebarOpen={sidebarOpen}
+                    tooltip={t(child.label)}
+                    isRtl={isRtl}
                   >
-                    <span className="text-sm whitespace-nowrap">
-                      {t(child.label)}
-                    </span>
-                  </div>
+                    <child.icon className="w-5 h-5" />
+                  </IconBox>
+
+                  {sidebarOpen && (
+                    <span className={labelClass}>{t(child.label)}</span>
+                  )}
                 </Link>
               );
             })}
@@ -143,31 +180,23 @@ const LinkItem: React.FC<LinkItemProps> = ({
     );
   }
 
+  /* -------------------------------------------------------------- */
+  /* Simple link (no children)                                      */
+  /* -------------------------------------------------------------- */
   return (
     <Link
       href={`/${currentLocale}${item.path}`}
-      className={`flex items-center p-2 rounded ${
-        isActive
-          ? "bg-info-dark text-white"
-          : "hover:bg-info-dark hover:text-white"
-      }`}
-      onClick={() =>
-        setHeaderInfo({
-          label: item.label,
-          icon: <item.icon />,
-        })
-      }
+      className={`
+        ${buttonBaseClass}
+        ${isActive ? "bg-info-dark text-white" : ""}
+      `}
+      onClick={() => setHeaderInfo({ label: item.label, icon: <item.icon /> })}
     >
-      <div className="w-6 h-6 flex items-center justify-center shrink-0">
-        <item.icon className="w-5 h-5 rounded-md" />
-      </div>
-      <div
-        className={`transition-opacity duration-300 ${
-          sidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
-        }`}
-      >
-        <span className="text-sm whitespace-nowrap">{t(item.label)}</span>
-      </div>
+      <IconBox sidebarOpen={sidebarOpen} tooltip={t(item.label)} isRtl={isRtl}>
+        <item.icon className="w-5 h-5" />
+      </IconBox>
+
+      {sidebarOpen && <span className={labelClass}>{t(item.label)}</span>}
     </Link>
   );
 };

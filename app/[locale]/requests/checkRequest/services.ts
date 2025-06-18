@@ -5,6 +5,9 @@ import type {
   TCheckRequestValues,
   TCheckRequestsResponse,
 } from "./types";
+// add this with the other imports
+import { throwApiError } from "@/app/helpers/handleApiError";
+
 
 /**
  * Get a list of check requests with optional pagination/search
@@ -35,9 +38,10 @@ export async function getCheckRequests(
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch check requests. Status: ${res.status}`);
-  }
+if (!res.ok) {
+  await throwApiError(res, "Failed to fetch check requests.");
+}
+
 
   const data = (await res.json()) as TCheckRequestsResponse;
   return data;
@@ -64,7 +68,7 @@ export async function getCheckRequestById(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch check request ${id}. Status: ${res.status}`);
+    await throwApiError(res, `Failed to fetch check request ${id}.`);
   }
 
   const data = (await res.json()) as TCheckRequestValues;
@@ -103,7 +107,7 @@ export async function createCheckRequest(payload: {
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to create check request. Status: ${res.status}`);
+    await throwApiError(res, "Failed to create check request.");
   }
 
   // Return created record from the API

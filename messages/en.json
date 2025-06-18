@@ -1,379 +1,584 @@
 {
-    "sidebarItems": {
-      "statementOfAccount":"Statement of account",
-      "title":"Companies Gateway",
-
-      "transfer":{
-          "label": "Transfers",
-          "in": "Internal Transfers",
-          "out":"External transfers "
-      },
-      "requests":{
-        "label":"Requests",
-        "checkBook":"Request a check book",
-        "certifiedCheck":"Certified Check request",
-        "guaranteeLetter":"Letter of guarantee request",
-        "creditFacility":"Credit facility request",
-        "visa":"visa card Request",
-        "rtgs":"RTGS transfer request",
-        "foreign":"license for foreign transfers request",
-        "cbl":"CBL Inquiry Request"
-      },
-      "salaryLocalization":{
-        "title":"Localization of salaries",
-        "salaries":"Salaries",
-        "uploadFiles":"Import from excel",
-        "salariesTransfer":"Posting to BCD"
-      },
-      "documentary":"Documentary Credits",
-      "followUp":"Follow Up Requests",
-      "customizations":{
-        "label":"Customizations",
-        "banks":"Banks",
-        "commissions":"Commissions",
-        "limits":"Limist"
-      },
-      "settings":"Settings",
-      "currRate":"Currency exchange rates",
-  
-      "logout":"Logout",
-      "defaultTitle":""
-    
+  "sidebarItems": {
+    "dashboard": "Dashboard",
+    "statementOfAccount": "Statement of Account",
+    "title": "Corporate Gateway System",
+    "transfer": {
+      "label": "Transfer",
+      "in": "Internal Transfer",
+      "out": "External Transfer"
     },
-    "mainHeader":{
-      "title":"Companies Gateway"
+    "requests": {
+      "label": "Requests",
+      "checkBook": "Checkbook Request",
+      "certifiedCheck": "Certified Check Request",
+      "guaranteeLetter": "Guarantee Letter Request",
+      "creditFacility": "Credit Facility Request",
+      "visa": "VISA Card Request",
+      "certifiedBankStatement": "Certified Bank‑Statement Request",
+      "rtgs": "RTGS Transfer Request",
+      "foreign": "Foreign‑Transfer Licence Request",
+      "cbl": "CBL Inquiry Request"
     },
-    "cblForm":{
-      "partyName":"Party Name",
-      "capital":"Capital",
-      "foundingDate":"Founding Date",
-
-      "legalForm":"Legal Form",
-      "branchOrAgency":"Branch or Agnecy",
-      "sub":"m",
-      "currentAccount":"Currenct account number",
-      "accountOpening":"Account opening date",
-  
-      "generalInformation": "General Information",
-      "financialInformation": "Financial Information",
-      "representativeInformation": "Representative Information",
-
-    
-      "commercialLicense":"Commercial license number",
-      "validatyLicense":"Validaty of commercial license",
-      "commercialRegistration":"Commercial registration number",
-      "validatyRegister":"Validity of the commercial register",
-      "statisticalCode":"Statistical Code",
-      "validatyCode":"Statistical Code Validity",
-      "chamberNumber":"Chamber of commerce number",
-      "validatyChamber":"Validaty of the chamber of commerce",
-      "taxNumber":"Tax Number",
-      "taxAdmin":"Tax Administration",
-      "office":"Office",
-      "legalRepresentative":"Name of the legal representative",
-      "representativeNumber":"The national number of the legal representative",
-      "birthDate":"Date of birth",
-      "passportNumber":"Passport number",
-      "passportIssuance":"Passport issuance date",
-      "passportExpiry":"Passport expiry date",
-      "mobile":"Mobile number",
-      "address":"Permanent address",
-  
-  
-      "table1":{
-        "title":"Board Director Members",
-        "columns":{
-          "name":"Name",
-          "position":"Position"
-        }
-      },
-  
-      "table2":{
-        "title":"Authorized signatories on the account",
-        "columns":{
-          "name":"Name",
-          "signature":"Signature"
-        }
-      },
-  
-      "infoBox": {
-        "1": "Attachments",
-        "2": "A colored copy of the passport for the authorized person and members (valid)",
-        "3": "The national number form for the authorized person and members (stamped)",
-        "4": "A colored copy of the ID card for the authorized person and members (valid)",
-        "5": "A colored copy of the statistical code (valid)",
-        "6": "A colored copy of the chamber of commerce certificate (authentic copy, valid)",
-        "7": "A colored copy of the license (authentic copy, valid)",
-        "8": "A colored copy of the commercial registration (authentic copy, valid)",
-        "9": "A copy of the Articles of Association",
-        "10": "Tax clearance certificate",
-        "note": "Note:",
-        "n1": "The authorized person must be the legal representative in the commercial registration.",
-        "n2": "The members mentioned in the Articles of Association and the commercial registration.",
-        "n3": "Documents will not be accepted unless sent by mail and stamped.",
-        "n4": "Ensure that the customer fills in the information correctly."
-      },
-
-      "additionalInformation":"Additional information",
-      "packingDate": "Filling date",
-      "specialistName":"Name of the responsible employee"
-      
-  
-  
-    
+    "salaryLocalization": {
+      "title": "Salary Localization",
+      "salaries": "Salaries",
+      "uploadFiles": "Upload Files",
+      "salariesTransfer": "Salaries Transfer"
     },
-  
-    "signaturePad":{
-      "open":"Open signature pad",
-      "done":"Done",
-      "clear":"Clear"
+    "documentary": "Documentary Credits",
+    "followUp": "Follow‑up Requests",
+    "customizations": {
+      "label": "Definitions",
+      "banks": "Banks",
+      "commissions": "Commissions",
+      "limits": "Limits"
     },
-    "actions":"Actions",
-  
-    "RTGSForm":{
-      "accountNb":"ACCCOUNT NO",
-      "name":"NAME OF APPLICANT",
-      "address":"ADDRESS",
-      "benName":"BENEFFICIRYS NAME",
-      "benAccNum":"BENEFFICIRYS ACCCOUNT NO",
-      "benBank":"BENEFFICIRYS BANK",
-      "branch":"BRANCH NAME",
-      "amount":"AMOUNT(LYD)",
-      "only":"ONLY",
-      "reniInfo":"RENITTANCEIN INFORMATION",
-      "custSignature":"Customer Signature",
-      "branchOrAgency":"Branch Manager/Agency Head",
-      "auditorSign":"Internal Auditor Signature",
-      "finSign":"Signature of Financial Intelligence Unit employee",
-      "attachments":"Attachments",
-      "invoice":"Invoice",
-      "contract":"Contract",
-      "claim":"Claim",
-      "otherDoc":"Other documents",
-      "note":"Note: Any transfer exceeding one million dinars must be approved by an employee of the bank’s Financial Information Unit.",
-      "ach":"ACH",
-      "rtgs":"RTGS",
-      "title":"مصرف التجارة و التنمية",
-      "subtitle":"الادارة العامة - بنغازي",
-      "accInfo":"Account Information",
-      "benDetails":"Beneficiary Details",
-      "payDetails":"Payment Details",
-      "footer":"",
-      "refNum":"Reference number",
-      "date":"Date"
-  
-  
-    },
-  
-  
-    "checkForm": {
-      "name": "Full Name",
-      "address": "Address",
-      "accNum": "Account Number",
-      "sendTo": "Please send to",
-      "book": "A book containing",
-      "checkbox": "Check",
-      "checks": "Checks",
-      "for": "For",
-      "holder": "The Holder",
-      "forUse": "For Use",
-      "branch": "Branch",
-      "specificTo": "Specific to",
-      "email": "Send by mail",
-      "savedUntil": "To be kept until claimed",
-      "erase": "(Please erase the words that are not needed)",
-      "agree": "I/We undertake to bear all responsibilities of any kind that directly fall on the bank as a result of the loss, theft, or misuse of one or all of these checks, except in cases where the bank has proceeded with the disbursement of such lost, stolen, or misused checks, or has been properly notified in writing beforehand about the loss, theft, or misuse of these checks.",
-      "date": "Date",
-      "signature": "Signature",
-      "note": "Note: The request will only be accepted with the approved bank signature and a dual signature for accounts requiring dual signatures.",
-      "checkDetails":"Check Details",
-      "checkboxSection":""
-    },
-  
-  
-    "CheckRequest": {
-      "title": "Certified Check Request",
-      "branch": "Branch",
-      "branchNum": "Branch Number",
-      "date": "Date",
-      "f": "F",
-      "customerName": "Customer Name",
-      "cardNum": "Card Number",
-      "checkAmountChars": "Check Amount in Words",
-      "amount": "Amount",
-      "dirham": "Dirham",
-      "lyd": "LYD",
-      "curr": "Currency",
-      "expenses": "Expenses",
-      "totalAmount": "Total Amount",
-      "accountNum": "Account Number",
-      "beneficiary": "Beneficiary",
-      "cust1Sign": "Customer Signature 1",
-      "cust2Sign": "Customer Signature 2",
-      "cust3Sign": "Customer Signature 3",
-      "note": "Please deduct the specified amount from my account and issue a certified check for it.",
-      "filledByBank": "To be filled by the bank",
-      "checkNum": "Certified Check Number",
-      "employeeSign": "Responsible Employee's Signature",
-      "custSign": "Customer's Receipt Signature",
-      "otherInfo":"",
-      "customerInfo":"",
-      "actions":"Actions",
-      "amountTable":"",
-      "delegate":"Delegate"
-  
-  
-    },
+    "settings": "Settings",
+    "currRate": "Currency Exchange Rates",
+    "logout": "Logout",
+    "defaultTitle": "",
+    "currencies": "Currencies",
+    "employees": "Employees",
+    "companies": "Companies"
+  },
 
-    "notFound":{
-        "title":"Page Not Available",
-        "des":"Sorry, this page is currently not available. Please check back later."
-    },
+  "mainHeader": {
+    "title": "Corporate Gateway System"
+  },
 
+  "cblForm": {
+    "partyName": "Party Name",
+    "capital": "Capital",
+    "foundingDate": "Founding Date",
+    "legalForm": "Legal Form",
+    "branchOrAgency": "Branch or Agency",
+    "sub": "No.",
+    "currentAccount": "Current Account Number",
+    "accountOpening": "Account‑Opening Date",
 
-    "crudDataGrid": {
-        "title": "Data Grid",
-        "searchPlaceholder": "Search by",
-        "dropdownDefault": "Select an option",
-        "addButton": "Add",
-        "noItems":"No items available",
-        "yes":"yes",
-        "no":"no",
-        "actions":"Actions"
+    "generalInformation": "General Information",
+    "financialInformation": "Financial Information",
+    "representativeInformation": "Legal‑Representative Information",
 
-    },
-    "edit":"Edit",
-    "delete":"Delete",
-    
-    "internalTransferForm": {
-        "title": "Internal Bank Transfer",
-        "from": "From Account",
-        "to": "To Account",
-        "value": "Value",
-        "commision": "Commissions",
-        "description": "Description",
-        "rec": "Recurring Transfer",
-        "ends": "Ends At",
-        "status":"status",
-        "continue": "Continue",
-        "delete": "Cancel",
-        "back":"Back",
-        "onhold":"On hold",
-        "inactive":"Inactive",
-        "balance":"Balance",
-        "bearer": "Commission bearer",
-        "receiverOrSender":"Commission bearer",
-        "sender": "Sender",
-        "receiver": "Receiver",
-        "commisionSender":" deducted from Sender",
-        "commisionReceiver":" deducted from Receiver",
-        "recipient": "Recipient",
-        "commissionPaidBy":"Commission paid by"
+    "commercialLicense": "Commercial‑Licence Number",
+    "validatyLicense": "Commercial‑Licence Validity",
+    "commercialRegistration": "Commercial‑Registration Number",
+    "validatyRegister": "Commercial‑Registration Validity",
+    "statisticalCode": "Statistical Code",
+    "validatyCode": "Statistical‑Code Validity",
+    "chamberNumber": "Chamber‑of‑Commerce Number",
+    "validatyChamber": "Chamber‑of‑Commerce Validity",
 
-      },
-      "statementOfAccount":{
-        "title":"Generate Statement of Accounts",
-        "account":"Account Number",
-        "from":"From Date",
-        "to":"To Date",
-        "continue":"Continue"
-      },
-      "formTypeSelect": {
-        "internal": "Internal Transfer",
-        "between": "Transfer Between Banks"
-      },
-      "confirmationModal":{
-        "title":"Confirm",
-        "print":"PDF",
-        "submit":"Submit"
-      },
-      "continueButton":{
-        "continue": "Continue"
-      },
-      "salaries":{
-        "columns":{
-          "id":"ID",
-          "name":"Name",
-          "salary":"Salary",
-          "deduction":"Deduction"
-        },
-        "salariesPage": {
-          "columns": {
-            "date": "Date",
-            "month": "Month",
-            "total": "Total",
-            "submittingDate": "Submitting Date",
-            "accountNumber": "Account Number"
-          }
-        }
-      },
+    "taxNumber": "Tax Number",
+    "taxAdmin": "Tax Administration",
+    "office": "Office",
+    "legalRepresentative": "Legal‑Representative Name",
+    "representativeNumber": "Legal‑Rep National Number",
+    "birthDate": "Date of Birth",
+    "passportNumber": "Passport Number",
+    "passportIssuance": "Passport Issue Date",
+    "passportExpiry": "Passport Expiry Date",
+    "mobile": "Mobile Phone",
+    "address": "Permanent Address",
 
-      "customizations":{
-        "banks":{
-          "title":"banks",
-          "description":"Description",
-          "swiftcode":"Swiftcode",
-          "bankNumber":"Bank Number"
-        },
-        "commissions":{
-          "title":"Commissions",
-          "tc":"TC",
-          "from":"From",
-          "to":"To",
-          "per":"Percent",
-          "value":"Value",
-          "bearer":"Bearer"
-        },
-        "limits":{
-          "title":"Limits",
-          "ft":"FT",
-          "mc":"M/C",
-          "from":"from",
-          "to":"To",
-          "checker":"Checker"
-        }
-      },
-
-      "global": {
-        "dialogTitle": "Confirmation",
-        "delmessage": "Are you sure you want to proceed?",
-        "cancel": "Cancel",
-        "confirm": "Confirm"
-      },
-
-      "descriptions": {
-        "statementOfAccountDescription": "View and download account statements",
-        "transferDescription": "Manage all fund transfers",
-        "transferInDescription": "Transfer funds into your account",
-        "transferOutDescription": "Send funds to other accounts",
-        "requestsDescription": "Request banking services",
-        "checkBookDescription": "Request a new checkbook",
-        "certifiedCheckDescription": "Apply for a certified check",
-        "guaranteeLetterDescription": "Request a guarantee letter",
-        "creditFacilityDescription": "Apply for credit facilities",
-        "visaDescription": "Manage your visa requests",
-        "rtgsDescription": "Initiate RTGS transactions",
-        "foreignRequestsDescription": "Request foreign currency transactions",
-        "cblDescription": "View details related to CBL",
-        "salaryLocalizationDescription": "Manage salary localization settings",
-        "salariesDescription": "Process and transfer employee salaries",
-        "uploadFilesDescription": "Upload files for localization",
-        "salariesTransferDescription": "Transfer salaries to employees",
-        "documentaryDescription": "Access and manage documentary details",
-        "followUpDescription": "Follow up on processes and requests",
-        "settingsDescription": "Configure your application settings",
-        "customizationsDescription": "Customize your banking preferences",
-        "banksDescription": "Manage and view your bank details",
-        "commissionsDescription": "Handle commission-related data",
-        "limitsDescription": "Set and manage operational limits",
-        "defaultDescription":""
-      },
-
-      "login":{
-        "email":"Email",
-        "pass":"Password",
-        "button":"Login"
+    "table1": {
+      "title": "Board‑Members",
+      "columns": {
+        "name": "Name",
+        "position": "Position"
       }
-      
-      
+    },
+
+    "table2": {
+      "title": "Authorized Signatories",
+      "columns": {
+        "name": "Name",
+        "signature": "Signature"
+      }
+    },
+
+    "infoBox": {
+      "1": "Attachments",
+      "2": "Coloured copy of valid passport for the authorised person and members",
+      "3": "Stamped National‑Number form for the authorised person and members",
+      "4": "Coloured copy of valid ID card for the authorised person and members",
+      "5": "Coloured copy of valid Statistical Code",
+      "6": "Valid Chamber‑of‑Commerce certificate (certified copy)",
+      "7": "Valid licence copy (certified copy)",
+      "8": "Valid commercial‑register copy (certified copy)",
+      "9": "Copy of Articles of Association",
+      "10": "Tax‑payment certificate",
+      "note": "Note:",
+      "n1": "The authorised person must be the legal representative in the commercial register.",
+      "n2": "Members must be those listed in the Articles of Association and commercial register.",
+      "n3": "Documents are only accepted if sent by mail and stamped.",
+      "n4": "Ensure all data are filled in correctly by the customer."
+    },
+
+    "additionalInformation": "Additional Information",
+    "packingDate": "Filling Date",
+    "specialistName": "Specialist‑Employee Name",
+    "changeStatus": "Change Status",
+    "status": "Status",
+    "statusRequired": "Status is required",
+    "loading": "Loading..."
+  },
+
+  "signaturePad": {
+    "open": "Open Signature Pad",
+    "done": "Done",
+    "clear": "Clear"
+  },
+
+  "actions": "Actions",
+
+  "RTGSForm": {
+    "accountNb": "Sender‑Account Number",
+    "name": "Sender‑Account Number",
+    "address": "Address",
+    "benName": "Beneficiary Name",
+    "benAccNum": "Beneficiary‑Account Number",
+    "benBank": "Beneficiary‑Bank Name",
+    "branch": "Branch Name",
+    "amount": "Amount",
+    "only": "Only",
+    "reniInfo": "Purpose of Transfer",
+    "custSignature": "Customer Signature",
+    "branchOrAgency": "Branch‑Manager / Agency‑Head Approval",
+    "auditorSign": "Internal‑Auditor Signature",
+    "finSign": "FIU‑Employee Signature",
+    "attachments": "Attachments",
+    "invoice": "Invoice",
+    "contract": "Contract",
+    "claim": "Claim",
+    "otherDoc": "Other Documents",
+    "note": "Note: Any transfer exceeding one million LYD must be approved by the bank’s FIU employee.",
+    "ach": "ACH",
+    "rtgs": "RTGS",
+    "title": "Commerce & Development Bank",
+    "subtitle": "General Administration – Benghazi",
+    "accInfo": "Account Information",
+    "benDetails": "Beneficiary Details",
+    "payDetails": "Payment Details",
+    "footer": "",
+    "refNum": "Reference Number",
+    "date": "Date",
+    "payType": "Payment Type"
+  },
+
+  "checkForm": {
+    "name": "Full Name",
+    "address": "Address",
+    "accNum": "Account Number",
+    "sendTo": "Representative",
+    "book": "Check‑book containing",
+    "checkbox": "Tick the box",
+    "checks": "Checks",
+    "for": "Pay to the order of",
+    "holder": "Bearer",
+    "forUse": "For use",
+    "branch": "Branch",
+    "specificTo": "specifying that",
+    "email": "Send by mail",
+    "savedUntil": "Keep until requested",
+    "erase": "(Please delete words that do not apply)",
+    "agree": "I/We undertake full responsibility for any loss, theft or misuse of any or all of these checks, except where the bank cashes such checks or has been duly notified in writing in sufficient time.",
+    "date": "Date",
+    "signature": "Signature",
+    "note": "Note: Request accepted only with authorised bank signature; dual signature required for dual‑signatory accounts.",
+    "checkDetails": "Check Details",
+    "checkboxSection": "",
+    "cancel": "Close",
+    "submit": "Submit",
+    "required": "Required",
+    "invalidDate": "Invalid date",
+    "selectOneOption": "Please select at least one option",
+    "changeStatus": "Change Status",
+    "statusRequired": "Status is required",
+    "status": "Status",
+    "changeStatusTitle": "Change Check Status",
+    "approved": "Approved",
+    "declined": "Declined",
+    "loading": "Loading..."
+  },
+
+  "CheckRequest": {
+    "title": "Certified‑Check Request",
+    "branch": "Branch",
+    "branchNum": "Branch Number",
+    "date": "Date",
+    "f": "No.",
+    "customerName": "Customer Name",
+    "cardNum": "Card Number",
+    "checkAmountChars": "Check Amount (words)",
+    "amount": "Amount",
+    "dirham": "Dirham",
+    "lyd": "LYD",
+    "curr": "Currency",
+    "expenses": "Expenses",
+    "totalAmount": "Total Amount",
+    "accountNum": "Account Number",
+    "beneficiary": "Beneficiary",
+    "cust1Sign": "Customer Signature 1",
+    "cust2Sign": "Customer Signature 2",
+    "cust3Sign": "Customer Signature 3",
+    "note": "Please debit the specified amount from my account and issue a certified check.",
+    "filledByBank": "To be filled by the bank",
+    "checkNum": "Certified‑Check Number",
+    "employeeSign": "Responsible‑Employee Signature",
+    "custSign": "Customer Receipt Signature",
+    "otherInfo": "",
+    "customerInfo": "",
+    "actions": "Actions",
+    "amountTable": "",
+    "delegate": "Representative",
+    "loading": "Loading..."
+  },
+
+  "notFound": {
+    "title": "Page Unavailable",
+    "des": "Sorry, this page is not available right now. Please check back later."
+  },
+
+  "crudDataGrid": {
+    "title": "Data Grid",
+    "searchPlaceholder": "Search by",
+    "dropdownDefault": "Choose an option",
+    "addButton": "Add",
+    "noItems": "No items available",
+    "yes": "Yes",
+    "no": "No",
+    "actions": "Actions",
+    "doubleClickToExpand": "Double‑click to expand",
+    "goTo": "Go to",
+    "of": "of",
+    "page": "page",
+    "goFirst": "Go to first page",
+    "goPrevious": "Go to previous page",
+    "goNext": "Go to next page",
+    "goLast": "Go to last page",
+    "doubleClickToCollapse": "Double‑click to collapse"
+  },
+
+  "edit": "Edit",
+  "delete": "Delete",
+
+  "internalTransferForm": {
+    "title": "Internal Bank Transfer",
+    "id": "ID",
+    "from": "From Account",
+    "to": "To Account",
+    "value": "Amount",
+    "commision": "Commissions",
+    "description": "Description",
+    "rec": "Recurring Transfer",
+    "ends": "Ends on",
+    "status": "Status",
+    "continue": "Continue",
+    "delete": "Cancel",
+    "back": "Back",
+    "onhold": "On Hold",
+    "inactive": "Inactive",
+    "balance": "Balance",
+    "bearer": "Commission Bearer",
+    "receiverOrSender": "Commission Bearer",
+    "sender": "Sender",
+    "receiver": "Receiver",
+    "commisionSender": "Deducted from sender",
+    "commisionReceiver": "Deducted from receiver",
+    "category": "Category",
+    "amount": "Amount",
+    "requestedAt": "Request Date",
+    "requiredFromAccount": "From‑account required",
+    "requiredToAccount": "To‑account required",
+    "currencyMismatch": "Accounts must have the same currency",
+    "valueMustBeNumber": "Value must be a number",
+    "requiredValue": "Amount is required",
+    "valueMustBePositive": "Value must be positive",
+    "requiredDescription": "Description is required",
+    "commissionPaidBy": "Commission paid by",
+    "recipient": "Recipient"
+  },
+
+  "statementOfAccount": {
+    "title": "Generate Account Statement",
+    "account": "Account Number",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "continue": "Continue",
+    "postingDate": "Posting Date",
+    "amount": "Amount",
+    "drCr": "Debit / Credit",
+    "narrative1": "Narrative 1",
+    "narrative2": "Narrative 2",
+    "narrative3": "Narrative 3",
+    "required": "Required",
+    "selectAccount": "Please select an account"
+  },
+
+  "formTypeSelect": {
+    "internal": "Internal Bank Transfer",
+    "between": "Inter‑bank Transfer"
+  },
+
+  "confirmationModal": {
+    "title": "Confirmation",
+    "print": "Print",
+    "submit": "Confirm"
+  },
+
+  "continueButton": {
+    "continue": "Continue"
+  },
+
+  "salaries": {
+    "columns": {
+      "id": "ID",
+      "name": "Name",
+      "salary": "Salary",
+      "deduction": "Deduction"
+    },
+    "salariesPage": {
+      "columns": {
+        "date": "Date",
+        "month": "Month",
+        "total": "Total",
+        "submittingDate": "Submitting Date",
+        "accountNumber": "Account Number"
+      }
+    }
+  },
+
+  "customizations": {
+    "banks": {
+      "title": "Banks",
+      "description": "Description",
+      "swiftcode": "SWIFT Code",
+      "bankNumber": "Bank Number"
+    },
+    "commissions": {
+      "title": "Commissions",
+      "tc": "Transaction Code",
+      "from": "From",
+      "to": "To",
+      "per": "Percent",
+      "value": "Value",
+      "bearer": "Bearer"
+    },
+    "limits": {
+      "title": "Limits",
+      "ft": "Transaction Type",
+      "mc": "Maker / Checker",
+      "from": "From",
+      "to": "To",
+      "checker": "Checker"
+    }
+  },
+
+  "global": {
+    "dialogTitle": "Note",
+    "delmessage": "Are you sure you want to proceed?",
+    "cancel": "Close",
+    "confirm": "Confirm"
+  },
+
+  "descriptions": {
+    "statementOfAccountDescription": "View and download account statements",
+    "transferDescription": "Manage all money transfers",
+    "transferInDescription": "Transfer money to your account",
+    "transferOutDescription": "Send money to other accounts",
+    "requestsDescription": "Request banking services",
+    "checkBookDescription": "Request a new checkbook",
+    "certifiedCheckDescription": "Apply for a certified check",
+    "guaranteeLetterDescription": "Request a guarantee letter",
+    "creditFacilityDescription": "Apply for credit facilities",
+    "visaDescription": "Manage your Visa requests",
+    "rtgsDescription": "Execute RTGS transactions",
+    "foreignRequestsDescription": "Request foreign‑currency transactions",
+    "cblDescription": "View CBL‑related details",
+    "salaryLocalizationDescription": "Manage salary‑localization settings",
+    "salariesDescription": "Process and transfer salaries",
+    "uploadFilesDescription": "Upload files for localization",
+    "salariesTransferDescription": "Transfer salaries to employees",
+    "documentaryDescription": "Access and manage documentary details",
+    "followUpDescription": "Follow up on operations and requests",
+    "settingsDescription": "Configure application settings",
+    "customizationsDescription": "Customize banking preferences",
+    "banksDescription": "Manage and view bank details",
+    "commissionsDescription": "Manage commission data",
+    "limitsDescription": "Set and manage operational limits",
+    "defaultDescription": ""
+  },
+
+  "login": {
+    "email": "Email",
+    "pass": "Password",
+    "button": "Login"
+  },
+
+  "foreignTransfers": {
+    "toBank": "To Bank",
+    "branch": "Branch",
+    "residentSuppName": "Seller / Party Name",
+    "residentSuppNationality": "Nationality",
+    "nonResidentPassport": "Seller’s ID / Passport No. (non‑resident)",
+    "placeOfIssue": "Place of Issue",
+    "dateOfIssue": "Date of Issue",
+    "nonResidentSuppNationality": "Nationality",
+    "nonResidentSuppaddress": "Resident in",
+    "transferAmount": "Transfer Amount",
+    "destinationCountry": "Country",
+    "beneficiaryName": "Beneficiary Name",
+    "beneficiaryAddress": "Beneficiary Address",
+    "externalBankName": "External Bank Name",
+    "externalBankAddress": "External Bank Address",
+    "transferToAccount": "Transfer‑Account Number",
+    "transferToAddress": "Transfer Address",
+    "accountHolderName": "Account‑Holder Name",
+    "payementAddress": "Payment Address",
+    "purpose": "Purpose of Transfer",
+    "documents": "Supporting documents for transfers over USD 15,000 (attach)",
+    "step1Title": "Basic Transfer Data",
+    "step2Title": "Bank‑Account Details",
+    "changeStatus": "Change Status",
+    "statusRequired": "Status is required",
+    "status": "Status",
+    "loading": "Loading...",
+    "isRequired": "Required",
+    "trasnferAmount": "Transfer Amount",
+    "uploadDocuments": "Upload",
+    "mustBeNumber": "Must be a number"
+  },
+
+  "tabsWizard": {
+    "review": "Review & Submit",
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit"
+  },
+
+  "visaRequest": {
+    "step1Title": "Step 1",
+    "step2Title": "Step 2",
+    "reviewStepTitle": "Review & Submit",
+
+    "branch": "Branch / Agency",
+    "date": "Date",
+    "accountHolderName": "Account‑Holder Name",
+    "accountNumber": "Account Number",
+    "nationalId": "National ID",
+    "phoneNumberLinkedToNationalId": "Phone linked to National ID",
+
+    "cbl": "CBL Number",
+    "cardMovementApproval": "Card‑movement approval",
+    "cardUsingAcknowledgment": "Card‑use acknowledgment (per CBL)",
+    "foreignAmount": "Foreign Amount",
+    "localAmount": "Local Amount",
+    "pldedge": "Pledge not to claim CBL fees",
+
+    "isRequired": "Required"
+  },
+
+  "bankStatement": {
+    "step1Title": "Step 1",
+    "step2Title": "Step 2",
+    "reviewStepTitle": "Review & Submit",
+
+    "accountHolderName": "Account‑Holder Name",
+    "authorizedOnTheAccountName": "Authorised on the Account",
+    "accountNumber": "Account Number",
+    "serviceRequests": "Service Requests",
+
+    "reactivateIdfaali": "Reactivate Idfaali",
+    "deactivateIdfaali": "Deactivate Idfaali",
+    "resetDigitalBankPassword": "Reset Digital‑Bank Password",
+    "resendMobileBankingPin": "Resend Mobile‑Banking PIN",
+    "changePhoneNumber": "Change Phone Number",
+
+    "oldAccountNumber": "Old Account Number",
+    "newAccountNumber": "New Account Number",
+    "statementRequest": "Statement Requests",
+
+    "currentAccountStatement": "Current‑Account Statement",
+    "arabic": "Arabic",
+    "english": "English",
+    "visaAccountStatement": "Visa‑Account Statement",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "accountStatement": "Account Statement",
+    "journalMovement": "Journal Movement",
+    "nonFinancialCommitment": "Non‑Financial Commitment",
+
+    "isRequired": "Required",
+    "mustBeNumber": "Must be a number"
+  },
+
+  "dashboard": {
+    "accountNb": "Account Number",
+    "debitBalance": "Debit Balance",
+    "availableBalance": "Available Balance",
+    "failedToFetchData": "Failed to fetch data",
+    "noDataAvailable": "No data available"
+  },
+
+  "employees": {
+    "id": "ID",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "permissions": "Permissions",
+    "editPermissions": "Edit Permissions",
+    "permissionsPage": {
+      "back": "Back",
+      "save": "Save",
+      "CompanyCanViewDashboard": "Can view dashboard",
+      "CompanyCanStatementOfAccounts": "Can view statements",
+      "CompanyCanTransfer": "Can manage transfers",
+      "CompanyCanRequest": "Can submit requests",
+      "CompanyCanCurrency": "Can manage currencies",
+      "CompanyCanInternalTransfer": "Can make internal transfers",
+      "CompanyCanExternalTransfer": "Can make external transfers",
+      "CompanyCanAddEmployee": "Company Can add employees",
+      "CompanyCanEditEmployee": "Can edit employees",
+      "EmployeeCanCheckTransfers": "Can check transfers",
+      "EmployeeCanCheckRequests": "Can check requests",
+      "EmployeeCanUpdateRequests": "Can update requests",
+      "EmployeeCanEditCurrency": "Can edit currencies",
+      "EmployeeCanSettings": "Can manage settings",
+      "EmployeeCanApproveCompanies": "Can approve companies",
+      "EmployeeCanAddEmployees": "Employee Can add employees"
+    },
+    "form":{
+      "personalInformation":"Personal Information",
+      "firstName":"First Name",
+      "lastName":"Last Name",
+      "username":"Username",
+      "accountInformation":"Account Information",
+      "email":"Email",
+      "password":"Password",
+      "contactAndRole":"Contacts and Role",
+      "phone":"Phone",
+      "role":"Role",
+      "save":"Save",
+      "cancel":"Cancel"
+    }
+  },
+
+  "backButton": {
+    "back": "Back"
+  },
+
+  "reviewStep": {
+    "title": "Review Information",
+    "description": "Please ensure all details are correct before submission"
+  },
+
+  "currencies": {
+    "code": "Code",
+    "rate": "Exchange Rate",
+    "description": "Description"
   }
+}

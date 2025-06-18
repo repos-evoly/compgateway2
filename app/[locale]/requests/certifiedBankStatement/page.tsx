@@ -1,29 +1,39 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 
+import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CertifiedBankStatementForm from "./components/CertifiedBankStatementForm";
-import { getCertifiedBankStatements } from "./services";
-import { CertifiedBankStatementRequestWithID } from "./types"; // <-- from single source
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+
+import {
+  getCertifiedBankStatements,
+  createCertifiedBankStatement,
+} from "./services";
+
+import type {
+  CertifiedBankStatementRequest,
+  CertifiedBankStatementRequestWithID,
+} from "./types";
 
 export default function CertifiedBankStatementPage() {
   const t = useTranslations("bankStatement");
 
-  // State for data from API
+  /*──────────────────────────── Grid & form state ───────────────────────*/
   const [data, setData] = useState<CertifiedBankStatementRequestWithID[]>([]);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
-
-  // "Add" form toggle
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
-
   const limit = 10;
 
-  // Fetch data on mount / currentPage change
+  /*──────────────────────────── Modal state ─────────────────────────────*/
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
+  /*──────────────────────────── Fetch paginated data ────────────────────*/
   useEffect(() => {
     async function fetchData() {
       try {
@@ -31,19 +41,20 @@ export default function CertifiedBankStatementPage() {
           page: currentPage,
           limit,
         });
-        // e.g. res => { data, page, limit, totalPages, ... }
         setData(res.data);
         setTotalPages(res.totalPages);
-      } catch (error) {
-        console.error("Failed to fetch certified bank statements:", error);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : t("unknownError");
+        setModalTitle(t("fetchError"));
+        setModalMessage(msg);
+        setModalSuccess(false);
+        setModalOpen(true);
       }
     }
     fetchData();
-  }, [currentPage]);
+  }, [currentPage, t]);
 
-  // Grid columns => Add more fields
-  // We'll display e.g. accountHolderName, accountNumber, authorizedOnTheAccountName,
-  // plus some of statementRequest fields. Adapt as needed.
+  /*──────────────────────────── Columns ─────────────────────────────────*/
   const columns = [
     { key: "accountHolderName", label: t("accountHolderName") },
     { key: "accountNumber", label: t("accountNumber") },
@@ -51,30 +62,45 @@ export default function CertifiedBankStatementPage() {
       key: "authorizedOnTheAccountName",
       label: t("authorizedOnTheAccountName"),
     },
-    // For statementRequest, we can show e.g. "fromDate" or "toDate"
-    {
-      key: "statementRequest.fromDate",
-      label: t("fromDate"),
-    },
-    {
-      key: "statementRequest.toDate",
-      label: t("toDate"),
-    },
+    { key: "statementRequest.fromDate", label: t("fromDate") },
+    { key: "statementRequest.toDate", label: t("toDate") },
   ];
 
-  function handleAddClick() {
-    setShowForm(true);
+  /*──────────────────────────── Handlers ───────────────────────────────*/
+  const handleAddClick = () => setShowForm(true);
+
+  async function handleFormSubmit(values: CertifiedBankStatementRequestWithID) {
+    try {
+      // Strip the placeholder id so the backend can generate its own
+      const { id: _unused, ...rest } = values;
+      void _unused; // ← mark as used
+
+      const payload = rest as CertifiedBankStatementRequest;
+
+      const created = await createCertifiedBankStatement(payload);
+      setData((prev) => [created, ...prev]);
+
+      setModalTitle(t("createSuccessTitle"));
+      setModalMessage(t("createSuccessMsg"));
+      setModalSuccess(true);
+      setModalOpen(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t("unknownError");
+      setModalTitle(t("createErrorTitle"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
+    }
   }
 
-  // On wizard submit => local add (no POST yet)
-  function handleFormSubmit(values: CertifiedBankStatementRequestWithID) {
-    console.log("Submitted data =>", values);
-    // Generate new ID, or handle it differently if your API sets ID
-    const newId = data.length > 0 ? Math.max(...data.map((d) => d.id)) + 1 : 1;
-    setData((prev) => [...prev, { ...values, id: newId }]);
-    setShowForm(false);
-  }
+  /* modal actions */
+  const closeModal = () => setModalOpen(false);
+  const confirmModal = () => {
+    if (modalSuccess) setShowForm(false);
+    setModalOpen(false);
+  };
 
+  /*──────────────────────────── Render ──────────────────────────────────*/
   return (
     <div className="p-6">
       {showForm ? (
@@ -90,6 +116,16 @@ export default function CertifiedBankStatementPage() {
           onAddClick={handleAddClick}
         />
       )}
+
+      {/*──────── Error / Success Modal ────────*/}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={closeModal}
+        onConfirm={confirmModal}
+      />
     </div>
   );
 }

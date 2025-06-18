@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import CheckRequestForm from "../components/CheckRequestForm";
 import { getCheckRequestById } from "../services";
 import { TCheckRequestValues, TCheckRequestFormValues } from "../types";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 const CheckRequestDetailPage = () => {
   const { id } = useParams(); // /checkrequest/[id]
@@ -14,21 +15,29 @@ const CheckRequestDetailPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [checkData, setCheckData] = useState<TCheckRequestValues | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   useEffect(() => {
     if (!id) return;
+
     const fetchData = async () => {
       try {
         const item = await getCheckRequestById(id.toString());
         setCheckData(item);
       } catch (error) {
-        console.error("Failed to fetch check request:", error);
+        const msg = error instanceof Error ? error.message : t("genericError");
+        setModalTitle(t("errorTitle"));
+        setModalMessage(msg);
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, [id]);
+  }, [id, t]); // ← added t
 
   if (loading) {
     return <div className="p-4">{t("loading")}</div>;
@@ -77,6 +86,14 @@ const CheckRequestDetailPage = () => {
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
         readOnly // <<< Make the form read-only
+      />
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={false}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
       />
     </div>
   );

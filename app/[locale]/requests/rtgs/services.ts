@@ -64,3 +64,78 @@ export async function getRtgsRequestById(id: string | number): Promise<TRTGSValu
     const data = (await response.json()) as TRTGSValues;
     return data;
   }
+
+
+
+  /**
+ * POST /rtgsrequests
+ * Creates a new RTGS request and returns the created record.
+ */
+export async function createRtgsRequest(
+  values: TRTGSValues,
+): Promise<TRTGSValues> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  /** Build the exact body the API expects */
+  const body: {
+    refNum: string;
+    date: string;
+    paymentType: string;
+    accountNo: string;
+    applicantName: string;
+    address: string;
+    beneficiaryName: string;
+    beneficiaryAccountNo: string;
+    beneficiaryBank: string;
+    branchName: string;
+    amount: string;
+    remittanceInfo: string;
+    invoice: boolean;
+    contract: boolean;
+    claim: boolean;
+    otherDoc: boolean;
+  } = {
+    refNum: new Date(values.refNum).toISOString(),
+    date: new Date(values.date).toISOString(),
+    paymentType: values.paymentType,
+    accountNo: values.accountNo,
+    applicantName: values.applicantName,
+    address: values.address,
+    beneficiaryName: values.beneficiaryName,
+    beneficiaryAccountNo: values.beneficiaryAccountNo,
+    beneficiaryBank: values.beneficiaryBank,
+    branchName: values.branchName,
+    amount: values.amount,
+    remittanceInfo: values.remittanceInfo,
+    invoice: values.invoice ?? false,
+    contract: values.contract ?? false,
+    claim: values.claim ?? false,
+    otherDoc: values.otherDoc ?? false,
+  };
+
+  const response = await fetch(`${baseUrl}/rtgsrequests`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to create RTGS request. Status: ${response.status}`,
+    );
+  }
+
+  const created = (await response.json()) as TRTGSValues;
+  return created;
+}

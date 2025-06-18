@@ -45,13 +45,13 @@ const Page = () => {
 
   // columns => minimal example
   const columns = [
-    { key: "id", label: "ID" },
-    { key: "categoryName", label: "Category" },
-    { key: "fromAccount", label: "From" },
-    { key: "toAccount", label: "To" },
-    { key: "amount", label: "Amount" },
-    { key: "status", label: "Status" },
-    { key: "requestedAt", label: "RequestedAt" },
+    { key: "id", label: t("id") },
+    { key: "categoryName", label: t("category") },
+    { key: "fromAccount", label: t("from") },
+    { key: "toAccount", label: t("to") },
+    { key: "amount", label: t("amount") },
+    { key: "status", label: t("status") },
+    { key: "requestedAt", label: t("requestedAt") },
   ];
 
   // Searching & dropdown

@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import CreditFacilityForm from "../components/CreditFacilityForm";
 import type { TCreditFacility } from "../types";
 import { getCreditFacilityById } from "../services";
+
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
 
 /**
  * Detail/Edit page for a single credit facility:
@@ -15,27 +17,32 @@ export default function CreditFacilityDetailPage() {
   const params = useParams();
   const router = useRouter();
 
+  /* ─── Data state ─────────────────────────────────────────── */
   const [facilityData, setFacilityData] = useState<TCreditFacility | null>(
     null
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1) On mount, fetch the record by ID
+  /* ─── Modal state (NEW) ──────────────────────────────────── */
+  const [modalOpen, setModalOpen] = useState(false);
+
+  /* ─── Fetch record on mount ──────────────────────────────── */
   useEffect(() => {
-    const fetchOne = async () => {
+    async function fetchOne() {
       try {
-        if (!params.id) return; // or handle missing ID
+        if (!params.id) return;
+
         const numericId = Number(params.id);
         if (Number.isNaN(numericId)) {
-          setError("Invalid ID parameter");
+          setError("معرّف غير صالح");
+          setModalOpen(true);
           setLoading(false);
           return;
         }
 
         const apiItem = await getCreditFacilityById(numericId);
 
-        // Convert the API item shape to TCreditFacility if needed
         const converted: TCreditFacility = {
           id: apiItem.id,
           accountNumber: apiItem.accountNumber,
@@ -43,8 +50,8 @@ export default function CreditFacilityDetailPage() {
           amount: apiItem.amount,
           purpose: apiItem.purpose,
           additionalInfo: apiItem.additionalInfo,
-          curr: apiItem.curr, // e.g. "002"
-          refferenceNumber: apiItem.referenceNumber, // map
+          curr: apiItem.curr,
+          refferenceNumber: apiItem.referenceNumber,
           type: apiItem.type,
         };
 
@@ -52,56 +59,75 @@ export default function CreditFacilityDetailPage() {
       } catch (err) {
         console.error("Failed to fetch credit facility detail:", err);
         setError("فشل جلب التسهيل الائتماني");
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     fetchOne();
   }, [params.id]);
 
-  // 2) Loading or error states
+  /* ─── Loading / error fallback in page view ──────────────── */
   if (loading) {
     return <div className="p-4">جاري التحميل...</div>;
   }
 
-  if (error) {
-    return (
-      <div className="p-4 text-red-500">
-        <p>{error}</p>
-      </div>
-    );
-  }
-
   if (!facilityData) {
     return (
-      <div className="p-4 text-red-500">
-        لم يتم العثور على التسهيل الائتماني المطلوب.
-      </div>
+      <>
+        <div className="p-4 text-red-500">
+          {error ?? "لم يتم العثور على التسهيل الائتماني المطلوب."}
+        </div>
+
+        {/* Error modal */}
+        <ErrorOrSuccessModal
+          isOpen={modalOpen}
+          isSuccess={false}
+          title="خطأ"
+          message={error ?? "فشل جلب التسهيل الائتماني"}
+          onClose={() => setModalOpen(false)}
+          onConfirm={() => {
+            setModalOpen(false);
+            router.push("/creditfacility");
+          }}
+        />
+      </>
     );
   }
 
-  // 3) On form submit => pretend update
+  /* ─── Handlers for pretend update / cancel ──────────────── */
   const handleUpdate = (updatedItem: TCreditFacility) => {
     console.log("Updated item:", updatedItem);
-    alert("تم تحديث التسهيل بنجاح!");
     router.push("/creditfacility");
   };
 
-  // 4) If user cancels, go back
-  const handleCancel = () => {
-    router.push("/creditfacility");
-  };
+  const handleCancel = () => router.push("/creditfacility");
 
-  // 5) Render the form with the fetched data, in read-only mode
+  /* ─── Render form ────────────────────────────────────────── */
   return (
-    <div className="p-4">
-      <CreditFacilityForm
-        initialData={facilityData}
-        onSubmit={handleUpdate}
-        onCancel={handleCancel}
-        readOnly // <--- Make the form read-only
+    <>
+      <div className="p-4">
+        <CreditFacilityForm
+          initialData={facilityData}
+          onSubmit={handleUpdate}
+          onCancel={handleCancel}
+          readOnly
+        />
+      </div>
+
+      {/* Error modal (in case fetch succeeded but later errors) */}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={false}
+        title="خطأ"
+        message={error ?? ""}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => {
+          setModalOpen(false);
+          router.push("/creditfacility");
+        }}
       />
-    </div>
+    </>
   );
 }

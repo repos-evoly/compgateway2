@@ -9,9 +9,9 @@ import type {
   TLetterOfGuarantee,
 } from "./types";
 import { getLetterOfGuarantees, addLetterOfGuarantee } from "./services";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 export default function LetterOfGuaranteePage() {
-
   // Table data states
   const [data, setData] = useState<LetterOfGuaranteeApiItem[]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -24,6 +24,10 @@ export default function LetterOfGuaranteePage() {
 
   // Show/hide "Add" form
   const [showForm, setShowForm] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMsg, setModalMsg] = useState("");
+  const [modalOk, setModalOk] = useState(false); // success ↔︎ error
 
   /**
    * Fetch data from server with (page, limit, searchTerm, searchBy).
@@ -45,6 +49,12 @@ export default function LetterOfGuaranteePage() {
       setTotalPages(result.totalPages);
     } catch (error) {
       console.error("Failed to fetch letterOfGuarantee:", error);
+      setModalTitle("خطأ في الجلب");
+      setModalMsg(
+        error instanceof Error ? error.message : "تعذر تحميل البيانات."
+      );
+      setModalOk(false);
+      setModalOpen(true);
     }
   }
 
@@ -90,12 +100,21 @@ export default function LetterOfGuaranteePage() {
       const { id, ...body } = newItem; // exclude "id"
       console.log("Submitting new letterOfGuarantee:", id);
       await addLetterOfGuarantee(body);
+      setModalTitle("تم الحفظ");
+      setModalMsg("تم إنشاء خطاب الضمان بنجاح.");
+      setModalOk(true);
+      setModalOpen(true);
+
       // After success => re-fetch
       fetchData();
       setShowForm(false);
     } catch (error) {
-      console.error("Failed to create letterOfGuarantee:", error);
-      alert("حدث خطأ أثناء إنشاء الخطاب");
+      setModalTitle("خطأ أثناء الإرسال");
+      setModalMsg(
+        error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الخطاب."
+      );
+      setModalOk(false);
+      setModalOpen(true);
     }
   };
 
@@ -138,6 +157,17 @@ export default function LetterOfGuaranteePage() {
           onAddClick={() => setShowForm(true)}
         />
       )}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalOk}
+        title={modalTitle}
+        message={modalMsg}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => {
+          setModalOpen(false);
+          if (modalOk) fetchData(); // refresh after successful create
+        }}
+      />
     </div>
   );
 }

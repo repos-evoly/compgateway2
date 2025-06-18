@@ -6,6 +6,8 @@ import type {
   ForeignTransfersListResponse,
   CreateForeignTransferPayload,
 } from "./types";
+import { throwApiError } from "@/app/helpers/handleApiError";
+
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
 
@@ -36,9 +38,11 @@ export async function getForeignTransfers(
     },
   });
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch foreign transfers. Status: ${res.status}`);
-  }
+/* getForeignTransfers */
+if (!res.ok) {
+  await throwApiError(res, "Failed to fetch foreign transfers.");
+}
+
 
   const data = (await res.json()) as ForeignTransfersListResponse;
   return data;
@@ -61,11 +65,11 @@ export async function getForeignTransferById(
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) {
-    throw new Error(
-      `Failed to fetch foreign transfer ${id}. Status: ${res.status}`
-    );
-  }
+/* getForeignTransferById */
+if (!res.ok) {
+  await throwApiError(res, `Failed to fetch foreign transfer ${id}.`);
+}
+
 
   const data = (await res.json()) as ForeignTransferDetailResponse;
   return data;
@@ -92,9 +96,11 @@ export async function createForeignTransfer(
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    throw new Error(`Failed to create foreign transfer. Status: ${res.status}`);
-  }
+/* createForeignTransfer */
+if (!res.ok) {
+  await throwApiError(res, "Failed to create foreign transfer.");
+}
+
 
   const data = (await res.json()) as ForeignTransferDetailResponse;
   return data;

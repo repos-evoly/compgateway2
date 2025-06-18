@@ -6,6 +6,8 @@ import type {
   CreditFacilitiesApiResponse,
   TCreditFacility,
 } from "./types";
+import { throwApiError } from "@/app/helpers/handleApiError";
+
 
 const BASE_API = process.env.NEXT_PUBLIC_BASE_API;
 const token = getAccessTokenFromCookies();
@@ -43,8 +45,9 @@ export async function getCreditFacilities(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch credit facilities. Status: ${res.status}`);
+    await throwApiError(res, "Failed to fetch credit facilities.");
   }
+  
 
   const data: CreditFacilitiesApiResponse = await res.json();
   return data;
@@ -82,8 +85,9 @@ export async function addCreditFacility(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to create credit facility. Status: ${res.status}`);
+    await throwApiError(res, "Failed to create credit facility.");
   }
+  
 
   const data = await res.json();
   return data as CreditFacilityApiItem;
@@ -111,8 +115,9 @@ export async function getCreditFacilityById(
     });
   
     if (!res.ok) {
-      throw new Error(`Failed to fetch credit facility ID=${id}. Status: ${res.status}`);
+      await throwApiError(res, `Failed to fetch credit facility ID=${id}.`);
     }
+    
   
     const data: CreditFacilityApiItem = await res.json();
     return data;

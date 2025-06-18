@@ -40,7 +40,8 @@
       "logout":"تسجيل الخروج",
       "defaultTitle":"",
       "currencies":"العملات",
-      "employees":"الموظفين"
+      "employees":"الموظفين",
+      "companies":"الشركات"
 
     },
     "mainHeader":{
@@ -122,7 +123,11 @@
 
       "additionalInformation":"معلومات إضافية",
       "packingDate":"تاريخ التعبئة",
-      "specialistName": "اسم الموظف المختص"
+      "specialistName": "اسم الموظف المختص",
+      "changeStatus":"تغيير الحالة",
+      "status":"الحالة",
+      "statusRequired":"الحالة مطلوبة",
+      "loading":"جار التحميل..."
   
     },
   
@@ -163,7 +168,8 @@
       "payDetails":"تفاصيل الدفع",
       "footer":"",
       "refNum":"الرقم الإشاري",
-      "date":"التاريخ"
+      "date":"التاريخ",
+      "payType":"نوع الدفع"
     },
   
   
@@ -193,7 +199,14 @@
       "submit":"تقديم",
       "required":"مطلوب",
       "invalidDate":"تاريخ غير صالح",
-      "selectOneOption":"الرجاء اختيار خيار واحد على الأقل"
+      "selectOneOption":"الرجاء اختيار خيار واحد على الأقل",
+      "changeStatus":"تغيير الحالة",
+      "statusRequired":"الحالة مطلوبة",
+      "status":"الحالة",
+      "changeStatusTitle":"تغيير حالة الصك",
+      "approved":"موافق",
+      "declined":"مرفوض",
+      "loading":"جار التحميل..."
     },
   
     "CheckRequest":{
@@ -225,7 +238,8 @@
       "customerInfo":"",
       "actions":"عمليات",
       "amountTable":"",
-      "delegate":"المندوب"
+      "delegate":"المندوب",
+      "loading":"جار التحميل..."
 
 
   
@@ -237,23 +251,24 @@
         "des": "عذرا، هذه الصفحة غير متاحة حاليا. يرجى التحقق في وقت لاحق."
     },
     "crudDataGrid": {
-        "title": "شبكة البيانات",
-        "searchPlaceholder": "ابحث من خلال",
-        "dropdownDefault": "اختر خيارًا",
-        "addButton": "إضافة",
-        "noItems":"لا يوجد عناصر متاحة",
-        "yes":"نعم",
-        "no":"لا",
-        "actions":"عمليات",
-        "doubleClickToExpand":"انقر نقرًا مزدوجًا للتوسيع",
-        "goTo":"اذهب إلى",
-        "of":"من",
-        "page":"صفحة",
-        "goFirst":"اذهب إلى الصفحة الأولى",
-        "goPrevious":"اذهب إلى الصفحة السابقة",
-        "goNext":"اذهب إلى الصفحة التالية",
-        "goLast":"اذهب إلى الصفحة الأخيرة"
-      },
+      "title": "شبكة البيانات",
+      "searchPlaceholder": "ابحث من خلال",
+      "dropdownDefault": "اختر خيارًا",
+      "addButton": "إضافة",
+      "noItems":"لا يوجد عناصر متاحة",
+      "yes":"نعم",
+      "no":"لا",
+      "actions":"عمليات",
+      "doubleClickToExpand":"انقر نقرًا مزدوجًا للتوسيع",
+      "goTo":"اذهب إلى",
+      "of":"من",
+      "page":"صفحة",
+      "goFirst":"اذهب إلى الصفحة الأولى",
+      "goPrevious":"اذهب إلى الصفحة السابقة",
+      "goNext":"اذهب إلى الصفحة التالية",
+      "goLast":"اذهب إلى الصفحة الأخيرة",
+      "doubleClickToCollapse":"انقر نقرًا مزدوجًا للطي"
+    },
 
 
       "edit":"تعديل",
@@ -261,6 +276,7 @@
 
       "internalTransferForm":{
         "title":"التحويل داخل المصرف",
+        "id":"المعرف",
         "from":"من حساب",
         "to":"إلى حساب",
         "value":"القيمة",
@@ -281,16 +297,34 @@
         "receiver":"المتلقي",
         "commisionSender": " تستقطع من المرسل",
         "commisionReceiver": "تستقطع من المتلقي",
-        "recipient": "المتلقي",
-        "commissionPaidBy": "العمولة مدفوعة من"
+        "category":"الفئة",
+        "amount": "المبلغ",
+        "requestedAt": "تاريخ الطلب",
+        "requiredFromAccount": "الحساب المطلوب ",
+        "requiredToAccount": "الحساب المطلوب ",
+        "currencyMismatch":"يجب أن تكون عملة الحسابات هي نفسها",
+        "valueMustBeNumber":"يجب أن تكون القيمة رقمًا",
+        "requiredValue":"القيمة مطلوبة",
+        "valueMustBePositive": "يجب أن تكون القيمة موجبة",
+        "requiredDescription":"البيان مطلوب",
+        "commissionPaidBy":"العمولة مدفوعة من قبل",
+        "recipient": "المستلم"
 
       },
       "statementOfAccount": {
         "title":"توليد كشف الحساب",
         "account": "رقم الحساب",
-        "from": "من التاريخ",
-        "to": "إلى التاريخ",
-        "continue": "متابعة"
+        "fromDate": "من التاريخ",
+        "toDate": "إلى التاريخ",
+        "continue": "متابعة",
+        "postingDate": "تاريخ النشر",
+        "amount": "المبلغ",
+        "drCr": "مدين / دائن",
+        "narrative1": "البيان 1",
+        "narrative2": "البيان 2",
+        "narrative3": "البيان 3",
+        "required": "مطلوب",
+        "selectAccount": "الرجاء اختيار حساب"
       },
       "formTypeSelect":{
         "internal":"تحويل داخل المصرف",
@@ -402,7 +436,7 @@
         "nonResidentSuppNationality":"الجنسية",
         "nonResidentSuppaddress":"المقيم في",
 
-        "trasnferAmount":"قيمة التحويل",
+        "transferAmount":"قيمة التحويل",
         "destinationCountry":"الدولة",
         "beneficiaryName":"اسم المستفيد",
         "beneficiaryAddress":"عنوان المستفيد",
@@ -415,7 +449,15 @@
         "purpose":"الغرض من التحويل",
         "documents":"المستندات المؤيدة للطلب في حالة تجاوز المبلغ المطلوب تحويله خمسة عشر ألف دولار أو ما يعادلها من العملات الأجنبية ( ترفق مع الطلب)",
         "step1Title":"البيانات الأساسية للتحويل",
-        "step2Title":"تفاصيل الحساب المصرفي"
+        "step2Title":"تفاصيل الحساب المصرفي",
+        "changeStatus":"تغيير الحالة",
+        "statusRequired":"الحالة مطلوبة",
+        "status":"الحالة",
+        "loading":"جار التحميل...",
+        "isRequired":"مطلوب",
+        "trasnferAmount": "قيمة التحويل",
+        "uploadDocuments": "تحميل",
+        "mustBeNumber":"يجب أن يكون رقماً"
       },
       "tabsWizard":{
         "review":"مراجعة و تقديم",
@@ -475,7 +517,8 @@
         "nonFinancialCommitment": "التزامات غير مالية",
     
         "isRequired": "مطلوب",
-        "mustBeNumber": "يجب أن يكون رقماً"
+        "mustBeNumber": "يجب أن يكون رقماً",
+        "successTitle": "تم إرسال طلبك بنجاح"
       },
       "dashboard":{
         "accountNb":" رقم الحساب",
@@ -483,6 +526,62 @@
         "availableBalance":"الرصيد المتاح",
         "failedToFetchData":"فشل في جلب البيانات",
         "noDataAvailable":"لا توجد بيانات متاحة"
+      },
+      "employees":{
+        "id":"المعرف",
+        "firstName":"الاسم الأول",
+        "lastName":"الاسم الأخير",
+        "email":"البريد الإلكتروني",
+        "phone":"الهاتف",
+        "role":"الدور",
+        "permissions":"الصلاحيات",
+        "editPermissions":"تعديل الصلاحيات",
+        "permissionsPage":{
+          "back": "رجوع",
+          "save": "حفظ",
+          "CompanyCanViewDashboard": "يمكنه عرض لوحة التحكم",
+          "CompanyCanStatementOfAccounts": "يمكنه عرض كشف الحساب",
+          "CompanyCanTransfer": "يمكنه إدارة التحويلات",
+          "CompanyCanRequest": "يمكنه تقديم طلبات",
+          "CompanyCanCurrency": "يمكنه إدارة العملات",
+          "CompanyCanInternalTransfer": "يمكنه إجراء التحويلات الداخلية",
+          "CompanyCanExternalTransfer": "يمكنه إجراء التحويلات الخارجية",
+          "CompanyCanAddEmployee": "يمكنه إضافة موظفين",
+          "CompanyCanEditEmployee": "يمكنه تعديل الموظفين",
+          "EmployeeCanCheckTransfers": "يمكنه التحقق من التحويلات",
+          "EmployeeCanCheckRequests": "يمكنه التحقق من الطلبات",
+          "EmployeeCanUpdateRequests": "يمكنه تحديث الطلبات",
+          "EmployeeCanEditCurrency": "يمكنه تعديل العملات",
+          "EmployeeCanSettings": "يمكنه إدارة الإعدادات",
+          "EmployeeCanApproveCompanies": "يمكنه الموافقة على الشركات",
+          "EmployeeCanAddEmployees": "يمكنه إضافة موظفين"
+        },
+        "form":{
+          "personalInformation":"المعلومات الشخصية",
+          "firstName":"الاسم الأول",
+          "lastName":"الاسم الأخير",
+          "username":"اسم المستخدم",
+          "accountInformation":"معلومات الحساب",
+          "email":"البريد الإلكتروني",
+          "password":"كلمة المرور",
+          "contactAndRole":"جهات الاتصال والدور",
+          "phone":"الهاتف",
+          "role":"الدور",
+          "save":"حفظ",
+          "cancel":"إلغاء"
+        }
+      },
+      "backButton": {
+        "back": "رجوع"
+      },
+      "reviewStep":{
+        "title":"معلومات المراجعة",
+        "description":"يرجى التأكد من صحة جميع التفاصيل قبل الإرسال"
+      },
+      "currencies":{
+        "code":"الرمز",
+        "rate":"سعر الصرف",
+        "description":"الوصف"
       }
       
   }

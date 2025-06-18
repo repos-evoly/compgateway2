@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import LetterOfGuaranteeForm from "../components/LetterOfGuaranteeForm";
 import type { TLetterOfGuarantee } from "../types";
 import { getLetterOfGuaranteeById } from "../services";
 
+// ⬇️ NEW: modal import
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+
 /**
  * Detail/Edit page for a single letterOfGuarantee:
- * GET /creditfacilities/{id}? => show the item in form => user can update
+ * GET /creditfacilities/{id} → show item in form (read-only)
  */
 export default function LetterOfGuaranteeDetailPage() {
   const params = useParams();
@@ -21,21 +24,31 @@ export default function LetterOfGuaranteeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1) On mount, fetch the record by ID
+  /* ────────── modal state ────────── */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMsg, setModalMsg] = useState("");
+
+  /* ────────── fetch on mount ─────── */
   useEffect(() => {
     const fetchOne = async () => {
       try {
         if (!params.id) return;
+
         const numericId = Number(params.id);
         if (Number.isNaN(numericId)) {
           setError("Invalid ID parameter");
+          setModalTitle("خطأ");
+          setModalMsg("معرّف غير صالح.");
+          setModalSuccess(false);
+          setModalOpen(true);
           setLoading(false);
           return;
         }
 
         const apiItem = await getLetterOfGuaranteeById(numericId);
 
-        // Convert to local TLetterOfGuarantee shape
         const converted: TLetterOfGuarantee = {
           id: apiItem.id,
           accountNumber: apiItem.accountNumber,
@@ -45,13 +58,19 @@ export default function LetterOfGuaranteeDetailPage() {
           additionalInfo: apiItem.additionalInfo,
           curr: apiItem.curr,
           refferenceNumber: apiItem.referenceNumber,
-          type: apiItem.type, // always "letterOfGuarantee"
+          type: apiItem.type,
         };
 
         setGuaranteeData(converted);
       } catch (err) {
         console.error("Failed to fetch letterOfGuarantee detail:", err);
         setError("فشل جلب خطاب الضمان المطلوب");
+        setModalTitle("خطأ");
+        setModalMsg(
+          err instanceof Error ? err.message : "فشل جلب خطاب الضمان المطلوب."
+        );
+        setModalSuccess(false);
+        setModalOpen(true);
       } finally {
         setLoading(false);
       }
@@ -60,47 +79,55 @@ export default function LetterOfGuaranteeDetailPage() {
     fetchOne();
   }, [params.id]);
 
-  // 2) Loading or error states
-  if (loading) {
-    return <div className="p-4">جاري التحميل...</div>;
-  }
+  /* ────────── handlers ───────────── */
+  const handleUpdate = (updated: TLetterOfGuarantee) => {
+    console.log("Updated letterOfGuarantee:", updated);
+    setModalTitle("تم التحديث");
+    setModalMsg("تم تحديث خطاب الضمان بنجاح!");
+    setModalSuccess(true);
+    setModalOpen(true);
+  };
 
-  if (error) {
+  const handleCancel = () => router.push("/letterofguarantee");
+
+  /* ────────── ui states ──────────── */
+  if (loading) return <div className="p-4">جاري التحميل...</div>;
+
+  if (error && !modalOpen)
     return (
       <div className="p-4 text-red-500">
         <p>{error}</p>
       </div>
     );
-  }
 
-  if (!guaranteeData) {
+  if (!guaranteeData)
     return (
       <div className="p-4 text-red-500">
         لم يتم العثور على خطاب الضمان المطلوب.
       </div>
     );
-  }
 
-  // 3) On form submit => pretend update or do real update
-  const handleUpdate = (updatedItem: TLetterOfGuarantee) => {
-    console.log("Updated letterOfGuarantee:", updatedItem);
-    alert("تم تحديث خطاب الضمان بنجاح!");
-    router.push("/letterofguarantee");
-  };
-
-  // 4) If user cancels => go back
-  const handleCancel = () => {
-    router.push("/letterofguarantee");
-  };
-
-  // 5) Render the form with the fetched data, in read-only mode
+  /* ────────── render ─────────────── */
   return (
     <div className="p-4">
       <LetterOfGuaranteeForm
         initialData={guaranteeData}
         onSubmit={handleUpdate}
         onCancel={handleCancel}
-        readOnly // <--- This makes the form read-only
+        readOnly
+      />
+
+      {/* modal */}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMsg}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => {
+          setModalOpen(false);
+          if (modalSuccess) router.push("/letterofguarantee");
+        }}
       />
     </div>
   );

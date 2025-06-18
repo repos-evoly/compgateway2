@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import { getCurrencies } from "./services";
 import { T } from "@/types"; // Adjust path if necessary
+import { useTranslations } from "next-intl";
 
 const Page = () => {
   // Table data => T[] for the grid
@@ -18,13 +19,13 @@ const Page = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState("code");
 
+  const t = useTranslations("currencies");
+
   // CrudDataGrid columns
   const columns = [
-    { key: "code", label: "Code" },
-    { key: "rate", label: "Rate" },
-    { key: "description", label: "Description" },
-    { key: "createdAt", label: "Created At" },
-    { key: "updatedAt", label: "Updated At" },
+    { key: "code", label: t("code") },
+    { key: "rate", label: t("rate") },
+    { key: "description", label: t("description") },
   ];
 
   // Re-fetch whenever page, searchTerm, or searchBy changes

@@ -22,6 +22,7 @@ import {
   FaChartPie,
 } from "react-icons/fa";
 import BackButton from "@/app/components/reusable/BackButton";
+import { useTranslations } from "next-intl";
 
 export default function PermissionsPage() {
   // Read the dynamic route segments from the URL
@@ -31,6 +32,8 @@ export default function PermissionsPage() {
   const [companyPerms, setCompanyPerms] = useState<CompanyPermissions[]>([]);
   const [userPerms, setUserPerms] = useState<UserPermissions[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const t = useTranslations("employees.permissionsPage");
 
   console.log("PermissionsPage route params:", { userId, roleId });
 
@@ -112,7 +115,7 @@ export default function PermissionsPage() {
               <div className="flex">
                 <BackButton fallbackPath="/employees" isEditing />
                 <SubmitButton
-                  title="Save Changes"
+                  title={t("save")}
                   color="info-dark"
                   fullWidth={false}
                   isSubmitting={isSubmitting}
@@ -120,12 +123,12 @@ export default function PermissionsPage() {
               </div>
             </FormHeader>
 
-            <Form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
               {companyPerms.map((cp) => (
                 <SettingsBox
                   key={cp.id}
-                  title={cp.name}
-                  description={cp.description}
+                  title={t(cp.name)}
+                  description=""
                   icon={iconMap[cp.name] ?? <FaLock />}
                   controlType="switch"
                   control={<SwitchWrapper name={`perm_${cp.id}`} label="" />}

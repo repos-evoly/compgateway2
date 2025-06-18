@@ -44,3 +44,5 @@ export type CertifiedBankStatementRequestWithID = CertifiedBankStatementRequest 
   status?: string;
   rejectReason?: string;
 };
+
+

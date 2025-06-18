@@ -258,6 +258,13 @@ export async function loginRoutingHandler(
     secure: false,
     httpOnly: false,
   });
+
+  Cookies.set("enabledTransactionCategories", JSON.stringify(userData.enabledTransactionCategories), {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+  
   
 
   // Route based on companyStatus

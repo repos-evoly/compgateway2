@@ -23,15 +23,18 @@ import {
   FaTasks,
   FaFileSignature,
   FaLanguage,
-  // FaChevronDown,
-  // FaChevronUp,
-  // FaUser,
+  FaTachometerAlt,
+  FaUsers,
+  FaCoins,
 } from "react-icons/fa";
 import { IoWalletSharp, IoEarth } from "react-icons/io5";
 import { MdRequestQuote } from "react-icons/md";
 import { HiOutlineCurrencyDollar } from "react-icons/hi";
 import { BiDollarCircle, BiUpload, BiTransferAlt } from "react-icons/bi";
 
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
 type HeaderInfo = {
   label: string; // Label key for translation
   icon?: JSX.Element; // Optional icon for the header
@@ -45,11 +48,21 @@ type GlobalContextType = {
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 
-// Move the ICONS constant outside the component to avoid dependency issues
+/* ------------------------------------------------------------------ */
+/* Icons & Descriptions                                               */
+/* ------------------------------------------------------------------ */
 const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
+  dashboard: {
+    icon: <FaTachometerAlt />,
+    description: "dashboardDescription",
+  },
   statementOfAccount: {
     icon: <FaFileInvoice />,
     description: "statementOfAccountDescription",
+  },
+  employees: {
+    icon: <FaUsers />,
+    description: "employeesDescription",
   },
   "transfer.label": {
     icon: <IoWalletSharp />,
@@ -87,6 +100,10 @@ const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
     icon: <FaCreditCard />,
     description: "visaDescription",
   },
+  "requests.certifiedBankStatement": {
+    icon: <FaClipboardList />,
+    description: "certifiedBankStatementDescription",
+  },
   "requests.rtgs": {
     icon: <FaReceipt />,
     description: "rtgsDescription",
@@ -98,6 +115,10 @@ const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
   "requests.cbl": {
     icon: <FaClipboardList />,
     description: "cblDescription",
+  },
+  currencies: {
+    icon: <FaCoins />,
+    description: "currenciesDescription",
   },
   "salaryLocalization.title": {
     icon: <HiOutlineCurrencyDollar />,
@@ -153,6 +174,9 @@ const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
   },
 };
 
+/* ------------------------------------------------------------------ */
+/* Provider                                                           */
+/* ------------------------------------------------------------------ */
 export const GlobalProvider = ({ children }: { children: ReactNode }) => {
   const [headerInfo, setHeaderInfoState] = useState<HeaderInfo>({
     label: "defaultTitle",
@@ -169,9 +193,9 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
         description: ICONS[storedLabel]?.description || "defaultDescription",
       });
     }
-  }, []); // Removed dependency on ICONS as it is now outside the component
+  }, []);
 
-  // Set the header info and store in localStorage
+  // Update header info and persist it
   const setHeaderInfo = (info: { label: string }) => {
     setHeaderInfoState({
       label: info.label,
@@ -188,6 +212,9 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/* ------------------------------------------------------------------ */
+/* Hook                                                               */
+/* ------------------------------------------------------------------ */
 export const useGlobalContext = () => {
   const context = useContext(GlobalContext);
   if (!context) {

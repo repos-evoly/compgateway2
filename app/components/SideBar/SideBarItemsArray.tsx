@@ -1,4 +1,6 @@
 import {
+  FaTachometerAlt, // dashboard
+  FaUsers, // employees
   FaUniversity,
   FaCheck,
   FaHandshake,
@@ -8,13 +10,13 @@ import {
   FaReceipt,
   FaClipboardList,
   FaFileInvoice,
+  FaExchangeAlt, // transfers (parent)
+  FaCoins, // currencies
   FaSignOutAlt,
-  FaCog,
   // FaTasks,
   FaFileSignature,
   FaLanguage,
 } from "react-icons/fa";
-import { IoWalletSharp } from "react-icons/io5";
 import { MdRequestQuote } from "react-icons/md";
 // import { HiOutlineCurrencyDollar } from "react-icons/hi";
 // import { BiDollarCircle, BiUpload, BiTransferAlt } from "react-icons/bi"; // New icons for Salary Localization children
@@ -24,7 +26,7 @@ export const sidebarItems = [
     id: 31,
     label: "dashboard",
     path: "/dashboard",
-    icon: FaCog,
+    icon: FaTachometerAlt, // was FaCog
     children: [],
     permissions: ["CompanyCanDashboard"],
   },
@@ -40,7 +42,7 @@ export const sidebarItems = [
     id: 31,
     label: "employees",
     path: "/employees",
-    icon: FaCog,
+    icon: FaUsers, // was FaCog
     children: [],
     permissions: ["CompanyCanEmployees"],
   },
@@ -56,8 +58,9 @@ export const sidebarItems = [
     id: 3,
     label: "transfer.label",
     path: "/transfer",
-    icon: IoWalletSharp,
+    icon: FaExchangeAlt, // was IoWalletSharp
     permissions: ["CompanyCanTransfer"],
+    enabledTransactionCategories: ["Transfers"],
     children: [
       {
         id: 4,
@@ -65,6 +68,7 @@ export const sidebarItems = [
         path: "/transfers/internal",
         icon: FaUniversity,
         permissions: ["CompanyCanTransferInternal"],
+        enabledTransactionCategories: ["InternalTransfer"],
       },
 
       // {
@@ -89,6 +93,7 @@ export const sidebarItems = [
     path: "/requests",
     icon: MdRequestQuote,
     permissions: ["CompanyCanRequests"],
+    enabledTransactionCategories: ["Requests"],
     children: [
       {
         id: 9,
@@ -96,6 +101,7 @@ export const sidebarItems = [
         path: "/requests/checkbook",
         icon: FaMoneyCheckAlt,
         permissions: ["CompanyCanRequestCheckBook"],
+        enabledTransactionCategories: ["Checkbook"],
       },
       {
         id: 10,
@@ -103,6 +109,7 @@ export const sidebarItems = [
         path: "/requests/checkRequest",
         icon: FaCheck,
         permissions: ["CompanyCanRequestCertifiedCheck"],
+        enabledTransactionCategories: ["CheckRequest"],
       },
       {
         id: 11,
@@ -110,6 +117,7 @@ export const sidebarItems = [
         path: "/requests/letterOfGuarantee",
         icon: FaFileSignature,
         permissions: ["CompanyCanRequestGuaranteeLetter"],
+        enabledTransactionCategories: ["LetterOfGuarantee"],
       },
       {
         id: 12,
@@ -117,6 +125,7 @@ export const sidebarItems = [
         path: "/requests/creditFacility",
         icon: FaHandshake,
         permissions: ["CompanyCanRequestCreditFacility"],
+        enabledTransactionCategories: ["CreditFacility"],
       },
       {
         id: 13,
@@ -124,6 +133,7 @@ export const sidebarItems = [
         path: "/requests/visaRequest",
         icon: FaCreditCard,
         permissions: ["CompanyCanRequestVisa"],
+        enabledTransactionCategories: ["VisaRequest"],
       },
       {
         id: 29,
@@ -131,6 +141,7 @@ export const sidebarItems = [
         path: "/requests/certifiedBankStatement",
         icon: FaClipboardList,
         permissions: ["CompanyCanRequestCertifiedBankStatement"],
+        enabledTransactionCategories: ["CertifiedBankStatement"],
       },
       {
         id: 14,
@@ -138,6 +149,7 @@ export const sidebarItems = [
         path: "/requests/rtgs",
         icon: FaReceipt,
         permissions: ["CompanyCanRequestRTGS"],
+        enabledTransactionCategories: ["Rtgs"],
       },
       {
         id: 15,
@@ -145,6 +157,7 @@ export const sidebarItems = [
         path: "/requests/foreignTransfers",
         icon: FaGlobe,
         permissions: ["CompanyCanRequestForeignTransfers"],
+        enabledTransactionCategories: ["ForeignTransfer"],
       },
       {
         id: 16,
@@ -152,6 +165,7 @@ export const sidebarItems = [
         path: "/requests/cbl",
         icon: FaClipboardList,
         permissions: ["CompanyCanRequestCBL"],
+        enabledTransactionCategories: ["CBL"],
       },
     ],
   },
@@ -257,7 +271,7 @@ export const sidebarItems = [
     id: 30,
     label: "currencies",
     path: "/currencies",
-    icon: FaCog,
+    icon: FaCoins, // was FaCog
     children: [],
     permissions: ["CompanyCanCurrencies"],
   },

@@ -384,30 +384,44 @@
   },
 
   "descriptions": {
-    "statementOfAccountDescription": "View and download account statements",
-    "transferDescription": "Manage all money transfers",
-    "transferInDescription": "Transfer money to your account",
-    "transferOutDescription": "Send money to other accounts",
+    "dashboardDescription": "View overall dashboard metrics",
+    "statementOfAccountDescription": "Display and download account statements",
+    "employeesDescription": "Manage employee records and details",
+
+    "transferDescription": "Handle all money transfers",
+    "transferInDescription": "Move funds into your own account",
+    "transferOutDescription": "Send funds to other accounts",
+
     "requestsDescription": "Request banking services",
-    "checkBookDescription": "Request a new checkbook",
-    "certifiedCheckDescription": "Apply for a certified check",
-    "guaranteeLetterDescription": "Request a guarantee letter",
+    "checkBookDescription": "Order a new cheque book",
+    "certifiedCheckDescription": "Apply for a certified cheque",
+    "guaranteeLetterDescription": "Request a letter of guarantee",
     "creditFacilityDescription": "Apply for credit facilities",
-    "visaDescription": "Manage your Visa requests",
+    "visaDescription": "Manage Visa card requests",
+    "certifiedBankStatementDescription": "Request a certified bank statement",
     "rtgsDescription": "Execute RTGS transactions",
-    "foreignRequestsDescription": "Request foreign‑currency transactions",
-    "cblDescription": "View CBL‑related details",
-    "salaryLocalizationDescription": "Manage salary‑localization settings",
-    "salariesDescription": "Process and transfer salaries",
+    "foreignRequestsDescription": "Request foreign-currency transfers",
+    "cblDescription": "View Central Bank of Libya related details",
+
+    "currenciesDescription": "Manage currencies and exchange rates",
+
+    "salaryLocalizationDescription": "Configure salary localization settings",
+    "salariesDescription": "Process and transfer employee salaries",
     "uploadFilesDescription": "Upload files for localization",
     "salariesTransferDescription": "Transfer salaries to employees",
+
     "documentaryDescription": "Access and manage documentary details",
     "followUpDescription": "Follow up on operations and requests",
     "settingsDescription": "Configure application settings",
-    "customizationsDescription": "Customize banking preferences",
-    "banksDescription": "Manage and view bank details",
+
+    "customizationsDescription": "Customize your banking preferences",
+    "banksDescription": "Manage and view bank information",
     "commissionsDescription": "Manage commission data",
     "limitsDescription": "Set and manage operational limits",
+
+    "changeLanguageDescription": "Switch application language",
+    "logoutDescription": "Sign out of the application",
+
     "defaultDescription": ""
   },
 

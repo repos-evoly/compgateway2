@@ -391,32 +391,45 @@
 
 
         "descriptions": {
+          "dashboardDescription": "عرض لوحات التحكم الشاملة",
           "statementOfAccountDescription": "عرض وتنزيل كشوف الحساب",
+          "employeesDescription": "إدارة سجلات وبيانات الموظفين",
+      
           "transferDescription": "إدارة جميع تحويلات الأموال",
           "transferInDescription": "تحويل الأموال إلى حسابك",
           "transferOutDescription": "إرسال الأموال إلى حسابات أخرى",
+      
           "requestsDescription": "طلب الخدمات المصرفية",
           "checkBookDescription": "طلب دفتر شيكات جديد",
-          "certifiedCheckDescription": "التقدم بطلب للحصول على شيك معتمد",
+          "certifiedCheckDescription": "التقدم بطلب للحصول على شيك مُعتمد",
           "guaranteeLetterDescription": "طلب خطاب ضمان",
           "creditFacilityDescription": "التقدم بطلب تسهيلات ائتمانية",
-          "visaDescription": "إدارة طلبات الفيزا الخاصة بك",
+          "visaDescription": "إدارة طلبات بطاقة الفيزا",
+          "certifiedBankStatementDescription": "طلب كشف حساب مُعتمد",
           "rtgsDescription": "تنفيذ معاملات RTGS",
-          "foreignRequestsDescription": "طلب معاملات العملة الأجنبية",
+          "foreignRequestsDescription": "طلب تحويلات بالعملة الأجنبية",
           "cblDescription": "عرض التفاصيل المتعلقة بمصرف ليبيا المركزي",
+      
+          "currenciesDescription": "إدارة العملات وأسعار الصرف",
+      
           "salaryLocalizationDescription": "إدارة إعدادات توطين الرواتب",
           "salariesDescription": "معالجة وتحويل رواتب الموظفين",
           "uploadFilesDescription": "تحميل الملفات للتوطين",
           "salariesTransferDescription": "تحويل الرواتب إلى الموظفين",
+      
           "documentaryDescription": "الوصول إلى التفاصيل الوثائقية وإدارتها",
           "followUpDescription": "متابعة العمليات والطلبات",
-          "settingsDescription": "تكوين إعدادات التطبيق",
+          "settingsDescription": "تهيئة إعدادات التطبيق",
+      
           "customizationsDescription": "تخصيص تفضيلاتك المصرفية",
-          "banksDescription": "إدارة وعرض تفاصيل البنوك",
+          "banksDescription": "إدارة وعرض معلومات البنوك",
           "commissionsDescription": "إدارة البيانات المتعلقة بالعمولات",
           "limitsDescription": "تعيين وإدارة الحدود التشغيلية",
-          "defaultDescription":""
-
+      
+          "changeLanguageDescription": "تغيير لغة التطبيق",
+          "logoutDescription": "تسجيل الخروج من التطبيق",
+      
+          "defaultDescription": ""
         },
 
 

@@ -289,6 +289,7 @@ export type User = {
 };
 
 
+
 /**
  * Represents the complete user object returned by /users/by-auth/{id}.
  * Adjust field types (string vs. string|null, etc.) if needed.
@@ -313,6 +314,8 @@ export type DetailedUser = {
   companyStatus?: string;
   companyStatusMessage?: string;
   isCompanyAdmin?: boolean;
+
+  enabledTransactionCategories:string[];
 
   /** The 'role' object from the API. */
   role: {

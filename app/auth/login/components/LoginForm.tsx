@@ -161,10 +161,16 @@ export default function LoginForm(): JSX.Element {
         </Form>
       </div>
 
-      {/* 2FA Verification Overlay (no separate Modal component) */}
+      {/* 2FA Verification Overlay */}
       {show2FAModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-          <div className=" rounded-3xl w-full max-w-sm p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+          onClick={() => setShow2FAModal(false)}
+        >
+          <div
+            className="rounded-3xl w-full max-w-sm p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <VerificationForm
               onClose={() => setShow2FAModal(false)}
               sourcePage="login"
@@ -175,8 +181,14 @@ export default function LoginForm(): JSX.Element {
 
       {/* Forgot Password Overlay */}
       {showForgotModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowForgotModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <ForgotPasswordForm onClose={() => setShowForgotModal(false)} />
           </div>
         </div>
@@ -185,7 +197,7 @@ export default function LoginForm(): JSX.Element {
       {/* Company not approved modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
-        isSuccess={false} // not approved => use error style
+        isSuccess={false}
         title={modalTitle || "حالة الشركة"}
         message={modalMessage || "الحساب غير معتمد بعد."}
         onClose={handleCloseModal}

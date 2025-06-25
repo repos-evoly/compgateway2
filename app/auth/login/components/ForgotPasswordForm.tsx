@@ -1,13 +1,17 @@
+/* --------------------------------------------------------------------------
+   auth/login/components/ForgotPasswordForm.tsx
+   -------------------------------------------------------------------------- */
 "use client";
-import React, { useState, useRef } from "react";
+
+import React, { useState, useRef, useEffect } from "react";
 import * as Yup from "yup";
 import {
   FiMail,
   FiEye,
   FiEyeOff,
   FiLock,
-  FiLogIn,
   FiKey,
+  FiLogIn,
 } from "react-icons/fi";
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
@@ -23,35 +27,56 @@ type ForgotPasswordFormProps = {
   onClose: () => void;
 };
 
+/* escalating resend delays (seconds) */
+const RESEND_INTERVALS = [30, 60, 120] as const;
+
 const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
+  /* ui state */
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
+
+  /* flow steps */
+  const [step, setStep] = useState<1 | 2>(1);
   const [userEmail, setUserEmail] = useState("");
+
+  /* submission control */
   const [processingSubmit, setProcessingSubmit] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  console.log(processingSubmit);
+  /* resend-code control (step 2 only) */
+  const [resendCount, setResendCount] = useState(0);
+  const [cooldown, setCooldown] = useState(0);
 
-  // Forgot password step 1: initial values and validation
-  const forgotInitialValues: ForgotPasswordValues = {
-    login: "",
-  };
+  /* start first cooldown when we enter step 2 */
+  useEffect(() => {
+    if (step === 2) {
+      setCooldown(RESEND_INTERVALS[0]);
+    }
+  }, [step]);
 
+  /* countdown timer */
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((sec) => sec - 1), 1_000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  /* ----------------------------------------------------------------------
+   * Validation schemas
+   * -------------------------------------------------------------------- */
+  const forgotInitialValues: ForgotPasswordValues = { email: "" };
   const forgotValidationSchema = Yup.object({
-    login: Yup.string()
+    email: Yup.string()
       .email("البريد الإلكتروني غير صالح")
       .required("هذا الحقل مطلوب"),
   });
 
-  // Reset password step 2: initial values and validation
   const resetInitialValues: ResetPasswordValues = {
     passwordToken: "",
     password: "",
     confirmPassword: "",
   };
-
   const resetValidationSchema = Yup.object({
     passwordToken: Yup.string().required("هذا الحقل مطلوب"),
     password: Yup.string().required("هذا الحقل مطلوب"),
@@ -60,9 +85,10 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
       .required("هذا الحقل مطلوب"),
   });
 
-  // onSubmit for forgot password form with debounce to prevent double submission
+  /* ----------------------------------------------------------------------
+   * Handlers
+   * -------------------------------------------------------------------- */
   const onForgotPasswordSubmit = async (values: ForgotPasswordValues) => {
-    // Use ref to prevent double submission (more reliable than state)
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
@@ -70,21 +96,17 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
     setLoading(true);
 
     try {
-      // Store email for display in step 2
-      const emailToStore = values.login;
-
       await forgotPasswordHandler(values, {
         onSuccess: () => {
-          // Only update stored email if successful
-          setUserEmail(emailToStore);
-          // Move to reset password step
+          setUserEmail(values.email);
           setStep(2);
+          setResendCount(0);
+          setCooldown(RESEND_INTERVALS[0]);
         },
         onError: (msg) => alert(msg),
       });
     } finally {
       setLoading(false);
-      // Reset processing flag with a delay to prevent any potential race conditions
       setTimeout(() => {
         setProcessingSubmit(false);
         isSubmittingRef.current = false;
@@ -92,9 +114,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
     }
   };
 
-  // onSubmit for reset password form
   const onResetPasswordSubmit = async (values: ResetPasswordValues) => {
-    // Use ref to prevent double submission
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
@@ -103,9 +123,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
 
     try {
       await resetPasswordHandler(values, {
-        onSuccess: () => {
-          onClose(); // Close the modal on success
-        },
+        onSuccess: () => onClose(),
         onError: (msg) => alert(msg),
       });
     } finally {
@@ -117,7 +135,42 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
     }
   };
 
-  // Render step 1: Email input
+  const handleResendCode = async () => {
+    if (cooldown > 0 || resendCount >= RESEND_INTERVALS.length) return;
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
+    setProcessingSubmit(true);
+    setLoading(true);
+
+    try {
+      await forgotPasswordHandler(
+        { email: userEmail },
+        {
+          onSuccess: () => {
+            const nextCount = resendCount + 1;
+            setResendCount(nextCount);
+            const nextDelay =
+              RESEND_INTERVALS[
+                Math.min(nextCount, RESEND_INTERVALS.length - 1)
+              ];
+            setCooldown(nextDelay);
+          },
+          onError: (msg) => alert(msg),
+        }
+      );
+    } finally {
+      setLoading(false);
+      setTimeout(() => {
+        setProcessingSubmit(false);
+        isSubmittingRef.current = false;
+      }, 500);
+    }
+  };
+
+  /* ----------------------------------------------------------------------
+   * Render
+   * -------------------------------------------------------------------- */
   if (step === 1) {
     return (
       <div className="w-full">
@@ -134,7 +187,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
           key="forgot-form"
         >
           <FormInputIcon
-            name="login"
+            name="email"
             label="البريد الإلكتروني"
             type="email"
             startIcon={<FiMail />}
@@ -144,22 +197,44 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
             title={loading ? "جارٍ الإرسال..." : "إرسال"}
             Icon={FiLogIn}
             color="info-dark"
-            fullWidth={true}
+            fullWidth
+            disabled={loading || processingSubmit}
           />
         </Form>
       </div>
     );
   }
 
-  // Render step 2: Password reset form
+  /* ----------------------------- Step 2 ------------------------------- */
+  const resendDisabled =
+    cooldown > 0 ||
+    resendCount >= RESEND_INTERVALS.length ||
+    loading ||
+    processingSubmit;
+
   return (
     <div className="w-full">
       <h2 className="text-xl font-semibold text-center mb-4">
         تغيير كلمة المرور
       </h2>
-      <p className="text-gray-500 text-center mb-6">
+      <p className="text-gray-500 text-center mb-4">
         تم إرسال رمز إعادة التعيين إلى {userEmail}
       </p>
+
+      {/* Resend code link / timer */}
+      <div className="text-center mb-6">
+        <button
+          type="button"
+          onClick={handleResendCode}
+          disabled={resendDisabled}
+          className="text-sm text-info-dark hover:underline disabled:opacity-50 disabled:hover:no-underline"
+        >
+          {resendDisabled
+            ? `يمكن الإعادة بعد ${cooldown} ث`
+            : "إعادة إرسال الرمز"}
+        </button>
+      </div>
+
       <Form
         initialValues={resetInitialValues}
         onSubmit={onResetPasswordSubmit}
@@ -198,7 +273,8 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onClose }) => {
           title={loading ? "جارٍ التغيير..." : "تغيير كلمة المرور"}
           Icon={FiLogIn}
           color="info-dark"
-          fullWidth={true}
+          fullWidth
+          disabled={loading || processingSubmit}
         />
       </Form>
     </div>

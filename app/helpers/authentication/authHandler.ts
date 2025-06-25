@@ -17,7 +17,7 @@ export type LoginFormValues = {
 };
 
 export type ForgotPasswordValues = {
-  login: string;
+  email: string;
 };
 
 export type ResetPasswordValues = {
@@ -110,7 +110,7 @@ export async function forgotPasswordHandler(
 ) {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_API}/forgot-password`,
+      `${process.env.NEXT_PUBLIC_AUTH_API}/customer-forgot-password`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -125,7 +125,7 @@ export async function forgotPasswordHandler(
     alert("يرجى التواصل مع الجهة المسؤولة للحصول على الرمز اللازم لتغيير كلمة المرور.");
 
     if (onSuccess) {
-      onSuccess(values.login);
+      onSuccess(values.email);
     }
   } catch (err: unknown) {
     if (err instanceof Error) {

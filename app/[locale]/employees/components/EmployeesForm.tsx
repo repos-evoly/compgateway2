@@ -24,8 +24,14 @@ const EmployeeFormSchema = Yup.object().shape({
   lastName: Yup.string().required("Required"),
   username: Yup.string().required("Required"),
   email: Yup.string().email("Invalid email").required("Required"),
-  password: Yup.string().required("Required"),
-  phone: Yup.string().required("Required"),
+  password: Yup.string()
+    .required("كلمة المرور مطلوبة")
+    .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{6,}$/,
+      "يجب أن تحتوي كلمة المرور على حرف صغير، حرف كبير، رقم، ورمز خاص"
+    ),
+  phone: Yup.string().required("Required").min(8, "رقم الهاتف قصير جداً"),
   roleId: Yup.number().required("Please select a role"),
 });
 
@@ -74,7 +80,7 @@ export default function EmployeeForm({
   console.log("roles fetched in the create employee ", roles);
 
   return (
-    <div className="rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl">
+    <div className="rounded-xl overflow-visible transition-all duration-300 hover:shadow-xl">
       {/* Header with back button */}
       <div className="bg-info-dark py-8 h-10 flex items-center gap-4">
         <BackButton

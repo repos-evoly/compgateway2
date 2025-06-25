@@ -14,6 +14,8 @@ export type InternalFormValues = {
   receiverOrSender?: string;
   transactionCategoryId?: number;
   currencyId?: number | null;
+  economicSectorId?: number;   
+
 };
 
 export type InternalFormProps = {
@@ -51,6 +53,7 @@ export interface TransferPayload {
   currencyId: number; // or null if unknown
   description: string;
   commissionOnRecipient?: boolean; // optional, if your API supports it
+  economicSectorId?: number;
 }
 
 /**
@@ -67,6 +70,7 @@ export interface TransferResponse {
   description: string;
   createdAt: string;
   updatedAt: string;
+  economicSectorId?: number; // optional if your API supports it
 }
 
 
@@ -92,6 +96,38 @@ export interface TransfersApiResponse {
 
 
 export type TransfersCommision = {
-  commissionPct:number;
-  feeFixed:number;
+  servicePackageId: number;
+  servicePackageName: string;
+  transactionCategoryId: number;
+  transactionCategoryName: string;
+  transactionCategoryHasLimits: boolean;
+  isEnabledForPackage: boolean;
+  b2BCommissionPct: number;
+  b2BFixedFee: number;
+  b2BMinPercentage: number;
+  b2BTransactionLimit: number;
+  b2CCommissionPct: number;
+  b2CFixedFee: number;
+  b2CMinPercentage: number;
+  b2CTransactionLimit: number;
 }
+
+
+export type EconomicSector = {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export type EconomicSectorGetResponse = {
+  data: EconomicSector[];
+  totalPages: number;
+}
+
+export type CheckAccountResponse = {
+  accountString: string;
+  availableBalance: number;
+  debitBalance: number;
+  transferType: string; 
+}
+

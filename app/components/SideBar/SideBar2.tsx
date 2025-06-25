@@ -23,8 +23,7 @@ const getCookieValue = (key: string): string | undefined =>
 const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
   if (!value) return new Set<string>();
   try {
-    const parsed = JSON.parse(decodeURIComponent(value)) as string[];
-    return new Set(parsed);
+    return new Set(JSON.parse(decodeURIComponent(value)));
   } catch {
     return new Set<string>();
   }
@@ -33,7 +32,7 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
 type SidebarItem = (typeof sidebarItems)[number];
 
 /* --------------------------------------------------
- * Component
+ * Sidebar
  * -------------------------------------------------- */
 const Sidebar = () => {
   const pathname = usePathname();
@@ -48,8 +47,6 @@ const Sidebar = () => {
   const [mobileView, setMobileView] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [submenuOpen, setSubmenuOpen] = useState<number | null>(null);
-
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const checkMobileView = () => {
@@ -79,88 +76,44 @@ const Sidebar = () => {
     }
   }, [mobileView, sidebarOpen]);
 
-  /* ---------- auth / feature flags --------------- */
+  /* ---------- permissions from cookies ----------- */
   const permissionsSet = useMemo(
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const categoriesSet = useMemo(
-    () => decodeCookieArray(getCookieValue("enabledTransactionCategories")),
-    []
-  );
 
-  useEffect(() => {
-    if (permissionsSet.size > 0 || categoriesSet.size > 0) {
-      setReady(true);
-    }
-  }, [permissionsSet, categoriesSet]);
-
-  /* ---------- visibility engine ------------------ */
-  // keep previous import line with useCallback
-
-  /* ---------- visibility engine ------------------ */
+  /* ---------- filter items ----------------------- */
   const isItemVisible = useCallback(
-    (item: SidebarItem): boolean => {
-      const { permissions, enabledTransactionCategories } = item;
-
-      const permOk =
-        !permissions?.length || permissions.every((p) => permissionsSet.has(p));
-
-      const catOk =
-        !enabledTransactionCategories?.length ||
-        enabledTransactionCategories.some((c) => categoriesSet.has(c));
-
-      return permOk && catOk;
-    },
-    [permissionsSet, categoriesSet]
+    (item: SidebarItem): boolean =>
+      !item.permissions?.length ||
+      item.permissions.every((perm) => permissionsSet.has(perm)),
+    [permissionsSet]
   );
 
   const filterItems = useCallback(
-    (items: readonly SidebarItem[]): SidebarItem[] => {
-      return items
+    (items: readonly SidebarItem[]): SidebarItem[] =>
+      items
         .map((item) => {
-          const filteredChildren = item.children?.length
-            ? filterItems(item.children as SidebarItem[])
-            : [];
-          const visibleSelf = isItemVisible(item);
-          if (!visibleSelf && filteredChildren.length === 0) return null;
-          return { ...item, children: filteredChildren };
+          const children =
+            item.children?.length &&
+            filterItems(item.children as SidebarItem[]);
+          const visible = isItemVisible(item);
+          if (!visible && (!children || children.length === 0)) return null;
+          return { ...item, children: children ?? [] };
         })
-        .filter(Boolean) as SidebarItem[];
-    },
+        .filter(Boolean) as SidebarItem[],
     [isItemVisible]
   );
 
   const visibleItems = useMemo(() => filterItems(sidebarItems), [filterItems]);
 
-  /* ---------- handlers --------------------------- */
-  const toggleSidebar = () => {
-    if (mobileView) setMobileMenuOpen((prev) => !prev);
-    else setSidebarOpen((prev) => !prev);
-  };
+  /* ---------- skeleton control ------------------- */
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    /* first client tick → cookies (if any) already parsed */
+    setReady(true);
+  }, []);
 
-  const toggleSubmenu = (id: number) => {
-    setSubmenuOpen((prev) => (prev === id ? null : id));
-  };
-
-  const toggleLocale = () => {
-    const newLocale = currentLocale === "ar" ? "en" : "ar";
-    const newPath = `/${newLocale}${pathname.replace(/^\/(en|ar)/, "")}`;
-    window.location.assign(newPath);
-  };
-
-  function handleLogout() {
-    document.cookie = "accessToken=; max-age=0; path=/;";
-    document.cookie = "refreshToken=; max-age=0; path=/;";
-    document.cookie = "kycToken=; max-age=0; path=/;";
-    window.location.reload();
-  }
-
-  /* ------------------------------------------------
-   * Render blocks
-   * ------------------------------------------------ */
-
-  /* ---------- show skeleton until cookies decoded ---------- */
   if (!ready) {
     return (
       <SidebarSkeleton
@@ -168,59 +121,72 @@ const Sidebar = () => {
         mobileView={mobileView}
         mobileMenuOpen={mobileMenuOpen}
         isRtl={isRtl}
-        toggleSidebar={toggleSidebar}
+        toggleSidebar={() =>
+          mobileView ? setMobileMenuOpen((p) => !p) : setSidebarOpen((p) => !p)
+        }
       />
     );
   }
 
-  // ------------------------------------------------
-  // Real sidebar (unchanged from your implementation)
-  // ------------------------------------------------
+  /* ---------- handlers --------------------------- */
+  const toggleSidebar = () => {
+    if (mobileView) setMobileMenuOpen((prev) => !prev);
+    else setSidebarOpen((prev) => !prev);
+  };
 
+  const toggleSubmenu = (id: number) =>
+    setSubmenuOpen((prev) => (prev === id ? null : id));
+
+  const toggleLocale = () => {
+    const newLocale = currentLocale === "ar" ? "en" : "ar";
+    const newPath = `/${newLocale}${pathname.replace(/^\/(en|ar)/, "")}`;
+    window.location.assign(newPath);
+  };
+
+  const handleLogout = () => {
+    document.cookie = "accessToken=; max-age=0; path=/;";
+    document.cookie = "refreshToken=; max-age=0; path=/;";
+    document.cookie = "kycToken=; max-age=0; path=/;";
+    window.location.reload();
+  };
+
+  /* ------------------------------------------------
+   * Desktop sidebar
+   * ------------------------------------------------ */
   const desktopSidebar = (
     <div
       className={`
         bg-secondary-dark text-white h-screen
-        transition-all duration-300 ease-in-out text-sm flex-shrink-0
+        transition-all duration-300 text-sm flex-shrink-0
         ${sidebarOpen ? "w-64" : "w-16"}
       `}
     >
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={toggleSidebar}
-            className="text-gray-300 hover:text-white"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
-          {sidebarOpen && (
-            <span className="text-lg font-semibold leading-tight break-words max-w-[11rem]">
-              {t("title")}
-            </span>
-          )}
-        </div>
+      <div className="flex items-center gap-4 p-4">
+        <button onClick={toggleSidebar} className="text-gray-300">
+          <FaBars className="w-6 h-6" />
+        </button>
+        {sidebarOpen && (
+          <span className="text-lg font-semibold break-words max-w-[11rem]">
+            {t("title")}
+          </span>
+        )}
       </div>
       <Divider />
 
-      {/* Sidebar Items */}
       <nav className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
         {visibleItems.map((item, idx) =>
           item.label === "logout" ? (
             <div key={`sidebar-item-${idx}`} className="py-1">
               <button
                 onClick={handleLogout}
-                className={`
-                  flex items-center gap-2 w-full py-2 px-3 rounded-md 
-                  text-sm font-medium text-gray-300 hover:text-white 
-                  hover:bg-info-dark transition-colors
-                `}
+                className="flex items-center gap-2 w-full py-2 px-3 rounded-md text-sm text-gray-300 hover:text-white hover:bg-info-dark"
               >
                 {item.icon && <item.icon className="w-4 h-4" />}
                 <span
                   className={`whitespace-nowrap ${
                     sidebarOpen ? "opacity-100" : "opacity-0 invisible w-0"
-                  } transition-all duration-300`}
+                  } transition-all`}
                 >
                   {t(item.label)}
                 </span>
@@ -244,11 +210,14 @@ const Sidebar = () => {
     </div>
   );
 
+  /* ------------------------------------------------
+   * Mobile sidebar
+   * ------------------------------------------------ */
   const mobileSidebar = (
     <div
       className={`
-        fixed inset-y-0 bg-secondary-dark text-white h-screen z-40
-        w-64 transition-transform duration-300 ease-in-out
+        fixed inset-y-0 z-40 w-64 bg-secondary-dark text-white
+        transition-transform duration-300
         ${
           isRtl
             ? mobileMenuOpen
@@ -260,28 +229,17 @@ const Sidebar = () => {
         }
       `}
     >
-      {/* Sidebar Header */}
-      <div className="flex items-center justify-between p-4 mt-6">
-        <div className="flex items-center gap-4">
-          <span className="text-lg font-semibold whitespace-nowrap">
-            {t("title")}
-          </span>
-        </div>
+      <div className="flex items-center gap-4 p-4 mt-6">
+        <span className="text-lg font-semibold">{t("title")}</span>
       </div>
       <Divider />
-
-      {/* Sidebar Items */}
       <nav className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
         {visibleItems.map((item, idx) =>
           item.label === "logout" ? (
             <div key={`mobile-sidebar-item-${idx}`} className="py-1">
               <button
                 onClick={handleLogout}
-                className={`
-                  flex items-center gap-2 w-full py-2 px-3 rounded-md 
-                  text-sm font-medium text-gray-300 hover:text-white 
-                  hover:bg-secondary-light transition-colors
-                `}
+                className="flex items-center gap-2 w-full py-2 px-3 rounded-md text-sm text-gray-300 hover:text-white hover:bg-secondary-light"
               >
                 {item.icon && <item.icon className="w-4 h-4" />}
                 <span className="whitespace-nowrap">{t(item.label)}</span>
@@ -305,9 +263,10 @@ const Sidebar = () => {
     </div>
   );
 
+  /* Overlay for mobile */
   const mobileOverlay = mobileMenuOpen && (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
+      className="fixed inset-0 z-30 bg-black/50"
       onClick={() => setMobileMenuOpen(false)}
     />
   );

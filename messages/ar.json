@@ -127,7 +127,9 @@
       "changeStatus":"تغيير الحالة",
       "status":"الحالة",
       "statusRequired":"الحالة مطلوبة",
-      "loading":"جار التحميل..."
+      "loading":"جار التحميل...",
+      "createSuccessTitle": "نجاح",
+      "createSuccessMsg": "تم إنشاء طلب CBL بنجاح."
   
     },
   
@@ -169,7 +171,9 @@
       "footer":"",
       "refNum":"الرقم الإشاري",
       "date":"التاريخ",
-      "payType":"نوع الدفع"
+      "payType":"نوع الدفع",
+      "createSuccessTitle": "نجاح",
+      "createSuccessMsg": "تم إنشاء طلب RTGS بنجاح."
     },
   
   
@@ -206,7 +210,9 @@
       "changeStatusTitle":"تغيير حالة الصك",
       "approved":"موافق",
       "declined":"مرفوض",
-      "loading":"جار التحميل..."
+      "loading":"جار التحميل...",
+      "successTitle": "نجاح",
+      "successMessage": "تم تقديم طلب الصك بنجاح."
     },
   
     "CheckRequest":{
@@ -239,10 +245,9 @@
       "actions":"عمليات",
       "amountTable":"",
       "delegate":"المندوب",
-      "loading":"جار التحميل..."
-
-
-  
+      "loading":"جار التحميل...",
+      "successTitle": "نجاح",
+      "successMessage": "تم تقديم طلب الصك بنجاح."
     },
   
 
@@ -308,7 +313,26 @@
         "valueMustBePositive": "يجب أن تكون القيمة موجبة",
         "requiredDescription":"البيان مطلوب",
         "commissionPaidBy":"العمولة مدفوعة من قبل",
-        "recipient": "المستلم"
+        "recipient": "المستلم",
+        "economicSector": "القطاع الاقتصادي",
+        "requiredEconomicSector": "القطاع الاقتصادي مطلوب",
+        "modal": {
+          "title": "تأكيد تفاصيل التحويل",
+          "subtitle": "يرجى مراجعة التفاصيل بعناية",
+          "amount": "مبلغ التحويل",
+          "amountPlusFee": "المبلغ + الرسوم",
+          "from": "من",
+          "to": "إلى",
+          "transactionDetails": "تفاصيل المعاملة",
+          "description": "الوصف",
+          "noDescription": "لا يوجد وصف",
+          "transferFee": "رسوم التحويل",
+          "feeMessage": "سيتم خصم رسوم قدرها {amount} {currency} من {payer}",
+          "feePayerSender": "المرسل",
+          "feePayerRecipient": "المستلم",
+          "cancel": "إلغاء",
+          "confirm": "تأكيد التحويل"
+        }
 
       },
       "statementOfAccount": {
@@ -531,14 +555,21 @@
     
         "isRequired": "مطلوب",
         "mustBeNumber": "يجب أن يكون رقماً",
-        "successTitle": "تم إرسال طلبك بنجاح"
+        "successTitle": "تم إرسال طلبك بنجاح",
+        "createSuccessTitle": "نجاح",
+        "createSuccessMsg": "تم إنشاء طلب كشف الحساب بنجاح."
       },
       "dashboard":{
         "accountNb":" رقم الحساب",
         "debitBalance":"الرصيد المدين",
         "availableBalance":"الرصيد المتاح",
         "failedToFetchData":"فشل في جلب البيانات",
-        "noDataAvailable":"لا توجد بيانات متاحة"
+        "noDataAvailable":"لا توجد بيانات متاحة",
+        "mostActiveSector": "القطاع الأكثر نشاطاً",
+        "userCount": "عدد المستخدمين",
+        "totalTransfers": "إجمالي التحويلات",
+        "transferVolume": "حجم التحويلات",
+        "loading":"جار التحميل..."
       },
       "employees":{
         "id":"المعرف",
@@ -595,6 +626,109 @@
         "code":"الرمز",
         "rate":"سعر الصرف",
         "description":"الوصف"
+      },
+      "letterOfGuarantee": {
+        "form": {
+          "fields": {
+            "accountNumber": "رقم الحساب",
+            "date": "التاريخ",
+            "amount": "المبلغ",
+            "purpose": "الغرض",
+            "additionalInfo": "معلومات إضافية",
+            "currency": "العملة",
+            "referenceNumber": "رقم المرجع"
+          },
+          "validation": {
+            "required": "هذا الحقل مطلوب",
+            "amountMustBeNumber": "المبلغ يجب أن يكون رقماً",
+            "amountPositive": "المبلغ يجب أن يكون موجباً",
+            "amountExceedsBalance": "المبلغ أكبر من الرصيد المتاح"
+          },
+          "ui": {
+            "availableBalance": "الرصيد المتاح: {amount}",
+            "currencyPlaceholder": "اختر العملة",
+            "saveChanges": "حفظ التغييرات",
+            "add": "إضافة",
+            "savedTitle": "تم الحفظ",
+            "savedMessage": "تم إنشاء خطاب الضمان بنجاح.",
+            "errorTitle": "خطأ",
+            "unexpectedError": "حدث خطأ غير متوقع أثناء الإرسال.",
+            "accountFetchError": "فشل في جلب بيانات الحساب"
+          }
+        },
+        "page": {
+          "columns": {
+            "accountNumber": "رقم الحساب",
+            "date": "التاريخ",
+            "amount": "المبلغ",
+            "purpose": "الغرض",
+            "currency": "العملة",
+            "type": "النوع",
+            "status": "الحالة",
+            "createdAt": "تاريخ الإنشاء"
+          },
+          "ui": {
+            "addButton": "إضافة"
+          },
+          "messages": {
+            "fetchErrorTitle": "خطأ في الجلب",
+            "fetchErrorGeneric": "تعذر تحميل البيانات.",
+            "savedTitle": "تم الحفظ",
+            "savedMessage": "تم إنشاء خطاب الضمان بنجاح.",
+            "submitErrorTitle": "خطأ أثناء الإرسال",
+            "submitErrorGeneric": "حدث خطأ أثناء إنشاء الخطاب."
+          }
+        }
+      },
+      "creditFacility": {
+        "form": {
+          "fields": {
+            "accountNumber": "رقم الحساب",
+            "date": "التاريخ",
+            "amount": "المبلغ",
+            "purpose": "الغرض",
+            "additionalInfo": "معلومات إضافية",
+            "currency": "العملة",
+            "referenceNumber": "رقم المرجع"
+          },
+          "validation": {
+            "required": "هذا الحقل مطلوب",
+            "amountMustBeNumber": "يجب أن يكون المبلغ رقماً"
+          },
+          "ui": {
+            "currencyPlaceholder": "اختر العملة",
+            "add": "إضافة",
+            "saveChanges": "حفظ التغييرات",
+            "savedTitle": "تم الحفظ",
+            "savedMessage": "تم حفظ البيانات بنجاح.",
+            "errorTitle": "خطأ",
+            "currencyFetchError": "فشل في جلب العملات.",
+            "submitErrorGeneric": "حدث خطأ أثناء الإرسال."
+          }
+        },
+        "page": {
+          "columns": {
+            "accountNumber": "رقم الحساب",
+            "date": "التاريخ",
+            "amount": "المبلغ",
+            "purpose": "الغرض",
+            "currency": "العملة",
+            "type": "النوع",
+            "status": "الحالة",
+            "createdAt": "تاريخ الإنشاء"
+          },
+          "ui": {
+            "addButton": "إضافة"
+          },
+          "messages": {
+            "fetchErrorTitle": "خطأ في الجلب",
+            "fetchErrorGeneric": "تعذر تحميل البيانات.",
+            "savedTitle": "تم الحفظ",
+            "savedMessage": "تم إضافة التسهيل الائتماني بنجاح.",
+            "submitErrorTitle": "خطأ أثناء الإرسال",
+            "submitErrorGeneric": "حدث خطأ أثناء إضافة السجل."
+          }
+        }
       }
       
   }

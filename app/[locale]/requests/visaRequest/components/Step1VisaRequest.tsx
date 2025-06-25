@@ -40,6 +40,7 @@ export function Step1VisaRequest({ readOnly = false }: Step1VisaRequestProps) {
             startIcon={icon}
             type={type}
             disabled={readOnly}
+            maskingFormat={name === "accountNumber" ? "0000-000000-000" : ""}
           />
         );
       })}

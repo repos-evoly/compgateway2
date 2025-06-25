@@ -1,3 +1,6 @@
+/* --------------------------------------------------------------------------
+   app/requests/rtgs/components/RTGSForm.tsx
+   -------------------------------------------------------------------------- */
 "use client";
 
 import React from "react";
@@ -11,6 +14,8 @@ import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import Checkbox from "@/app/components/FormUI/CheckboxWrapper";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
+import BackButton from "@/app/components/reusable/BackButton";
+
 import {
   FaUser,
   FaUniversity,
@@ -21,10 +26,11 @@ import {
   FaPaperPlane,
 } from "react-icons/fa";
 
-import { TRTGSFormValues } from "../types";
-import BackButton from "@/app/components/reusable/BackButton";
+import type { TRTGSFormValues } from "../types";
 
-/** Props for the RTGSForm component */
+/* ------------------------------------------------------------------ */
+/* Props                                                              */
+/* ------------------------------------------------------------------ */
 type RTGSFormProps = {
   initialValues?: Partial<TRTGSFormValues>;
   onSubmit: (
@@ -36,7 +42,9 @@ type RTGSFormProps = {
   readOnly?: boolean;
 };
 
-/** Validation Schema */
+/* ------------------------------------------------------------------ */
+/* Validation                                                         */
+/* ------------------------------------------------------------------ */
 const validationSchema = Yup.object({
   refNum: Yup.date().required("Reference Number is required"),
   date: Yup.date().required("Date is required").typeError("Invalid date"),
@@ -58,15 +66,17 @@ const validationSchema = Yup.object({
   otherDoc: Yup.boolean().default(false).optional(),
 });
 
-/** The RTGS form component */
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
 const RTGSForm: React.FC<RTGSFormProps> = ({
   initialValues,
   onSubmit,
-  readOnly = false, // defaults to editable
+  readOnly = false,
 }) => {
   const t = useTranslations("RTGSForm");
 
-  // Default initial values
+  /* ------------------- Initial values ------------------- */
   const defaultVals: TRTGSFormValues = {
     refNum: new Date(),
     date: new Date(),
@@ -86,11 +96,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     otherDoc: false,
   };
 
-  // Merge with passed-in initial values
   const mergedValues: TRTGSFormValues = {
     ...defaultVals,
     ...initialValues,
-    // If parent gave refNum/date as string, convert them to Date
     refNum:
       typeof initialValues?.refNum === "string"
         ? new Date(initialValues.refNum)
@@ -101,7 +109,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         : initialValues?.date || new Date(),
   };
 
-  // We'll separate the sections for clarity
+  /* ------------------- Sections config ------------------ */
   const sections = [
     {
       title: t("accInfo"),
@@ -114,6 +122,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
             type: "text" as const,
             startIcon: <FaUniversity />,
             disabled: readOnly,
+            maskingFormat: "0000-000000-000",
           },
         },
         {
@@ -159,6 +168,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
             type: "text" as const,
             startIcon: <FaUniversity />,
             disabled: readOnly,
+            maskingFormat: "0000-000000-000",
           },
         },
         {
@@ -210,44 +220,29 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     },
     {
       title: t("attachments"),
+      note: t("note"),
       fields: [
         {
           component: Checkbox,
-          props: {
-            name: "invoice",
-            label: t("invoice"),
-            disabled: readOnly,
-          },
+          props: { name: "invoice", label: t("invoice"), disabled: readOnly },
         },
         {
           component: Checkbox,
-          props: {
-            name: "contract",
-            label: t("contract"),
-            disabled: readOnly,
-          },
+          props: { name: "contract", label: t("contract"), disabled: readOnly },
         },
         {
           component: Checkbox,
-          props: {
-            name: "claim",
-            label: t("claim"),
-            disabled: readOnly,
-          },
+          props: { name: "claim", label: t("claim"), disabled: readOnly },
         },
         {
           component: Checkbox,
-          props: {
-            name: "otherDoc",
-            label: t("otherDoc"),
-            disabled: readOnly,
-          },
+          props: { name: "otherDoc", label: t("otherDoc"), disabled: readOnly },
         },
       ],
-      note: t("note"),
     },
   ];
 
+  /* ------------------- Submit handler ------------------- */
   const handleSubmit = (
     values: TRTGSFormValues,
     helpers: FormikHelpers<TRTGSFormValues>
@@ -255,16 +250,17 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     onSubmit(values, helpers);
   };
 
+  /* ========================== RENDER ============================ */
   return (
-    <div className="mt-2 rounded w-full bg-gray-100">
+    <div className="mt-2 w-full rounded bg-gray-100">
       <Form
         initialValues={mergedValues}
         onSubmit={handleSubmit}
         validationSchema={validationSchema}
       >
-        {/* Header Section */}
-        <div className="w-full bg-info-dark h-16 rounded-t-md flex items-center gap-6 px-4">
-          <div className="mt-3 w-1/3">
+        {/* ----------------- Header (responsive) ----------------- */}
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0">
+          <div className="flex-1">
             <DatePickerValue
               name="refNum"
               label={t("refNum")}
@@ -273,7 +269,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               disabled={readOnly}
             />
           </div>
-          <div className="mt-3 w-1/3">
+          <div className="flex-1">
             <DatePickerValue
               name="date"
               label={t("date")}
@@ -282,7 +278,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               disabled={readOnly}
             />
           </div>
-          <div className="mt-3 w-1/3">
+          <div className="flex-1">
             <RadiobuttonWrapper
               name="paymentType"
               label=""
@@ -297,34 +293,38 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           </div>
         </div>
 
-        {sections.map((section, index) => (
-          <div key={index} className="px-6 py-4">
-            <h2 className="text-xl font-semibold mb-4">{section.title}</h2>
+        {/* ----------------- Dynamic sections ----------------- */}
+        {sections.map((section, idx) => (
+          <div key={idx} className="px-4 md:px-6 py-4">
+            <h2 className="text-lg md:text-xl font-semibold mb-4">
+              {section.title}
+            </h2>
+
+            {/* Form fields */}
             <div
-              className={`${
+              className={
                 section.title === t("attachments")
-                  ? "grid grid-cols-4 w-1/2"
-                  : "flex gap-4"
-              }`}
+                  ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-md"
+                  : "grid grid-cols-1 md:grid-cols-2 gap-4"
+              }
             >
-              {section.fields.map((field, fieldIndex) => {
+              {section.fields.map((field, fieldIdx) => {
                 const FieldComponent = field.component;
-                return (
-                  <div key={fieldIndex} className="w-full">
-                    <FieldComponent {...field.props} />
-                  </div>
-                );
+                return <FieldComponent key={fieldIdx} {...field.props} />;
               })}
             </div>
+
+            {/* Section note */}
             {section.note && (
-              <p className="text-sm text-gray-700 mt-4">{section.note}</p>
+              <p className="mt-4 text-sm text-gray-700 whitespace-pre-wrap">
+                {section.note}
+              </p>
             )}
           </div>
         ))}
 
-        {/* Buttons */}
-        <div className="px-6 pb-6 flex justify-center items-center gap-2">
-          {/* Hide the submit button if readOnly */}
+        {/* ----------------- Buttons ----------------- */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 px-4 md:px-6 pb-6">
           {!readOnly && (
             <SubmitButton
               title="Submit"

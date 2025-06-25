@@ -32,10 +32,13 @@ export default function CertifiedBankStatementPage() {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
+
 
   /*──────────────────────────── Fetch paginated data ────────────────────*/
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
       try {
         const res = await getCertifiedBankStatements({
           page: currentPage,
@@ -49,6 +52,8 @@ export default function CertifiedBankStatementPage() {
         setModalMessage(msg);
         setModalSuccess(false);
         setModalOpen(true);
+      } finally { 
+        setLoading(false);
       }
     }
     fetchData();
@@ -114,6 +119,7 @@ export default function CertifiedBankStatementPage() {
           onPageChange={setCurrentPage}
           showAddButton
           onAddClick={handleAddClick}
+          loading={loading}
         />
       )}
 

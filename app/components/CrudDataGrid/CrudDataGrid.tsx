@@ -13,6 +13,7 @@ import {
 import CrudDataGridHeader from "./CrudDataGridHeader";
 import CrudDataGridBody from "./CrudDataGridBody";
 import type { CrudDataGridProps } from "@/types";
+import CrudDataGridSkeleton from "./CrudDataGridSkeleton";
 
 const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   data,
@@ -35,6 +36,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   onPageChange,
   currentPage,
   totalPages,
+  loading = false,
 }) => {
   const t = useTranslations("crudDataGrid");
 
@@ -46,6 +48,11 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   useEffect(() => {
     setGoToPage(String(currentPage));
   }, [currentPage]);
+  if (loading) {
+    return (
+      <CrudDataGridSkeleton columns={columns.length + (showActions ? 1 : 0)} />
+    );
+  }
 
   const canGoBack = currentPage > 1;
   const canGoForward = currentPage < totalPages;

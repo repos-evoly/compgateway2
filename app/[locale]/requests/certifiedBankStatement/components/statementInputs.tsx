@@ -69,6 +69,7 @@ export const step1StatementInputs = [
     label: "accountNumber",
     icon: <FiCreditCard />,
     type: "number",
+    maskingFormat: "0000-000000-000",
   },
   // For serviceRequests, you may handle it in a special UI
   // (like multiple checkboxes). We'll treat it as a single "group" for now.
@@ -89,12 +90,14 @@ export const step2StatementInputs = [
     label: "oldAccountNumber",
     icon: <FiCreditCard />,
     type: "number",
+    maskingFormat: "0000-000000-000",
   },
   {
     name: "newAccountNumber",
     label: "newAccountNumber",
     icon: <FiCreditCard />,
     type: "number",
+    maskingFormat: "0000-000000-000",
   },
   // statementRequest => custom UI (checkboxes, date fields, etc.)
   {

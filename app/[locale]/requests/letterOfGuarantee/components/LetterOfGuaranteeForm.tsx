@@ -1,39 +1,45 @@
+/* --------------------------------------------------------------------------
+ * app/[locale]/requests/letterOfGuarantee/components/LetterOfGuaranteeForm.tsx
+ * Fully-translated (en ⇄ ar) + account-check guard — FINAL VERSION
+ * ----------------------------------------------------------------------- */
+
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { Formik, Form, FormikHelpers, FormikProps } from "formik";
 import * as Yup from "yup";
+import { useTranslations } from "next-intl";
 
+import FormHeader from "@/app/components/reusable/FormHeader";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import { FaPaperPlane } from "react-icons/fa";
 
-// For fetching currencies
 import { getCurrencies } from "@/app/[locale]/currencies/services";
-// For checking account
 import { CheckAccount } from "@/app/helpers/checkAccount";
 
 import type { TLetterOfGuarantee } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
-import FormHeader from "@/app/components/reusable/FormHeader";
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
-/** Props for the top-level form component */
+/* ------------------------------------------------------------------ */
+/* Props                                                              */
+/* ------------------------------------------------------------------ */
 type Props = {
-  initialData?: TLetterOfGuarantee | null; // if editing existing
+  initialData?: TLetterOfGuarantee | null;
   onSubmit: (vals: TLetterOfGuarantee) => void;
   onCancel: () => void;
-  /** If true, form fields are disabled and submit is hidden */
   readOnly?: boolean;
 };
 
-/** Additional props for the inner Form component */
+/* ------------------------------------------------------------------ */
+/* Inner form props                                                   */
+/* ------------------------------------------------------------------ */
 type InnerFormProps = FormikProps<TLetterOfGuarantee> & {
-  onCancel: () => void;
   initialData?: TLetterOfGuarantee | null;
   availableBalance: number | null;
   setAvailableBalance: React.Dispatch<React.SetStateAction<number | null>>;
@@ -41,23 +47,30 @@ type InnerFormProps = FormikProps<TLetterOfGuarantee> & {
   readOnly?: boolean;
 };
 
-/**
- * Reusable child component recognized as a valid function component
- * so we can use Hooks without ESLint complaining.
- */
+/* ------------------------------------------------------------------ */
+/* Inner form                                                         */
+/* ------------------------------------------------------------------ */
 function InnerForm({
   isSubmitting,
   isValid,
   dirty,
   values,
+  errors,
+  touched,
   setFieldError,
-  initialData,
+  setFieldTouched,
   availableBalance,
   setAvailableBalance,
   currencyOptions,
+  initialData,
   readOnly = false,
 }: InnerFormProps) {
-  // Watch for changes in "accountNumber" => fetch balance
+  const t = useTranslations("letterOfGuarantee.form.fields");
+  const tu = useTranslations("letterOfGuarantee.form.ui");
+
+  /* --------------------------------------------------------------
+   * Check account balance whenever accountNumber changes
+   * -------------------------------------------------------------- */
   useEffect(() => {
     if (!values.accountNumber) {
       setAvailableBalance(null);
@@ -66,21 +79,34 @@ function InnerForm({
 
     const fetchBalance = async () => {
       try {
-        const data: AccountInfo[] = await CheckAccount(values.accountNumber);
-        if (data.length > 0) {
-          setAvailableBalance(data[0].availableBalance);
+        const info: AccountInfo[] = await CheckAccount(values.accountNumber);
+        if (info.length) {
+          setAvailableBalance(info[0].availableBalance);
+          setFieldError("accountNumber", "");
         } else {
           setAvailableBalance(null);
+          setFieldError("accountNumber", tu("accountNotFound"));
         }
-      } catch (err) {
-        console.error("Failed to check account =>", err);
-        setFieldError("accountNumber", "فشل في جلب بيانات الحساب");
+      } catch {
         setAvailableBalance(null);
+        setFieldError("accountNumber", tu("accountFetchError"));
+      } finally {
+        setFieldTouched("accountNumber", true, false);
       }
     };
 
     fetchBalance();
-  }, [values.accountNumber, setFieldError, setAvailableBalance]);
+  }, [
+    values.accountNumber,
+    setFieldError,
+    setFieldTouched,
+    setAvailableBalance,
+    tu,
+  ]);
+
+  const accountHasError = Boolean(
+    errors.accountNumber && touched.accountNumber
+  );
 
   return (
     <Form>
@@ -94,31 +120,34 @@ function InnerForm({
         {/* Account Number */}
         <FormInputIcon
           name="accountNumber"
-          label="رقم الحساب"
+          label={t("accountNumber")}
           type="text"
           helpertext={
             availableBalance != null
-              ? `الرصيد المتاح: ${availableBalance.toLocaleString()}`
+              ? tu("availableBalance", {
+                  amount: availableBalance.toLocaleString(),
+                })
               : undefined
           }
-          disabled={readOnly} // <--- Disable if readOnly
+          disabled={readOnly}
+          maskingFormat="0000-000000-000"
         />
 
         {/* Date */}
-        <DatePickerValue name="date" label="التاريخ" disabled={readOnly} />
+        <DatePickerValue name="date" label={t("date")} disabled={readOnly} />
 
         {/* Amount */}
         <FormInputIcon
           name="amount"
-          label="المبلغ"
+          label={t("amount")}
           type="number"
-          disabled={readOnly} // <--- Disable if readOnly
+          disabled={readOnly}
         />
 
         {/* Purpose */}
         <FormInputIcon
           name="purpose"
-          label="الغرض"
+          label={t("purpose")}
           type="text"
           disabled={readOnly}
         />
@@ -126,7 +155,7 @@ function InnerForm({
         {/* Additional Info */}
         <FormInputIcon
           name="additionalInfo"
-          label="معلومات إضافية"
+          label={t("additionalInfo")}
           type="text"
           disabled={readOnly}
         />
@@ -134,78 +163,74 @@ function InnerForm({
         {/* Currency */}
         <InputSelectCombo
           name="curr"
-          label="العملة"
+          label={t("currency")}
           options={currencyOptions}
-          placeholder="اختر العملة"
+          placeholder={tu("currencyPlaceholder")}
           width="w-full"
-          disabled={readOnly} // <--- Disable if readOnly
+          disabled={readOnly}
         />
 
         {/* Reference Number */}
         <FormInputIcon
           name="refferenceNumber"
-          label="رقم المرجع"
+          label={t("referenceNumber")}
           type="text"
           disabled={readOnly}
         />
       </div>
 
-      {/* Buttons */}
-      <div className="mt-4 flex justify-center items-center gap-3">
-        {/* Hide Submit if readOnly */}
-        {!readOnly && (
+      {!readOnly && (
+        <div className="mt-4 flex justify-center items-center gap-3">
           <SubmitButton
-            title={initialData ? "حفظ التغييرات" : "إضافة"}
+            title={initialData ? tu("saveChanges") : tu("add")}
             color="info-dark"
             Icon={FaPaperPlane}
             isSubmitting={isSubmitting}
-            disabled={!isValid || !dirty || isSubmitting}
+            disabled={!isValid || !dirty || isSubmitting || accountHasError}
             fullWidth={false}
           />
-        )}
-      </div>
+        </div>
+      )}
     </Form>
   );
 }
 
-/**
- * LetterOfGuaranteeForm is the main export that uses Formik
- */
+/* ------------------------------------------------------------------ */
+/* Main exported component                                            */
+/* ------------------------------------------------------------------ */
 export default function LetterOfGuaranteeForm({
   initialData,
   onSubmit,
-  onCancel,
   readOnly = false,
 }: Props) {
-  // We'll fetch real currencies from the API
+  const tv = useTranslations("letterOfGuarantee.form.validation");
+  const tu = useTranslations("letterOfGuarantee.form.ui");
+
   const [currencyOptions, setCurrencyOptions] = useState<
     Array<{ label: string; value: string }>
   >([]);
 
-  // We'll store the availableBalance in local state for the "accountNumber"
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
-  // On mount => get currencies
+  /* fetch currencies once */
   useEffect(() => {
     (async () => {
       try {
         const res: CurrenciesResponse = await getCurrencies(1, 50, "", "");
-        const opts = res.data.map((c) => ({
-          label: c.description,
-          value: c.code,
-        }));
-        setCurrencyOptions(opts);
+        setCurrencyOptions(
+          res.data.map((c) => ({ label: c.description, value: c.code }))
+        );
       } catch (err) {
-        console.error("Failed to fetch currencies:", err);
+        console.error("Currency fetch error:", err);
       }
     })();
   }, []);
 
-  // Default blank form => always type="letterOfGuarantee"
   const defaultValues: TLetterOfGuarantee = {
     id: undefined,
     accountNumber: "",
@@ -218,53 +243,44 @@ export default function LetterOfGuaranteeForm({
     type: "letterOfGuarantee",
   };
 
-  // Merge incoming data => ensure type is "letterOfGuarantee"
   const initialValues: TLetterOfGuarantee = initialData
     ? { ...defaultValues, ...initialData, type: "letterOfGuarantee" }
     : defaultValues;
 
-  // Validation schema => no "type" field in user-facing form
   const validationSchema = Yup.object({
-    accountNumber: Yup.string().required("حقل رقم الحساب مطلوب"),
-    date: Yup.string().required("حقل التاريخ مطلوب"),
+    accountNumber: Yup.string().required(tv("required")),
+    date: Yup.string().required(tv("required")),
     amount: Yup.number()
-      .typeError("المبلغ يجب أن يكون رقماً")
-      .required("حقل المبلغ مطلوب")
-      .positive("المبلغ يجب أن يكون موجبا")
-      .test("check-balance", "المبلغ أكبر من الرصيد المتاح", function (value) {
-        if (!value || availableBalance == null) return true;
-        return value <= availableBalance;
-      }),
-    purpose: Yup.string().required("حقل الغرض مطلوب"),
+      .typeError(tv("amountMustBeNumber"))
+      .required(tv("required"))
+      .positive(tv("amountPositive"))
+      .test(
+        "check-balance",
+        tv("amountExceedsBalance"),
+        (val) => !val || availableBalance == null || val <= availableBalance
+      ),
+    purpose: Yup.string().required(tv("required")),
     additionalInfo: Yup.string().nullable(),
-    curr: Yup.string().required("حقل العملة مطلوب"),
-    refferenceNumber: Yup.string().required("حقل رقم المرجع مطلوب"),
+    curr: Yup.string().required(tv("required")),
+    refferenceNumber: Yup.string().required(tv("required")),
   });
 
-  // onSubmit => call parent's handler
   async function handleSubmit(
     values: TLetterOfGuarantee,
     { setSubmitting, resetForm }: FormikHelpers<TLetterOfGuarantee>
   ) {
     try {
-      const finalVals = { ...values, type: "letterOfGuarantee" };
-      onSubmit(finalVals);
-
+      onSubmit({ ...values, type: "letterOfGuarantee" });
       resetForm();
 
-      /* success modal */
-      setModalTitle("تم الحفظ");
-      setModalMessage("تم إنشاء خطاب الضمان بنجاح.");
+      setModalTitle(tu("savedTitle"));
+      setModalMessage(tu("savedMessage"));
       setModalSuccess(true);
       setModalOpen(true);
     } catch (err) {
-      console.error("Error in form submission:", err);
-
-      const msg =
-        err instanceof Error ? err.message : "حدث خطأ غير متوقع أثناء الإرسال.";
-
-      /* error modal */
-      setModalTitle("خطأ");
+      console.error("Submit error:", err);
+      const msg = err instanceof Error ? err.message : tu("unexpectedError");
+      setModalTitle(tu("errorTitle"));
       setModalMessage(msg);
       setModalSuccess(false);
       setModalOpen(true);
@@ -274,18 +290,17 @@ export default function LetterOfGuaranteeForm({
   }
 
   return (
-    <div className="w-full bg-gray-100 rounded-md p-4" dir="rtl">
+    <div className="w-full bg-gray-100 rounded-md p-4">
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        {(formikProps) => (
+        {(formik) => (
           <InnerForm
-            {...formikProps}
+            {...formik}
             initialData={initialData}
-            onCancel={onCancel}
             availableBalance={availableBalance}
             setAvailableBalance={setAvailableBalance}
             currencyOptions={currencyOptions}
@@ -293,6 +308,7 @@ export default function LetterOfGuaranteeForm({
           />
         )}
       </Formik>
+
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

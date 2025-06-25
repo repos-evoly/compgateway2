@@ -29,10 +29,13 @@ const CheckbookPage: React.FC = () => {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
+
 
   /* ─── Fetch data ──────────────────────────────────────────── */
   useEffect(() => {
     async function fetchData() {
+      setLoading(true); // Set loading state
       try {
         const result = await getCheckbookRequests(
           currentPage,
@@ -48,6 +51,8 @@ const CheckbookPage: React.FC = () => {
         setModalMessage(msg);
         setModalSuccess(false);
         setModalOpen(true);
+      } finally {
+        setLoading(false); // Reset loading state
       }
     }
     fetchData();
@@ -115,6 +120,7 @@ const CheckbookPage: React.FC = () => {
           }}
           showAddButton
           onAddClick={handleAddClick}
+          loading={loading}
         />
       )}
 

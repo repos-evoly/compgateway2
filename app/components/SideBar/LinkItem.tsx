@@ -34,7 +34,7 @@ type LinkItemProps = {
 /* ------------------------------------------------------------------ */
 /* Default shared styles                                              */
 /* ------------------------------------------------------------------ */
-const fallbackLabelCls = "break-words leading-tight text-[13px]"; // wrap-friendly, small
+const fallbackLabelCls = "break-words leading-tight text-[13px]";
 const fallbackButtonCls = `
   flex items-center gap-3 w-full p-2 rounded
   text-gray-300 hover:text-white hover:bg-info-dark
@@ -111,6 +111,10 @@ const LinkItem: React.FC<LinkItemProps> = ({
   /* Parent item with children                                      */
   /* -------------------------------------------------------------- */
   if (hasChildren) {
+    /* child indentation: RTL → pr-10 | LTR → pl-10 when sidebar open.
+       collapsed sidebar → no extra spacing (fixes X-scroll issue). */
+    const childIndentClass = sidebarOpen && (isRtl ? "pr-10" : "pl-10");
+
     return (
       <>
         {/* Parent row -------------------------------------------- */}
@@ -133,7 +137,6 @@ const LinkItem: React.FC<LinkItemProps> = ({
             {sidebarOpen && <span className={labelClass}>{t(item.label)}</span>}
           </div>
 
-          {/* Chevron only while expanded sidebar */}
           {sidebarOpen &&
             (submenuOpen === item.id ? (
               <FaChevronUp className="w-4 h-4 shrink-0" />
@@ -153,7 +156,8 @@ const LinkItem: React.FC<LinkItemProps> = ({
                   key={child.id}
                   href={`/${currentLocale}${child.path}`}
                   className={`
-                    ${buttonBaseClass} pl-10
+                    ${buttonBaseClass}
+                    ${childIndentClass ? childIndentClass : ""}
                     ${childActive ? "bg-info-dark text-white" : ""}
                   `}
                   onClick={() =>

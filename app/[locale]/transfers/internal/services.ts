@@ -1,7 +1,8 @@
 "use client";
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // Adjust path
-import { TransferPayload, TransferResponse, TransfersApiResponse, TransfersCommision } from "./types"; // Adjust path
+import { CheckAccountResponse, EconomicSectorGetResponse, TransferPayload, TransferResponse, TransfersApiResponse, TransfersCommision } from "./types"; // Adjust path
+import { throwApiError } from "@/app/helpers/handleApiError";  
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_API ;
@@ -28,7 +29,7 @@ export async function createTransfer(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to create transfer. Status: ${res.status}`);
+    await throwApiError(res, "Failed to create transfer.");           
   }
 
   const data = await res.json();
@@ -61,7 +62,7 @@ export async function getTransfers(
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch transfers. Status: ${res.status}`);
+    await throwApiError(res, "Failed to get transfers.");           
   }
 
   const data = (await res.json()) as TransfersApiResponse;
@@ -89,7 +90,7 @@ export async function getTransferById(id: number): Promise<TransferResponse> {
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch transfer ID=${id}. Status: ${res.status}`);
+    await throwApiError(res, "Failed to get transfer.");             
   }
 
   const data = await res.json();
@@ -98,13 +99,13 @@ export async function getTransferById(id: number): Promise<TransferResponse> {
 
 
 
-export async function getTransfersCommision(servicePackageId:number, transactionCategoryId:number, currencyId:number): Promise<TransfersCommision>{
+export async function getTransfersCommision(servicePackageId:number, transactionCategoryId:number): Promise<TransfersCommision>{
 
   if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
 
-  const url = `${BASE_URL}/transfers/commission?servicePackageId=${servicePackageId}&transactionCategoryId=${transactionCategoryId}&currencyId=${currencyId}`;
+  const url = `${BASE_URL}/servicepackages/${servicePackageId}/categories/${transactionCategoryId}`;
 
   const res = await fetch(url, {
     method: "GET",
@@ -115,7 +116,7 @@ export async function getTransfersCommision(servicePackageId:number, transaction
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch transfers commission. Status: ${res.status}`);
+    await throwApiError(res, "Failed to create fetch commission.");            
   }
 
   const data = (await res.json()) as TransfersCommision;
@@ -123,3 +124,55 @@ export async function getTransfersCommision(servicePackageId:number, transaction
 }
 
 
+export async function getEconomicSectors(page: number, limit:number, searchTerm?:string):Promise<EconomicSectorGetResponse>{
+
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not set.");
+  }
+
+  const url = new URL(`${BASE_URL}/economic-sectors`);
+  url.searchParams.append("page", String(page));
+  url.searchParams.append("limit", String(limit));
+  if (searchTerm) {
+    url.searchParams.append("searchTerm", searchTerm);
+  }
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    await throwApiError(res, "Failed to fetch economic sector.");           
+  }
+
+  const data = (await res.json()) as EconomicSectorGetResponse;
+  return data;
+}
+
+export async function checkAccount(account:string): Promise<CheckAccountResponse[]>{
+
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not set.");
+  }
+
+  const url = `${BASE_URL}/transfers/accounts?account=${account}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    await throwApiError(res, "Failed to check account.");            
+  }
+
+  const data = (await res.json()) as CheckAccountResponse[];
+  return data;
+}

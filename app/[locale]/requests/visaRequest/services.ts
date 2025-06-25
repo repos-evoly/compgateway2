@@ -78,23 +78,42 @@ export const createVisaRequest = async (
     const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
     if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
     if (!token) throw new Error("No access token found in cookies");
+
+      const isoDate =
+    formValues.date && formValues.date.length === 10   // "2025-06-20"
+      ? new Date(`${formValues.date}T00:00:00Z`).toISOString() // → "2025-06-20T00:00:00.000Z"
+      : formValues.date ?? "";
   
     // The API requires all fields (string/number).
     // We'll convert `undefined` => "" or 0.
     const body = {
       branch: formValues.branch ?? "",
-      date: formValues.date ?? "",
+      date: isoDate,
       accountHolderName: formValues.accountHolderName ?? "",
-      accountNumber: formValues.accountNumber ?? "",
-      nationalId: formValues.nationalId ?? 0,
-      phoneNumberLinkedToNationalId: formValues.phoneNumberLinkedToNationalId ?? "",
-      cbl: formValues.cbl ?? "",
-      cardMovementApproval: formValues.cardMovementApproval ?? "",
+    
+      // 1️⃣  Account number must follow 0000-000000-000
+      accountNumber:
+        typeof formValues.accountNumber === "string"
+          ? formValues.accountNumber
+          : String(formValues.accountNumber ?? ""),
+    
+      // 2️⃣  Phone must be sent as *string*
+      phoneNumberLinkedToNationalId: String(
+        formValues.phoneNumberLinkedToNationalId ?? ""
+      ),
+    
+      // 3️⃣  Cast numbers
+      nationalId: Number(formValues.nationalId) || 0,
+      foreignAmount: Number(formValues.foreignAmount) || 0,
+      localAmount: Number(formValues.localAmount) || 0,
+    
+      // 4️⃣  Keep these as strings
+      cbl: String(formValues.cbl ?? ""),
+      cardMovementApproval: String(formValues.cardMovementApproval ?? ""),
       cardUsingAcknowledgment: formValues.cardUsingAcknowledgment ?? "",
-      foreignAmount: formValues.foreignAmount ?? 0,
-      localAmount: formValues.localAmount ?? 0,
       pldedge: formValues.pldedge ?? "",
-    };
+    } as const;
+    
   
     const response = await fetch(`${baseUrl}/visarequests`, {
       method: "POST",

@@ -1,22 +1,31 @@
+/* --------------------------------------------------------------------------
+ * app/[locale]/requests/creditFacility/components/CreditFacilityForm.tsx
+ * i18n-ready (en ⇄ ar) version — copy-paste
+ * ----------------------------------------------------------------------- */
+
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
+import { useTranslations } from "next-intl";
 
+import FormHeader from "@/app/components/reusable/FormHeader";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
-import { getCurrencies } from "@/app/[locale]/currencies/services";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
+import { getCurrencies } from "@/app/[locale]/currencies/services";
 import { FaPaperPlane } from "react-icons/fa";
 
 import type { TCreditFacility } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
-import FormHeader from "@/app/components/reusable/FormHeader";
 
+/* ------------------------------------------------------------------ */
+/* Props                                                              */
+/* ------------------------------------------------------------------ */
 type Props = {
   initialData?: TCreditFacility | null;
   onSubmit: (vals: TCreditFacility) => void;
@@ -24,23 +33,31 @@ type Props = {
   readOnly?: boolean;
 };
 
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function CreditFacilityForm({
   initialData,
   onSubmit,
   readOnly = false,
 }: Props) {
-  /* ─── Currency dropdown ─────────────────────────────────── */
+  /* ─── i18n hooks ──────────────────────────────────────────────── */
+  const tFields = useTranslations("creditFacility.form.fields");
+  const tVal = useTranslations("creditFacility.form.validation");
+  const tUi = useTranslations("creditFacility.form.ui");
+
+  /* ─── Currency dropdown ──────────────────────────────────────── */
   const [currencyOptions, setCurrencyOptions] = useState<
     { label: string; value: string }[]
   >([]);
 
-  /* ─── Modal state (NEW) ─────────────────────────────────── */
+  /* ─── Modal state ────────────────────────────────────────────── */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
-  /* ─── Fetch currencies ──────────────────────────────────── */
+  /* ─── Fetch currencies (once) ────────────────────────────────── */
   useEffect(() => {
     (async () => {
       try {
@@ -49,16 +66,16 @@ export default function CreditFacilityForm({
           res.data.map((c) => ({ label: c.description, value: c.code }))
         );
       } catch (err) {
-        console.log("Failed to fetch currencies:", err);
-        setModalTitle("خطأ");
-        setModalMessage("فشل في جلب العملات.");
+        console.error("Currency fetch error:", err);
+        setModalTitle(tUi("errorTitle"));
+        setModalMessage(tUi("currencyFetchError"));
         setModalSuccess(false);
         setModalOpen(true);
       }
     })();
-  }, []);
+  }, [tUi]);
 
-  /* ─── Defaults & validation ─────────────────────────────── */
+  /* ─── Form defaults & validation ─────────────────────────────── */
   const defaultValues: TCreditFacility = {
     id: undefined,
     accountNumber: "",
@@ -76,32 +93,34 @@ export default function CreditFacilityForm({
     : defaultValues;
 
   const validationSchema = Yup.object({
-    accountNumber: Yup.string().required("حقل رقم الحساب مطلوب"),
-    date: Yup.string().required("حقل التاريخ مطلوب"),
+    accountNumber: Yup.string().required(tVal("required")),
+    date: Yup.string().required(tVal("required")),
     amount: Yup.number()
-      .typeError("المبلغ يجب أن يكون رقماً")
-      .required("حقل المبلغ مطلوب"),
-    purpose: Yup.string().required("حقل الغرض مطلوب"),
+      .typeError(tVal("amountMustBeNumber"))
+      .required(tVal("required")),
+    purpose: Yup.string().required(tVal("required")),
     additionalInfo: Yup.string().nullable(),
-    curr: Yup.string().required("حقل العملة مطلوب"),
-    refferenceNumber: Yup.string().required("حقل رقم المرجع مطلوب"),
+    curr: Yup.string().required(tVal("required")),
+    refferenceNumber: Yup.string().required(tVal("required")),
   });
 
-  /* ─── Submit ────────────────────────────────────────────── */
+  /* ─── Submit handler ─────────────────────────────────────────── */
   async function handleSubmit(
     values: TCreditFacility,
-    { setSubmitting }: FormikHelpers<TCreditFacility>
+    { setSubmitting, resetForm }: FormikHelpers<TCreditFacility>
   ) {
     try {
       await onSubmit({ ...values, type: "creditFacility" });
-      setModalTitle("تم");
-      setModalMessage("تم حفظ البيانات بنجاح.");
+
+      setModalTitle(tUi("savedTitle"));
+      setModalMessage(tUi("savedMessage"));
       setModalSuccess(true);
       setModalOpen(true);
+      resetForm();
     } catch (err) {
-      setModalTitle("خطأ");
+      setModalTitle(tUi("errorTitle"));
       setModalMessage(
-        err instanceof Error ? err.message : "حدث خطأ أثناء الإرسال."
+        err instanceof Error ? err.message : tUi("submitErrorGeneric")
       );
       setModalSuccess(false);
       setModalOpen(true);
@@ -110,10 +129,10 @@ export default function CreditFacilityForm({
     }
   }
 
-  /* ─── JSX ───────────────────────────────────────────────── */
+  /* ─── JSX ────────────────────────────────────────────────────── */
   return (
     <>
-      <div className="w-full bg-gray-100 rounded-md p-4" dir="rtl">
+      <div className="w-full bg-gray-100 rounded-md p-4">
         <Formik
           initialValues={initialValues}
           validationSchema={validationSchema}
@@ -128,52 +147,60 @@ export default function CreditFacilityForm({
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                {/* Account Number */}
                 <FormInputIcon
                   name="accountNumber"
-                  label="رقم الحساب"
+                  label={tFields("accountNumber")}
                   type="text"
                   disabled={readOnly}
+                  maskingFormat="0000-000000-000"
                 />
 
+                {/* Date */}
                 <DatePickerValue
                   name="date"
-                  label="التاريخ"
+                  label={tFields("date")}
                   disabled={readOnly}
                 />
 
+                {/* Amount */}
                 <FormInputIcon
                   name="amount"
-                  label="المبلغ"
+                  label={tFields("amount")}
                   type="number"
                   disabled={readOnly}
                 />
 
+                {/* Purpose */}
                 <FormInputIcon
                   name="purpose"
-                  label="الغرض"
+                  label={tFields("purpose")}
                   type="text"
                   disabled={readOnly}
                 />
 
+                {/* Additional Info */}
                 <FormInputIcon
                   name="additionalInfo"
-                  label="معلومات إضافية"
+                  label={tFields("additionalInfo")}
                   type="text"
                   disabled={readOnly}
                 />
 
+                {/* Currency */}
                 <InputSelectCombo
                   name="curr"
-                  label="العملة"
+                  label={tFields("currency")}
                   options={currencyOptions}
-                  placeholder="اختر العملة"
+                  placeholder={tUi("currencyPlaceholder")}
                   width="w-full"
                   disabled={readOnly}
                 />
 
+                {/* Reference Number */}
                 <FormInputIcon
                   name="refferenceNumber"
-                  label="رقم المرجع"
+                  label={tFields("referenceNumber")}
                   type="text"
                   disabled={readOnly}
                 />
@@ -182,7 +209,7 @@ export default function CreditFacilityForm({
               {!readOnly && (
                 <div className="mt-4 flex justify-center gap-3">
                   <SubmitButton
-                    title={initialData ? "حفظ التغييرات" : "إضافة"}
+                    title={initialData ? tUi("saveChanges") : tUi("add")}
                     color="info-dark"
                     Icon={FaPaperPlane}
                     isSubmitting={isSubmitting}
@@ -196,7 +223,7 @@ export default function CreditFacilityForm({
         </Formik>
       </div>
 
-      {/* Error / Success modal (NEW) */}
+      {/* Modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

@@ -86,6 +86,8 @@ export const sidebarItems = [
     path: "",
     icon: () => null,
     children: [],
+    permissions: ["CompanyCanTransfer"],
+    enabledTransactionCategories: ["Transfers"],
   },
   {
     id: 8,
@@ -175,6 +177,8 @@ export const sidebarItems = [
     path: "",
     icon: () => null,
     children: [],
+    permissions: ["CompanyCanRequests"],
+    enabledTransactionCategories: ["Requests"],
   },
   // {
   //   id: 18,

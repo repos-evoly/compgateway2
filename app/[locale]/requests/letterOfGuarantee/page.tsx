@@ -1,139 +1,155 @@
+/* --------------------------------------------------------------------------
+ * app/[locale]/requests/letterOfGuarantee/page.tsx
+ * Complete, i18n-ready page component
+ * ----------------------------------------------------------------------- */
+
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import LetterOfGuaranteeForm from "./components/LetterOfGuaranteeForm";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+
+import { getLetterOfGuarantees, addLetterOfGuarantee } from "./services";
+
 import type {
   LetterOfGuaranteeApiItem,
   LetterOfGuaranteeApiResponse,
   TLetterOfGuarantee,
 } from "./types";
-import { getLetterOfGuarantees, addLetterOfGuarantee } from "./services";
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function LetterOfGuaranteePage() {
-  // Table data states
+  /* --------------------------------------------------------------
+   * Translation hooks
+   * -------------------------------------------------------------- */
+  const tCol = useTranslations("letterOfGuarantee.page.columns"); // table headers
+  const tUi = useTranslations("letterOfGuarantee.page.ui"); // misc UI strings
+  const tMsg = useTranslations("letterOfGuarantee.page.messages"); // modal texts
+
+  /* --------------------------------------------------------------
+   * Local state
+   * -------------------------------------------------------------- */
   const [data, setData] = useState<LetterOfGuaranteeApiItem[]>([]);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotal] = useState<number>(1);
+  const [currentPage, setPage] = useState<number>(1);
   const limit = 10;
 
-  // Searching
+  /* search */
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState("");
 
-  // Show/hide "Add" form
+  /* form / modal */
   const [showForm, setShowForm] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalOk, setModalOk] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMsg, setModalMsg] = useState("");
-  const [modalOk, setModalOk] = useState(false); // success ↔︎ error
+  const [loading, setLoading] = useState<boolean>(true);
 
-  /**
-   * Fetch data from server with (page, limit, searchTerm, searchBy).
-   * But only apply 'searchBy' if there's a non-empty searchTerm.
-   */
-  async function fetchData() {
+
+  /* --------------------------------------------------------------
+   * Fetch helper
+   * -------------------------------------------------------------- */
+  const fetchData = async () => {
+    setLoading(true); // Set loading state
     try {
-      // If user hasn't typed any searchTerm, ignore searchBy
-      const actualSearchBy = searchTerm ? searchBy : "";
-      const actualSearchTerm = searchTerm ? searchTerm : "";
-
-      const result: LetterOfGuaranteeApiResponse = await getLetterOfGuarantees(
+      const term = searchTerm.trim();
+      const res: LetterOfGuaranteeApiResponse = await getLetterOfGuarantees(
         currentPage,
         limit,
-        actualSearchTerm,
-        actualSearchBy
+        term,
+        term ? searchBy : ""
       );
-      setData(result.data);
-      setTotalPages(result.totalPages);
-    } catch (error) {
-      console.error("Failed to fetch letterOfGuarantee:", error);
-      setModalTitle("خطأ في الجلب");
+      setData(res.data);
+      setTotal(res.totalPages);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setModalTitle(tMsg("fetchErrorTitle"));
       setModalMsg(
-        error instanceof Error ? error.message : "تعذر تحميل البيانات."
+        err instanceof Error ? err.message : tMsg("fetchErrorGeneric")
       );
       setModalOk(false);
       setModalOpen(true);
+    } finally {
+      setLoading(false); // Reset loading state
     }
-  }
+  };
 
-  // On mount / whenever page or search changes => fetch
+  /* run on mount / deps change */
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, limit, searchTerm, searchBy]);
 
-  // Table columns
+  /* --------------------------------------------------------------
+   * Columns
+   * -------------------------------------------------------------- */
   const columns = [
-    { key: "accountNumber", label: "رقم الحساب" },
-    { key: "date", label: "التاريخ" },
-    { key: "amount", label: "المبلغ" },
-    { key: "purpose", label: "الغرض" },
-    { key: "curr", label: "العملة" },
-    { key: "type", label: "النوع" },
-    { key: "status", label: "الحالة" },
-    { key: "createdAt", label: "تاريخ الإنشاء" },
+    { key: "accountNumber", label: tCol("accountNumber") },
+    { key: "date", label: tCol("date") },
+    { key: "amount", label: tCol("amount") },
+    { key: "purpose", label: tCol("purpose") },
+    { key: "curr", label: tCol("currency") },
+    { key: "type", label: tCol("type") },
+    { key: "status", label: tCol("status") },
+    { key: "createdAt", label: tCol("createdAt") },
   ];
 
-  // Searching handlers
+  /* --------------------------------------------------------------
+   * Search handlers
+   * -------------------------------------------------------------- */
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (!term) {
-      setSearchBy("");
-    }
-    setCurrentPage(1);
+    if (!term) setSearchBy("");
+    setPage(1);
   };
 
   const handleDropdownSelect = (val: string) => {
-    if (searchTerm) {
-      setSearchBy(val);
-      setCurrentPage(1);
-    } else {
-      setSearchBy("");
-    }
+    if (searchTerm) setSearchBy(val);
+    else setSearchBy("");
   };
 
-  // Add form => actually posts to server with type="letterOfGuarantee"
+  /* --------------------------------------------------------------
+   * Add / submit handlers
+   * -------------------------------------------------------------- */
   const handleFormSubmit = async (newItem: TLetterOfGuarantee) => {
     try {
-      const { id, ...body } = newItem; // exclude "id"
-      console.log("Submitting new letterOfGuarantee:", id);
+      const { id, ...body } = newItem; // exclude id
+      console.log("Submitting new letter of guarantee:", id);
       await addLetterOfGuarantee(body);
-      setModalTitle("تم الحفظ");
-      setModalMsg("تم إنشاء خطاب الضمان بنجاح.");
+
+      setModalTitle(tMsg("savedTitle"));
+      setModalMsg(tMsg("savedMessage"));
       setModalOk(true);
       setModalOpen(true);
 
-      // After success => re-fetch
       fetchData();
       setShowForm(false);
-    } catch (error) {
-      setModalTitle("خطأ أثناء الإرسال");
+    } catch (err) {
+      setModalTitle(tMsg("submitErrorTitle"));
       setModalMsg(
-        error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الخطاب."
+        err instanceof Error ? err.message : tMsg("submitErrorGeneric")
       );
       setModalOk(false);
       setModalOpen(true);
     }
   };
 
-  const handleFormCancel = () => setShowForm(false);
-
-  // Double-click => detail page
-  // const handleRowDoubleClick = (rowIndex: number) => {
-  //   const item = data[rowIndex];
-  //   if (item && item.id) {
-  //     router.push(`/letterofguarantee/${item.id}`);
-  //   }
-  // };
-
+  /* --------------------------------------------------------------
+   * JSX
+   * -------------------------------------------------------------- */
   return (
     <div className="p-4">
+      {/* Add / grid toggle */}
       {showForm ? (
         <LetterOfGuaranteeForm
           onSubmit={handleFormSubmit}
-          onCancel={handleFormCancel}
+          onCancel={() => setShowForm(false)}
         />
       ) : (
         <CrudDataGrid
@@ -141,22 +157,26 @@ export default function LetterOfGuaranteePage() {
           columns={columns}
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={(page) => setCurrentPage(page)}
-          // Searching
+          onPageChange={setPage}
+          /* search */
           showSearchBar
           showSearchInput
           onSearch={handleSearch}
           showDropdown
           dropdownOptions={[
-            { value: "accountNumber", label: "رقم الحساب" },
-            { value: "type", label: "النوع" },
+            { value: "accountNumber", label: tCol("accountNumber") },
+            { value: "type", label: tCol("type") },
           ]}
           onDropdownSelect={handleDropdownSelect}
-          // Add button
+          /* add button */
           showAddButton
+          addButtonLabel={tUi("addButton")} /* if CrudDataGrid supports label */
           onAddClick={() => setShowForm(true)}
+          loading={loading}
         />
       )}
+
+      {/* Modal feedback */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalOk}
@@ -165,7 +185,7 @@ export default function LetterOfGuaranteePage() {
         onClose={() => setModalOpen(false)}
         onConfirm={() => {
           setModalOpen(false);
-          if (modalOk) fetchData(); // refresh after successful create
+          if (modalOk) fetchData();
         }}
       />
     </div>

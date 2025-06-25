@@ -31,6 +31,8 @@ export default function ForeignTransfersListPage() {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
+
 
   // Each page => limit=10
   const limit = 10;
@@ -42,6 +44,7 @@ export default function ForeignTransfersListPage() {
   }, [currentPage, searchTerm, searchBy]);
 
   async function fetchData() {
+    setLoading(true); // Set loading state
     try {
       const response = await getForeignTransfers(
         currentPage,
@@ -85,6 +88,8 @@ export default function ForeignTransfersListPage() {
       setModalMessage(msg);
       setModalSuccess(false);
       setModalOpen(true);
+    } finally {
+      setLoading(false); // Reset loading state
     }
   }
 
@@ -181,6 +186,7 @@ export default function ForeignTransfersListPage() {
           // Show "Add" button => open form wizard
           showAddButton
           onAddClick={handleAddClick}
+          loading={loading}
         />
       )}
       <ErrorOrSuccessModal

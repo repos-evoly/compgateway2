@@ -122,7 +122,9 @@
     "changeStatus": "Change Status",
     "status": "Status",
     "statusRequired": "Status is required",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "createSuccessTitle": "Success",
+    "createSuccessMsg": "CBL request created successfully."
   },
 
   "signaturePad": {
@@ -164,7 +166,9 @@
     "footer": "",
     "refNum": "Reference Number",
     "date": "Date",
-    "payType": "Payment Type"
+    "payType": "Payment Type",
+    "createSuccessTitle": "Success",
+    "createSuccessMsg": "RTGS request created successfully."
   },
 
   "checkForm": {
@@ -200,7 +204,9 @@
     "changeStatusTitle": "Change Check Status",
     "approved": "Approved",
     "declined": "Declined",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "successTitle": "Success",
+    "successMessage": "Check request submitted successfully."
   },
 
   "CheckRequest": {
@@ -233,7 +239,9 @@
     "actions": "Actions",
     "amountTable": "",
     "delegate": "Representative",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "successTitle": "Success",
+    "successMessage": "Check request submitted successfully."
   },
 
   "notFound": {
@@ -298,7 +306,27 @@
     "valueMustBePositive": "Value must be positive",
     "requiredDescription": "Description is required",
     "commissionPaidBy": "Commission paid by",
-    "recipient": "Recipient"
+    "recipient": "Recipient",
+    "economicSector": "Economic Sector",
+    "requiredEconomicSector": "Economic Sector is required",
+    "modal": {
+      "title": "Transfer Confirmation",
+      "subtitle": "Please review the details carefully",
+      "amount": "Transfer Amount",
+      "amountPlusFee": "Amount + Fee",
+      "from": "FROM",
+      "to": "TO",
+      "transactionDetails": "Transaction Details",
+      "description": "Description",
+      "noDescription": "No description provided",
+      "transferFee": "Transfer Fee",
+      "feeMessage": "A fee of {amount} {currency} will be charged to the {payer}",
+      "feePayerSender": "sender",
+      "feePayerRecipient": "recipient",
+      "cancel": "Cancel",
+      "confirm": "Confirm Transfer"
+    }
+
   },
 
   "statementOfAccount": {
@@ -525,7 +553,9 @@
     "nonFinancialCommitment": "Non‑Financial Commitment",
 
     "isRequired": "Required",
-    "mustBeNumber": "Must be a number"
+    "mustBeNumber": "Must be a number",
+    "createSuccessTitle": "Success",
+    "createSuccessMsg": "Bank statement request created successfully."
   },
 
   "dashboard": {
@@ -533,7 +563,12 @@
     "debitBalance": "Debit Balance",
     "availableBalance": "Available Balance",
     "failedToFetchData": "Failed to fetch data",
-    "noDataAvailable": "No data available"
+    "noDataAvailable": "No data available",
+    "mostActiveSector": "Most Active Sector",
+    "userCount": "User Count",
+    "totalTransfers": "Total Transfers",
+    "transferVolume": "Transfer Volume",
+    "loading": "Loading..."
   },
 
   "employees": {
@@ -594,5 +629,111 @@
     "code": "Code",
     "rate": "Exchange Rate",
     "description": "Description"
+  },
+  "letterOfGuarantee": {
+    "form": {
+      "fields": {
+        "accountNumber": "Account Number",
+        "date": "Date",
+        "amount": "Amount",
+        "purpose": "Purpose",
+        "additionalInfo": "Additional Info",
+        "currency": "Currency",
+        "referenceNumber": "Reference Number"
+      },
+      "validation": {
+        "required": "This field is required",
+        "amountMustBeNumber": "Amount must be a number",
+        "amountPositive": "Amount must be positive",
+        "amountExceedsBalance": "Amount exceeds available balance"
+      },
+      "ui": {
+        "availableBalance": "Available balance: {amount}",
+        "currencyPlaceholder": "Select a currency",
+        "saveChanges": "Save changes",
+        "add": "Add",
+        "savedTitle": "Saved",
+        "savedMessage": "Letter of guarantee saved successfully.",
+        "errorTitle": "Error",
+        "unexpectedError": "An unexpected error occurred.",
+        "accountFetchError": "Failed to fetch account data"
+      }
+    },
+    "page": {
+      "columns": {
+        "accountNumber": "Account Number",
+        "date": "Date",
+        "amount": "Amount",
+        "purpose": "Purpose",
+        "currency": "Currency",
+        "type": "Type",
+        "status": "Status",
+        "createdAt": "Created At"
+      },
+      "ui": {
+        "addButton": "Add"
+      },
+      "messages": {
+        "fetchErrorTitle": "Fetch Error",
+        "fetchErrorGeneric": "Unable to load data.",
+        "savedTitle": "Saved",
+        "savedMessage": "Letter of guarantee created successfully.",
+        "submitErrorTitle": "Submission Error",
+        "submitErrorGeneric": "An error occurred while creating the letter."
+      }
+    }
+  
+  },
+  "creditFacility": {
+    "form": {
+      "fields": {
+        "accountNumber": "Account Number",
+        "date": "Date",
+        "amount": "Amount",
+        "purpose": "Purpose",
+        "additionalInfo": "Additional Info",
+        "currency": "Currency",
+        "referenceNumber": "Reference Number"
+      },
+      "validation": {
+        "required": "This field is required",
+        "amountMustBeNumber": "Amount must be a number"
+      },
+      "ui": {
+        "currencyPlaceholder": "Select a currency",
+        "add": "Add",
+        "saveChanges": "Save changes",
+        "savedTitle": "Saved",
+        "savedMessage": "Data saved successfully.",
+        "errorTitle": "Error",
+        "currencyFetchError": "Failed to fetch currencies.",
+        "submitErrorGeneric": "An error occurred during submission."
+      }
+    },
+    "page": {
+      "columns": {
+        "accountNumber": "Account Number",
+        "date": "Date",
+        "amount": "Amount",
+        "purpose": "Purpose",
+        "currency": "Currency",
+        "type": "Type",
+        "status": "Status",
+        "createdAt": "Created At"
+      },
+      "ui": {
+        "addButton": "Add"
+      },
+      "messages": {
+        "fetchErrorTitle": "Fetch Error",
+        "fetchErrorGeneric": "Unable to load data.",
+        "savedTitle": "Saved",
+        "savedMessage": "Credit facility added successfully.",
+        "submitErrorTitle": "Submission Error",
+        "submitErrorGeneric": "An error occurred while adding the record."
+      }
+    }
   }
+
+
 }

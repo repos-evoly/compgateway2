@@ -4,13 +4,14 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import FormTypeSelect from "./components/FormTypeSelect";
+// import FormTypeSelect from "./components/FormTypeSelect";
 import InternalForm from "./components/InternalForm";
-import BetweenForm from "./components/BetweenForm";
+// import BetweenForm from "./components/BetweenForm";
 import { TransfersApiResponse } from "./types";
 
 // The new API function
 import { getTransfers } from "./services";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 const Page = () => {
   const t = useTranslations("internalTransferForm");
@@ -21,22 +22,34 @@ const Page = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const limit = 10; // or whichever page size
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   // Show/hide form
   const [showForm, setShowForm] = useState(false);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
-  const [formType, setFormType] = useState("internal");
+  // const [formType, setFormType] = useState("internal");
 
   // We'll create a function to fetch data
   const fetchTransfers = useCallback(async () => {
+    setLoading(true); // Set loading state
     try {
       const result = await getTransfers(currentPage, limit, searchTerm);
       setData(result.data);
       setTotalPages(result.totalPages);
     } catch (err) {
-      console.error("Failed to fetch transfers:", err);
+      const msg = err instanceof Error ? err.message : t("unknownError");
+      setModalTitle(t("fetchErrorTitle")); // use your i18n keys
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
+    } finally {
+      setLoading(false); // Reset loading state
     }
-  }, [currentPage, limit, searchTerm]);
+  }, [currentPage, limit, searchTerm, t]);
 
   // On mount / whenever page or searchTerm changes => fetch data
   useEffect(() => {
@@ -78,6 +91,11 @@ const Page = () => {
     setShowForm(false);
     // Re-fetch data
     fetchTransfers();
+
+    setModalTitle(t("createSuccessTitle"));
+    setModalMessage(t("createSuccessMsg"));
+    setModalSuccess(true);
+    setModalOpen(true);
   };
 
   return (
@@ -101,6 +119,7 @@ const Page = () => {
           // Add button
           showAddButton
           onAddClick={handleAddClick}
+          loading={loading}
         />
       ) : (
         <div className="bg-white rounded">
@@ -112,24 +131,28 @@ const Page = () => {
               {t("back")}
             </button>
 
-            <FormTypeSelect
+            {/* <FormTypeSelect
               selectedFormType={formType}
               onFormTypeChange={setFormType}
-            />
+            /> */}
           </div>
 
           <div>
-            {formType === "internal" ? (
-              <InternalForm
-                initialData={selectedRowIndex !== null ? {} : {}}
-                onSuccess={handleTransferCreated}
-              />
-            ) : (
-              <BetweenForm />
-            )}
+            <InternalForm
+              initialData={selectedRowIndex !== null ? {} : {}}
+              onSuccess={handleTransferCreated}
+            />
           </div>
         </div>
       )}
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
+      />
     </div>
   );
 };

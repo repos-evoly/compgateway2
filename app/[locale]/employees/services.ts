@@ -268,3 +268,4 @@ export async function updateEmployeePermissions(
     await throwApiError(res, "Failed to fetch permissions.");
   }
 }
+

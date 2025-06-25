@@ -9,7 +9,12 @@ import { FaTrash } from "react-icons/fa";
 import { Formik, Form, useFormikContext } from "formik";
 
 import { getCurrencies } from "@/app/[locale]/currencies/services";
-import { getTransfersCommision, createTransfer } from "../services";
+import {
+  getTransfersCommision,
+  createTransfer,
+  getEconomicSectors,
+  checkAccount,
+} from "../services";
 
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import ResetButton from "@/app/components/FormUI/ResetButton";
@@ -26,6 +31,7 @@ import type {
   InternalFormValues,
   AdditionalData,
 } from "../types";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 /* -------------------------------------------------------------------------- */
 /*                               Helper                                       */
@@ -81,6 +87,11 @@ function InternalForm({
 
   const isNew = !initialData || Object.keys(initialData).length === 0;
   const [fieldsDisabled, setFieldsDisabled] = useState(viewOnly || !isNew);
+  const [toError, setToError] = useState<string | undefined>(undefined);
+  const [transferType, setTransferType] = useState<string>();
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
 
   /* ---------------- account list from cookie ---------------- */
   const [accountOptions, setAccountOptions] = useState<
@@ -111,7 +122,23 @@ function InternalForm({
     additionalData?: AdditionalData;
     commissionAmount: number;
     commissionCurrency: string;
+    displayAmount: number;
   } | null>(null);
+
+  const [sectorOptions, setSectorOptions] = useState<InputSelectComboOption[]>(
+    []
+  );
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getEconomicSectors(1, 10000); // limit 10 000
+        setSectorOptions(res.data.map((s) => ({ value: s.id, label: s.name })));
+      } catch (err) {
+        console.error("Fetch economic sectors failed:", err);
+      }
+    })();
+  }, []);
 
   /* ---------------- values & schema ------------------------- */
   const defaults: ExtendedValues = {
@@ -120,7 +147,8 @@ function InternalForm({
     value: 0,
     description: "",
     commissionOnRecipient: false,
-    transactionCategoryId: 1,
+    transactionCategoryId: 2,
+    economicSectorId: undefined, // ⬅️ new
   };
   const initialValues: ExtendedValues = { ...defaults, ...initialData };
 
@@ -139,6 +167,7 @@ function InternalForm({
     description: Yup.string().required(t("requiredDescription")),
     commissionOnRecipient: Yup.boolean().required(),
     transactionCategoryId: Yup.number().required(),
+    economicSectorId: Yup.number().required(t("requiredEconomicSector")),
   });
 
   /* -------- open confirmation modal (skipped in viewOnly) --- */
@@ -148,23 +177,33 @@ function InternalForm({
     try {
       const currencyCode = vals.from.slice(-3);
       const currResp = await getCurrencies(1, 1, currencyCode, "code");
-      const currencyId = currResp.data[0]?.id ?? 0;
       const currencyDesc = currResp.data[0]?.description ?? currencyCode;
 
       const servicePackageId = Number(Cookies.get("servicePackageId") ?? 0);
       const commResp = await getTransfersCommision(
         servicePackageId,
-        vals.transactionCategoryId ?? 1,
-        currencyId
+        vals.transactionCategoryId ?? 2
       );
 
-      const pctAmt = (commResp.commissionPct * vals.value) / 100;
-      const fee = Math.max(pctAmt, commResp.feeFixed);
+      console.log("Commission response:", commResp);
+
+      const isB2B = transferType === "B2B";
+      const pct = isB2B ? commResp.b2BCommissionPct : commResp.b2CCommissionPct;
+      const fixed = isB2B ? commResp.b2BFixedFee : commResp.b2CFixedFee;
+
+      /* calculate final fee */
+      const pctAmt = (pct * vals.value) / 100;
+      const fee = Math.max(pctAmt, fixed);
 
       setModalData({
         formikData: vals,
         commissionAmount: fee,
         commissionCurrency: currencyDesc,
+
+        // NEW → what the user should see on top of the modal
+        displayAmount: vals.commissionOnRecipient
+          ? vals.value
+          : vals.value + fee,
       });
       setModalOpen(true);
     } catch (err) {
@@ -182,12 +221,14 @@ function InternalForm({
       description,
       commissionOnRecipient,
       transactionCategoryId,
+      economicSectorId,
     } = modalData.formikData;
 
     try {
       const currencyId = Number(from.slice(-3));
       await createTransfer({
         transactionCategoryId,
+        economicSectorId,
         fromAccount: from,
         toAccount: to,
         amount: value,
@@ -198,9 +239,35 @@ function InternalForm({
       onSubmit?.(modalData.formikData);
       onSuccess?.();
     } catch (err) {
-      console.error(err);
+      const msg = err instanceof Error ? err.message : t("unknownError");
+      setAlertTitle(t("createErrorTitle")); // e.g. "Creation Error"
+      setAlertMessage(msg);
+      setAlertOpen(true);
     } finally {
       setModalOpen(false);
+    }
+  };
+
+  const handleCheckAccount = async (value: string) => {
+    try {
+      const account = await checkAccount(value);
+      setToError(undefined); // clear any old error
+
+      setTransferType(account[0].transferType);
+      console.log("Account check successful:", account);
+    } catch (err: unknown) {
+      console.error("Account check failed:", err);
+
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message: unknown }).message === "string"
+      ) {
+        setToError((err as { message: string }).message);
+      } else {
+        setToError(t("accountNotFound"));
+      }
     }
   };
 
@@ -226,11 +293,14 @@ function InternalForm({
                 disabled={fieldsDisabled}
                 maskingFormat="0000-000000-000"
               />
+
               <FormInputIcon
                 name="to"
                 label={t("to")}
                 maskingFormat="0000-000000-000"
                 disabled={fieldsDisabled}
+                onBlurAdditional={handleCheckAccount}
+                errorMessage={toError}
               />
               <FormInputIcon
                 name="value"
@@ -239,6 +309,12 @@ function InternalForm({
                 disabled={fieldsDisabled}
               />
             </div>
+            <InputSelectCombo
+              name="economicSectorId"
+              label={t("economicSector")}
+              options={sectorOptions}
+              disabled={fieldsDisabled}
+            />
 
             {/* Row 2 */}
             <div className="mt-4">
@@ -289,6 +365,7 @@ function InternalForm({
                     commissionOnRecipient: true,
                     transactionCategoryId: true,
                   }}
+                  disabled={!!toError} // ⬅️ block submit if error
                 />
               </div>
             )}
@@ -303,10 +380,20 @@ function InternalForm({
           formData={modalData.formikData}
           commissionAmount={modalData.commissionAmount}
           commissionCurrency={modalData.commissionCurrency}
+          displayAmount={modalData.displayAmount}
           onClose={() => setModalOpen(false)}
           onConfirm={confirmModal}
         />
       )}
+
+      <ErrorOrSuccessModal
+        isOpen={alertOpen}
+        isSuccess={false}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={() => setAlertOpen(false)}
+        onConfirm={() => setAlertOpen(false)}
+      />
     </div>
   );
 }

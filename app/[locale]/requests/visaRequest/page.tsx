@@ -31,6 +31,8 @@ export default function VisaRequestListPage() {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
+
 
   /*─────────────────────────── Fetch list  ─────────────────────────────────*/
   useEffect(() => {
@@ -39,6 +41,7 @@ export default function VisaRequestListPage() {
   }, [currentPage, searchTerm]);
 
   async function fetchData() {
+    setLoading(true); // Set loading state
     try {
       const res = await getVisaRequests(currentPage, limit, searchTerm);
       setApiData(res.data);
@@ -49,6 +52,8 @@ export default function VisaRequestListPage() {
       setModalMessage(msg);
       setModalSuccess(false);
       setModalOpen(true);
+    } finally {
+      setLoading(false); // Reset loading state
     }
   }
 
@@ -116,6 +121,7 @@ export default function VisaRequestListPage() {
           }}
           showAddButton
           onAddClick={handleAddClick}
+          loading={loading}
         />
       )}
 

@@ -116,11 +116,19 @@ export default function RegisterForm({
       email: Yup.string()
         .email("صيغة بريد إلكتروني غير صالحة")
         .required("البريد الإلكتروني مطلوب"),
-      password: Yup.string().required("كلمة المرور مطلوبة"),
+      password: Yup.string()
+        .required("كلمة المرور مطلوبة")
+        .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل")
+        .matches(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{6,}$/,
+          "يجب أن تحتوي كلمة المرور على حرف صغير، حرف كبير، رقم، ورمز خاص"
+        ),
     }),
     firstName: Yup.string().required("الاسم الأول مطلوب"),
     lastName: Yup.string().required("الاسم الأخير مطلوب"),
-    phone: Yup.string().required("رقم الهاتف مطلوب"),
+    phone: Yup.string()
+      .required("رقم الهاتف مطلوب")
+      .min(8, "رقم الهاتف قصير جداً"),
   });
 
   // Pick a default label if none is specified

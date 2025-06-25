@@ -222,6 +222,7 @@ export type AddButtonProps =
       onSearch?: (searchValue: string) => void;
       onDropdownSelect?: (optionValue: string ) => void;
       dropdownOptions?: DropdownOption[];
+      loading?: boolean;
     } & ActionsProps & {
       isModal?: boolean;
       modalComponent?: React.ReactNode;

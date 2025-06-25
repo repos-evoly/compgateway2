@@ -11,6 +11,7 @@ const Page = () => {
   const [data, setData] = useState<T[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Each page shows 10 items
   const limit = 10;
@@ -35,6 +36,7 @@ const Page = () => {
   }, [currentPage, searchTerm, searchBy]);
 
   async function fetchData() {
+    setLoading(true); // Set loading state
     try {
       // We pass searchTerm + searchBy, along with page & limit
       const response = await getCurrencies(
@@ -58,6 +60,8 @@ const Page = () => {
       setTotalPages(response.totalPages);
     } catch (err) {
       console.error("Error fetching currencies:", err);
+    } finally {
+      setLoading(false); // Reset loading state
     }
   }
 
@@ -91,6 +95,7 @@ const Page = () => {
           setSearchBy(val);
           setCurrentPage(1); // reset to first page if user changes search field
         }}
+        loading={loading}
       />
     </div>
   );

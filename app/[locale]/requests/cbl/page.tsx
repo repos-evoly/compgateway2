@@ -30,6 +30,8 @@ const CBLListPage: React.FC = () => {
   // Search
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchBy, setSearchBy] = useState<string>("partyName"); // default or "status"
+  const [loading, setLoading] = useState<boolean>(true);
+
 
   // Add form toggle
   const [showForm, setShowForm] = useState(false);
@@ -39,6 +41,7 @@ const CBLListPage: React.FC = () => {
   // -----------------------------------------
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true); // Set loading state
       try {
         const response = await getCblRequests(
           currentPage,
@@ -51,6 +54,8 @@ const CBLListPage: React.FC = () => {
         setTotalPages(response.totalPages);
       } catch (error) {
         console.error("Failed to fetch CBL requests:", error);
+      } finally {
+        setLoading(false); // Reset loading state
       }
     };
 
@@ -135,6 +140,7 @@ const CBLListPage: React.FC = () => {
           // Show add button => local "Add"
           showAddButton
           onAddClick={handleAddClick}
+          loading={loading}
         />
       )}
     </div>

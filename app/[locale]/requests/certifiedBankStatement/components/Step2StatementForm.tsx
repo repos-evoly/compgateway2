@@ -186,6 +186,11 @@ export function Step2StatementForm({ readOnly = false }: Props) {
             startIcon={icon}
             type={type}
             disabled={readOnly}
+            maskingFormat={
+              name.toLocaleLowerCase().includes("accountnumber")
+                ? "0000-000000-000"
+                : ""
+            }
           />
         );
       })}

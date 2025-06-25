@@ -25,10 +25,12 @@ const RTGSListPage: React.FC = () => {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   /* ─────────────────────────── Fetch paginated data ─────────────────────── */
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
         const res = await getRtgsRequests(currentPage, limit);
         setData(res.data);
@@ -39,6 +41,8 @@ const RTGSListPage: React.FC = () => {
         setModalMessage(msg);
         setModalSuccess(false);
         setModalOpen(true);
+      } finally {
+        setLoading(false);
       }
     })();
   }, [currentPage, limit, t]);
@@ -103,6 +107,7 @@ const RTGSListPage: React.FC = () => {
           onPageChange={setCurrentPage}
           showAddButton
           onAddClick={handleAddClick}
+          loading={loading}
         />
       )}
 

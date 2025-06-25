@@ -3,65 +3,62 @@
 
 import React, { useState, useEffect } from "react";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import type { EmployeesFormPayload } from "./types";
 import EmployeeForm from "./components/EmployeesForm";
 import { getEmployees, createEmployee } from "./services";
-import type { CompanyEmployee } from "./types";
+import type { EmployeesFormPayload, CompanyEmployee } from "./types";
 import { FaLock } from "react-icons/fa";
 import type { Action } from "@/types";
 import { useRouter } from "next/navigation";
-
-// Import the modal
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { useTranslations } from "next-intl";
 
 export default function EmployeesPage() {
+  /* --------------------------------------------------
+   * Local state
+   * -------------------------------------------------- */
   const [employees, setEmployees] = useState<CompanyEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
-  // Modal state
+  /* Modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
   const t = useTranslations("employees");
-
   const router = useRouter();
-  useEffect(() => {
-    async function fetchAll() {
-      try {
-        const data = await getEmployees();
-        setEmployees(data);
-      } catch (err) {
-        /* show the error instead of just console.error */
-        const msg =
-          err instanceof Error ? err.message : "An unknown error occurred.";
-  
-        setModalTitle("Fetch Error");
-        setModalMessage(msg);
-        setModalSuccess(false);
-        setModalOpen(true);
-      } finally {
-        setLoading(false);
-      }
+
+  /* --------------------------------------------------
+   * Data helpers
+   * -------------------------------------------------- */
+  const fetchEmployees = async () => {
+    try {
+      const data = await getEmployees();
+      setEmployees(data);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "An unknown error occurred.";
+      setModalTitle("Fetch Error");
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
+    } finally {
+      setLoading(false);
     }
-    fetchAll();
+  };
+
+  useEffect(() => {
+    fetchEmployees();
   }, []);
-  
 
-  if (loading) {
-    return <div className="p-4">Loading employees...</div>;
-  }
-
-  // Convert permissions[] => comma-separated string for display
+  /* --------------------------------------------------
+   * Datagrid config
+   * -------------------------------------------------- */
   const rowData = employees.map((emp) => ({
     ...emp,
     permissions: emp.permissions.join(", "),
   }));
-
-  console.log("Employees Data =>", rowData);
 
   const columns = [
     { key: "id", label: t("id") },
@@ -79,12 +76,14 @@ export default function EmployeesPage() {
       tip: t("editPermissions"),
       icon: <FaLock />,
       onClick: (row) => {
-        // push to dynamic route => /employees/permissions/[id]/[roleId]
         router.push(`/employees/permissions/${row.id}/${row.roleId}`);
       },
     },
   ];
 
+  /* --------------------------------------------------
+   * Handlers
+   * -------------------------------------------------- */
   const handleAddClick = () => {
     setShowForm(true);
   };
@@ -100,20 +99,21 @@ export default function EmployeesPage() {
         phone: values.phone || "",
         roleId: values.roleId || 0,
       });
-      console.log("New Employee Submitted =>", newEmployee);
 
-      // Show success modal
+      /* Update grid instantly */
+      setEmployees((prev) => [...prev, newEmployee]);
+
+      /* Success modal */
       setModalTitle("Employee Created");
       setModalMessage("The employee was created successfully.");
       setModalSuccess(true);
       setModalOpen(true);
-    } catch (err) {
-      // Show error modal; do NOT hide the form or reset it
-      // console.error("Failed to create employee:", err);
 
+      /* Return to grid */
+      setShowForm(false);
+    } catch (err) {
       const errorMsg =
         err instanceof Error ? err.message : "An unknown error occurred.";
-
       setModalTitle("Creation Error");
       setModalMessage(errorMsg);
       setModalSuccess(false);
@@ -121,19 +121,12 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
-  };
+  const handleModalClose = () => setModalOpen(false);
+  const handleModalConfirm = () => setModalOpen(false);
 
-  const handleModalConfirm = () => {
-    if (modalSuccess) {
-      // If success => refresh page and hide form
-      router.refresh();
-      setShowForm(false);
-    }
-    setModalOpen(false);
-  };
-
+  /* --------------------------------------------------
+   * JSX
+   * -------------------------------------------------- */
   return (
     <div className="p-4 space-y-8">
       {!showForm && (
@@ -150,6 +143,7 @@ export default function EmployeesPage() {
           onAddClick={handleAddClick}
           showActions
           actions={actions}
+          loading={loading}
         />
       )}
 
@@ -162,7 +156,6 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      {/* Render the modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

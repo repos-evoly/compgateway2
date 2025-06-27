@@ -122,7 +122,7 @@ export async function forgotPasswordHandler(
       throw new Error("فشل إرسال طلب إعادة تعيين كلمة المرور.");
     }
 
-    alert("يرجى التواصل مع الجهة المسؤولة للحصول على الرمز اللازم لتغيير كلمة المرور.");
+    alert("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.");
 
     if (onSuccess) {
       onSuccess(values.email);
@@ -269,7 +269,7 @@ export async function loginRoutingHandler(
 
   // Route based on companyStatus
   if (userData.companyStatus === "approved") {
-    router.push("/statement-of-account");
+    router.push("/dashboard");
   } else if (userData.companyStatus === "missingInformation" && userData.isCompanyAdmin) {
     const encodedMsg = encodeURIComponent(userData.companyStatusMessage || "");
     router.push(`/auth/register/${userData.companyCode}?msg=${encodedMsg}`);

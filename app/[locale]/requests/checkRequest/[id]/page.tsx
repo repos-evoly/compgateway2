@@ -8,6 +8,7 @@ import CheckRequestForm from "../components/CheckRequestForm";
 import { getCheckRequestById } from "../services";
 import { TCheckRequestValues, TCheckRequestFormValues } from "../types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 const CheckRequestDetailPage = () => {
   const { id } = useParams(); // /checkrequest/[id]
@@ -40,7 +41,7 @@ const CheckRequestDetailPage = () => {
   }, [id, t]); // ← added t
 
   if (loading) {
-    return <div className="p-4">{t("loading")}</div>;
+    return <LoadingPage />;
   }
 
   if (!checkData) {

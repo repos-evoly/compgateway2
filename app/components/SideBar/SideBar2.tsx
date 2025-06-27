@@ -143,10 +143,24 @@ const Sidebar = () => {
     window.location.assign(newPath);
   };
 
-  const handleLogout = () => {
-    document.cookie = "accessToken=; max-age=0; path=/;";
-    document.cookie = "refreshToken=; max-age=0; path=/;";
-    document.cookie = "kycToken=; max-age=0; path=/;";
+  const COOKIE_NAMES = [
+    "accessToken",
+    "refreshToken",
+    "kycToken",
+    "statementAccounts",
+    "companyCode",
+    "permissions",
+    "servicePackageId",
+    "enabledTransactionCategories",
+  ] as const; // ensures this is a readonly tuple of string literals
+
+  const CLEAR_OPTS = "max-age=0; path=/;";
+
+  const handleLogout = (): void => {
+    COOKIE_NAMES.forEach((name) => {
+      document.cookie = `${name}=; ${CLEAR_OPTS}`;
+    });
+
     window.location.reload();
   };
 

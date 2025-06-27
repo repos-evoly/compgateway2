@@ -9,6 +9,7 @@ import { getLetterOfGuaranteeById } from "../services";
 
 // ⬇️ NEW: modal import
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 /**
  * Detail/Edit page for a single letterOfGuarantee:
@@ -91,8 +92,7 @@ export default function LetterOfGuaranteeDetailPage() {
   const handleCancel = () => router.push("/letterofguarantee");
 
   /* ────────── ui states ──────────── */
-  if (loading) return <div className="p-4">جاري التحميل...</div>;
-
+  if (loading) return <LoadingPage />;
   if (error && !modalOpen)
     return (
       <div className="p-4 text-red-500">

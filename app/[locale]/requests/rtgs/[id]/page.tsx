@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import RTGSForm from "../components/RTGSForm";
 import { getRtgsRequestById } from "../services";
 import { TRTGSFormValues, TRTGSValues } from "../types";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 /**
  * RTGS Detail page => /rtgs/[id]
@@ -37,7 +38,8 @@ const RtgsDetailPage: React.FC = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="p-4">{t("loading")}</div>;
+    return <LoadingPage />;
+
   }
 
   if (!item) {

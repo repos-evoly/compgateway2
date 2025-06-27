@@ -11,6 +11,7 @@ import type {
   ForeignTransferDetailResponse,
 } from "../types";
 import ForeignTransfersForm from "../components/ForeignTransfersForm";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 /**
  * A page to display/edit a single foreign transfer by ID.
@@ -65,7 +66,7 @@ export default function ForeignTransfersDetailPage() {
   }
 
   if (loading) {
-    return <p className="p-4">{t("loading")}</p>;
+    return <LoadingPage />;
   }
   if (error) {
     return (

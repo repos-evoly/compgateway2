@@ -8,6 +8,7 @@ import type { TCreditFacility } from "../types";
 import { getCreditFacilityById } from "../services";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
+import LoadingPage from "@/app/components/reusable/Loading";
 
 /**
  * Detail/Edit page for a single credit facility:
@@ -70,7 +71,7 @@ export default function CreditFacilityDetailPage() {
 
   /* ─── Loading / error fallback in page view ──────────────── */
   if (loading) {
-    return <div className="p-4">جاري التحميل...</div>;
+    return <LoadingPage />;
   }
 
   if (!facilityData) {

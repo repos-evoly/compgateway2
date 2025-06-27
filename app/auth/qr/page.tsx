@@ -5,13 +5,13 @@ import QRCodeDisplay from "@/app/auth/login/components/Qr"; // Adjust the path i
 import AuthHeader from "@/app/auth/components/AuthHeader"; // Import the new header component
 
 const QRPage = () => {
-  const [email, setEmail] = useState<string | null>(null);
+  const [login, setlogin] = useState<string | null>(null);
 
   useEffect(() => {
-    // Retrieve email from cookies
-    const storedEmail = localStorage.getItem("auth_login");
-    if (storedEmail) {
-      setEmail(storedEmail);
+    // Retrieve login from cookies
+    const storedlogin = localStorage.getItem("auth_login");
+    if (storedlogin) {
+      setlogin(storedlogin);
       // Clear the cookie after retrieval for security
       document.cookie =
         "auth_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -29,7 +29,7 @@ const QRPage = () => {
 
       {/* QR Code Display */}
       <div className="flex-grow flex items-center justify-center">
-        {email ? <QRCodeDisplay /> : <p>جاري تحميل البريد الإلكتروني...</p>}
+        {login ? <QRCodeDisplay /> : <p>جاري تحميل البريد الإلكتروني...</p>}
       </div>
     </div>
   );

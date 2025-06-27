@@ -27,6 +27,7 @@ import {
   FiPackage,
 } from "react-icons/fi";
 import { MdError } from "react-icons/md";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function DashboardPage() {
   /* ------------------------------------------------------------------ */
@@ -103,14 +104,8 @@ export default function DashboardPage() {
   }
 
   if (loadingAccounts || loadingStats) {
-    return (
-      <div className="p-3">
-        <div className="bg-info-dark text-white p-3 rounded shadow-md flex items-center">
-          <FiInfo className="text-xl mr-2" />
-          <p className="font-bold text-sm">{t("loading")}</p>
-        </div>
-      </div>
-    );
+    /* Use the reusable full-screen loader */
+    return <LoadingPage />;
   }
 
   /* ------------------------------------------------------------------ */

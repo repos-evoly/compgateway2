@@ -6,6 +6,7 @@ import type { EmployeesFormPayload } from "../types";
 import EmployeeForm from "../components/EmployeesForm";
 import { getEmployeeById, editEmployee } from "../services";
 import type { CompanyEmployee } from "../types";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function SingleEmployeePage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function SingleEmployeePage() {
   }, [numericId]);
 
   if (loading) {
-    return <div className="p-4">Loading employee...</div>;
+    return <LoadingPage />;
   }
 
   if (!employee) {

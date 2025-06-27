@@ -8,6 +8,7 @@ import CheckbookForm from "../components/CheckbookForm";
 import { TCheckbookValues, TCheckbookFormValues } from "../types";
 import { getCheckbookRequestById } from "../services";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 /**
  * Detail/Edit page for a single checkbook request.
@@ -48,11 +49,7 @@ const CheckbookDetailPage: React.FC = () => {
 
   // We'll show a loading indicator if data is not yet fetched
   if (loading) {
-    return (
-      <div className="p-4">
-        <p>{t("loading")}</p>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   // If there's an error or no data

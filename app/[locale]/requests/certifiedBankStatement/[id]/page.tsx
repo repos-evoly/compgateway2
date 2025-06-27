@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import CertifiedBankStatementForm from "../components/CertifiedBankStatementForm";
 import { getCertifiedBankStatementById } from "../services";
 import type { CertifiedBankStatementRequestWithID } from "../types";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function CertifiedBankStatementDetailPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function CertifiedBankStatementDetailPage() {
   }
 
   if (loading) {
-    return <div className="p-4">Loading statement data...</div>;
+    return <LoadingPage />;
   }
 
   if (!rowData) {

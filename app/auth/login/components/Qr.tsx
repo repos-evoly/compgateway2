@@ -28,7 +28,7 @@ const Modal = ({
 };
 
 const QRCodeDisplay: React.FC = () => {
-  const [email, setEmail] = useState<string | null>(null);
+  const [login, setlogin] = useState<string | null>(null);
   const [qrCodePath, setQrCodePath] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,19 +38,19 @@ const QRCodeDisplay: React.FC = () => {
     // Clear any existing QR code when component mounts
     setQrCodePath(null);
 
-    const storedEmail = localStorage.getItem("auth_login");
-    if (storedEmail) {
-      console.log("Retrieved email from local storage:", storedEmail);
-      setEmail(storedEmail);
+    const storedlogin = localStorage.getItem("auth_login");
+    if (storedlogin) {
+      console.log("Retrieved login from local storage:", storedlogin);
+      setlogin(storedlogin);
     }
   }, []);
 
   useEffect(() => {
-    if (!email) return;
+    if (!login) return;
 
     const fetchQRCode = async () => {
       try {
-        console.log("Fetching QR code for email:", email);
+        console.log("Fetching QR code for login:", login);
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_AUTH_API}/enable-2fa`,
           {
@@ -59,7 +59,7 @@ const QRCodeDisplay: React.FC = () => {
               "Content-Type": "application/json",
               "Cache-Control": "no-cache, no-store, must-revalidate",
             },
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({ login }),
           }
         );
 
@@ -84,9 +84,9 @@ const QRCodeDisplay: React.FC = () => {
     };
 
     fetchQRCode();
-  }, [email]);
+  }, [login]);
 
-  if (!email) {
+  if (!login) {
     return (
       <p className="text-gray-600 text-lg font-semibold text-center" dir="rtl">
         جارٍ تحميل البريد الإلكتروني...

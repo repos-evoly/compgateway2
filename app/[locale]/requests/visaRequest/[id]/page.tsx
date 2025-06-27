@@ -9,6 +9,7 @@ import type { VisaRequestApiItem, VisaRequestFormValues } from "../types";
 import VisaWizardForm from "../components/VisaRequest";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function SingleVisaRequestPage() {
   const { id } = useParams(); // e.g. /visarequests/123  → id = "123"
@@ -59,7 +60,7 @@ export default function SingleVisaRequestPage() {
   const confirmModal = () => setModalOpen(false);
 
   /*──────────────────────────── Early states ──────────────────────────────*/
-  if (loading) return <div className="p-4">Loading…</div>;
+  if (loading) return <LoadingPage />;
   if (!requestData) return null; // error already handled by modal
 
   /*──────────────────────────── Map API → form shape ─────────────────────*/

@@ -5,13 +5,14 @@ import { useParams, useRouter } from "next/navigation";
 import InternalForm from "../components/InternalForm";
 import { getTransferById } from "../services";
 import type { InternalFormValues } from "../types";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function InternalTransferDetailsPage() {
-  const { id }     = useParams<{ id: string }>();
-  const router     = useRouter();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
 
-  const [loading, setLoading]       = useState(true);
-  const [initial, setInitial]       = useState<InternalFormValues | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [initial, setInitial] = useState<InternalFormValues | null>(null);
 
   /* ---------------------- fetch by id --------------------- */
   useEffect(() => {
@@ -34,11 +35,7 @@ export default function InternalTransferDetailsPage() {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-10">
-        <p className="text-gray-600">Loading transfer …</p>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!initial) {

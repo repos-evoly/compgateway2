@@ -23,6 +23,7 @@ import {
 } from "react-icons/fa";
 import BackButton from "@/app/components/reusable/BackButton";
 import { useTranslations } from "next-intl";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function PermissionsPage() {
   // Read the dynamic route segments from the URL
@@ -60,7 +61,7 @@ export default function PermissionsPage() {
   }, [userId]);
 
   if (loading) {
-    return <div className="p-4">Loading permissions…</div>;
+    return <LoadingPage />;
   }
 
   // Prepare Formik initial values

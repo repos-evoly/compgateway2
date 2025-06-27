@@ -91,11 +91,13 @@ export default function VerificationForm({
       /* Store tokens */
       Cookies.set("accessToken", data.accessToken, {
         expires: 1,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
+        httpOnly: false, // cannot set HttpOnly from client
       });
       Cookies.set("refreshToken", data.refreshToken, {
         expires: 7,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
+        httpOnly: false, // cannot set HttpOnly from client
       });
 
       /* Remove saved login */

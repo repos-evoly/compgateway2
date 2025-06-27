@@ -8,6 +8,7 @@ import { TCBLValues } from "../types";
 import { getCblRequestById } from "../service";
 import CBLForm from "../components/CBLForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import LoadingPage from "@/app/components/reusable/Loading";
 
 const CblDetailPage: React.FC = () => {
   const { id } = useParams(); // e.g. /cbl/123
@@ -57,7 +58,7 @@ const CblDetailPage: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-4">{t("loading")}</div>;
+    return <LoadingPage />;
   }
 
   return (

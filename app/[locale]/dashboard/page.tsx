@@ -3,20 +3,19 @@
    -------------------------------------------------------------------------- */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { JSX, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useTranslations } from "next-intl";
 
 import { CheckAccount } from "@/app/helpers/checkAccount";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
 
-import { getDashboardData } from "./services"; // adjust if moved
+import { getDashboardData } from "./services";
 import type { Dashboard } from "./types";
 
 import InfoBox from "./components/InfoBox";
 import StatsBox from "./components/StatsBox";
 
-/* Icons */
 import {
   FiInfo,
   FiDollarSign,
@@ -25,22 +24,33 @@ import {
   FiUsers,
   FiRepeat,
   FiPackage,
+  FiPlus,
+  FiMinus,
 } from "react-icons/fi";
 import { MdError } from "react-icons/md";
+import type { IconType } from "react-icons";
+
 import LoadingPage from "@/app/components/reusable/Loading";
 
-export default function DashboardPage() {
-  /* ------------------------------------------------------------------ */
-  /* Local state                                                         */
-  /* ------------------------------------------------------------------ */
-  const t = useTranslations("dashboard");
-  const getCompanyCode = (): string | undefined => {
-    const raw = Cookies.get("companyCode"); // → %22725119%22
-    if (!raw) return undefined;
-    return decodeURIComponent(raw).replace(/^"|"$/g, "");
-  };
+/* ────────────────────────────────────────────────────────────────────────────
+ * Constants & helpers
+ * ────────────────────────────────────────────────────────────────────────── */
+const INITIAL_VISIBLE = 3;
 
+const getCompanyCode = (): string | undefined => {
+  const raw = Cookies.get("companyCode");
+  if (!raw) return undefined;
+  return decodeURIComponent(raw).replace(/^"|"$/g, "");
+};
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Component
+ * ────────────────────────────────────────────────────────────────────────── */
+export default function DashboardPage(): JSX.Element {
+  const t = useTranslations("dashboard");
   const companyCode = getCompanyCode();
+
+  /* ----------------------------- state ----------------------------- */
   const [accountData, setAccountData] = useState<AccountInfo[] | null>(null);
   const [stats, setStats] = useState<Dashboard | null>(null);
 
@@ -48,12 +58,13 @@ export default function DashboardPage() {
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  /* ------------------------------------------------------------------ */
-  /* Fetch account list (CheckAccount helper)                            */
-  /* ------------------------------------------------------------------ */
+  const [visibleCount, setVisibleCount] = useState<number>(INITIAL_VISIBLE);
+
+  /* --------------------------- fetch accounts ---------------------- */
   useEffect(() => {
+    if (!companyCode) return;
+
     (async () => {
-      if (!companyCode) return;
       try {
         const data = await CheckAccount(companyCode);
         setAccountData(data);
@@ -67,12 +78,11 @@ export default function DashboardPage() {
     })();
   }, [companyCode]);
 
-  /* ------------------------------------------------------------------ */
-  /* Fetch dashboard stats                                               */
-  /* ------------------------------------------------------------------ */
+  /* ----------------------------- fetch stats ----------------------- */
   useEffect(() => {
+    if (!companyCode) return;
+
     (async () => {
-      if (!companyCode) return;
       try {
         const data = await getDashboardData(companyCode);
         setStats(data);
@@ -86,16 +96,14 @@ export default function DashboardPage() {
     })();
   }, [companyCode]);
 
-  /* ------------------------------------------------------------------ */
-  /* Error / Loading states                                              */
-  /* ------------------------------------------------------------------ */
+  /* ----------------------- loading / error UI ---------------------- */
   if (error) {
     return (
       <div className="p-3">
-        <div className="bg-red-600 text-white p-3 rounded shadow-md">
-          <div className="flex items-center mb-2">
-            <MdError className="text-xl mr-2" />
-            <p className="font-bold text-sm">{t("failedToFetchData")}</p>
+        <div className="rounded bg-red-600 p-3 text-white shadow-md">
+          <div className="mb-2 flex items-center">
+            <MdError className="mr-2 text-xl" />
+            <p className="text-sm font-bold">{t("failedToFetchData")}</p>
           </div>
           <p className="text-sm">{error}</p>
         </div>
@@ -104,73 +112,110 @@ export default function DashboardPage() {
   }
 
   if (loadingAccounts || loadingStats) {
-    /* Use the reusable full-screen loader */
     return <LoadingPage />;
   }
 
-  /* ------------------------------------------------------------------ */
-  /* Render                                                              */
-  /* ------------------------------------------------------------------ */
+  /* ------------------------- icon arrays --------------------------- */
+  const balanceIcons: IconType[] = [FiDollarSign, FiCreditCard, FiBarChart2];
+
+  const statsConfig: {
+    key: string;
+    label: string;
+    value: string | number;
+    Icon: IconType;
+  }[] = [
+    {
+      key: "transferVolume",
+      label: t("transferVolume"),
+      value: stats?.transferVolume ?? 0,
+      Icon: FiDollarSign,
+    },
+    {
+      key: "totalTransfers",
+      label: t("totalTransfers"),
+      value: stats?.totalTransfers ?? 0,
+      Icon: FiRepeat,
+    },
+    {
+      key: "userCount",
+      label: t("userCount"),
+      value: stats?.userCount ?? 0,
+      Icon: FiUsers,
+    },
+    {
+      key: "mostActiveSector",
+      label: t("mostActiveSector"),
+      value: stats?.mostActiveSector ?? "-",
+      Icon: FiPackage,
+    },
+  ];
+
+  /* -------------------------- render ------------------------------- */
   return (
     <div className="p-3">
-      {/* Stats grid */}
+      {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[
-            {
-              key: "transferVolume",
-              label: t("transferVolume"),
-              value: stats.transferVolume,
-              Icon: FiDollarSign,
-            },
-            {
-              key: "totalTransfers",
-              label: t("totalTransfers"),
-              value: stats.totalTransfers,
-              Icon: FiRepeat,
-            },
-            {
-              key: "userCount",
-              label: t("userCount"),
-              value: stats.userCount,
-              Icon: FiUsers,
-            },
-            {
-              key: "mostActiveSector",
-              label: t("mostActiveSector"),
-              value: stats.mostActiveSector,
-              Icon: FiPackage,
-            },
-          ].map(({ key, label, value, Icon }) => (
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {statsConfig.map(({ key, label, value, Icon }) => (
             <StatsBox key={key} label={label} value={value} Icon={Icon} />
           ))}
         </div>
       )}
 
-      {/* Accounts grid */}
+      {/* Accounts */}
       {accountData && accountData.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
-          {accountData.map((acc, index) => {
-            /* choose an icon cyclically */
-            const icons = [FiDollarSign, FiCreditCard, FiBarChart2];
-            const BoxIcon = icons[index % icons.length];
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {accountData.slice(0, visibleCount).map((acc, index) => {
+              const BoxIcon = balanceIcons[index % balanceIcons.length];
+              return (
+                <InfoBox
+                  key={acc.accountString}
+                  title={`حساب ${index + 1}`}
+                  icon={BoxIcon}
+                  accountString={acc.accountString}
+                  availableBalance={acc.availableBalance}
+                  debitBalance={acc.debitBalance}
+                />
+              );
+            })}
+          </div>
 
-            return (
-              <InfoBox
-                key={index}
-                title={`حساب ${index + 1}`}
-                icon={BoxIcon}
-                accountString={acc.accountString}
-                availableBalance={acc.availableBalance}
-                debitBalance={acc.debitBalance}
-              />
-            );
-          })}
-        </div>
+          {/* Controls */}
+          <div className="mt-4 flex justify-center gap-4">
+            {visibleCount < accountData.length && (
+              <button
+                type="button"
+                aria-label={t("showMore")}
+                className="rounded-full bg-info-dark p-2 text-white shadow hover:bg-info-dark/90"
+                onClick={() =>
+                  setVisibleCount((prev) =>
+                    Math.min(prev + 3, accountData.length)
+                  )
+                }
+              >
+                <FiPlus className="text-lg" />
+              </button>
+            )}
+
+            {visibleCount > INITIAL_VISIBLE && (
+              <button
+                type="button"
+                aria-label={t("showLess")}
+                className="rounded-full bg-info-dark p-2 text-white shadow hover:bg-info-dark/90"
+                onClick={() =>
+                  setVisibleCount((prev) => Math.max(prev - 3, INITIAL_VISIBLE))
+                }
+              >
+                <FiMinus className="text-lg" />
+              </button>
+            )}
+          </div>
+        </>
       ) : (
-        <div className="bg-info-dark text-white p-3 rounded shadow-md flex items-center">
-          <FiInfo className="text-xl mr-2" />
-          <p className="font-bold text-sm">{t("noDataAvailable")}</p>
+        <div className="flex items-center rounded bg-info-dark p-3 text-white shadow-md">
+          <FiInfo className="mr-2 text-xl" />
+          <p className="text-sm font-bold">{t("noDataAvailable")}</p>
         </div>
       )}
     </div>

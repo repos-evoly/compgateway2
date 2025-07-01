@@ -1,3 +1,6 @@
+/* --------------------------------------------------------------------------
+   components/Table.tsx
+   -------------------------------------------------------------------------- */
 "use client";
 
 import React, { useState } from "react";
@@ -6,38 +9,35 @@ import { useTranslations } from "use-intl";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 
 interface TableProps {
-  title: string; // Title of the table
-  columns: string[]; // Column titles
-  /** If true => disable inputs, hide row-add/row-delete */
+  title: string;
+  columns: string[];
   readOnly?: boolean;
+  /** All Formik field paths will be prefixed with this string. */
+  fieldNamePrefix?: string;
 }
 
-const Table: React.FC<TableProps> = ({ title, columns, readOnly = false }) => {
-  // State to manage rows in the table
+const Table: React.FC<TableProps> = ({
+  title,
+  columns,
+  readOnly = false,
+  fieldNamePrefix = "rows", // ← NEW (default)
+}) => {
   const [rows, setRows] = useState<number[]>([0]);
-
   const t = useTranslations();
 
-  // Handler to add a new row => hide if readOnly
-  const addRow = () => {
-    setRows((prev) => [...prev, prev.length]);
-  };
-
-  // Handler to delete a row => hide if readOnly
-  const deleteRow = (rowIndex: number) => {
-    setRows((prev) => prev.filter((_, index) => index !== rowIndex));
-  };
+  const addRow = () => setRows((prev) => [...prev, prev.length]);
+  const deleteRow = (idx: number) =>
+    setRows((prev) => prev.filter((_, i) => i !== idx));
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md border border-gray-300">
-      {/* Title */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-center w-full">{title}</h2>
-        {/* Hide the + if readOnly */}
+    <div className="rounded-lg border border-gray-300 bg-white p-6 shadow-md">
+      {/* Title + “add row” */}
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="w-full text-center text-lg font-semibold">{title}</h2>
         {!readOnly && (
           <button
             onClick={addRow}
-            className="text-gray-500 hover:text-gray-700 transition-colors ml-auto"
+            className="ml-auto text-gray-500 transition-colors hover:text-gray-700"
             aria-label="Add Row"
           >
             <FaPlus />
@@ -47,48 +47,45 @@ const Table: React.FC<TableProps> = ({ title, columns, readOnly = false }) => {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="table-auto w-full border-collapse border border-gray-300">
-          {/* Table Header */}
+        <table className="w-full table-auto border-collapse border border-gray-300">
           <thead>
             <tr>
-              {columns.map((col, index) => (
+              {columns.map((col) => (
                 <th
-                  key={index}
-                  className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300"
+                  key={col}
+                  className="border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700"
                 >
                   {col}
                 </th>
               ))}
-              {/* Hide actions if readOnly */}
               {!readOnly && (
-                <th className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300">
+                <th className="border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700">
                   {t("actions")}
                 </th>
               )}
             </tr>
           </thead>
 
-          {/* Table Body */}
           <tbody>
-            {rows.map((rowId, rowIndex) => (
+            {rows.map((rowId, rowIdx) => (
               <tr key={rowId} className="border-b">
-                {columns.map((_, columnIndex) => (
-                  <td key={columnIndex} className="px-4 py-2 border">
+                {columns.map((_, colIdx) => (
+                  <td key={colIdx} className="border px-4 py-2">
                     <FormInputIcon
-                      name={`rows.${rowIndex}.${columnIndex}`}
+                      name={`${fieldNamePrefix}.${rowIdx}.${colIdx}`}
                       label=""
-                      textColor="text-gray-700"
                       type="text"
-                      disabled={readOnly} // disable if readOnly
+                      textColor="text-gray-700"
+                      disabled={readOnly}
                     />
                   </td>
                 ))}
 
                 {!readOnly && (
-                  <td className="px-4 py-2 border text-center">
+                  <td className="border px-4 py-2 text-center">
                     <button
-                      onClick={() => deleteRow(rowIndex)}
-                      className="text-red-500 hover:text-red-700 transition-colors"
+                      onClick={() => deleteRow(rowIdx)}
+                      className="text-red-500 transition-colors hover:text-red-700"
                       aria-label="Delete Row"
                     >
                       <FaTrash />

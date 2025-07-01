@@ -1,3 +1,6 @@
+/* --------------------------------------------------------------------------
+   components/Step1TransferInfo.tsx
+   -------------------------------------------------------------------------- */
 "use client";
 
 import React from "react";
@@ -6,38 +9,30 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import { step1Inputs } from "./formInputsArrays";
 
-type Step1TransferInfoProps = {
-  readOnly?: boolean;
-};
+type Step1TransferInfoProps = { readOnly?: boolean };
 
 /**
- * Step 1 => 3 "rows" layout
+ * Step 1 — three logical “rows” rendered responsively.
  */
 export function Step1TransferInfo({
   readOnly = false,
 }: Step1TransferInfoProps) {
   const t = useTranslations("foreignTransfers");
 
-  // Make sure your step1Inputs array has these fields:
-  //   toBank, branch, residentSupplierName
-  //   residentSupplierNationality, nonResidentPassportNumber, placeOfIssue, dateOfIssue
-  //   nonResidentNationality, nonResidentAddress
+  /* pick inputs by position */
   const row1 = [step1Inputs[0], step1Inputs[1], step1Inputs[2]];
   const row2 = [step1Inputs[3], step1Inputs[4], step1Inputs[5], step1Inputs[6]];
   const row3 = [step1Inputs[7], step1Inputs[8]];
 
-  function renderField(field: (typeof step1Inputs)[0]) {
-    if (field.type === "datePicker") {
-      return (
-        <DatePickerValue
-          key={field.name}
-          name={field.name}
-          label={t(field.label)}
-          disabled={readOnly}
-        />
-      );
-    }
-    return (
+  const renderField = (field: (typeof step1Inputs)[number]) =>
+    field.type === "datePicker" ? (
+      <DatePickerValue
+        key={field.name}
+        name={field.name}
+        label={t(field.label)}
+        disabled={readOnly}
+      />
+    ) : (
       <FormInputIcon
         key={field.name}
         name={field.name}
@@ -47,23 +42,22 @@ export function Step1TransferInfo({
         disabled={readOnly}
       />
     );
-  }
 
   return (
     <div className="space-y-4">
-      {/* Row 1 => 3 columns */}
-      <div className="grid grid-cols-3 gap-4">
-        {row1.map((f) => renderField(f))}
+      {/* Row 1 ─ 1 / 2 / 3 columns */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {row1.map(renderField)}
       </div>
 
-      {/* Row 2 => 4 columns */}
-      <div className="grid grid-cols-4 gap-4">
-        {row2.map((f) => renderField(f))}
+      {/* Row 2 ─ stack → 2 cols → 4 cols */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {row2.map(renderField)}
       </div>
 
-      {/* Row 3 => 2 columns (1fr / 2fr or custom) */}
-      <div className="grid grid-cols-[1fr_2fr] gap-4">
-        {row3.map((f) => renderField(f))}
+      {/* Row 3 ─ full-width then 2-column asymmetric */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[1fr_2fr]">
+        {row3.map(renderField)}
       </div>
     </div>
   );

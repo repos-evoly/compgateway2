@@ -186,17 +186,22 @@ const CBLForm: React.FC<CBLFormProps> = ({
 
           {/* Table + InfoBox */}
           <div className="flex w-full gap-6">
-            <div className="flex flex-col gap-6 flex-1">
+            <div className="flex flex-1 flex-col gap-6">
+              {/* Table 1 */}
               <Table
                 title={t("table1.title")}
                 columns={columns1}
-                // Pass readOnly => table won't allow add/delete rows, fields disabled
+                fieldNamePrefix="table1Rows"
                 readOnly={readOnly}
               />
-              <div className="flex-grow bg-gray-100 rounded-lg shadow-sm border border-gray-300 flex items-center justify-center" />
+
+              <div className="flex-grow rounded-lg border border-gray-300 bg-gray-100 shadow-sm" />
+
+              {/* Table 2 */}
               <Table
                 title={t("table2.title")}
                 columns={columns2}
+                fieldNamePrefix="table2Rows"
                 readOnly={readOnly}
               />
             </div>

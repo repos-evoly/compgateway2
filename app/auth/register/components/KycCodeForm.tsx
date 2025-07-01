@@ -40,7 +40,7 @@ export default function KycCodeForm({ onSuccess }: KycCodeFormProps) {
       }
       onSuccess(response.data);
     } catch (err) {
-        console.error("Error verifying KYC code:", err);
+      console.error("Error verifying KYC code:", err);
       setError("حدث خطأ أثناء التحقق من الرمز.");
     }
   }
@@ -84,7 +84,7 @@ export default function KycCodeForm({ onSuccess }: KycCodeFormProps) {
       >
         <FormInputIcon
           name="code"
-          label="الرمز"
+          label="معرف الشركة ( 6 أرقام )"
           type="text"
           startIcon={<FiKey />}
           textColor="text-dark"

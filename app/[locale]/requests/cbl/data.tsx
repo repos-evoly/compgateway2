@@ -281,11 +281,11 @@ export const fields = (t: (key: string) => string) => [
     component: DatePickerValue,
     type: "date",
   },
-  {
-    name: "specialistName",
-    label: t("specialistName"),
-    component: FormInputIcon,
-    type: "text",
-    icon: <FaUser />,
-  },
+  // {
+  //   name: "specialistName",
+  //   label: t("specialistName"),
+  //   component: FormInputIcon,
+  //   type: "text",
+  //   icon: <FaUser />,
+  // },
 ];

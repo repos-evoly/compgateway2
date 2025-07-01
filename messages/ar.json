@@ -142,7 +142,7 @@
   
     "RTGSForm":{
       "accountNb":"رقم حساب المحول",
-      "name":"رقم حساب المحول",
+      "name":" الاسم المحول",
       "address":"العنوان",
       "benName":"اسم المستفيد",
       "benAccNum":"رقم حساب المستفيد",
@@ -332,7 +332,9 @@
           "feePayerRecipient": "المستلم",
           "cancel": "إلغاء",
           "confirm": "تأكيد التحويل"
-        }
+        },
+        "createSuccessTitle": "نجاح",
+        "createSuccessMsg": "تم إنشاء طلب التحويل الداخلي بنجاح."
 
       },
       "statementOfAccount": {
@@ -494,7 +496,8 @@
         "isRequired":"مطلوب",
         "trasnferAmount": "قيمة التحويل",
         "uploadDocuments": "تحميل",
-        "mustBeNumber":"يجب أن يكون رقماً"
+        "mustBeNumber":"يجب أن يكون رقماً",
+        "nonResidentPassportNumber":"رقم جواز السفر لغير المقيم"
       },
       "tabsWizard":{
         "review":"مراجعة و تقديم",
@@ -521,9 +524,12 @@
         "localAmount": "المبلغ المحلي",
         "pldedge": "تعهد بعدم المطالبة بالرسوم المفروضة من مصرف ليبيا المركزي",
     
-        "isRequired": "مطلوب"
+        "isRequired": "مطلوب",
+        "createSuccessTitle": "نجاح",
+        "createSuccessMsg": "تم إنشاء طلب بطاقة الفيزا بنجاح."
       },
       "bankStatement": {
+        "id":"المعرف",
         "step1Title": "الخطوة الأولى",
         "step2Title": "الخطوة الثانية",
         "reviewStepTitle": "مراجعة وإرسال",
@@ -569,7 +575,9 @@
         "userCount": "عدد المستخدمين",
         "totalTransfers": "إجمالي التحويلات",
         "transferVolume": "حجم التحويلات",
-        "loading":"جار التحميل..."
+        "loading":"جار التحميل...",
+        "showMore": "عرض المزيد",
+        "showLess": "عرض أقل"
       },
       "employees":{
         "id":"المعرف",

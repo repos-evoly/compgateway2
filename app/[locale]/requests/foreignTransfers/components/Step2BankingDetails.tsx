@@ -1,3 +1,6 @@
+/* --------------------------------------------------------------------------
+   components/Step2BankingDetails.tsx
+   -------------------------------------------------------------------------- */
 "use client";
 
 import React from "react";
@@ -7,47 +10,33 @@ import FormFileUpload from "@/app/components/FormUI/FormFileUpload";
 import { FiInfo } from "react-icons/fi";
 import { step2Inputs } from "./formInputsArrays";
 
-type Step2BankingDetailsProps = {
-  readOnly?: boolean;
-};
+type Step2BankingDetailsProps = { readOnly?: boolean };
 
 /**
- * Step 2 => 5 "rows" layout example
+ * Step 2 — five responsive rows (plus info box).
  */
 export function Step2BankingDetails({
   readOnly = false,
 }: Step2BankingDetailsProps) {
   const t = useTranslations("foreignTransfers");
 
-  // step2Inputs fields:
-  //   transferAmount, toCountry, beneficiaryName
-  //   beneficiaryAddress, externalBankName, externalBankAddress
-  //   transferToAccountNumber, transferToAddress, accountHolderName
-  //   permanentAddress, purposeOfTransfer
-  //   (maybe a file upload?)
-
   const row1 = [step2Inputs[0], step2Inputs[1], step2Inputs[2]];
   const row2 = [step2Inputs[3], step2Inputs[4], step2Inputs[5]];
   const row3 = [step2Inputs[6], step2Inputs[7], step2Inputs[8]];
   const row4 = [step2Inputs[9], step2Inputs[10]];
-  // If you have an upload:
-  // const rowUpload = [step2Inputs[11]];
+  // const rowUpload = [step2Inputs[11]]; // if needed
 
-  function renderField(field: (typeof step2Inputs)[0]) {
-    if (field.type === "file") {
-      return (
-        <FormFileUpload
-          key={field.name}
-          name={field.name}
-          label={t(field.label)}
-          multiple={field.multiple}
-          accept=".pdf,.jpg,.png"
-          disabled={readOnly}
-        />
-      );
-    }
-
-    return (
+  const renderField = (field: (typeof step2Inputs)[number]) =>
+    field.type === "file" ? (
+      <FormFileUpload
+        key={field.name}
+        name={field.name}
+        label={t(field.label)}
+        multiple={field.multiple}
+        accept=".pdf,.jpg,.png"
+        disabled={readOnly}
+      />
+    ) : (
       <FormInputIcon
         key={field.name}
         name={field.name}
@@ -57,31 +46,32 @@ export function Step2BankingDetails({
         disabled={readOnly}
       />
     );
-  }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-700">Step 2 Fields</h2>
+    <div className="space-y-6">
+      {/* Row 1 */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {row1.map(renderField)}
+      </div>
 
-      {/* Row 1 => 3 columns */}
-      <div className="grid grid-cols-3 gap-4">{row1.map(renderField)}</div>
+      {/* Row 2 */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {row2.map(renderField)}
+      </div>
 
-      {/* Row 2 => 3 columns */}
-      <div className="grid grid-cols-3 gap-4">{row2.map(renderField)}</div>
+      {/* Row 3 */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {row3.map(renderField)}
+      </div>
 
-      {/* Row 3 => 3 columns */}
-      <div className="grid grid-cols-3 gap-4">{row3.map(renderField)}</div>
-
-      {/* Row 4 => 2 columns -> (1fr, 2fr) */}
-      <div className="grid grid-cols-[1fr_2fr] gap-4">
+      {/* Row 4 – asymmetric 1 fr / 2 fr on XL */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[1fr_2fr]">
         {row4.map(renderField)}
       </div>
 
-      {/* If you have an upload row
-      <div>{rowUpload.map(renderField)}</div> */}
-
-      <div className="p-4 bg-gray-50 border rounded-lg flex items-start gap-2 text-sm text-gray-600">
-        <FiInfo className="text-blue-600 mt-1" />
+      {/* Helpful note */}
+      <div className="flex items-start gap-2 rounded-lg border bg-gray-50 p-4 text-sm text-gray-600">
+        <FiInfo className="mt-1 text-blue-600" />
         <p>{t("documents")}</p>
       </div>
     </div>

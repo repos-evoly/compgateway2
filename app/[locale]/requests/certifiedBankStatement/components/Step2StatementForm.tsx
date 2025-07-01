@@ -20,19 +20,25 @@ export function Step2StatementForm({ readOnly = false }: Props) {
     useFormikContext<CertifiedBankStatementRequest>();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    /* ───────────────────────────────────────────
+     * Root: 1-col on mobiles → 2-col (≥ sm) → 3-col (≥ lg)
+     * ─────────────────────────────────────────── */
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {step2StatementInputs.map(({ name, label, icon, type }) => {
         if (type === "statementRequest") {
           const statementVal = values.statementRequest || {};
           return (
-            <div key={name} className="col-span-2">
+            /* Full-width on mobile, span all columns on larger screens */
+            <div key={name} className="col-span-1 sm:col-span-2 lg:col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t(label)}
               </label>
-              <div className="border border-gray-300 rounded-md p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Current Account statement => arabic/english */}
-                <div className="flex flex-col mb-2">
-                  <span className="text-sm font-semibold text-gray-700">
+
+              {/* Inner grid: stacks on mobile, 2-col (≥ sm), 3-col (≥ lg) */}
+              <div className="border border-gray-300 rounded-md p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Current-account statement – Arabic / English */}
+                <div className="flex flex-col sm:col-span-2 lg:col-span-1">
+                  <span className="text-sm font-semibold text-gray-700 mb-1">
                     {t("currentAccountStatement")}
                   </span>
 
@@ -96,7 +102,7 @@ export function Step2StatementForm({ readOnly = false }: Props) {
                   </span>
                 </label>
 
-                {/* fromDate, toDate => disable if readOnly */}
+                {/* From / To dates */}
                 <div className="flex flex-col">
                   <label className="text-sm text-gray-700 mb-1">
                     {t("fromDate")}
@@ -120,7 +126,7 @@ export function Step2StatementForm({ readOnly = false }: Props) {
                   />
                 </div>
 
-                {/* accountStatement, journalMovement, nonFinancialCommitment */}
+                {/* Account statement */}
                 <label className="flex items-center space-x-2">
                   <Field
                     type="checkbox"
@@ -138,6 +144,8 @@ export function Step2StatementForm({ readOnly = false }: Props) {
                     {t("accountStatement")}
                   </span>
                 </label>
+
+                {/* Journal movement */}
                 <label className="flex items-center space-x-2">
                   <Field
                     type="checkbox"
@@ -155,6 +163,8 @@ export function Step2StatementForm({ readOnly = false }: Props) {
                     {t("journalMovement")}
                   </span>
                 </label>
+
+                {/* Non-financial commitment */}
                 <label className="flex items-center space-x-2">
                   <Field
                     type="checkbox"
@@ -177,7 +187,9 @@ export function Step2StatementForm({ readOnly = false }: Props) {
           );
         }
 
-        // Normal fields => e.g. oldAccountNumber, newAccountNumber
+        /* ───────────────────────────────────────────
+         * Normal text / masked inputs
+         * ─────────────────────────────────────────── */
         return (
           <FormInputIcon
             key={name}

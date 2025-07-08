@@ -98,6 +98,7 @@ export default function LetterOfGuaranteePage() {
     { key: "type", label: tCol("type") },
     { key: "status", label: tCol("status") },
     { key: "createdAt", label: tCol("createdAt") },
+    
   ];
 
   /* --------------------------------------------------------------

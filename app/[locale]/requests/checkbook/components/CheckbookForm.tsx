@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/checkbook/components/CheckbookForm.tsx
- * Account Number field now uses <InputSelectCombo> (cookie‑based options)
+ * Account Number field now uses <InputSelectCombo> (cookie-based options)
  * ----------------------------------------------------------------------- */
 
 "use client";
@@ -34,22 +34,28 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
 }) => {
   const t = useTranslations("checkForm");
 
-  /* submitting flag */
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  /* ------------------------------------------------------------------ */
+  /* Local state                                                         */
+  /* ------------------------------------------------------------------ */
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  /* modal state */
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalSuccess, setModalSuccess] = useState(false);
-  const [modalTitle, setModalTitle] = useState("");
-  const [modalMessage, setModalMessage] = useState("");
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [modalSuccess, setModalSuccess] = useState<boolean>(false);
+  const [modalTitle, setModalTitle] = useState<string>("");
+  const [modalMessage, setModalMessage] = useState<string>("");
 
-  /* account dropdown options */
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
+
+  /* ------------------------------------------------------------------ */
+  /* Effects                                                             */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
+    /* Pull saved statement-account numbers from a cookie */
     const raw = Cookies.get("statementAccounts") ?? "[]";
     let accounts: string[] = [];
+
     try {
       accounts = JSON.parse(raw);
     } catch {
@@ -59,10 +65,13 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
         accounts = [];
       }
     }
+
     setAccountOptions(accounts.map((acc) => ({ label: acc, value: acc })));
   }, []);
 
-  /* default values */
+  /* ------------------------------------------------------------------ */
+  /* Form values & validation                                            */
+  /* ------------------------------------------------------------------ */
   const defaultValues: TCheckbookFormValues = {
     fullName: "",
     address: "",
@@ -72,11 +81,11 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
     date: "",
     bookContaining: "",
   };
-  const initialValues = initialData
+
+  const initialValues: TCheckbookFormValues = initialData
     ? { ...defaultValues, ...initialData }
     : defaultValues;
 
-  /* validation */
   const schema = Yup.object({
     fullName: Yup.string().required(`${t("name")} ${t("required")}`),
     address: Yup.string().required(`${t("address")} ${t("required")}`),
@@ -87,8 +96,10 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
     bookContaining: Yup.string().required(t("selectOneOption")),
   });
 
-  /* submit */
-  const handleSubmit = async (values: TCheckbookFormValues) => {
+  /* ------------------------------------------------------------------ */
+  /* Handlers                                                            */
+  /* ------------------------------------------------------------------ */
+  const handleSubmit = async (values: TCheckbookFormValues): Promise<void> => {
     if (readOnly || isSubmitting) return;
     setIsSubmitting(true);
 
@@ -100,8 +111,8 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
       setModalMessage(t("successMessage"));
       setModalSuccess(true);
       setModalOpen(true);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : t("genericError");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t("genericError");
       setModalTitle(t("errorTitle"));
       setModalMessage(msg);
       setModalSuccess(false);
@@ -111,25 +122,32 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
     }
   };
 
-  /* render */
+  /* ------------------------------------------------------------------ */
+  /* Render                                                              */
+  /* ------------------------------------------------------------------ */
+  const status =
+    (initialData as { status?: string } | undefined)?.status ?? undefined;
+
   return (
     <>
-      <div className="mt-2 rounded w-full bg-gray-100">
-        <FormHeader>
+      <div className="mt-2 w-full rounded bg-gray-100">
+        {/* ---------- Header ---------- */}
+        <FormHeader status={status}>
           <BackButton
             fallbackPath="/requests/checkbook"
             isEditing={initialData !== undefined}
           />
         </FormHeader>
 
+        {/* ---------- Form body ---------- */}
         <div className="px-6 pb-6">
           <Form
             initialValues={initialValues}
             onSubmit={handleSubmit}
             validationSchema={schema}
           >
-            {/* inputs */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Inputs grid */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Account Number dropdown */}
               <InputSelectCombo
                 name="accountNumber"
@@ -147,10 +165,12 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
                 { name: "address", label: t("address"), type: "text" },
                 { name: "pleaseSend", label: t("sendTo"), type: "text" },
                 { name: "branch", label: t("branch"), type: "text" },
-              ].map((f) => (
+              ].map(({ name, label, type }) => (
                 <FormInputIcon
-                  key={f.name}
-                  {...f}
+                  key={name}
+                  name={name}
+                  label={label}
+                  type={type}
                   width="w-full"
                   disabled={readOnly}
                 />
@@ -164,7 +184,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
               />
             </div>
 
-            {/* radio */}
+            {/* Radio buttons */}
             <div className="mt-4">
               <RadiobuttonWrapper
                 name="bookContaining"
@@ -178,10 +198,12 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
               />
             </div>
 
-            <Description variant="h1" className="text-black m-auto mt-4">
+            {/* Agreement text */}
+            <Description variant="h1" className="m-auto mt-4 text-black">
               {t("agree")}
             </Description>
 
+            {/* Submit button */}
             {!readOnly && (
               <div className="mt-4 flex justify-center gap-3">
                 <SubmitButton
@@ -197,7 +219,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
         </div>
       </div>
 
-      {/* modal */}
+      {/* ---------- Modal ---------- */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

@@ -79,6 +79,9 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
         : defaultValues.lineItems,
   };
 
+  const status =
+    (initialValues as { status?: string } | undefined)?.status ?? undefined;
+
   /* form fields array */
   const formFields = [
     {
@@ -152,6 +155,7 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
     <>
       <div className="mt-4 rounded w-full bg-gray-100">
         <FormHeader
+          status={status}
           showBackButton
           fallbackPath="/requests/checkRequest"
           isEditing={readOnly}

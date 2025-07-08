@@ -92,6 +92,7 @@ export default function VisaRequestListPage() {
     { key: "branch", label: t("branch") },
     { key: "date", label: t("date") },
     { key: "accountHolderName", label: t("accountHolderName") },
+    {key:"status", label: t("status") }
   ];
 
   /*─────────────────────────── Modal handlers  ─────────────────────────────*/

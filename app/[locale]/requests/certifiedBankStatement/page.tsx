@@ -34,7 +34,6 @@ export default function CertifiedBankStatementPage() {
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
-
   /*──────────────────────────── Fetch paginated data ────────────────────*/
   useEffect(() => {
     async function fetchData() {
@@ -52,7 +51,7 @@ export default function CertifiedBankStatementPage() {
         setModalMessage(msg);
         setModalSuccess(false);
         setModalOpen(true);
-      } finally { 
+      } finally {
         setLoading(false);
       }
     }
@@ -69,6 +68,7 @@ export default function CertifiedBankStatementPage() {
     },
     { key: "statementRequest.fromDate", label: t("fromDate") },
     { key: "statementRequest.toDate", label: t("toDate") },
+    { key: "status", label: t("status") },
   ];
 
   /*──────────────────────────── Handlers ───────────────────────────────*/

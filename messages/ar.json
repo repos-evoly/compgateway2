@@ -174,7 +174,8 @@
       "date":"التاريخ",
       "payType":"نوع الدفع",
       "createSuccessTitle": "نجاح",
-      "createSuccessMsg": "تم إنشاء طلب RTGS بنجاح."
+      "createSuccessMsg": "تم إنشاء طلب RTGS بنجاح.",
+      "status":"الحالة"
     },
   
   
@@ -248,7 +249,8 @@
       "delegate":"المندوب",
       "loading":"جار التحميل...",
       "successTitle": "نجاح",
-      "successMessage": "تم تقديم طلب الصك بنجاح."
+      "successMessage": "تم تقديم طلب الصك بنجاح.",
+      "status":"الحالة"
     },
   
 
@@ -530,7 +532,8 @@
     
         "isRequired": "مطلوب",
         "createSuccessTitle": "نجاح",
-        "createSuccessMsg": "تم إنشاء طلب بطاقة الفيزا بنجاح."
+        "createSuccessMsg": "تم إنشاء طلب بطاقة الفيزا بنجاح.",
+        "status":"الحالة"
       },
       "bankStatement": {
         "id":"المعرف",
@@ -567,7 +570,8 @@
         "mustBeNumber": "يجب أن يكون رقماً",
         "successTitle": "تم إرسال طلبك بنجاح",
         "createSuccessTitle": "نجاح",
-        "createSuccessMsg": "تم إنشاء طلب كشف الحساب بنجاح."
+        "createSuccessMsg": "تم إنشاء طلب كشف الحساب بنجاح.",
+        "status":"الحالة"
       },
       "dashboard":{
         "accountNb":" رقم الحساب",

@@ -66,6 +66,7 @@ const CheckbookPage: React.FC = () => {
     { key: "branch", label: t("branch") },
     { key: "date", label: t("date") },
     { key: "pleaseSend", label: t("sendTo") },
+    {key:"status", label: t("status")}
   ];
 
   /* ─── Handlers ────────────────────────────────────────────── */

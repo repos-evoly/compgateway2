@@ -33,7 +33,6 @@ export default function ForeignTransfersListPage() {
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
-
   // Each page => limit=10
   const limit = 10;
 
@@ -154,6 +153,7 @@ export default function ForeignTransfersListPage() {
     { key: "branch", label: t("branch") },
     { key: "toBank", label: t("toBank") },
     { key: "transferAmount", label: t("transferAmount") },
+    { key: "status", label: t("status") },
   ];
 
   return (

@@ -51,4 +51,5 @@ export type TCheckRequestLineItem = {
       dirham: string;
       lyd: string;
     }[];
+    status?: string; 
   };

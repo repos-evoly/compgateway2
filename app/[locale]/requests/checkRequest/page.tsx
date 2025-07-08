@@ -35,7 +35,6 @@ const CheckRequestPage: React.FC = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
-
   /* ─── Fetch data ──────────────────────────────────────────── */
   useEffect(() => {
     async function fetchData() {
@@ -72,6 +71,7 @@ const CheckRequestPage: React.FC = () => {
     { key: "cardNum", label: t("cardNum") },
     { key: "accountNum", label: t("accountNum") },
     { key: "beneficiary", label: t("beneficiary") },
+    { key: "status", label: t("status") },
   ];
 
   /* ─── Handlers ────────────────────────────────────────────── */

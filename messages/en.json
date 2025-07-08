@@ -169,7 +169,8 @@
     "date": "Date",
     "payType": "Payment Type",
     "createSuccessTitle": "Success",
-    "createSuccessMsg": "RTGS request created successfully."
+    "createSuccessMsg": "RTGS request created successfully.",
+    "status":"Status"
   },
 
   "checkForm": {
@@ -242,7 +243,8 @@
     "delegate": "Representative",
     "loading": "Loading...",
     "successTitle": "Success",
-    "successMessage": "Check request submitted successfully."
+    "successMessage": "Check request submitted successfully.",
+    "status": "Status"
   },
 
   "notFound": {
@@ -523,7 +525,8 @@
     "localAmount": "Local Amount",
     "pldedge": "Pledge not to claim CBL fees",
 
-    "isRequired": "Required"
+    "isRequired": "Required",
+    "status":"Status"
   },
 
   "bankStatement": {
@@ -559,7 +562,8 @@
     "isRequired": "Required",
     "mustBeNumber": "Must be a number",
     "createSuccessTitle": "Success",
-    "createSuccessMsg": "Bank statement request created successfully."
+    "createSuccessMsg": "Bank statement request created successfully.",
+    "status": "Status"
   },
 
   "dashboard": {

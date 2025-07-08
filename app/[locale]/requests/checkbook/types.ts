@@ -29,6 +29,7 @@ export type TCheckbookFormValues = {
   branch: string;
   date: string;
   bookContaining: string;
+  status?: string; 
 };
 
 /** Props for our CheckbookForm component */

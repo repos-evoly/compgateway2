@@ -1,22 +1,30 @@
-// File: FormHeader.tsx
+"use client";
+
 import React from "react";
 import BackButton, { type BackButtonProps } from "./BackButton";
+import StatusBanner from "./StatusBanner";
 
-/**
- * Inherits every prop that <BackButton/> understands (e.g. `fallbackPath`, `isEditing`)
- * and adds layout-specific options for the header itself.
- */
+/* ------------------------------------------------------------------ */
+/* Props                                                               */
+/* ------------------------------------------------------------------ */
 export type FormHeaderProps = BackButtonProps & {
   /** Title text shown next to the Back button */
   text?: string;
-  /** Extra content (typically buttons or switches) rendered on the right */
+  /** Extra content (typically buttons or switches) rendered after the title */
   children?: React.ReactNode;
+  /** Force-show or hide the Back button; otherwise auto-detects */
   showBackButton?: boolean;
   className?: string;
   /** Makes the header sticky at the top of the scroll container */
   isFixedOnScroll?: boolean;
+  /** Optional status badge text (any string). Always appears at the row’s end
+   *  (right in LTR, left in RTL) without affecting the Back button. */
+  status?: string;
 };
 
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 const FormHeader: React.FC<FormHeaderProps> = ({
   text,
   children,
@@ -25,23 +33,23 @@ const FormHeader: React.FC<FormHeaderProps> = ({
   showBackButton,
   fallbackPath,
   isEditing,
+  status,
   ...restBackButtonProps
 }) => {
   /* ---------------- logic ---------------- */
-  // Auto-display the Back button when navigation context exists
   const displayBackButton =
     showBackButton ?? (Boolean(fallbackPath) || Boolean(isEditing));
 
-  // Left area is rendered only when we have either text or a Back button
   const hasLeftContent = displayBackButton || Boolean(text);
 
+  /* ---------------- render ---------------- */
   return (
     <div
       className={`flex items-center bg-info-dark text-white p-4 rounded-md
-        ${hasLeftContent && children ? "justify-between" : "justify-start"}
         ${isFixedOnScroll ? "sticky top-0 z-50" : ""}
         ${className}`}
     >
+      {/* ---------- Left side (Back + title) ---------- */}
       {hasLeftContent && (
         <div className="flex items-center gap-2">
           {displayBackButton && (
@@ -55,8 +63,12 @@ const FormHeader: React.FC<FormHeaderProps> = ({
         </div>
       )}
 
-      {children && (
-        <div className={`${!hasLeftContent ? "w-fit" : ""}`}>{children}</div>
+      {/* ---------- Middle controls ---------- */}
+      {children}
+
+      {/* ---------- Status badge (always row-end) ---------- */}
+      {status && (
+        <StatusBanner status={status} className="ltr:ml-auto rtl:mr-auto" />
       )}
     </div>
   );

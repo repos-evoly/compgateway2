@@ -32,7 +32,6 @@ const CBLListPage: React.FC = () => {
   const [searchBy, setSearchBy] = useState<string>("partyName"); // default or "status"
   const [loading, setLoading] = useState<boolean>(true);
 
-
   // Add form toggle
   const [showForm, setShowForm] = useState(false);
 
@@ -91,6 +90,7 @@ const CBLListPage: React.FC = () => {
     { key: "legalRepresentative", label: t("legalRepresentative") },
     { key: "mobile", label: t("mobile") },
     { key: "address", label: t("address") },
+    { key: "status", label: t("status") },
   ];
 
   // Data to pass to the grid

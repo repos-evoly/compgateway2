@@ -66,6 +66,7 @@ const CheckRequestDetailPage = () => {
       dirham: li.dirham,
       lyd: li.lyd,
     })),
+    status: checkData.status,
   };
 
   // For now, let's just log if we "submit" from the detail page

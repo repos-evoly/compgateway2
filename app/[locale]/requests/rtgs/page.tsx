@@ -65,6 +65,7 @@ const RTGSListPage: React.FC = () => {
     { key: "applicantName", label: t("name") },
     { key: "beneficiaryName", label: t("benName") },
     { key: "amount", label: t("amount") },
+    { key: "status", label: t("status") },
   ];
 
   /* ─────────────────────────── Grid-friendly data ───────────────────────── */

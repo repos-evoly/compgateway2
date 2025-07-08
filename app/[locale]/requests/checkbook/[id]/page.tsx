@@ -71,6 +71,7 @@ const CheckbookDetailPage: React.FC = () => {
     branch: checkbookData.branch ?? "",
     date: checkbookData.date ?? "",
     bookContaining: checkbookData.bookContaining ?? "",
+    status: checkbookData.status ?? "",
   };
 
   // For demonstration, do nothing special on form submit/cancel.

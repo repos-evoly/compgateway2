@@ -1,0 +1,12 @@
+1. create new branch:
+    git checkout -b osama 
+    git checkout -b moftah
+
+2. switch to existing branch:
+    git checkout osama 
+    git checkout moftah
+
+3. after switching to the branch:
+    git add .
+    git commit -m "Your message"
+    git push   ( this will go to the branch that we are currently in)

@@ -1,11 +1,20 @@
+/* --------------------------------------------------------------------------
+ * app/[locale]/requests/checkbook/components/CheckbookForm.tsx
+ * Account Number field now uses <InputSelectCombo> (cookie‑based options)
+ * ----------------------------------------------------------------------- */
+
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import { useTranslations } from "next-intl";
 import * as Yup from "yup";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
@@ -16,8 +25,7 @@ import { createCheckbookRequest } from "../services";
 import { TCheckbookFormProps, TCheckbookFormValues } from "../types";
 import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
-
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   onSubmit,
@@ -29,11 +37,30 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   /* submitting flag */
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /* modal state (NEW) */
+  /* modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+
+  /* account dropdown options */
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  useEffect(() => {
+    const raw = Cookies.get("statementAccounts") ?? "[]";
+    let accounts: string[] = [];
+    try {
+      accounts = JSON.parse(raw);
+    } catch {
+      try {
+        accounts = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        accounts = [];
+      }
+    }
+    setAccountOptions(accounts.map((acc) => ({ label: acc, value: acc })));
+  }, []);
 
   /* default values */
   const defaultValues: TCheckbookFormValues = {
@@ -69,14 +96,13 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
       const newItem = await createCheckbookRequest(values);
       onSubmit(newItem);
 
-      setModalTitle(t("successTitle")); // e.g. "Success"
-      setModalMessage(t("successMessage")); // e.g. "Created."
+      setModalTitle(t("successTitle"));
+      setModalMessage(t("successMessage"));
       setModalSuccess(true);
       setModalOpen(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("genericError");
-
-      setModalTitle(t("errorTitle")); // e.g. "Error"
+      setModalTitle(t("errorTitle"));
       setModalMessage(msg);
       setModalSuccess(false);
       setModalOpen(true);
@@ -104,21 +130,38 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
           >
             {/* inputs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Account Number dropdown */}
+              <InputSelectCombo
+                name="accountNumber"
+                label={t("accNum")}
+                options={accountOptions}
+                placeholder={t("accNum")}
+                width="w-full"
+                maskingFormat="0000-000000-000"
+                disabled={readOnly}
+              />
+
+              {/* Other text fields */}
               {[
                 { name: "fullName", label: t("name"), type: "text" },
                 { name: "address", label: t("address"), type: "text" },
-                { name: "accountNumber", label: t("accNum"), type: "text" },
                 { name: "pleaseSend", label: t("sendTo"), type: "text" },
                 { name: "branch", label: t("branch"), type: "text" },
-                { name: "date", label: t("date"), component: DatePickerValue },
-              ].map(({ component: Comp = FormInputIcon, ...field }) => (
-                <Comp
-                  key={field.name}
-                  {...field}
+              ].map((f) => (
+                <FormInputIcon
+                  key={f.name}
+                  {...f}
                   width="w-full"
                   disabled={readOnly}
                 />
               ))}
+
+              {/* Date picker */}
+              <DatePickerValue
+                name="date"
+                label={t("date")}
+                disabled={readOnly}
+              />
             </div>
 
             {/* radio */}
@@ -154,7 +197,7 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
         </div>
       </div>
 
-      {/* modal (NEW) */}
+      {/* modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

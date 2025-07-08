@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/letterOfGuarantee/components/LetterOfGuaranteeForm.tsx
- * Fully-translated (en ⇄ ar) + account-check guard — FINAL VERSION
+ * Account Number now uses <InputSelectCombo> fed from cookie list
  * ----------------------------------------------------------------------- */
 
 "use client";
@@ -8,11 +8,14 @@
 import React, { useEffect, useState } from "react";
 import { Formik, Form, FormikHelpers, FormikProps } from "formik";
 import * as Yup from "yup";
+import Cookies from "js-cookie";
 import { useTranslations } from "next-intl";
 
 import FormHeader from "@/app/components/reusable/FormHeader";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -27,7 +30,7 @@ import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
 
 /* ------------------------------------------------------------------ */
-/* Props                                                              */
+/* Props                                                               */
 /* ------------------------------------------------------------------ */
 type Props = {
   initialData?: TLetterOfGuarantee | null;
@@ -37,18 +40,19 @@ type Props = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Inner form props                                                   */
+/* Inner form props                                                    */
 /* ------------------------------------------------------------------ */
 type InnerFormProps = FormikProps<TLetterOfGuarantee> & {
   initialData?: TLetterOfGuarantee | null;
   availableBalance: number | null;
   setAvailableBalance: React.Dispatch<React.SetStateAction<number | null>>;
-  currencyOptions: Array<{ label: string; value: string }>;
+  currencyOptions: InputSelectComboOption[];
+  accountOptions: InputSelectComboOption[];
   readOnly?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
-/* Inner form                                                         */
+/* Inner form                                                          */
 /* ------------------------------------------------------------------ */
 function InnerForm({
   isSubmitting,
@@ -62,22 +66,21 @@ function InnerForm({
   availableBalance,
   setAvailableBalance,
   currencyOptions,
+  accountOptions,
   initialData,
   readOnly = false,
 }: InnerFormProps) {
   const t = useTranslations("letterOfGuarantee.form.fields");
   const tu = useTranslations("letterOfGuarantee.form.ui");
 
-  /* --------------------------------------------------------------
-   * Check account balance whenever accountNumber changes
-   * -------------------------------------------------------------- */
+  /* --- check account balance whenever accountNumber changes --- */
   useEffect(() => {
     if (!values.accountNumber) {
       setAvailableBalance(null);
       return;
     }
 
-    const fetchBalance = async () => {
+    (async () => {
       try {
         const info: AccountInfo[] = await CheckAccount(values.accountNumber);
         if (info.length) {
@@ -93,9 +96,7 @@ function InnerForm({
       } finally {
         setFieldTouched("accountNumber", true, false);
       }
-    };
-
-    fetchBalance();
+    })();
   }, [
     values.accountNumber,
     setFieldError,
@@ -117,21 +118,24 @@ function InnerForm({
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        {/* Account Number */}
-        <FormInputIcon
-          name="accountNumber"
-          label={t("accountNumber")}
-          type="text"
-          helpertext={
-            availableBalance != null
-              ? tu("availableBalance", {
-                  amount: availableBalance.toLocaleString(),
-                })
-              : undefined
-          }
-          disabled={readOnly}
-          maskingFormat="0000-000000-000"
-        />
+        {/* Account Number -> InputSelectCombo */}
+        <div className="flex flex-col">
+          <InputSelectCombo
+            name="accountNumber"
+            label={t("accountNumber")}
+            options={accountOptions}
+            width="w-full"
+            maskingFormat="0000-000000-000"
+            disabled={readOnly}
+          />
+          {availableBalance != null && (
+            <p className="text-sm text-gray-500 mt-1">
+              {tu("availableBalance", {
+                amount: availableBalance.toLocaleString(),
+              })}
+            </p>
+          )}
+        </div>
 
         {/* Date */}
         <DatePickerValue name="date" label={t("date")} disabled={readOnly} />
@@ -185,9 +189,9 @@ function InnerForm({
             title={initialData ? tu("saveChanges") : tu("add")}
             color="info-dark"
             Icon={FaPaperPlane}
+            fullWidth={false}
             isSubmitting={isSubmitting}
             disabled={!isValid || !dirty || isSubmitting || accountHasError}
-            fullWidth={false}
           />
         </div>
       )}
@@ -196,7 +200,7 @@ function InnerForm({
 }
 
 /* ------------------------------------------------------------------ */
-/* Main exported component                                            */
+/* Main component                                                      */
 /* ------------------------------------------------------------------ */
 export default function LetterOfGuaranteeForm({
   initialData,
@@ -206,18 +210,24 @@ export default function LetterOfGuaranteeForm({
   const tv = useTranslations("letterOfGuarantee.form.validation");
   const tu = useTranslations("letterOfGuarantee.form.ui");
 
+  /* --- dropdown data ----------------------------------------------------- */
   const [currencyOptions, setCurrencyOptions] = useState<
-    Array<{ label: string; value: string }>
+    InputSelectComboOption[]
+  >([]);
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
   >([]);
 
+  /* available balance state */
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
 
+  /* modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
-  /* fetch currencies once */
+  /* load currencies */
   useEffect(() => {
     (async () => {
       try {
@@ -231,7 +241,24 @@ export default function LetterOfGuaranteeForm({
     })();
   }, []);
 
-  const defaultValues: TLetterOfGuarantee = {
+  /* load account numbers from cookie */
+  useEffect(() => {
+    const raw = Cookies.get("statementAccounts") ?? "[]";
+    let list: string[] = [];
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      try {
+        list = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        list = [];
+      }
+    }
+    setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
+  }, []);
+
+  /* ---- form values & schema -------------------------------------------- */
+  const defaults: TLetterOfGuarantee = {
     id: undefined,
     accountNumber: "",
     date: "",
@@ -242,12 +269,11 @@ export default function LetterOfGuaranteeForm({
     refferenceNumber: "",
     type: "letterOfGuarantee",
   };
-
   const initialValues: TLetterOfGuarantee = initialData
-    ? { ...defaultValues, ...initialData, type: "letterOfGuarantee" }
-    : defaultValues;
+    ? { ...defaults, ...initialData, type: "letterOfGuarantee" }
+    : defaults;
 
-  const validationSchema = Yup.object({
+  const schema = Yup.object({
     accountNumber: Yup.string().required(tv("required")),
     date: Yup.string().required(tv("required")),
     amount: Yup.number()
@@ -255,7 +281,7 @@ export default function LetterOfGuaranteeForm({
       .required(tv("required"))
       .positive(tv("amountPositive"))
       .test(
-        "check-balance",
+        "balance-check",
         tv("amountExceedsBalance"),
         (val) => !val || availableBalance == null || val <= availableBalance
       ),
@@ -265,12 +291,13 @@ export default function LetterOfGuaranteeForm({
     refferenceNumber: Yup.string().required(tv("required")),
   });
 
+  /* ---- submit ----------------------------------------------------------- */
   async function handleSubmit(
-    values: TLetterOfGuarantee,
+    vals: TLetterOfGuarantee,
     { setSubmitting, resetForm }: FormikHelpers<TLetterOfGuarantee>
   ) {
     try {
-      onSubmit({ ...values, type: "letterOfGuarantee" });
+      onSubmit({ ...vals, type: "letterOfGuarantee" });
       resetForm();
 
       setModalTitle(tu("savedTitle"));
@@ -278,7 +305,6 @@ export default function LetterOfGuaranteeForm({
       setModalSuccess(true);
       setModalOpen(true);
     } catch (err) {
-      console.error("Submit error:", err);
       const msg = err instanceof Error ? err.message : tu("unexpectedError");
       setModalTitle(tu("errorTitle"));
       setModalMessage(msg);
@@ -289,11 +315,12 @@ export default function LetterOfGuaranteeForm({
     }
   }
 
+  /* ---- JSX -------------------------------------------------------------- */
   return (
     <div className="w-full bg-gray-100 rounded-md p-4">
       <Formik
         initialValues={initialValues}
-        validationSchema={validationSchema}
+        validationSchema={schema}
         onSubmit={handleSubmit}
         enableReinitialize
       >
@@ -304,6 +331,7 @@ export default function LetterOfGuaranteeForm({
             availableBalance={availableBalance}
             setAvailableBalance={setAvailableBalance}
             currencyOptions={currencyOptions}
+            accountOptions={accountOptions}
             readOnly={readOnly}
           />
         )}

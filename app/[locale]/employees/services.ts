@@ -226,7 +226,7 @@ export async function getCompanyPermissions(): Promise<CompanyPermissions[]> {
     throw new Error("No access token found in cookies");
   }
 
-  const url = `${BASE_URL}/users/permissions?isGlobal=false`;
+  const url = `${BASE_URL}/users/permissions?isGlobal=10.2`;
   const res = await fetch(url, {
     method: "GET",
     headers: {

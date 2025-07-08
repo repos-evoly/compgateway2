@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/creditFacility/components/CreditFacilityForm.tsx
- * i18n-ready (en ⇄ ar) version — copy-paste
+ * i18n‑ready — account number uses <InputSelectCombo> with cookie options
  * ----------------------------------------------------------------------- */
 
 "use client";
@@ -8,11 +8,14 @@
 import React, { useEffect, useState } from "react";
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
+import Cookies from "js-cookie";
 import { useTranslations } from "next-intl";
 
 import FormHeader from "@/app/components/reusable/FormHeader";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -41,23 +44,15 @@ export default function CreditFacilityForm({
   onSubmit,
   readOnly = false,
 }: Props) {
-  /* ─── i18n hooks ──────────────────────────────────────────────── */
+  /* ─── i18n ──────────────────────────────────────────────── */
   const tFields = useTranslations("creditFacility.form.fields");
   const tVal = useTranslations("creditFacility.form.validation");
   const tUi = useTranslations("creditFacility.form.ui");
 
-  /* ─── Currency dropdown ──────────────────────────────────────── */
+  /* ─── currency dropdown ─────────────────────────────────── */
   const [currencyOptions, setCurrencyOptions] = useState<
-    { label: string; value: string }[]
+    InputSelectComboOption[]
   >([]);
-
-  /* ─── Modal state ────────────────────────────────────────────── */
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalSuccess, setModalSuccess] = useState(false);
-  const [modalTitle, setModalTitle] = useState("");
-  const [modalMessage, setModalMessage] = useState("");
-
-  /* ─── Fetch currencies (once) ────────────────────────────────── */
   useEffect(() => {
     (async () => {
       try {
@@ -75,8 +70,33 @@ export default function CreditFacilityForm({
     })();
   }, [tUi]);
 
-  /* ─── Form defaults & validation ─────────────────────────────── */
-  const defaultValues: TCreditFacility = {
+  /* ─── account number dropdown from cookie ───────────────── */
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  useEffect(() => {
+    const raw = Cookies.get("statementAccounts") ?? "[]";
+    let list: string[] = [];
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      try {
+        list = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        list = [];
+      }
+    }
+    setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
+  }, []);
+
+  /* ─── modal state ───────────────────────────────────────── */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
+  /* ─── form defaults & validation ────────────────────────── */
+  const defaults: TCreditFacility = {
     id: undefined,
     accountNumber: "",
     date: "",
@@ -87,12 +107,11 @@ export default function CreditFacilityForm({
     refferenceNumber: "",
     type: "creditFacility",
   };
-
   const initialValues: TCreditFacility = initialData
-    ? { ...defaultValues, ...initialData, type: "creditFacility" }
-    : defaultValues;
+    ? { ...defaults, ...initialData, type: "creditFacility" }
+    : defaults;
 
-  const validationSchema = Yup.object({
+  const schema = Yup.object({
     accountNumber: Yup.string().required(tVal("required")),
     date: Yup.string().required(tVal("required")),
     amount: Yup.number()
@@ -104,14 +123,13 @@ export default function CreditFacilityForm({
     refferenceNumber: Yup.string().required(tVal("required")),
   });
 
-  /* ─── Submit handler ─────────────────────────────────────────── */
+  /* ─── submit handler ────────────────────────────────────── */
   async function handleSubmit(
-    values: TCreditFacility,
+    vals: TCreditFacility,
     { setSubmitting, resetForm }: FormikHelpers<TCreditFacility>
   ) {
     try {
-      await onSubmit({ ...values, type: "creditFacility" });
-
+      await onSubmit({ ...vals, type: "creditFacility" });
       setModalTitle(tUi("savedTitle"));
       setModalMessage(tUi("savedMessage"));
       setModalSuccess(true);
@@ -129,13 +147,13 @@ export default function CreditFacilityForm({
     }
   }
 
-  /* ─── JSX ────────────────────────────────────────────────────── */
+  /* ─── JSX ──────────────────────────────────────────────── */
   return (
     <>
       <div className="w-full bg-gray-100 rounded-md p-4">
         <Formik
           initialValues={initialValues}
-          validationSchema={validationSchema}
+          validationSchema={schema}
           onSubmit={handleSubmit}
         >
           {({ isSubmitting, isValid, dirty }) => (
@@ -147,13 +165,15 @@ export default function CreditFacilityForm({
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                {/* Account Number */}
-                <FormInputIcon
+                {/* Account Number (dropdown) */}
+                <InputSelectCombo
                   name="accountNumber"
                   label={tFields("accountNumber")}
-                  type="text"
-                  disabled={readOnly}
+                  options={accountOptions}
+                  placeholder={tFields("accountNumber")}
+                  width="w-full"
                   maskingFormat="0000-000000-000"
+                  disabled={readOnly}
                 />
 
                 {/* Date */}
@@ -212,9 +232,9 @@ export default function CreditFacilityForm({
                     title={initialData ? tUi("saveChanges") : tUi("add")}
                     color="info-dark"
                     Icon={FaPaperPlane}
+                    fullWidth={false}
                     isSubmitting={isSubmitting}
                     disabled={!isValid || !dirty || isSubmitting}
-                    fullWidth={false}
                   />
                 </div>
               )}
@@ -223,7 +243,6 @@ export default function CreditFacilityForm({
         </Formik>
       </div>
 
-      {/* Modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

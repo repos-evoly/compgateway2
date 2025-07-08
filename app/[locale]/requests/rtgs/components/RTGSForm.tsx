@@ -1,9 +1,11 @@
 /* --------------------------------------------------------------------------
    app/requests/rtgs/components/RTGSForm.tsx
+   – Fixes TS prop‑type conflict by casting FieldComponent to ElementType
    -------------------------------------------------------------------------- */
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import { FormikHelpers } from "formik";
 import { useTranslations } from "next-intl";
 import * as Yup from "yup";
@@ -15,6 +17,9 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import Checkbox from "@/app/components/FormUI/CheckboxWrapper";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import BackButton from "@/app/components/reusable/BackButton";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 
 import {
   FaUser,
@@ -38,7 +43,6 @@ type RTGSFormProps = {
     helpers: FormikHelpers<TRTGSFormValues>
   ) => void;
   onCancel?: () => void;
-  /** If true, form fields are disabled and the submit button is hidden */
   readOnly?: boolean;
 };
 
@@ -75,6 +79,25 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
   readOnly = false,
 }) => {
   const t = useTranslations("RTGSForm");
+
+  /* ---- account dropdown from cookie ----------------------------------- */
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  useEffect(() => {
+    const raw = Cookies.get("statementAccounts") ?? "[]";
+    let list: string[] = [];
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      try {
+        list = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        list = [];
+      }
+    }
+    setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
+  }, []);
 
   /* ------------------- Initial values ------------------- */
   const defaultVals: TRTGSFormValues = {
@@ -115,14 +138,15 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       title: t("accInfo"),
       fields: [
         {
-          component: FormInputIcon,
+          component: InputSelectCombo,
           props: {
             name: "accountNo",
             label: t("accountNb"),
-            type: "text" as const,
-            startIcon: <FaUniversity />,
-            disabled: readOnly,
+            options: accountOptions,
+            placeholder: t("accountNb"),
+            width: "w-full",
             maskingFormat: "0000-000000-000",
+            disabled: readOnly,
           },
         },
         {
@@ -130,7 +154,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "applicantName",
             label: t("name"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaUser />,
             disabled: readOnly,
           },
@@ -140,7 +164,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "address",
             label: t("address"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaMapMarkerAlt />,
             disabled: readOnly,
           },
@@ -155,7 +179,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "beneficiaryName",
             label: t("benName"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaUser />,
             disabled: readOnly,
           },
@@ -165,7 +189,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "beneficiaryAccountNo",
             label: t("benAccNum"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaUniversity />,
             disabled: readOnly,
             maskingFormat: "0000-000000-000",
@@ -176,7 +200,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "beneficiaryBank",
             label: t("benBank"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaBuilding />,
             disabled: readOnly,
           },
@@ -186,7 +210,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "branchName",
             label: t("branch"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaMapMarkerAlt />,
             disabled: readOnly,
           },
@@ -201,7 +225,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "amount",
             label: t("amount"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaDollarSign />,
             disabled: readOnly,
           },
@@ -211,7 +235,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           props: {
             name: "remittanceInfo",
             label: t("reniInfo"),
-            type: "text" as const,
+            type: "text",
             startIcon: <FaInfoCircle />,
             disabled: readOnly,
           },
@@ -246,11 +270,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
   const handleSubmit = (
     values: TRTGSFormValues,
     helpers: FormikHelpers<TRTGSFormValues>
-  ) => {
-    onSubmit(values, helpers);
-  };
+  ) => onSubmit(values, helpers);
 
-  /* ========================== RENDER ============================ */
+  /* ====================================================== */
   return (
     <div className="mt-2 w-full rounded bg-gray-100">
       <Form
@@ -258,7 +280,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         onSubmit={handleSubmit}
         validationSchema={validationSchema}
       >
-        {/* ----------------- Header (responsive) ----------------- */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0">
           <div className="flex-1">
             <DatePickerValue
@@ -293,14 +315,13 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           </div>
         </div>
 
-        {/* ----------------- Dynamic sections ----------------- */}
+        {/* Sections */}
         {sections.map((section, idx) => (
           <div key={idx} className="px-4 md:px-6 py-4">
             <h2 className="text-lg md:text-xl font-semibold mb-4">
               {section.title}
             </h2>
 
-            {/* Form fields */}
             <div
               className={
                 section.title === t("attachments")
@@ -308,13 +329,12 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
                   : "grid grid-cols-1 md:grid-cols-2 gap-4"
               }
             >
-              {section.fields.map((field, fieldIdx) => {
-                const FieldComponent = field.component;
-                return <FieldComponent key={fieldIdx} {...field.props} />;
+              {section.fields.map((field, fIdx) => {
+                const FieldComponent = field.component as React.ElementType;
+                return <FieldComponent key={fIdx} {...field.props} />;
               })}
             </div>
 
-            {/* Section note */}
             {section.note && (
               <p className="mt-4 text-sm text-gray-700 whitespace-pre-wrap">
                 {section.note}
@@ -323,7 +343,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           </div>
         ))}
 
-        {/* ----------------- Buttons ----------------- */}
+        {/* Buttons */}
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 px-4 md:px-6 pb-6">
           {!readOnly && (
             <SubmitButton

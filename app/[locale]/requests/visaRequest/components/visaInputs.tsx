@@ -22,6 +22,15 @@ import {
  */
 export const step1VisaInputs = [
   {
+    name: "accountNumber",
+    label: "accountNumber",
+    icon: <FiCreditCard />,
+    type: "text",
+    maskingFormat: "0000-000000-000",
+    component: "InputSelectCombo",
+  },
+
+  {
     name: "branch",
     label: "branch",
     icon: <FiFileText />,
@@ -39,13 +48,7 @@ export const step1VisaInputs = [
     icon: <FiUser />,
     type: "text",
   },
-  {
-    name: "accountNumber",
-    label: "accountNumber",
-    icon: <FiCreditCard />,
-    type: "text",
-    maskingFormat: "0000-000000-000",
-  },
+
   {
     name: "nationalId",
     label: "nationalId",

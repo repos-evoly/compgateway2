@@ -18,7 +18,6 @@ import StatsBox from "./components/StatsBox";
 
 import {
   FiInfo,
-  FiDollarSign,
   FiCreditCard,
   FiBarChart2,
   FiUsers,
@@ -27,6 +26,7 @@ import {
   FiPlus,
   FiMinus,
 } from "react-icons/fi";
+import { FaMoneyBillWave } from "react-icons/fa";
 import { MdError } from "react-icons/md";
 import type { IconType } from "react-icons";
 
@@ -116,7 +116,7 @@ export default function DashboardPage(): JSX.Element {
   }
 
   /* ------------------------- icon arrays --------------------------- */
-  const balanceIcons: IconType[] = [FiDollarSign, FiCreditCard, FiBarChart2];
+  const balanceIcons: IconType[] = [FaMoneyBillWave, FiCreditCard, FiBarChart2];
 
   const statsConfig: {
     key: string;
@@ -128,7 +128,7 @@ export default function DashboardPage(): JSX.Element {
       key: "transferVolume",
       label: t("transferVolume"),
       value: stats?.transferVolume ?? 0,
-      Icon: FiDollarSign,
+      Icon: FaMoneyBillWave,
     },
     {
       key: "totalTransfers",

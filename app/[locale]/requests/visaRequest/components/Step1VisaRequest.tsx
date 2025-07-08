@@ -1,25 +1,49 @@
+/* --------------------------------------------------------------------------
+ * app/[locale]/requests/visaRequest/components/Step1VisaRequest.tsx
+ * Renders accountNumber with <InputSelectCombo>
+ * ----------------------------------------------------------------------- */
+
 "use client";
 
 import React from "react";
 import { useTranslations } from "next-intl";
 import { step1VisaInputs } from "./visaInputs";
 
-// Reuse your custom inputs:
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 
 type Step1VisaRequestProps = {
-  /** If true, disable all inputs in this step */
   readOnly?: boolean;
+  /** Options for the accountNumber dropdown (passed from the wizard) */
+  accountOptions: InputSelectComboOption[];
 };
 
-export function Step1VisaRequest({ readOnly = false }: Step1VisaRequestProps) {
+export function Step1VisaRequest({
+  readOnly = false,
+  accountOptions,
+}: Step1VisaRequestProps) {
   const t = useTranslations("visaRequest");
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {step1VisaInputs.map(({ name, label, icon, type }) => {
-        // If it's a date, use DatePickerValue:
+        if (name === "accountNumber") {
+          return (
+            <InputSelectCombo
+              key={name}
+              name="accountNumber"
+              label={t(label)}
+              options={accountOptions}
+              width="w-full"
+              maskingFormat="0000-000000-000"
+              disabled={readOnly}
+            />
+          );
+        }
+
         if (type === "date") {
           return (
             <DatePickerValue
@@ -31,7 +55,6 @@ export function Step1VisaRequest({ readOnly = false }: Step1VisaRequestProps) {
           );
         }
 
-        // Otherwise use FormInputIcon
         return (
           <FormInputIcon
             key={name}

@@ -1,6 +1,12 @@
+/* --------------------------------------------------------------------------
+ * app/[locale]/requests/visaRequest/components/VisaWizardForm.tsx
+ * Uses <InputSelectCombo> for accountNumber (options read from cookie)
+ * ----------------------------------------------------------------------- */
+
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useTranslations } from "next-intl";
@@ -10,11 +16,11 @@ import { Step1VisaRequest } from "./Step1VisaRequest";
 import { Step2VisaRequest } from "./Step2VisaRequest";
 import { step1VisaInputs, step2VisaInputs } from "./visaInputs";
 import { VisaRequestFormValues } from "../types";
+import type { InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
 
 type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
   onSubmit: (values: VisaRequestFormValues) => void;
-  /** If true, disable all inputs and remove the last-step button */
   readOnly?: boolean;
 };
 
@@ -25,7 +31,26 @@ export default function VisaWizardForm({
 }: VisaWizardFormProps) {
   const t = useTranslations("visaRequest");
 
-  // Default/merged
+  /* ---- Account dropdown (cookie) ------------------------------------- */
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  useEffect(() => {
+    const raw = Cookies.get("statementAccounts") ?? "[]";
+    let list: string[] = [];
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      try {
+        list = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        list = [];
+      }
+    }
+    setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
+  }, []);
+
+  /* ---- Initial values ------------------------------------------------ */
   const mergedInitial: VisaRequestFormValues = {
     branch: "",
     date: "",
@@ -42,10 +67,13 @@ export default function VisaWizardForm({
     ...initialValues,
   };
 
+  /* ---- Wizard steps -------------------------------------------------- */
   const steps = [
     {
       title: t("step1Title"),
-      component: <Step1VisaRequest readOnly={readOnly} />,
+      component: (
+        <Step1VisaRequest readOnly={readOnly} accountOptions={accountOptions} />
+      ),
     },
     {
       title: t("step2Title"),
@@ -53,14 +81,14 @@ export default function VisaWizardForm({
     },
   ];
 
+  /* ---- Field‑name translator (for review) ---------------------------- */
   function translateFieldName(fieldName: string): string {
     const allInputs = [...step1VisaInputs, ...step2VisaInputs];
     const found = allInputs.find((i) => i.name === fieldName);
-    if (found) return t(found.label);
-    return fieldName;
+    return found ? t(found.label) : fieldName;
   }
 
-  // Each step's schema
+  /* ---- Per‑step validation ------------------------------------------ */
   const stepValidations = [
     Yup.object({
       branch: Yup.string().required(t("branch") + " " + t("isRequired")),
@@ -96,39 +124,39 @@ export default function VisaWizardForm({
     }),
   ];
 
+  /* ---- Submit -------------------------------------------------------- */
   async function handleSubmit(values: VisaRequestFormValues) {
     onSubmit(values);
   }
 
+  /* ---- JSX ----------------------------------------------------------- */
   return (
     <div className="w-full p-4 bg-gray-50 rounded-md">
       <Formik
         initialValues={mergedInitial}
-        onSubmit={(vals) => handleSubmit(vals)}
+        onSubmit={handleSubmit}
         validationSchema={Yup.object({})}
         validateOnBlur
         validateOnChange={false}
       >
         {(formik) => {
-          async function validateCurrentStep(stepIndex: number) {
-            const currentSchema = stepValidations[stepIndex];
+          async function validateCurrentStep(stepIdx: number) {
+            const schema = stepValidations[stepIdx];
             try {
-              await currentSchema.validate(formik.values, {
-                abortEarly: false,
-              });
+              await schema.validate(formik.values, { abortEarly: false });
               formik.setErrors({});
               return true;
             } catch (err) {
               if (err instanceof Yup.ValidationError) {
-                const errors: Record<string, string> = {};
+                const errs: Record<string, string> = {};
                 const touched: Record<string, boolean> = {};
-                for (const e of err.inner) {
+                err.inner.forEach((e) => {
                   if (e.path) {
-                    errors[e.path] = e.message;
+                    errs[e.path] = e.message;
                     touched[e.path] = true;
                   }
-                }
-                formik.setErrors(errors);
+                });
+                formik.setErrors(errs);
                 formik.setTouched(touched, false);
               }
               return false;
@@ -143,7 +171,7 @@ export default function VisaWizardForm({
                 onSubmit={() => formik.handleSubmit()}
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
-                readOnly={readOnly} // Pass down to handle last-step button removal
+                readOnly={readOnly}
                 fallbackPath="/requests/visaRequest"
                 isEditing={initialValues !== undefined}
               />

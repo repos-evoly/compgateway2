@@ -1,15 +1,24 @@
+/* --------------------------------------------------------------------------
+   app/[locale]/requests/cbl/components/CBLForm.tsx
+   – Current Account uses <InputSelectCombo> with cookie options
+   -------------------------------------------------------------------------- */
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import { FormikHelpers } from "formik";
 import { useTranslations } from "use-intl";
-// ⬇️ add with the other imports
+
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
+
 import { FaUser } from "react-icons/fa";
 
 import Table from "@/app/[locale]/requests/cbl/components/Table";
@@ -22,38 +31,58 @@ import { addCblRequest } from "../service";
 import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
 
-/**
- * A CBL form that, if readOnly => disables fields + hides buttons
- */
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 const CBLForm: React.FC<CBLFormProps> = ({
   initialValues,
   onSubmit,
   readOnly = false,
 }) => {
   const t = useTranslations("cblForm");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // ⬇️ add right after: const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /* ---- modal state ---- */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
-  // Merge defaults + incoming
+  /* ---- account dropdown options (cookie) ---- */
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  useEffect(() => {
+    const raw = Cookies.get("statementAccounts") ?? "[]";
+    let list: string[] = [];
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      try {
+        list = JSON.parse(decodeURIComponent(raw));
+      } catch {
+        list = [];
+      }
+    }
+    setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
+  }, []);
+
+  /* ---- merged initial values ---- */
   const mergedValues: TCBLValues = {
     id: 0,
     ...defaultVals,
     ...initialValues,
   };
 
-  // Prepare columns for the table
+  /* ---- dynamic columns ---- */
   const columns = getColumns(t);
   const columns1 = columns.table1;
   const columns2 = columns.table2;
 
-  // The dynamic field definitions
+  /* ---- dynamic field schema ---- */
   const formFields = fields(t);
 
-  // We'll define the "sections" just like your original
   const sections = [
     {
       title: t("generalInformation"),
@@ -76,8 +105,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
     },
   ];
 
-  // Handle form submission => do nothing if readOnly
-  // Handle form submission
+  /* ---- submit ---- */
   const handleSubmit = async (
     values: TCBLValues,
     helpers: FormikHelpers<TCBLValues>
@@ -88,18 +116,14 @@ const CBLForm: React.FC<CBLFormProps> = ({
     try {
       await addCblRequest(values);
 
-      /* ── success modal ── */
-      setModalTitle(t("createSuccessTitle")); // e.g. "Created!"
-      setModalMessage(t("createSuccessMessage")); // e.g. "CBL request saved."
+      setModalTitle(t("createSuccessTitle"));
+      setModalMessage(t("createSuccessMessage"));
       setModalSuccess(true);
       setModalOpen(true);
 
       onSubmit?.(values, helpers);
     } catch (error) {
-      console.error("Failed to create CBL request:", error);
-
-      /* ── error modal ── */
-      setModalTitle(t("createErrorTitle")); // e.g. "Error"
+      setModalTitle(t("createErrorTitle"));
       setModalMessage(
         error instanceof Error ? error.message : t("unknownError")
       );
@@ -110,6 +134,9 @@ const CBLForm: React.FC<CBLFormProps> = ({
     }
   };
 
+  /* ------------------------------------------------------------------ */
+  /* JSX                                                                 */
+  /* ------------------------------------------------------------------ */
   return (
     <>
       <FormHeader>
@@ -120,38 +147,57 @@ const CBLForm: React.FC<CBLFormProps> = ({
           />
         </div>
       </FormHeader>
+
       <div className="px-6 bg-gray-100 -mt-6 py-2">
         <Form initialValues={mergedValues} onSubmit={handleSubmit}>
-          {/* Dynamic sections */}
-          {sections.map((section, index) => (
-            <div className="mt-6" key={index}>
+          {/* ---------------- Sections ---------------- */}
+          {sections.map((section, idx) => (
+            <div className="mt-6" key={idx}>
               <h2 className="text-lg font-bold text-gray-800">
                 {section.title}
               </h2>
 
               {section.fieldGroups ? (
-                section.fieldGroups.map((group, groupIndex) => (
+                section.fieldGroups.map((group, gIdx) => (
                   <div
-                    key={groupIndex}
+                    key={gIdx}
                     className={`grid ${group.gridCols} gap-4 mt-4`}
                   >
-                    {group.fields.map((field, fieldIndex) => {
-                      const FieldComponent = field.component;
+                    {group.fields.map((field, fIdx) => {
+                      const FieldComponent =
+                        field.component as React.ElementType;
+                      const commonProps = {
+                        name: field.name,
+                        label: field.label,
+                        disabled: readOnly,
+                        textColor: "text-gray-700",
+                        titlePosition:
+                          field.component === DatePickerValue
+                            ? "top"
+                            : undefined,
+                      };
+
                       return (
-                        <div key={fieldIndex} className="w-full">
-                          <FieldComponent
-                            name={field.name}
-                            label={field.label}
-                            type={field.type}
-                            startIcon={field.icon || null}
-                            titlePosition={
-                              field.component === DatePickerValue
-                                ? "top"
-                                : undefined
-                            }
-                            textColor="text-gray-700"
-                            disabled={readOnly} // DISABLE fields if readOnly
-                          />
+                        <div key={fIdx} className="w-full">
+                          {field.name === "currentAccount" ? (
+                            <InputSelectCombo
+                              {...commonProps}
+                              options={accountOptions}
+                              width="w-full"
+                              maskingFormat="0000-000000-000"
+                            />
+                          ) : (
+                            <FieldComponent
+                              {...commonProps}
+                              type={field.type}
+                              startIcon={field.icon || null}
+                              maskingFormat={
+                                field.name === "currentAccount"
+                                  ? "0000-000000-000"
+                                  : undefined
+                              }
+                            />
+                          )}
                         </div>
                       );
                     })}
@@ -159,23 +205,38 @@ const CBLForm: React.FC<CBLFormProps> = ({
                 ))
               ) : (
                 <div className={`grid ${section.gridCols} gap-4 mt-4`}>
-                  {section.fields.map((field, fieldIndex) => {
-                    const FieldComponent = field.component;
+                  {section.fields.map((field, fIdx) => {
+                    const FieldComponent = field.component as React.ElementType;
+                    const commonProps = {
+                      name: field.name,
+                      label: field.label,
+                      disabled: readOnly,
+                      textColor: "text-gray-700",
+                      titlePosition:
+                        field.component === DatePickerValue ? "top" : undefined,
+                    };
+
                     return (
-                      <div key={fieldIndex} className="w-full">
-                        <FieldComponent
-                          name={field.name}
-                          label={field.label}
-                          type={field.type}
-                          startIcon={field.icon || null}
-                          titlePosition={
-                            field.component === DatePickerValue
-                              ? "top"
-                              : undefined
-                          }
-                          textColor="text-gray-700"
-                          disabled={readOnly} // DISABLE fields if readOnly
-                        />
+                      <div key={fIdx} className="w-full">
+                        {field.name === "currentAccount" ? (
+                          <InputSelectCombo
+                            {...commonProps}
+                            options={accountOptions}
+                            width="w-full"
+                            maskingFormat="0000-000000-000"
+                          />
+                        ) : (
+                          <FieldComponent
+                            {...commonProps}
+                            type={field.type}
+                            startIcon={field.icon || null}
+                            maskingFormat={
+                              field.name === "currentAccount"
+                                ? "0000-000000-000"
+                                : undefined
+                            }
+                          />
+                        )}
                       </div>
                     );
                   })}
@@ -184,10 +245,9 @@ const CBLForm: React.FC<CBLFormProps> = ({
             </div>
           ))}
 
-          {/* Table + InfoBox */}
+          {/* -------------- Tables + InfoBox -------------- */}
           <div className="flex w-full gap-6">
             <div className="flex flex-1 flex-col gap-6">
-              {/* Table 1 */}
               <Table
                 title={t("table1.title")}
                 columns={columns1}
@@ -197,7 +257,6 @@ const CBLForm: React.FC<CBLFormProps> = ({
 
               <div className="flex-grow rounded-lg border border-gray-300 bg-gray-100 shadow-sm" />
 
-              {/* Table 2 */}
               <Table
                 title={t("table2.title")}
                 columns={columns2}
@@ -211,7 +270,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
             </div>
           </div>
 
-          {/* Additional Info */}
+          {/* -------------- Additional Info -------------- */}
           <div className="mt-6">
             <h2 className="text-lg font-bold text-gray-800">
               {t("additionalInformation")}
@@ -234,20 +293,20 @@ const CBLForm: React.FC<CBLFormProps> = ({
             </div>
           </div>
 
-          {/* Buttons => hidden if readOnly */}
+          {/* -------------- Buttons -------------- */}
           {!readOnly && (
-            <div className="px-6 pb-6 flex justify-center items-center gap-2">
+            <div className="px-6 pb-6 flex justify-center gap-2">
               <SubmitButton
                 title="Submit"
                 color="info-dark"
-                fullWidth={false}
                 disabled={isSubmitting}
               />
             </div>
           )}
         </Form>
       </div>
-      {/* ⬇️ paste just before the closing fragment */}
+
+      {/* Modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

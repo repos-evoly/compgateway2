@@ -47,6 +47,15 @@ export const sidebarItems = [
     permissions: ["CompanyCanEmployees"],
   },
   {
+    id: 32,
+    label: "representatives",
+    path: "/representatives",
+    icon: FaUsers,
+    children: [],
+    // No permissions → always visible (for testing)
+    // permissions: ["CompanyCanRepresentatives"],
+  },
+  {
     id: 2, // Divider
     label: "divider",
     path: "",

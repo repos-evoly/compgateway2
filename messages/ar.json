@@ -41,7 +41,8 @@
       "defaultTitle":"",
       "currencies":"العملات",
       "employees":"الموظفين",
-      "companies":"الشركات"
+      "companies":"الشركات",
+      "representatives":"الممثلين"
 
     },
     "mainHeader":{
@@ -345,12 +346,12 @@
         "continue": "متابعة",
         "postingDate": "تاريخ النشر",
         "amount": "المبلغ",
-        "drCr": "مدين / دائن",
-        "narrative1": "البيان 1",
-        "narrative2": "البيان 2",
-        "narrative3": "البيان 3",
+        "debit": "مدين",
+        "credit": "دائن",
+        "narrative": "البيان",
         "required": "مطلوب",
-        "selectAccount": "الرجاء اختيار حساب"
+        "selectAccount": "الرجاء اختيار حساب",
+        "toDateCannotBeToday": "لا يمكن أن يكون تاريخ 'إلى' اليوم. يرجى اختيار تاريخ قبل يوم واحد على الأقل."
       },
       "formTypeSelect":{
         "internal":"تحويل داخل المصرف",
@@ -412,7 +413,9 @@
           "dialogTitle": "ملاحظة",
           "delmessage": "هل أنت متأكد أنك تريد المتابعة؟",
           "cancel": "أغلق",
-          "confirm": "تأكيد"
+          "confirm": "تأكيد",
+          "close": "إغلاق",
+          "ok": "حسناً"
         },
 
 
@@ -420,6 +423,7 @@
           "dashboardDescription": "عرض لوحات التحكم الشاملة",
           "statementOfAccountDescription": "عرض وتنزيل كشوف الحساب",
           "employeesDescription": "إدارة سجلات وبيانات الموظفين",
+          "representativesDescription": "إدارة ممثلين الشركة",
       
           "transferDescription": "إدارة جميع تحويلات الأموال",
           "transferInDescription": "تحويل الأموال إلى حسابك",
@@ -600,6 +604,7 @@
           "CompanyCanExternalTransfer": "يمكنه إجراء التحويلات الخارجية",
           "CompanyCanAddEmployee": "يمكنه إضافة موظفين",
           "CompanyCanEditEmployee": "يمكنه تعديل الموظفين",
+          "CompanyCanRepresentatives": "يمكنه إدارة الممثلين",
           "EmployeeCanCheckTransfers": "يمكنه التحقق من التحويلات",
           "EmployeeCanCheckRequests": "يمكنه التحقق من الطلبات",
           "EmployeeCanUpdateRequests": "يمكنه تحديث الطلبات",
@@ -737,6 +742,59 @@
             "submitErrorGeneric": "حدث خطأ أثناء إضافة السجل."
           }
         }
+      },
+      
+      "representatives": {
+        "title": "ممثلين الشركة",
+        "description": "إدارة ممثلين الشركة الذين يمكن تفعيلهم أو إلغاء تفعيلهم",
+        "columns": {
+          "id": "المعرف",
+          "name": "الاسم",
+          "number": "الرقم",
+          "passportNumber": "رقم جواز السفر",
+          "status": "الحالة",
+          "createdAt": "تاريخ الإنشاء",
+          "actions": "الإجراءات"
+        },
+        "status": {
+          "active": "مفعل",
+          "inactive": "غير مفعل"
+        },
+        "actions": {
+          "edit": "تعديل",
+          "delete": "حذف",
+          "activate": "تفعيل",
+          "deactivate": "إلغاء التفعيل"
+        },
+        "form": {
+          "addTitle": "إضافة ممثل",
+          "editTitle": "تعديل ممثل",
+          "fields": {
+            "name": "الاسم",
+            "namePlaceholder": "أدخل اسم الممثل",
+            "number": "الرقم",
+            "numberPlaceholder": "أدخل رقم الهاتف",
+            "passportNumber": "رقم جواز السفر",
+            "passportNumberPlaceholder": "أدخل رقم جواز السفر",
+            "isActive": "حالة التفعيل",
+            "isActiveDescription": "تفعيل أو إلغاء تفعيل هذا الممثل"
+          },
+          "createButton": "إنشاء",
+          "updateButton": "تحديث",
+          "cancelButton": "إلغاء",
+          "createSuccess": "تم إنشاء الممثل بنجاح",
+          "updateSuccess": "تم تحديث الممثل بنجاح",
+          "unexpectedError": "حدث خطأ غير متوقع"
+        },
+        "errorTitle": "خطأ",
+        "successTitle": "نجاح",
+        "unexpectedError": "حدث خطأ غير متوقع",
+        "doubleClickToEdit": "انقر نقراً مزدوجاً لتعديل هذا الممثل",
+        "representativeNotFound": "لم يتم العثور على الممثل",
+        "activatedSuccess": "تم تفعيل الممثل بنجاح",
+        "deactivatedSuccess": "تم إلغاء تفعيل الممثل بنجاح",
+        "confirmDeactivateMessage": "هل أنت متأكد من أنك تريد إلغاء تفعيل هذا الممثل؟",
+        "confirmActivateMessage": "هل أنت متأكد من أنك تريد تفعيل هذا الممثل؟"
       }
       
   }

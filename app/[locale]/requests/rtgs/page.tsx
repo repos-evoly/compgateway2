@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import RTGSForm from "./components/RTGSForm";
@@ -12,6 +13,15 @@ import { getRtgsRequests, createRtgsRequest } from "./services";
 
 const RTGSListPage: React.FC = () => {
   const t = useTranslations("RTGSForm");
+  const pathname = usePathname();
+
+  // Determine the locale based on the pathname
+  const [currentLocale, setCurrentLocale] = useState("en");
+  useEffect(() => {
+    const segments = pathname?.split("/") || [];
+    const locale = segments[1];
+    setCurrentLocale(locale === "ar" ? "ar" : "en");
+  }, [pathname]);
 
   /* ─────────────────────────── Grid / form state ────────────────────────── */
   const [data, setData] = useState<TRTGSValues[]>([]);
@@ -60,8 +70,8 @@ const RTGSListPage: React.FC = () => {
   /* ─────────────────────────── Grid-friendly data ───────────────────────── */
   const rowData = data.map((item) => ({
     ...item,
-    refNum: new Date(item.refNum).toLocaleDateString(),
-    date: new Date(item.date).toLocaleDateString(),
+    refNum: new Date(item.refNum).toLocaleDateString(currentLocale),
+    date: new Date(item.date).toLocaleDateString(currentLocale),
   }));
 
   /* ─────────────────────────── Handlers ─────────────────────────────────── */

@@ -1,3 +1,6 @@
+"use client";
+
+export const dynamic = "force-dynamic";
 // pages/login.tsx
 import React from "react";
 import { FiLogIn } from "react-icons/fi"; // Import login icon

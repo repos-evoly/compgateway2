@@ -11,15 +11,15 @@ export type BackButtonProps = {
   isEditing?: boolean;
 };
 
-const BackButton: React.FC<BackButtonProps> = ({ fallbackPath, isEditing }) => {
+const BackButton: React.FC<BackButtonProps> = ({ fallbackPath }) => {
   const t = useTranslations("backButton");
   const router = useRouter();
 
   const handleBack = () => {
-    if (fallbackPath && isEditing) {
+    if (fallbackPath) {
       router.push(fallbackPath);
     } else {
-      window.location.reload();
+      router.back();
     }
   };
 

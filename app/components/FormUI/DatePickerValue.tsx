@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useField, useFormikContext } from "formik";
 import dayjs from "dayjs";
+import { usePathname } from "next/navigation";
 
 type Props = {
   name: string;
@@ -23,6 +24,15 @@ export default function DatePickerValue({
 }: Props) {
   const [field] = useField(name);
   const { setFieldValue } = useFormikContext();
+  const pathname = usePathname();
+
+  // Determine the locale based on the pathname
+  const [currentLocale, setCurrentLocale] = useState("en");
+  useEffect(() => {
+    const segments = pathname?.split("/") || [];
+    const locale = segments[1];
+    setCurrentLocale(locale === "ar" ? "ar" : "en");
+  }, [pathname]);
 
   // Ensure the value is always a valid string or empty
   const value = field.value ? dayjs(field.value).format("YYYY-MM-DD") : "";
@@ -50,6 +60,11 @@ export default function DatePickerValue({
   // Input classes (note: removed textColor to keep default text styling)
   const inputClasses = `w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-sm text-black`;
 
+  // Get placeholder text based on locale
+  const getPlaceholder = () => {
+    return currentLocale === "ar" ? "يوم/شهر/سنة" : "Year/Month/Day";
+  };
+
   return (
     <div className={containerClasses}>
       {titlePosition === "side" ? (
@@ -64,6 +79,9 @@ export default function DatePickerValue({
             onChange={handleChange}
             disabled={disabled}
             className={inputClasses}
+            lang={currentLocale}
+            dir={currentLocale === "ar" ? "rtl" : "ltr"}
+            placeholder={getPlaceholder()}
           />
         </>
       ) : (
@@ -78,6 +96,9 @@ export default function DatePickerValue({
             onChange={handleChange}
             disabled={disabled}
             className={inputClasses}
+            lang={currentLocale}
+            dir={currentLocale === "ar" ? "rtl" : "ltr"}
+            placeholder={getPlaceholder()}
           />
         </>
       )}

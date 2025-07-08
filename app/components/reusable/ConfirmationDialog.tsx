@@ -43,12 +43,12 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           >
             {t("cancel")}
           </button>
-          {/* <button
+          <button
             onClick={() => handleClose(true)}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-success-main rounded hover:bg-success-dark"
           >
             {t("confirm")}
-          </button> */}
+          </button>
         </div>
       </div>
     </div>

@@ -789,8 +789,10 @@
     "representativeNotFound": "Representative not found",
     "activatedSuccess": "Representative activated successfully",
     "deactivatedSuccess": "Representative deactivated successfully",
+    "deleteSuccess": "Representative deleted successfully",
     "confirmDeactivateMessage": "Are you sure you want to deactivate this representative?",
-    "confirmActivateMessage": "Are you sure you want to activate this representative?"
+    "confirmActivateMessage": "Are you sure you want to activate this representative?",
+    "confirmDeleteMessage": "Are you sure you want to delete this representative? This action cannot be undone."
   }
 
 

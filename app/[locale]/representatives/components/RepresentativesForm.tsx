@@ -16,6 +16,7 @@ import type { Representative, RepresentativeFormValues } from "../types";
 
 interface RepresentativesFormProps {
   initialData: Representative | null;
+  representativeId?: number;
   onSubmit: (success: boolean, message: string) => void;
   onCancel: () => void;
 }
@@ -29,14 +30,15 @@ const validationSchema = Yup.object({
 
 export default function RepresentativesForm({
   initialData,
+  representativeId,
   onSubmit,
   onCancel,
 }: RepresentativesFormProps) {
   const t = useTranslations("representatives.form");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditMode = !!initialData;
 
   const initialValues: RepresentativeFormValues = {
-    id: initialData?.id,
     name: initialData?.name || "",
     number: initialData?.number || "",
     passportNumber: initialData?.passportNumber || "",
@@ -47,10 +49,9 @@ export default function RepresentativesForm({
     try {
       setIsSubmitting(true);
 
-      if (initialData) {
+      if (initialData && representativeId) {
         // Update existing representative
-        await updateRepresentative({
-          id: values.id!,
+        await updateRepresentative(representativeId, {
           name: values.name,
           number: values.number,
           passportNumber: values.passportNumber,
@@ -95,47 +96,51 @@ export default function RepresentativesForm({
             />
 
             <div className="mt-6 space-y-6">
-              {/* Name Field */}
-              <FormInputIcon
-                name="name"
-                label={t("fields.name")}
-                type="text"
-                startIcon={<FaUser />}
-                helpertext={t("fields.namePlaceholder")}
-              />
-
-              {/* Number Field */}
-              <FormInputIcon
-                name="number"
-                label={t("fields.number")}
-                type="text"
-                startIcon={<FaPhone />}
-                helpertext={t("fields.numberPlaceholder")}
-              />
-
-              {/* Passport Number Field */}
-              <FormInputIcon
-                name="passportNumber"
-                label={t("fields.passportNumber")}
-                type="text"
-                startIcon={<FaPassport />}
-                helpertext={t("fields.passportNumberPlaceholder")}
-              />
-
-              {/* Active Status Field */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    {t("fields.isActive")}
-                  </label>
-                  <p className="text-sm text-gray-500">
-                    {t("fields.isActiveDescription")}
-                  </p>
-                </div>
-                <Switch
-                  name="isActive"
-                  label=""
+              {/* First Row: Name and Number */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormInputIcon
+                  name="name"
+                  label={t("fields.name")}
+                  type="text"
+                  startIcon={<FaUser />}
+                  helpertext={t("fields.namePlaceholder")}
                 />
+
+                <FormInputIcon
+                  name="number"
+                  label={t("fields.number")}
+                  type="text"
+                  startIcon={<FaPhone />}
+                  helpertext={t("fields.numberPlaceholder")}
+                />
+              </div>
+
+              {/* Second Row: Passport Number and Active Status (edit mode only) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormInputIcon
+                  name="passportNumber"
+                  label={t("fields.passportNumber")}
+                  type="text"
+                  startIcon={<FaPassport />}
+                  helpertext={t("fields.passportNumberPlaceholder")}
+                />
+
+                {isEditMode && (
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        {t("fields.isActive")}
+                      </label>
+                      <p className="text-sm text-gray-500">
+                        {t("fields.isActiveDescription")}
+                      </p>
+                    </div>
+                    <Switch
+                      name="isActive"
+                      label=""
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

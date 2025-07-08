@@ -82,6 +82,7 @@ export default function PermissionsPage() {
     CompanyCanExternalTransfer: <FaTrashAlt />,
     CompanyCanAddEmployee: <FaUserShield />,
     CompanyCanEditEmployee: <FaCog />,
+    CompanyCanRepresentatives: <FaUserShield />,
   };
 
   return (

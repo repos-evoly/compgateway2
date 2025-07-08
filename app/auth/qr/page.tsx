@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = "force-dynamic";
+
 import React, { useEffect, useState } from "react";
 import { FiSmartphone } from "react-icons/fi";
 import QRCodeDisplay from "@/app/auth/login/components/Qr"; // Adjust the path if needed

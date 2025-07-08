@@ -85,19 +85,22 @@ const Page: React.FC = () => {
     const headerRow = [
       t("postingDate"),
       t("amount"),
-      t("drCr"),
-      t("narrative1"),
-      t("narrative2"),
-      t("narrative3"),
+      t("debit"),
+      t("credit"),
+      t("narrative"),
     ];
-    const dataRows = lines.map((line) => [
-      line.postingDate,
-      line.amount,
-      line.drCr,
-      line.nr1,
-      line.nr2,
-      line.nr3,
-    ]);
+    const dataRows = lines.map((line) => {
+      const narratives = [line.nr1, line.nr2, line.nr3].filter(n => n && n.trim() !== '').join(' ');
+      const isDebit = line.drCr === 'DR';
+      const isCredit = line.drCr === 'CR';
+      return [
+        line.postingDate,
+        line.amount,
+        isDebit ? line.amount : '',
+        isCredit ? line.amount : '',
+        narratives || '-',
+      ];
+    });
     const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "StatementData");
@@ -108,10 +111,28 @@ const Page: React.FC = () => {
   const columns = [
     { key: "postingDate", label: t("postingDate") },
     { key: "amount", label: t("amount") },
-    { key: "drCr", label: t("drCr") },
-    { key: "nr1", label: t("narrative1") },
-    { key: "nr2", label: t("narrative2") },
-    { key: "nr3", label: t("narrative3") },
+    { 
+      key: "debit", 
+      label: t("debit"),
+      renderCell: (row: StatementLine) => {
+        return row.drCr === 'DR' ? row.amount : '';
+      }
+    },
+    { 
+      key: "credit", 
+      label: t("credit"),
+      renderCell: (row: StatementLine) => {
+        return row.drCr === 'CR' ? row.amount : '';
+      }
+    },
+    { 
+      key: "narrative", 
+      label: t("narrative"),
+      renderCell: (row: StatementLine) => {
+        const narratives = [row.nr1, row.nr2, row.nr3].filter(n => n && n.trim() !== '').join(' ');
+        return narratives || '-';
+      }
+    },
   ];
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(lines.length / pageSize));
@@ -137,8 +158,23 @@ const Page: React.FC = () => {
               validationSchema={validationSchema}
               onSubmit={handleFilter}
               validateOnMount
+              validateOnChange
+              validateOnBlur
             >
-              {({ isValid, dirty }: FormikProps<FilterValues>) => (
+              {({ isValid, dirty, values }: FormikProps<FilterValues>) => {
+                // Check if today's date is selected for export functionality
+                const isTodaySelected = () => {
+                  if (!values.toDate) return false;
+                  const today = new Date();
+                  const selectedDate = new Date(values.toDate);
+                  today.setHours(0, 0, 0, 0);
+                  selectedDate.setHours(0, 0, 0, 0);
+                  return selectedDate.getTime() === today.getTime();
+                };
+
+                const isFormValid = isValid;
+                
+                return (
                 <FormikForm className="flex flex-wrap w-full px-1 py-1">
                   <div className="flex flex-wrap items-center w-full gap-2">
                     {/* Account selector from cookie */}
@@ -180,26 +216,28 @@ const Page: React.FC = () => {
                       <SubmitButton
                         title=""
                         Icon={isFetching ? undefined : FaSearch}
-                        disabled={!isValid || !dirty || isFetching}
+                        disabled={!isFormValid || !dirty || isFetching}
                         isSubmitting={isFetching}
                       />
                       <button
                         type="button"
                         onClick={handleDownloadExcel}
-                        disabled={!lines.length}
+                        disabled={!lines.length || isTodaySelected()}
                         className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300
                           ${
-                            !lines.length
+                            !lines.length || isTodaySelected()
                               ? "bg-gray-300 text-gray-500 cursor-not-allowed border border-white"
                               : "border border-white bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
                           }`}
+                        title={isTodaySelected() ? t("toDateCannotBeToday") : ""}
                       >
                         <FaDownload className="h-5 w-5" />
                       </button>
                     </div>
                   </div>
                 </FormikForm>
-              )}
+              );
+            }}
             </Formik>
           </div>
         }

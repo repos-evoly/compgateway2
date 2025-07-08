@@ -1,6 +1,8 @@
 import "../globals.css";
 import { Cairo } from "next/font/google";
 
+export const dynamic = "force-dynamic";
+
 // Importing Cairo font from Google Fonts
 const cairo = Cairo({ subsets: ["latin", "arabic"] });
 

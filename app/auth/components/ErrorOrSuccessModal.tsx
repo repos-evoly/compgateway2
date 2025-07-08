@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { FiX, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 
 type ErrorOrSuccessModalProps = {
@@ -20,6 +21,8 @@ export default function ErrorOrSuccessModal({
   onClose,
   onConfirm,
 }: ErrorOrSuccessModalProps) {
+  const t = useTranslations("global");
+  
   if (!isOpen) return null;
 
   return (
@@ -30,14 +33,13 @@ export default function ErrorOrSuccessModal({
       >
         <div
           className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full mx-4 border border-gray-100"
-          dir="rtl"
         >
           <div className="flex justify-between items-center mb-5">
             <h3 className="text-xl font-bold text-gray-800">{title}</h3>
             <button
               onClick={onClose}
               className="rounded-full p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
-              aria-label="إغلاق"
+              aria-label={t("close")}
             >
               <FiX size={22} />
             </button>
@@ -70,10 +72,10 @@ export default function ErrorOrSuccessModal({
 
                 {/* Confirm => call onConfirm if provided */}
                 <button
-                  onClick={onConfirm}
+                  onClick={onConfirm || onClose}
                   className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
                 >
-                  تأكيد
+                  {t("confirm")}
                 </button>
               </div>
             ) : (
@@ -82,7 +84,7 @@ export default function ErrorOrSuccessModal({
                 onClick={onClose}
                 className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700"
               >
-                حسناً
+                {t("ok")}
               </button>
             )}
           </div>

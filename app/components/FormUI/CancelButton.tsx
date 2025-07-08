@@ -17,7 +17,7 @@ export type CancelButtonProps = {
 };
 
 const CancelButton: FC<CancelButtonProps> = ({
-  title = "إلغاء",
+  title = "Cancel",
   onClick,
   disabled = false,
   fullWidth = false,

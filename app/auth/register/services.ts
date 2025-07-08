@@ -7,7 +7,7 @@ import {
     TAttachment, // <-- newly added in types.ts
   } from "./types";
   
-  const BASE_API = process.env.NEXT_PUBLIC_BASE_API;
+  const BASE_API = process.env.NEXT_PUBLIC_BASE_API || "http://localhost:3001/api";
   
   export async function getKycByCode(code: string): Promise<TKycResponse> {
     const response = await fetch(`${BASE_API}/companies/kyc/${code}`, {

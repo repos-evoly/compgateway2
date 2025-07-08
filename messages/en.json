@@ -40,7 +40,8 @@
     "defaultTitle": "",
     "currencies": "Currencies",
     "employees": "Employees",
-    "companies": "Companies"
+    "companies": "Companies",
+    "representatives": "Representatives"
   },
 
   "mainHeader": {
@@ -155,11 +156,11 @@
     "contract": "Contract",
     "claim": "Claim",
     "otherDoc": "Other Documents",
-    "note": "Note: Any transfer exceeding one million LYD must be approved by the bank’s FIU employee.",
+    "note": "Note: Any transfer exceeding one million LYD must be approved by the bank's FIU employee.",
     "ach": "ACH",
     "rtgs": "RTGS",
     "title": "Commerce & Development Bank",
-    "subtitle": "General Administration – Benghazi",
+    "subtitle": "General Administration – Benghazi",
     "accInfo": "Account Information",
     "benDetails": "Beneficiary Details",
     "payDetails": "Payment Details",
@@ -226,9 +227,9 @@
     "totalAmount": "Total Amount",
     "accountNum": "Account Number",
     "beneficiary": "Beneficiary",
-    "cust1Sign": "Customer Signature 1",
-    "cust2Sign": "Customer Signature 2",
-    "cust3Sign": "Customer Signature 3",
+    "cust1Sign": "Customer Signature 1",
+    "cust2Sign": "Customer Signature 2",
+    "cust3Sign": "Customer Signature 3",
     "note": "Please debit the specified amount from my account and issue a certified check.",
     "filledByBank": "To be filled by the bank",
     "checkNum": "Certified‑Check Number",
@@ -337,12 +338,12 @@
     "continue": "Continue",
     "postingDate": "Posting Date",
     "amount": "Amount",
-    "drCr": "Debit / Credit",
-    "narrative1": "Narrative 1",
-    "narrative2": "Narrative 2",
-    "narrative3": "Narrative 3",
+    "debit": "Debit",
+    "credit": "Credit",
+    "narrative": "Narrative",
     "required": "Required",
-    "selectAccount": "Please select an account"
+    "selectAccount": "Please select an account",
+    "toDateCannotBeToday": "To Date cannot be today. Please select a date at least one day earlier."
   },
 
   "formTypeSelect": {
@@ -408,13 +409,16 @@
     "dialogTitle": "Note",
     "delmessage": "Are you sure you want to proceed?",
     "cancel": "Close",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "close": "Close",
+    "ok": "OK"
   },
 
   "descriptions": {
     "dashboardDescription": "View overall dashboard metrics",
     "statementOfAccountDescription": "Display and download account statements",
     "employeesDescription": "Manage employee records and details",
+    "representativesDescription": "Manage company representatives",
 
     "transferDescription": "Handle all money transfers",
     "transferInDescription": "Move funds into your own account",
@@ -464,7 +468,7 @@
     "branch": "Branch",
     "residentSuppName": "Seller / Party Name",
     "residentSuppNationality": "Nationality",
-    "nonResidentPassport": "Seller’s ID / Passport No. (non‑resident)",
+    "nonResidentPassport": "Seller's ID / Passport No. (non‑resident)",
     "placeOfIssue": "Place of Issue",
     "dateOfIssue": "Date of Issue",
     "nonResidentSuppNationality": "Nationality",
@@ -480,7 +484,7 @@
     "accountHolderName": "Account‑Holder Name",
     "payementAddress": "Payment Address",
     "purpose": "Purpose of Transfer",
-    "documents": "Supporting documents for transfers over USD 15,000 (attach)",
+    "documents": "Supporting documents for transfers over USD 15,000 (attach)",
     "step1Title": "Basic Transfer Data",
     "step2Title": "Bank‑Account Details",
     "changeStatus": "Change Status",
@@ -501,8 +505,8 @@
   },
 
   "visaRequest": {
-    "step1Title": "Step 1",
-    "step2Title": "Step 2",
+    "step1Title": "Step 1",
+    "step2Title": "Step 2",
     "reviewStepTitle": "Review & Submit",
 
     "branch": "Branch / Agency",
@@ -523,8 +527,8 @@
   },
 
   "bankStatement": {
-    "step1Title": "Step 1",
-    "step2Title": "Step 2",
+    "step1Title": "Step 1",
+    "step2Title": "Step 2",
     "reviewStepTitle": "Review & Submit",
 
     "accountHolderName": "Account‑Holder Name",
@@ -592,6 +596,7 @@
       "CompanyCanExternalTransfer": "Can make external transfers",
       "CompanyCanAddEmployee": "Company Can add employees",
       "CompanyCanEditEmployee": "Can edit employees",
+      "CompanyCanRepresentatives": "Can manage representatives",
       "EmployeeCanCheckTransfers": "Can check transfers",
       "EmployeeCanCheckRequests": "Can check requests",
       "EmployeeCanUpdateRequests": "Can update requests",
@@ -733,6 +738,59 @@
         "submitErrorGeneric": "An error occurred while adding the record."
       }
     }
+  },
+
+  "representatives": {
+    "title": "Company Representatives",
+    "description": "Manage company representatives who can be enabled or disabled",
+    "columns": {
+      "id": "ID",
+      "name": "Name",
+      "number": "Number",
+      "passportNumber": "Passport Number",
+      "status": "Status",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "activate": "Activate",
+      "deactivate": "Deactivate"
+    },
+    "form": {
+      "addTitle": "Add Representative",
+      "editTitle": "Edit Representative",
+      "fields": {
+        "name": "Name",
+        "namePlaceholder": "Enter representative name",
+        "number": "Number",
+        "numberPlaceholder": "Enter phone number",
+        "passportNumber": "Passport Number",
+        "passportNumberPlaceholder": "Enter passport number",
+        "isActive": "Active Status",
+        "isActiveDescription": "Enable or disable this representative"
+      },
+      "createButton": "Create",
+      "updateButton": "Update",
+      "cancelButton": "Cancel",
+      "createSuccess": "Representative created successfully",
+      "updateSuccess": "Representative updated successfully",
+      "unexpectedError": "An unexpected error occurred"
+    },
+    "errorTitle": "Error",
+    "successTitle": "Success",
+    "unexpectedError": "An unexpected error occurred",
+    "doubleClickToEdit": "Double-click to edit this representative",
+    "representativeNotFound": "Representative not found",
+    "activatedSuccess": "Representative activated successfully",
+    "deactivatedSuccess": "Representative deactivated successfully",
+    "confirmDeactivateMessage": "Are you sure you want to deactivate this representative?",
+    "confirmActivateMessage": "Are you sure you want to activate this representative?"
   }
 
 

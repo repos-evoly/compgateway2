@@ -793,8 +793,10 @@
         "representativeNotFound": "لم يتم العثور على الممثل",
         "activatedSuccess": "تم تفعيل الممثل بنجاح",
         "deactivatedSuccess": "تم إلغاء تفعيل الممثل بنجاح",
+        "deleteSuccess": "تم حذف الممثل بنجاح",
         "confirmDeactivateMessage": "هل أنت متأكد من أنك تريد إلغاء تفعيل هذا الممثل؟",
-        "confirmActivateMessage": "هل أنت متأكد من أنك تريد تفعيل هذا الممثل؟"
+        "confirmActivateMessage": "هل أنت متأكد من أنك تريد تفعيل هذا الممثل؟",
+        "confirmDeleteMessage": "هل أنت متأكد من أنك تريد حذف هذا الممثل؟ لا يمكن التراجع عن هذا الإجراء."
       }
       
   }

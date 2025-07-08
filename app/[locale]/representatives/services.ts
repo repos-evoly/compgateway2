@@ -80,6 +80,7 @@ export const createRepresentative = async (
 };
 
 export const updateRepresentative = async (
+  id: number,
   data: UpdateRepresentativeRequest
 ): Promise<Representative> => {
   if (!token) {
@@ -87,7 +88,7 @@ export const updateRepresentative = async (
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/representatives/${data.id}`, {
+    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
       method: 'PUT',
       headers: {
         "Content-Type": "application/json",
@@ -114,7 +115,7 @@ export const getRepresentativeById = async (id: number): Promise<Representative>
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
+    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
       method: 'GET',
       headers: {
         "Content-Type": "application/json",
@@ -134,25 +135,58 @@ export const getRepresentativeById = async (id: number): Promise<Representative>
   }
 };
 
+export const deleteRepresentative = async (id: number): Promise<void> => {
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  try {
+    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
+      method: 'DELETE',
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      await throwApiError(response, "Failed to delete representative");
+    }
+  } catch (error) {
+    console.error('Error deleting representative:', error);
+    throw error;
+  }
+};
+
 export const toggleRepresentativeStatus = async (id: number): Promise<Representative> => {
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
   try {
+    console.log('Starting toggle for representative ID:', id);
+    
     // First get the current representative to know the current status
     const currentRepresentative = await getRepresentativeById(id);
+    console.log('Current representative:', currentRepresentative);
+    console.log('Current representative status:', currentRepresentative.isActive);
+    
+    // Calculate the new status (opposite of current)
+    const newStatus = !currentRepresentative.isActive;
+    console.log('Calculated new status:', newStatus);
     
     // Update with the opposite status
     const updatedData = {
-      id: currentRepresentative.id,
       name: currentRepresentative.name,
       number: currentRepresentative.number,
       passportNumber: currentRepresentative.passportNumber,
-      isActive: !currentRepresentative.isActive
+      isActive: newStatus
     };
+    
+    console.log('Sending update with new status:', updatedData.isActive);
+    console.log('Full update data:', updatedData);
 
-    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
+    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
       method: 'PUT',
       headers: {
         "Content-Type": "application/json",
@@ -166,7 +200,30 @@ export const toggleRepresentativeStatus = async (id: number): Promise<Representa
     }
 
     const result = await response.json();
-    return result;
+    console.log('Toggle API response:', result);
+    
+    // Handle different possible response structures
+    let finalResult: Representative;
+    
+    if (result.isActive !== undefined) {
+      // API returned the isActive field
+      finalResult = result;
+      console.log('Using API response isActive:', result.isActive);
+    } else {
+      // API didn't return isActive, use our calculated value
+      finalResult = {
+        name: result.name || currentRepresentative.name,
+        number: result.number || currentRepresentative.number,
+        passportNumber: result.passportNumber || currentRepresentative.passportNumber,
+        isActive: newStatus
+      };
+      console.log('Using calculated isActive:', newStatus);
+    }
+    
+    console.log('Final result:', finalResult);
+    console.log('Final isActive:', finalResult.isActive);
+    
+    return finalResult;
   } catch (error) {
     console.error('Error toggling representative status:', error);
     throw error;

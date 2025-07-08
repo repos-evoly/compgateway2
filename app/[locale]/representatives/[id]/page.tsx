@@ -92,6 +92,7 @@ export default function EditRepresentativePage() {
     <div>
       <RepresentativesForm
         initialData={representative}
+        representativeId={parseInt(id)}
         onSubmit={handleFormSubmit}
         onCancel={handleCancel}
       />

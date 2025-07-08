@@ -1,4 +1,11 @@
 export type Representative = {
+  name: string;
+  number: string;
+  passportNumber: string;
+  isActive: boolean;
+}
+
+export type RepresentativeListItem = {
   id: number;
   name: string;
   number: string;
@@ -9,7 +16,7 @@ export type Representative = {
 }
 
 export type RepresentativesResponse = {
-  data: Representative[];
+  data: RepresentativeListItem[];
   page: number;
   limit: number;
   totalPages: number;
@@ -24,7 +31,6 @@ export type CreateRepresentativeRequest = {
 }
 
 export type UpdateRepresentativeRequest = {
-  id: number;
   name: string;
   number: string;
   passportNumber: string;
@@ -32,7 +38,6 @@ export type UpdateRepresentativeRequest = {
 }
 
 export type RepresentativeFormValues = {
-  id?: number;
   name: string;
   number: string;
   passportNumber: string;

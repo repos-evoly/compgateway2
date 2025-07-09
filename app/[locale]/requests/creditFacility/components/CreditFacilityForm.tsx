@@ -34,6 +34,7 @@ type Props = {
   onSubmit: (vals: TCreditFacility) => void;
   onCancel: () => void;
   readOnly?: boolean;
+  isSubmitting?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -42,7 +43,9 @@ type Props = {
 export default function CreditFacilityForm({
   initialData,
   onSubmit,
+  
   readOnly = false,
+  
 }: Props) {
   /* ─── i18n ──────────────────────────────────────────────── */
   const tFields = useTranslations("creditFacility.form.fields");
@@ -177,14 +180,14 @@ export default function CreditFacilityForm({
                   placeholder={tFields("accountNumber")}
                   width="w-full"
                   maskingFormat="0000-000000-000"
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
 
                 {/* Date */}
                 <DatePickerValue
                   name="date"
                   label={tFields("date")}
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
 
                 {/* Amount */}
@@ -192,7 +195,7 @@ export default function CreditFacilityForm({
                   name="amount"
                   label={tFields("amount")}
                   type="number"
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
 
                 {/* Purpose */}
@@ -200,7 +203,7 @@ export default function CreditFacilityForm({
                   name="purpose"
                   label={tFields("purpose")}
                   type="text"
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
 
                 {/* Additional Info */}
@@ -208,7 +211,7 @@ export default function CreditFacilityForm({
                   name="additionalInfo"
                   label={tFields("additionalInfo")}
                   type="text"
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
 
                 {/* Currency */}
@@ -218,7 +221,7 @@ export default function CreditFacilityForm({
                   options={currencyOptions}
                   placeholder={tUi("currencyPlaceholder")}
                   width="w-full"
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
 
                 {/* Reference Number */}
@@ -226,7 +229,7 @@ export default function CreditFacilityForm({
                   name="refferenceNumber"
                   label={tFields("referenceNumber")}
                   type="text"
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
               </div>
 

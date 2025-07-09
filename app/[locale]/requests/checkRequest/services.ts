@@ -1,16 +1,11 @@
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // Adjust path
-import type {
-  TCheckRequestValues,
-  TCheckRequestsResponse,
-} from "./types";
-// add this with the other imports
+import { TCheckRequestFormValues, TCheckRequestsResponse, TCheckRequestValues } from "./types";
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { throwApiError } from "@/app/helpers/handleApiError";
 
-
 /**
- * Get a list of check requests with optional pagination/search
+ * Fetch all check requests (GET), with optional pagination & search.
  */
 export async function getCheckRequests(
   page: number,
@@ -18,13 +13,14 @@ export async function getCheckRequests(
   searchTerm: string = "",
   searchBy: string = ""
 ): Promise<TCheckRequestsResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API; 
   if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API not defined");
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
+
   const token = getAccessTokenFromCookies();
   if (!token) {
-    throw new Error("No access token");
+    throw new Error("No access token found in cookies");
   }
 
   const url = new URL(`${baseUrl}/checkrequests`);
@@ -33,71 +29,50 @@ export async function getCheckRequests(
   if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
   if (searchBy) url.searchParams.set("searchBy", searchBy);
 
-  const res = await fetch(url.toString(), {
+  const response = await fetch(url.toString(), {
     method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 
-if (!res.ok) {
-  await throwApiError(res, "Failed to fetch check requests.");
-}
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch check requests.");
+  }
 
-
-  const data = (await res.json()) as TCheckRequestsResponse;
-  return data;
+  return response.json() as Promise<TCheckRequestsResponse>;
 }
 
 /**
- * Get a single check request by ID: /checkrequests/{id}
+ * Creates a new check request (POST)
  */
-export async function getCheckRequestById(
-  id: string | number
-): Promise<TCheckRequestValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+export async function createCheckRequest(values: TCheckRequestFormValues): Promise<TCheckRequestValues> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API; 
   if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API not defined");
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
+
   const token = getAccessTokenFromCookies();
   if (!token) {
-    throw new Error("No access token");
+    throw new Error("No access token found in cookies");
   }
 
-  const res = await fetch(`${baseUrl}/checkrequests/${id}`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  // Convert form values to API format
+  const payload = {
+    branch: values.branch,
+    branchNum: values.branchNum,
+    date: values.date.toISOString(), // Convert Date to ISO string
+    customerName: values.customerName,
+    cardNum: values.cardNum,
+    accountNum: values.accountNum,
+    beneficiary: values.beneficiary,
+    lineItems: values.lineItems.map(item => ({
+      dirham: item.dirham,
+      lyd: item.lyd,
+    })),
+  };
 
-  if (!res.ok) {
-    await throwApiError(res, `Failed to fetch check request ${id}.`);
-  }
-
-  const data = (await res.json()) as TCheckRequestValues;
-  return data;
-}
-
-/**
- * Create a new check request (POST /checkrequests)
- */
-export async function createCheckRequest(payload: {
-  branch: string;
-  branchNum: string;
-  date: string; // must be ISO string
-  customerName: string;
-  cardNum: string;
-  accountNum: string;
-  beneficiary: string;
-  lineItems: { dirham: string; lyd: string }[];
-}): Promise<TCheckRequestValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API not defined");
-  }
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token");
-  }
-
-  const res = await fetch(`${baseUrl}/checkrequests`, {
+  const response = await fetch(`${baseUrl}/checkrequests`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -106,11 +81,87 @@ export async function createCheckRequest(payload: {
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to create check request.");
+  if (!response.ok) {
+    await throwApiError(response, "Failed to create check request.");
   }
 
-  // Return created record from the API
-  const data = (await res.json()) as TCheckRequestValues;
-  return data;
+  return response.json();
+}
+
+/**
+ * Fetch a single check request by ID (GET)
+ */
+export async function getCheckRequestById(id: string | number): Promise<TCheckRequestValues> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const response = await fetch(`${baseUrl}/checkrequests/${id}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, `Failed to fetch check request by ID ${id}.`);
+  }
+
+  const data = await response.json();
+  return data as TCheckRequestValues;
+}
+
+/**
+ * Updates a check request (PUT) with all the data fields.
+ */
+export async function updateCheckRequestById(
+  id: string | number,
+  values: TCheckRequestFormValues
+): Promise<TCheckRequestValues> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  // Convert form values to API format
+  const payload = {
+    branch: values.branch,
+    branchNum: values.branchNum,
+    date: values.date.toISOString(), // Convert Date to ISO string
+    customerName: values.customerName,
+    cardNum: values.cardNum,
+    accountNum: values.accountNum,
+    beneficiary: values.beneficiary,
+    lineItems: values.lineItems.map(item => ({
+      dirham: item.dirham,
+      lyd: item.lyd,
+    })),
+  };
+
+  const response = await fetch(`${baseUrl}/checkrequests/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, `Failed to update check request with ID ${id}.`);
+  }
+
+  const responseData = await response.json();
+  return responseData as TCheckRequestValues;
 }

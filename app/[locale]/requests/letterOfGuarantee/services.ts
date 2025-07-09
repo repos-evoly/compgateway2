@@ -131,3 +131,43 @@ export async function getLetterOfGuaranteeById(
   const data = await res.json();
   return data as LetterOfGuaranteeApiItem;
 }
+
+export async function updateLetterOfGuaranteeById(
+  id: number,
+  payload: TLetterOfGuarantee
+): Promise<LetterOfGuaranteeApiItem> {
+  if (!BASE_API) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not set.");
+  }
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${BASE_API}/creditfacilities/${id}`;
+
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      accountNumber: payload.accountNumber,
+      date: payload.date,
+      amount: payload.amount,
+      purpose: payload.purpose,
+      additionalInfo: payload.additionalInfo,
+      curr: payload.curr,
+      referenceNumber: payload.refferenceNumber, // note the field name difference
+      type: payload.type, // always "letterOfGuarantee"
+      status: payload.status,
+    }),
+  });
+
+  if (!res.ok) {
+    await throwApiError(res, `Failed to update letter of guarantee ID=${id}.`);
+  }
+
+  const data = await res.json();
+  return data as LetterOfGuaranteeApiItem;
+}

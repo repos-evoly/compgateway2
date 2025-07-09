@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 import CreditFacilityForm from "../components/CreditFacilityForm";
 import type { TCreditFacility } from "../types";
-import { getCreditFacilityById } from "../services";
+import { getCreditFacilityById, updateCreditFacilityById } from "../services";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
 import LoadingPage from "@/app/components/reusable/Loading";
@@ -27,6 +27,10 @@ export default function CreditFacilityDetailPage() {
 
   /* ─── Modal state (NEW) ──────────────────────────────────── */
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /* ─── Fetch record on mount ──────────────────────────────── */
   useEffect(() => {
@@ -54,7 +58,7 @@ export default function CreditFacilityDetailPage() {
           curr: apiItem.curr,
           refferenceNumber: apiItem.referenceNumber,
           type: apiItem.type,
-          status: apiItem.status
+          status: apiItem.status,
         };
 
         setFacilityData(converted);
@@ -99,9 +103,42 @@ export default function CreditFacilityDetailPage() {
   }
 
   /* ─── Handlers for pretend update / cancel ──────────────── */
-  const handleUpdate = (updatedItem: TCreditFacility) => {
-    console.log("Updated item:", updatedItem);
-    router.push("/creditfacility");
+  const handleUpdate = async (updatedItem: TCreditFacility) => {
+    if (!facilityData?.id || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const result = await updateCreditFacilityById(
+        facilityData.id,
+        updatedItem
+      );
+      setFacilityData({
+        id: result.id,
+        accountNumber: result.accountNumber,
+        date: result.date,
+        amount: result.amount,
+        purpose: result.purpose,
+        additionalInfo: result.additionalInfo,
+        curr: result.curr,
+        refferenceNumber: result.referenceNumber, // map field
+        type: result.type,
+        status: result.status,
+      });
+      setModalTitle("تم التحديث بنجاح");
+      setModalMessage("تم تحديث التسهيل الائتماني بنجاح.");
+      setModalSuccess(true);
+      setModalOpen(true);
+      // Optionally redirect after a delay:
+      // setTimeout(() => router.push("/creditfacility"), 1500);
+    } catch (err) {
+      setModalTitle("خطأ");
+      setModalMessage(
+        err instanceof Error ? err.message : "فشل تحديث التسهيل الائتماني"
+      );
+      setModalSuccess(false);
+      setModalOpen(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => router.push("/creditfacility");
@@ -114,20 +151,24 @@ export default function CreditFacilityDetailPage() {
           initialData={facilityData}
           onSubmit={handleUpdate}
           onCancel={handleCancel}
-          readOnly
+          readOnly={facilityData.status !== "Pending"}
+          isSubmitting={isSubmitting}
         />
       </div>
 
       {/* Error modal (in case fetch succeeded but later errors) */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
-        isSuccess={false}
-        title="خطأ"
-        message={error ?? ""}
-        onClose={() => setModalOpen(false)}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => {
+          setModalOpen(false);
+          if (modalSuccess) router.push("/creditfacility");
+        }}
         onConfirm={() => {
           setModalOpen(false);
-          router.push("/creditfacility");
+          if (modalSuccess) router.push("/creditfacility");
         }}
       />
     </>

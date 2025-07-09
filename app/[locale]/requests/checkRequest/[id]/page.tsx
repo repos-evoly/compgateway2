@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import CheckRequestForm from "../components/CheckRequestForm";
-import { getCheckRequestById } from "../services";
+import { getCheckRequestById, updateCheckRequestById } from "../services";
 import { TCheckRequestValues, TCheckRequestFormValues } from "../types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
@@ -13,12 +13,15 @@ import LoadingPage from "@/app/components/reusable/Loading";
 const CheckRequestDetailPage = () => {
   const { id } = useParams(); // /checkrequest/[id]
   const t = useTranslations("CheckRequest");
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [checkData, setCheckData] = useState<TCheckRequestValues | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -31,6 +34,7 @@ const CheckRequestDetailPage = () => {
         const msg = error instanceof Error ? error.message : t("genericError");
         setModalTitle(t("errorTitle"));
         setModalMessage(msg);
+        setModalSuccess(false);
         setModalOpen(true);
       } finally {
         setLoading(false);
@@ -38,7 +42,7 @@ const CheckRequestDetailPage = () => {
     };
 
     fetchData();
-  }, [id, t]); // ← added t
+  }, [id, t]);
 
   if (loading) {
     return <LoadingPage />;
@@ -69,17 +73,49 @@ const CheckRequestDetailPage = () => {
     status: checkData.status,
   };
 
-  // For now, let's just log if we "submit" from the detail page
-  // If you want to do an update, you'd do a PUT/PATCH here
-  const handleFormSubmit = (values: TCheckRequestFormValues) => {
-    console.log("Update not implemented yet. Received:", values);
+  // Handle form submission for updates
+  const handleFormSubmit = async (updatedItem: TCheckRequestFormValues) => {
+    if (isSubmitting || !id) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const result = await updateCheckRequestById(id.toString(), updatedItem);
+      
+      // Update local state with the returned data
+      setCheckData(result);
+      
+      setModalTitle(t("successTitle"));
+      setModalMessage(t("updateSuccessMessage") || "Check request updated successfully!");
+      setModalSuccess(true);
+      setModalOpen(true);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : t("genericError");
+      setModalTitle(t("errorTitle"));
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFormCancel = () => {
-    console.log(
-      "Cancelled. Possibly go back to the list or do something else."
-    );
+    // Navigate back to the check request list
+    router.push("/requests/checkrequest");
   };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    
+    // If it was a successful update, optionally redirect back to the list
+    if (modalSuccess) {
+      // You can uncomment this if you want to redirect after successful update
+      // router.push("/requests/checkrequest");
+    }
+  };
+
+  const isReadOnly = checkData.status !== "Pending";
 
   return (
     <div className="p-4">
@@ -87,15 +123,16 @@ const CheckRequestDetailPage = () => {
         initialValues={initialFormValues}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
-        readOnly // <<< Make the form read-only
+        readOnly={isReadOnly}
+        isSubmitting={isSubmitting}
       />
       <ErrorOrSuccessModal
         isOpen={modalOpen}
-        isSuccess={false}
+        isSuccess={modalSuccess}
         title={modalTitle}
         message={modalMessage}
-        onClose={() => setModalOpen(false)}
-        onConfirm={() => setModalOpen(false)}
+        onClose={handleModalClose}
+        onConfirm={handleModalClose}
       />
     </div>
   );

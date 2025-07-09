@@ -40,7 +40,7 @@ export type TCBLValues = {
     table2Data: { name: string; signature: string }[];
     packingDate: Date;
     specialistName: string;
-    status: string;
+    status?: string;
   };
   
   /** Props for the CBLForm component */

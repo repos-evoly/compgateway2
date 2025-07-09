@@ -53,7 +53,7 @@ export interface ForeignTransferDetailResponse {
   accountHolderName: string;
   permanentAddress: string;
   purposeOfTransfer: string;
-  status: string;
+  status?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,6 +93,5 @@ export interface CreateForeignTransferPayload {
   accountHolderName: string;
   permanentAddress: string;
   purposeOfTransfer: string;
-  status: string;
-
+  status?: string;
 }

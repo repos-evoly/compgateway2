@@ -5,10 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
-import { getForeignTransferById } from "../services";
+import { getForeignTransferById, updateForeignTransfer } from "../services";
 import type {
   ForeignTransfersFormValues,
   ForeignTransferDetailResponse,
+  CreateForeignTransferPayload,
 } from "../types";
 import ForeignTransfersForm from "../components/ForeignTransfersForm";
 import LoadingPage from "@/app/components/reusable/Loading";
@@ -38,13 +39,12 @@ export default function ForeignTransfersDetailPage() {
 
         const data: ForeignTransferDetailResponse =
           await getForeignTransferById(String(id));
-
         // Map API fields to your form shape
         const formData: ForeignTransfersFormValues = {
           // example fields
-          toBank: data.toBank,
-          branch: data.branch,
-          // ... etc.
+          toBank: data.toBank ?? '',
+          branch: data.branch ?? '',
+          status: data.status ?? 'pending' // Add required status field with default
         };
 
         setInitialValues(formData);
@@ -59,10 +59,42 @@ export default function ForeignTransfersDetailPage() {
     })();
   }, [id, t]); // 'id' and 't' are used inside the effect
 
-  function handleSubmit(updatedValues: ForeignTransfersFormValues) {
-    console.log("Submitting updated foreign transfer =>", updatedValues);
-    // Example: you might do a PUT request to update. Right now we just log and navigate back
-    router.back();
+  async function handleSubmit(updatedValues: ForeignTransfersFormValues) {
+    if (!id) return;
+    
+    try {
+      // Convert form values to API payload
+      const payload: CreateForeignTransferPayload = {
+        toBank: updatedValues.toBank ?? '',
+        branch: updatedValues.branch ?? '',
+        residentSupplierName: updatedValues.residentSupplierName ?? '',
+        residentSupplierNationality: updatedValues.residentSupplierNationality ?? '',
+        nonResidentPassportNumber: String(updatedValues.nonResidentSupplierPassportNumber ?? ''),
+        placeOfIssue: updatedValues.placeOfIssue ?? '',
+        dateOfIssue: updatedValues.dateOfIssue ?? '',
+        nonResidentNationality: updatedValues.nonResidentSupplierNationality ?? '',
+        nonResidentAddress: updatedValues.nonResidentAddress ?? '',
+        transferAmount: updatedValues.transferAmount ?? 0,
+        toCountry: updatedValues.toCountry ?? '',
+        beneficiaryName: updatedValues.beneficiaryName ?? '',
+        beneficiaryAddress: updatedValues.beneficiaryAddress ?? '',
+        externalBankName: updatedValues.externalBankName ?? '',
+        externalBankAddress: updatedValues.externalBankAddress ?? '',
+        transferToAccountNumber: String(updatedValues.transferToAccountNumber ?? ''),
+        transferToAddress: updatedValues.transferToAddress ?? '',
+        accountHolderName: updatedValues.accountholderName ?? '',
+        permanentAddress: updatedValues.permenantAddress ?? '',
+        purposeOfTransfer: updatedValues.purposeOfTransfer ?? '',
+        status: updatedValues.status
+      };
+      
+      await updateForeignTransfer(id.toString(), payload);
+      alert("Foreign transfer updated successfully!");
+      router.push("/requests/foreignTransfers");
+    } catch (error) {
+      console.error("Failed to update foreign transfer:", error);
+      alert("Failed to update foreign transfer!");
+    }
   }
 
   if (loading) {
@@ -84,8 +116,8 @@ export default function ForeignTransfersDetailPage() {
       {/* The same form you use for "add," pre-filled with initialValues */}
       <ForeignTransfersForm
         initialValues={initialValues}
-        onSubmit={handleSubmit}
-        readOnly
+        onSubmit={(values) => handleSubmit(values as ForeignTransfersFormValues)}
+        readOnly={initialValues.status === undefined ? false : initialValues.status === "pending"}
       />
       <ErrorOrSuccessModal
         isOpen={modalOpen}

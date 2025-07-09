@@ -130,7 +130,14 @@
       "statusRequired":"الحالة مطلوبة",
       "loading":"جار التحميل...",
       "createSuccessTitle": "نجاح",
-      "createSuccessMsg": "تم إنشاء طلب CBL بنجاح."
+      "createSuccessMsg": "تم إنشاء طلب CBL بنجاح.",
+      "createSuccessMessage": "تم إنشاء طلب CBL بنجاح.",
+      "updateSuccessTitle": "نجاح",
+      "updateSuccessMessage": "تم تحديث طلب CBL بنجاح.",
+      "updateError": "فشل في تحديث طلب CBL",
+      "noItemFound": "لم يتم العثور على طلب CBL",
+      "genericError": "حدث خطأ أثناء جلب طلب CBL",
+      "errorTitle": "خطأ"
   
     },
   
@@ -503,7 +510,9 @@
         "trasnferAmount": "قيمة التحويل",
         "uploadDocuments": "تحميل",
         "mustBeNumber":"يجب أن يكون رقماً",
-        "nonResidentPassportNumber":"رقم جواز السفر لغير المقيم"
+        "nonResidentPassportNumber":"رقم جواز السفر لغير المقيم",
+        "error": "خطأ",
+        "fetchDetailError": "فشل في جلب تفاصيل التحويل الأجنبي"
       },
       "tabsWizard":{
         "review":"مراجعة و تقديم",
@@ -533,7 +542,11 @@
         "isRequired": "مطلوب",
         "createSuccessTitle": "نجاح",
         "createSuccessMsg": "تم إنشاء طلب بطاقة الفيزا بنجاح.",
-        "status":"الحالة"
+        "createErrorTitle": "خطأ",
+        "fetchError": "فشل في جلب طلبات الفيزا",
+        "unknownError": "حدث خطأ غير متوقع",
+        "status":"الحالة",
+        "submit": "إرسال"
       },
       "bankStatement": {
         "id":"المعرف",
@@ -571,6 +584,9 @@
         "successTitle": "تم إرسال طلبك بنجاح",
         "createSuccessTitle": "نجاح",
         "createSuccessMsg": "تم إنشاء طلب كشف الحساب بنجاح.",
+        "createErrorTitle": "خطأ",
+        "fetchError": "فشل في جلب كشوف الحساب",
+        "unknownError": "حدث خطأ غير متوقع",
         "status":"الحالة"
       },
       "dashboard":{

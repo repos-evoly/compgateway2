@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
-import { getVisaRequestById } from "../services";
+import { getVisaRequestById, updateVisaRequest } from "../services";
 import type { VisaRequestApiItem, VisaRequestFormValues } from "../types";
 import VisaWizardForm from "../components/VisaRequest";
 
@@ -14,13 +14,13 @@ import LoadingPage from "@/app/components/reusable/Loading";
 export default function SingleVisaRequestPage() {
   const { id } = useParams(); // e.g. /visarequests/123  → id = "123"
   const numericId = Number(id);
+  const router = useRouter();
 
   /*──────────────────────────── Data + UI state ───────────────────────────*/
   const [requestData, setRequestData] = useState<VisaRequestApiItem | null>(
     null
   );
   const [loading, setLoading] = useState(true);
-  const [readOnly] = useState(true); // render form in read-only mode
 
   /*──────────────────────────── Modal state ───────────────────────────────*/
   const [modalOpen, setModalOpen] = useState(false);
@@ -57,7 +57,10 @@ export default function SingleVisaRequestPage() {
 
   /*──────────────────────────── Modal handlers ────────────────────────────*/
   const closeModal = () => setModalOpen(false);
-  const confirmModal = () => setModalOpen(false);
+  const confirmModal = () => {
+    setModalOpen(false);
+    router.push("/requests/visaRequest"); // Navigate to main VISA page
+  };
 
   /*──────────────────────────── Early states ──────────────────────────────*/
   if (loading) return <LoadingPage />;
@@ -80,9 +83,22 @@ export default function SingleVisaRequestPage() {
     status: requestData.status
   };
 
-  /*──────────────────────────── Submit (edit) stub ───────────────────────*/
-  const handleSubmit = (vals: VisaRequestFormValues) => {
-    console.log("Edit not implemented. Values:", vals);
+  /*──────────────────────────── Submit (edit) handler ───────────────────────*/
+  const handleSubmit = async (vals: VisaRequestFormValues) => {
+    try {
+      await updateVisaRequest(numericId, vals);
+      
+      setModalTitle("Success");
+      setModalMessage("Visa request updated successfully.");
+      setModalSuccess(true);
+      setModalOpen(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update visa request";
+      setModalTitle("Error");
+      setModalMessage(msg);
+      setModalSuccess(false);
+      setModalOpen(true);
+    }
   };
 
   /*──────────────────────────── Render ────────────────────────────────────*/
@@ -95,7 +111,7 @@ export default function SingleVisaRequestPage() {
       <VisaWizardForm
         initialValues={initialValues}
         onSubmit={handleSubmit}
-        readOnly={readOnly}
+        readOnly={requestData.status === undefined ? false : requestData.status === "pending"}
       />
 
       {/*──────── Error / Success Modal ────────*/}

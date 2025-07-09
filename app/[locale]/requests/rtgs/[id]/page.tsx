@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import RTGSForm from "../components/RTGSForm";
-import { getRtgsRequestById } from "../services";
+import { getRtgsRequestById, updateRtgsRequest } from "../services";
 import { TRTGSFormValues, TRTGSValues } from "../types";
 import LoadingPage from "@/app/components/reusable/Loading";
 
@@ -16,6 +16,7 @@ import LoadingPage from "@/app/components/reusable/Loading";
 const RtgsDetailPage: React.FC = () => {
   const t = useTranslations("RTGSForm");
   const { id } = useParams(); // The "[id]" in the URL
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<TRTGSValues | null>(null);
 
@@ -68,14 +69,29 @@ const RtgsDetailPage: React.FC = () => {
     status: item.status
   };
 
-  // For now, just console.log if the user re-submits
-  // If you want to do an update, you can add a "updateRtgsRequest" function
-  const handleFormSubmit = (values: TRTGSFormValues) => {
-    console.log("Update not implemented yet. Received:", values);
+  // Handle form submission for updates
+  const handleFormSubmit = async (values: TRTGSFormValues) => {
+    if (!id) return;
+    
+    try {
+      // Convert form values back to API shape
+      const updateValues: TRTGSValues = {
+        ...values,
+        refNum: values.refNum.toISOString(),
+        date: values.date.toISOString(),
+      };
+      
+      await updateRtgsRequest(id.toString(), updateValues);
+      alert("RTGS request updated successfully!");
+      router.push("/requests/rtgs");
+    } catch (error) {
+      console.error("Failed to update RTGS request:", error);
+      alert("Failed to update RTGS request!");
+    }
   };
 
   const handleFormCancel = () => {
-    console.log("Cancelled form. Possibly redirect back to the list page.");
+    router.push("/requests/rtgs");
   };
 
   return (
@@ -84,7 +100,7 @@ const RtgsDetailPage: React.FC = () => {
         initialValues={initialValues}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
-        readOnly // <--- Make the form read-only
+        readOnly={initialValues.status === undefined ? false : initialValues.status === "pending"}
       />
     </div>
   );

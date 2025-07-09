@@ -5,6 +5,7 @@
  * "id?" if you might store an ID, or define it if it’s needed. 
  */
 export type ForeignTransfersFormValues = {
+  status: string;
   id?: number; // if you want to keep track of the row ID as well
   toBank?: string;
   branch?: string;

@@ -105,3 +105,33 @@ if (!res.ok) {
   const data = (await res.json()) as ForeignTransferDetailResponse;
   return data;
 }
+
+/**
+ * PUT /foreigntransfers/{id} => update an existing foreign transfer
+ */
+export async function updateForeignTransfer(
+  id: string | number,
+  payload: CreateForeignTransferPayload
+): Promise<ForeignTransferDetailResponse> {
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${baseUrl}/foreigntransfers/${id}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    await throwApiError(res, "Failed to update foreign transfer.");
+  }
+
+  const data = (await res.json()) as ForeignTransferDetailResponse;
+  return data;
+}

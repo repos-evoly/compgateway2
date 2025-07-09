@@ -53,7 +53,7 @@ type GetCertifiedBankStatementsResponse = {
 
 // Token & base URL
 const token = getAccessTokenFromCookies();
-const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
 if (!baseUrl) {
   throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 }
@@ -265,6 +265,73 @@ export async function createCertifiedBankStatement(
     await throwApiError(
       response,
       "Failed to create Certified Bank Statement."
+    );
+  }
+
+  // 4) Map API ➜ form shape and return
+  const apiResult = (await response.json()) as ApiCertifiedBankStatement;
+  return transformApiToFormShape(apiResult);
+}
+
+/**
+ * Update an existing Certified Bank Statement.
+ * Converts the form-shape payload to the API shape, then maps the response
+ * back to the form/grid shape you work with elsewhere.
+ */
+export async function updateCertifiedBankStatement(
+  id: number,
+  payload: CertifiedBankStatementRequest
+): Promise<CertifiedBankStatementRequestWithID> {
+  // 1) Map form fields ➜ API fields
+  const apiBody = {
+    accountHolderName: payload.accountHolderName ?? null,
+    authorizedOnTheAccountName: payload.authorizedOnTheAccountName ?? null,
+    accountNumber: payload.accountNumber ?? null,
+    oldAccountNumber: payload.oldAccountNumber ?? null,
+    newAccountNumber: payload.newAccountNumber ?? null,
+    serviceRequests: {
+      reactivateIdfaali: payload.serviceRequests?.reactivateIdfaali ?? false,
+      deactivateIdfaali: payload.serviceRequests?.deactivateIdfaali ?? false,
+      resetDigitalBankPassword:
+        payload.serviceRequests?.resetDigitalBankPassword ?? false,
+      resendMobileBankingPin:
+        payload.serviceRequests?.resendMobileBankingPin ?? false,
+      changePhoneNumber: payload.serviceRequests?.changePhoneNumber ?? false,
+    },
+    statementRequest: {
+      currentAccountStatementArabic:
+        payload.statementRequest?.currentAccountStatement?.arabic ?? false,
+      currentAccountStatementEnglish:
+        payload.statementRequest?.currentAccountStatement?.english ?? false,
+      visaAccountStatement:
+        payload.statementRequest?.visaAccountStatement ?? false,
+      accountStatement: payload.statementRequest?.accountStatement ?? false,
+      journalMovement: payload.statementRequest?.journalMovement ?? false,
+      nonFinancialCommitment:
+        payload.statementRequest?.nonFinancialCommitment ?? false,
+      fromDate: payload.statementRequest?.fromDate ?? null,
+      toDate: payload.statementRequest?.toDate ?? null,
+    },
+  };
+
+  // 2) PUT to the API
+  const response = await fetch(
+    `${baseUrl}/certifiedbankstatementrequests/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(apiBody),
+    }
+  );
+
+  // 3) Handle errors (throws on non-2xx)
+  if (!response.ok) {
+    await throwApiError(
+      response,
+      "Failed to update Certified Bank Statement."
     );
   }
 

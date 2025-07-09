@@ -11,7 +11,7 @@ export const getVisaRequests = async (
   limit: number = 10,
   searchTerm: string = ""
 ): Promise<VisaRequestApiResponse> => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API; 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api"; 
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
   }
@@ -46,7 +46,7 @@ export const getVisaRequests = async (
 export const getVisaRequestById = async (
   id: number
 ): Promise<VisaRequestApiItem> => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
   }
@@ -75,7 +75,7 @@ export const getVisaRequestById = async (
 export const createVisaRequest = async (
     formValues: VisaRequestFormValues
   ): Promise<VisaRequestApiItem> => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
     if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
     if (!token) throw new Error("No access token found in cookies");
 
@@ -132,3 +132,64 @@ export const createVisaRequest = async (
     const created = (await response.json()) as VisaRequestApiItem;
     return created;
   };
+
+export const updateVisaRequest = async (
+  id: number,
+  formValues: VisaRequestFormValues
+): Promise<VisaRequestApiItem> => {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+  if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
+  if (!token) throw new Error("No access token found in cookies");
+
+  const isoDate =
+    formValues.date && formValues.date.length === 10   // "2025-06-20"
+      ? new Date(`${formValues.date}T00:00:00Z`).toISOString() // → "2025-06-20T00:00:00.000Z"
+      : formValues.date ?? "";
+
+  // The API requires all fields (string/number).
+  // We'll convert `undefined` => "" or 0.
+  const body = {
+    branch: formValues.branch ?? "",
+    date: isoDate,
+    accountHolderName: formValues.accountHolderName ?? "",
+  
+    // 1️⃣  Account number must follow 0000-000000-000
+    accountNumber:
+      typeof formValues.accountNumber === "string"
+        ? formValues.accountNumber
+        : String(formValues.accountNumber ?? ""),
+  
+    // 2️⃣  Phone must be sent as *string*
+    phoneNumberLinkedToNationalId: String(
+      formValues.phoneNumberLinkedToNationalId ?? ""
+    ),
+  
+    // 3️⃣  Cast numbers
+    nationalId: Number(formValues.nationalId) || 0,
+    foreignAmount: Number(formValues.foreignAmount) || 0,
+    localAmount: Number(formValues.localAmount) || 0,
+  
+    // 4️⃣  Keep these as strings
+    cbl: String(formValues.cbl ?? ""),
+    cardMovementApproval: String(formValues.cardMovementApproval ?? ""),
+    cardUsingAcknowledgment: formValues.cardUsingAcknowledgment ?? "",
+    pldedge: formValues.pldedge ?? "",
+  } as const;
+
+  const response = await fetch(`${baseUrl}/visarequests/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to update visa request");
+  }
+
+  // The API might return the updated item
+  const updated = (await response.json()) as VisaRequestApiItem;
+  return updated;
+};

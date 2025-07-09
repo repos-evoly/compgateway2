@@ -54,6 +54,7 @@ export default function CreditFacilityDetailPage() {
           curr: apiItem.curr,
           refferenceNumber: apiItem.referenceNumber,
           type: apiItem.type,
+          status: apiItem.status
         };
 
         setFacilityData(converted);

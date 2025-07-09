@@ -93,4 +93,6 @@ export interface CreateForeignTransferPayload {
   accountHolderName: string;
   permanentAddress: string;
   purposeOfTransfer: string;
+  status: string;
+
 }

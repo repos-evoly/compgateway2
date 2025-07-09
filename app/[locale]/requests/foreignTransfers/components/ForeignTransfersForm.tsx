@@ -13,6 +13,7 @@ import { TabsWizard } from "@/app/components/reusable/TabsWizard";
 import { Step1TransferInfo } from "./Step1TransferInfo";
 import { Step2BankingDetails } from "./Step2BankingDetails";
 import { step1Inputs, step2Inputs } from "./formInputsArrays";
+import FormHeader from "@/app/components/reusable/FormHeader";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Types
@@ -92,7 +93,8 @@ export default function ForeignTransfersForm({
     ...defaultValues,
     ...initialValues,
   };
-
+  const status =
+    (initialValues as { status?: string } | undefined)?.status ?? undefined;
   const steps = [
     {
       title: t("step1Title"),
@@ -160,6 +162,7 @@ export default function ForeignTransfersForm({
 
           return (
             <Form>
+              <FormHeader status={status} />
               <TabsWizard<ForeignTransfersFormValues>
                 steps={steps}
                 formik={formik}

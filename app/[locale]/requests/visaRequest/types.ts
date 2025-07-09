@@ -13,6 +13,7 @@ export type VisaRequestFormValues = {
     foreignAmount?: number;
     localAmount?: number;
     pldedge?: string;
+    status?: string;
   }
 
 

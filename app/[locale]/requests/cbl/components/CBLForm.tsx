@@ -82,6 +82,8 @@ const CBLForm: React.FC<CBLFormProps> = ({
 
   /* ---- dynamic field schema ---- */
   const formFields = fields(t);
+  const status =
+    (initialValues as { status?: string } | undefined)?.status ?? undefined;
 
   const sections = [
     {
@@ -139,7 +141,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
   /* ------------------------------------------------------------------ */
   return (
     <>
-      <FormHeader>
+      <FormHeader status={status}>
         <div className="pb-5">
           <BackButton
             fallbackPath="/requests/cbl"

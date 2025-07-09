@@ -58,6 +58,8 @@ export type TRTGSValues = {
     contract: boolean;
     claim: boolean;
     otherDoc: boolean;
+    status?: string;
+
   };
   
 

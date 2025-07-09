@@ -12,6 +12,8 @@ export type TLetterOfGuarantee = {
   refferenceNumber: string;
   // We always set type="letterOfGuarantee"
   type: string; 
+    status: string;
+
 };
 
 /** The shape of an API item returned by GET /creditfacilities/{id} when type=letterOfGuarantee. */

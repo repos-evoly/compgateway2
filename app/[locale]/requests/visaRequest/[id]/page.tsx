@@ -77,6 +77,7 @@ export default function SingleVisaRequestPage() {
     foreignAmount: requestData.foreignAmount,
     localAmount: requestData.localAmount,
     pldedge: requestData.pldedge,
+    status: requestData.status
   };
 
   /*──────────────────────────── Submit (edit) stub ───────────────────────*/

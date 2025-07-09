@@ -104,6 +104,8 @@ function InnerForm({
     setAvailableBalance,
     tu,
   ]);
+  const status =
+    (initialData as { status?: string } | undefined)?.status ?? undefined;
 
   const accountHasError = Boolean(
     errors.accountNumber && touched.accountNumber
@@ -115,6 +117,7 @@ function InnerForm({
         showBackButton
         fallbackPath="/requests/letterOfGuarantee"
         isEditing={readOnly}
+        status={status}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -268,6 +271,7 @@ export default function LetterOfGuaranteeForm({
     curr: "",
     refferenceNumber: "",
     type: "letterOfGuarantee",
+    status: ""
   };
   const initialValues: TLetterOfGuarantee = initialData
     ? { ...defaults, ...initialData, type: "letterOfGuarantee" }

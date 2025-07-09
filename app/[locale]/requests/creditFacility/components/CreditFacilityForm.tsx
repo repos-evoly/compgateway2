@@ -95,6 +95,8 @@ export default function CreditFacilityForm({
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
+  const status =
+    (initialData as { status?: string } | undefined)?.status ?? undefined;
   /* ─── form defaults & validation ────────────────────────── */
   const defaults: TCreditFacility = {
     id: undefined,
@@ -106,6 +108,7 @@ export default function CreditFacilityForm({
     curr: "",
     refferenceNumber: "",
     type: "creditFacility",
+    status: ""
   };
   const initialValues: TCreditFacility = initialData
     ? { ...defaults, ...initialData, type: "creditFacility" }
@@ -162,6 +165,7 @@ export default function CreditFacilityForm({
                 showBackButton
                 fallbackPath="/requests/creditFacility"
                 isEditing={readOnly}
+                status={status}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">

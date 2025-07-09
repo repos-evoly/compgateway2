@@ -65,6 +65,7 @@ const RtgsDetailPage: React.FC = () => {
     contract: item.contract,
     claim: item.claim,
     otherDoc: item.otherDoc,
+    status: item.status
   };
 
   // For now, just console.log if the user re-submits

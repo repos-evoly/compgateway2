@@ -17,6 +17,7 @@ import { Step2VisaRequest } from "./Step2VisaRequest";
 import { step1VisaInputs, step2VisaInputs } from "./visaInputs";
 import { VisaRequestFormValues } from "../types";
 import type { InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
+import FormHeader from "@/app/components/reusable/FormHeader";
 
 type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
@@ -87,6 +88,8 @@ export default function VisaWizardForm({
     const found = allInputs.find((i) => i.name === fieldName);
     return found ? t(found.label) : fieldName;
   }
+  const status =
+    (initialValues as { status?: string } | undefined)?.status ?? undefined;
 
   /* ---- Per‑step validation ------------------------------------------ */
   const stepValidations = [
@@ -165,6 +168,7 @@ export default function VisaWizardForm({
 
           return (
             <Form>
+              <FormHeader status={status} />
               <TabsWizard
                 steps={steps}
                 formik={formik}

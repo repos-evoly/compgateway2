@@ -107,6 +107,7 @@ export type CreditFacilityRequest = {
     curr: string;
     refferenceNumber: string;
     type: string;
+    status: string;
   };
 
 

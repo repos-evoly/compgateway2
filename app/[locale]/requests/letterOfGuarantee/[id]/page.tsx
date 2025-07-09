@@ -60,6 +60,7 @@ export default function LetterOfGuaranteeDetailPage() {
           curr: apiItem.curr,
           refferenceNumber: apiItem.referenceNumber,
           type: apiItem.type,
+          status: apiItem.status
         };
 
         setGuaranteeData(converted);

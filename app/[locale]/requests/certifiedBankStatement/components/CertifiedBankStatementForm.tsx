@@ -17,6 +17,7 @@ import {
   step1StatementInputs,
   step2StatementInputs,
 } from "./statementInputs";
+import FormHeader from "@/app/components/reusable/FormHeader";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Types
@@ -120,6 +121,8 @@ export default function CertifiedBankStatementForm({
     onSubmit(vals);
     helpers.setSubmitting(false);
   };
+  const status =
+    (initialValues as { status?: string } | undefined)?.status ?? undefined;
 
   return (
     <div className="w-full rounded-md bg-gray-50 p-4">
@@ -157,6 +160,7 @@ export default function CertifiedBankStatementForm({
 
           return (
             <Form>
+              <FormHeader status={status}/>
               <TabsWizard<CertifiedBankStatementRequestWithID>
                 steps={steps}
                 formik={formik}

@@ -32,6 +32,7 @@ import {
 } from "react-icons/fa";
 
 import type { TRTGSFormValues } from "../types";
+import FormHeader from "@/app/components/reusable/FormHeader";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                              */
@@ -117,6 +118,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     contract: false,
     claim: false,
     otherDoc: false,
+    status: ""
   };
 
   const mergedValues: TRTGSFormValues = {
@@ -131,6 +133,8 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         ? new Date(initialValues.date)
         : initialValues?.date || new Date(),
   };
+  const status =
+    (initialValues as { status?: string } | undefined)?.status ?? undefined;
 
   /* ------------------- Sections config ------------------ */
   const sections = [
@@ -282,6 +286,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       >
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0">
+          <FormHeader status={status}/>
           <div className="flex-1">
             <DatePickerValue
               name="refNum"

@@ -1,16 +1,21 @@
+// app/auth/components/ErrorOrSuccessModal.tsx
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
 import { FiX, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 
-type ErrorOrSuccessModalProps = {
+export type ErrorOrSuccessModalProps = {
   isOpen: boolean;
   isSuccess: boolean;
   title: string;
   message: string;
   onClose: () => void;
-  onConfirm?: () => void; // Added for success scenario
+  onConfirm?: () => void;
+
+  /** Optional overrides so you can still localise without next-intl */
+  okLabel?: string; // default: "حسناً"
+  confirmLabel?: string; // default: "تأكيد"
+  closeAriaLabel?: string; // default: "إغلاق"
 };
 
 export default function ErrorOrSuccessModal({
@@ -20,77 +25,71 @@ export default function ErrorOrSuccessModal({
   message,
   onClose,
   onConfirm,
+  okLabel = "حسناً",
+  confirmLabel = "تأكيد",
+  closeAriaLabel = "إغلاق",
 }: ErrorOrSuccessModalProps) {
-  const t = useTranslations("global");
-  
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
       <div
-        className="relative transform transition-all duration-300 ease-in-out scale-100 opacity-100"
+        className="relative transform transition-all duration-300 ease-in-out"
         style={{ animation: "fadeInScale 0.3s ease-out forwards" }}
       >
-        <div
-          className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full mx-4 border border-gray-100"
-        >
-          <div className="flex justify-between items-center mb-5">
+        <div className="w-full max-w-md transform rounded-2xl border border-gray-100 bg-white p-6 shadow-xl">
+          {/* Header */}
+          <div className="mb-5 flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+
             <button
               onClick={onClose}
-              className="rounded-full p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
-              aria-label={t("close")}
+              aria-label={closeAriaLabel}
+              className="rounded-full p-1 text-gray-400 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
             >
               <FiX size={22} />
             </button>
           </div>
 
-          <div className="text-center py-8">
+          {/* Icon & message */}
+          <div className="py-8 text-center">
             <div className="mb-6 flex justify-center">
               {isSuccess ? (
                 <div className="rounded-full bg-green-50 p-3">
-                  <FiCheckCircle className="text-green-500" size={54} />
+                  <FiCheckCircle size={54} className="text-green-500" />
                 </div>
               ) : (
                 <div className="rounded-full bg-red-50 p-3">
-                  <FiAlertCircle className="text-red-500" size={54} />
+                  <FiAlertCircle size={54} className="text-red-500" />
                 </div>
               )}
             </div>
-            <p className="mb-6 text-gray-700 text-lg">{message}</p>
 
-            {/* If success => show 2 buttons (Ok, Confirm), else => show 1 */}
+            <p className="mb-6 text-lg text-gray-700">{message}</p>
+
+            {/* Buttons */}
             {isSuccess ? (
               <div className="flex items-center justify-center gap-4">
-                {/* Ok => just close modal */}
-                {/* <button
-                  onClick={onClose}
-                  className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
-                >
-                  حسناً
-                </button> */}
-
-                {/* Confirm => call onConfirm if provided */}
                 <button
                   onClick={onConfirm || onClose}
-                  className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
+                  className="rounded-full px-8 py-2.5 text-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md bg-info-dark hover:bg-warning-light hover:text-info-dark"
                 >
-                  {t("confirm")}
+                  {confirmLabel}
                 </button>
               </div>
             ) : (
-              // Error => single button
               <button
                 onClick={onClose}
-                className="rounded-full px-8 py-2.5 font-medium text-lg transition-all duration-200 shadow-sm hover:shadow-md bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700"
+                className="rounded-full px-8 py-2.5 text-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md bg-red-500 hover:bg-red-600"
               >
-                {t("ok")}
+                {okLabel}
               </button>
             )}
           </div>
         </div>
       </div>
 
+      {/* local CSS animation */}
       <style jsx>{`
         @keyframes fadeInScale {
           from {

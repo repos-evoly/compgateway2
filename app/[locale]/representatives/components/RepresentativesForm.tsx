@@ -1,3 +1,10 @@
+// =============================================================
+// RepresentativesForm.tsx
+// Fully-typed, client-side form with conditional photo upload
+// • When **adding** → Passport Number + DocumentUploader share one row
+// • When **editing** → DocumentUploader moves to its own row
+// =============================================================
+
 "use client";
 
 import React, { useState } from "react";
@@ -9,24 +16,19 @@ import FormHeader from "@/app/components/reusable/FormHeader";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import Switch from "@/app/components/FormUI/Switch";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
+import { DocumentUploader } from "@/app/components/reusable/DocumentUploader";
+
 import { FaUser, FaPhone, FaPassport } from "react-icons/fa";
 
 import { createRepresentative, updateRepresentative } from "../services";
 import type { Representative, RepresentativeFormValues } from "../types";
 
-interface RepresentativesFormProps {
+type RepresentativesFormProps = {
   initialData: Representative | null;
   representativeId?: number;
   onSubmit: (success: boolean, message: string) => void;
   onCancel: () => void;
-}
-
-const validationSchema = Yup.object({
-  name: Yup.string().required("Name is required"),
-  number: Yup.string().required("Number is required"),
-  passportNumber: Yup.string().required("Passport number is required"),
-  isActive: Yup.boolean().required(),
-});
+};
 
 export default function RepresentativesForm({
   initialData,
@@ -36,44 +38,43 @@ export default function RepresentativesForm({
 }: RepresentativesFormProps) {
   const t = useTranslations("representatives.form");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isEditMode = !!initialData;
+
+  const isEditMode = Boolean(initialData);
 
   const initialValues: RepresentativeFormValues = {
-    name: initialData?.name || "",
-    number: initialData?.number || "",
-    passportNumber: initialData?.passportNumber || "",
+    name: initialData?.name ?? "",
+    number: initialData?.number ?? "",
+    passportNumber: initialData?.passportNumber ?? "",
     isActive: initialData?.isActive ?? true,
+    photo: [],
   };
+
+  const validationSchema = Yup.object({
+    name: Yup.string().required(t("validation.required")),
+    number: Yup.string().required(t("validation.required")),
+    passportNumber: Yup.string().required(t("validation.required")),
+    isActive: Yup.boolean().required(),
+    photo: Yup.array()
+      .of(Yup.mixed<File>())
+      .test("photo-required-on-create", t("validation.photoRequired"), (arr) =>
+        isEditMode ? true : Boolean(arr?.length)
+      ),
+  });
 
   const handleSubmit = async (values: RepresentativeFormValues) => {
     try {
       setIsSubmitting(true);
 
-      if (initialData && representativeId) {
-        // Update existing representative
-        await updateRepresentative(representativeId, {
-          name: values.name,
-          number: values.number,
-          passportNumber: values.passportNumber,
-          isActive: values.isActive,
-        });
+      if (isEditMode && representativeId) {
+        await updateRepresentative(representativeId, values);
         onSubmit(true, t("updateSuccess"));
       } else {
-        // Create new representative
-        await createRepresentative({
-          name: values.name,
-          number: values.number,
-          passportNumber: values.passportNumber,
-          isActive: values.isActive,
-        });
+        await createRepresentative(values);
         onSubmit(true, t("createSuccess"));
       }
     } catch (error) {
-      console.error("Form submission error:", error);
-      onSubmit(
-        false,
-        error instanceof Error ? error.message : t("unexpectedError")
-      );
+      const msg = error instanceof Error ? error.message : t("unexpectedError");
+      onSubmit(false, msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -89,14 +90,14 @@ export default function RepresentativesForm({
         {() => (
           <Form>
             <FormHeader
-              text={initialData ? t("editTitle") : t("addTitle")}
+              text={isEditMode ? t("editTitle") : t("addTitle")}
               showBackButton
               fallbackPath="/representatives"
-              isEditing={!!initialData}
+              isEditing={isEditMode}
             />
 
             <div className="mt-6 space-y-6">
-              {/* First Row: Name and Number */}
+              {/* Row 1 – Name & Number */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormInputIcon
                   name="name"
@@ -115,18 +116,21 @@ export default function RepresentativesForm({
                 />
               </div>
 
-              {/* Second Row: Passport Number and Active Status (edit mode only) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormInputIcon
-                  name="passportNumber"
-                  label={t("fields.passportNumber")}
-                  type="text"
-                  startIcon={<FaPassport />}
-                  helpertext={t("fields.passportNumberPlaceholder")}
-                />
+              {/* Row 2 – conditional layouts */}
+              {isEditMode ? (
+                /* Edit Mode: Passport + Active Toggle share one row */
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <FormInputIcon
+                      name="passportNumber"
+                      label={t("fields.passportNumber")}
+                      type="text"
+                      startIcon={<FaPassport />}
+                      helpertext={t("fields.passportNumberPlaceholder")}
+                    />
+                  </div>
 
-                {isEditMode && (
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg md:w-64">
                     <div>
                       <label className="text-sm font-medium text-gray-700">
                         {t("fields.isActive")}
@@ -135,16 +139,43 @@ export default function RepresentativesForm({
                         {t("fields.isActiveDescription")}
                       </p>
                     </div>
-                    <Switch
-                      name="isActive"
-                      label=""
+                    <Switch name="isActive" label="" />
+                  </div>
+                </div>
+              ) : (
+                /* Add Mode: Passport + Photo Uploader share one row */
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <FormInputIcon
+                      name="passportNumber"
+                      label={t("fields.passportNumber")}
+                      type="text"
+                      startIcon={<FaPassport />}
+                      helpertext={t("fields.passportNumberPlaceholder")}
                     />
                   </div>
-                )}
-              </div>
+
+                  <div className="flex-1">
+                    <DocumentUploader
+                      name="photo"
+                      maxFiles={1}
+                      label={t("fields.photo")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Extra row: in edit mode we still need the uploader, but below */}
+              {isEditMode && (
+                <DocumentUploader
+                  name="photo"
+                  maxFiles={1}
+                  label={t("fields.photo")}
+                />
+              )}
             </div>
 
-            {/* Form Actions */}
+            {/* Actions */}
             <div className="mt-8 flex justify-end gap-3">
               <button
                 type="button"
@@ -154,7 +185,7 @@ export default function RepresentativesForm({
                 {t("cancelButton")}
               </button>
               <SubmitButton
-                title={initialData ? t("updateButton") : t("createButton")}
+                title={isEditMode ? t("updateButton") : t("createButton")}
                 isSubmitting={isSubmitting}
                 disabled={isSubmitting}
                 fullWidth={false}
@@ -165,4 +196,4 @@ export default function RepresentativesForm({
       </Formik>
     </div>
   );
-} 
+}

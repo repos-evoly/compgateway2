@@ -1,6 +1,7 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/checkbook/components/CheckbookForm.tsx
  * Account Number field now uses <InputSelectCombo> (cookie-based options)
+ * Updated to handle both create and update operations
  * ----------------------------------------------------------------------- */
 
 "use client";
@@ -18,7 +19,7 @@ import InputSelectCombo, {
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import { FaPaperPlane } from "react-icons/fa";
+import { FaPaperPlane, FaEdit } from "react-icons/fa";
 import Description from "@/app/components/FormUI/Description";
 
 import { createCheckbookRequest } from "../services";
@@ -27,10 +28,17 @@ import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
-const CheckbookForm: React.FC<TCheckbookFormProps> = ({
+// Updated props interface to include isSubmitting
+interface UpdatedCheckbookFormProps extends TCheckbookFormProps {
+  isSubmitting?: boolean;
+}
+
+const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
   onSubmit,
+  onCancel,
   initialData,
   readOnly = false,
+  isSubmitting: externalIsSubmitting = false,
 }) => {
   const t = useTranslations("checkForm");
 
@@ -47,6 +55,9 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
+
+  // Determine if this is an edit form (has initialData) or create form
+  const isEditMode = initialData !== undefined && initialData !== null;
 
   /* ------------------------------------------------------------------ */
   /* Effects                                                             */
@@ -100,25 +111,38 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   /* Handlers                                                            */
   /* ------------------------------------------------------------------ */
   const handleSubmit = async (values: TCheckbookFormValues): Promise<void> => {
-    if (readOnly || isSubmitting) return;
-    setIsSubmitting(true);
+    if (readOnly || isSubmitting || externalIsSubmitting) return;
 
-    try {
-      const newItem = await createCheckbookRequest(values);
-      onSubmit(newItem);
+    if (isEditMode) {
+      // For edit mode, just call the parent's onSubmit (which should handle the update)
+      onSubmit(values);
+    } else {
+      // For create mode, handle the API call here
+      setIsSubmitting(true);
 
-      setModalTitle(t("successTitle"));
-      setModalMessage(t("successMessage"));
-      setModalSuccess(true);
-      setModalOpen(true);
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : t("genericError");
-      setModalTitle(t("errorTitle"));
-      setModalMessage(msg);
-      setModalSuccess(false);
-      setModalOpen(true);
-    } finally {
-      setIsSubmitting(false);
+      try {
+        const newItem = await createCheckbookRequest(values);
+        onSubmit(newItem);
+
+        setModalTitle(t("successTitle"));
+        setModalMessage(t("successMessage"));
+        setModalSuccess(true);
+        setModalOpen(true);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : t("genericError");
+        setModalTitle(t("errorTitle"));
+        setModalMessage(msg);
+        setModalSuccess(false);
+        setModalOpen(true);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
     }
   };
 
@@ -128,6 +152,8 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
   const status =
     (initialData as { status?: string } | undefined)?.status ?? undefined;
 
+  const submitButtonDisabled = isSubmitting || externalIsSubmitting;
+
   return (
     <>
       <div className="mt-2 w-full rounded bg-gray-100">
@@ -135,7 +161,8 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
         <FormHeader status={status}>
           <BackButton
             fallbackPath="/requests/checkbook"
-            isEditing={initialData !== undefined}
+            isEditing={isEditMode}
+            
           />
         </FormHeader>
 
@@ -207,27 +234,39 @@ const CheckbookForm: React.FC<TCheckbookFormProps> = ({
             {!readOnly && (
               <div className="mt-4 flex justify-center gap-3">
                 <SubmitButton
-                  title={t("submit")}
-                  Icon={FaPaperPlane}
+                  title={ t("submit")}
+                  Icon={isEditMode ? FaEdit : FaPaperPlane}
                   color="info-dark"
-                  disabled={isSubmitting}
+                  disabled={submitButtonDisabled}
                   fullWidth={false}
                 />
+                
+                {/* Cancel button */}
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600 disabled:opacity-50"
+                  disabled={submitButtonDisabled}
+                >
+                  {t("cancel")}
+                </button>
               </div>
             )}
           </Form>
         </div>
       </div>
 
-      {/* ---------- Modal ---------- */}
-      <ErrorOrSuccessModal
-        isOpen={modalOpen}
-        isSuccess={modalSuccess}
-        title={modalTitle}
-        message={modalMessage}
-        onClose={() => setModalOpen(false)}
-        onConfirm={() => setModalOpen(false)}
-      />
+      {/* ---------- Modal (only for create mode) ---------- */}
+      {!isEditMode && (
+        <ErrorOrSuccessModal
+          isOpen={modalOpen}
+          isSuccess={modalSuccess}
+          title={modalTitle}
+          message={modalMessage}
+          onClose={() => setModalOpen(false)}
+          onConfirm={() => setModalOpen(false)}
+        />
+      )}
     </>
   );
 };

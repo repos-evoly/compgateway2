@@ -79,19 +79,7 @@ const CheckRequestPage: React.FC = () => {
 
   const handleFormSubmit = async (formVals: TCheckRequestFormValues) => {
     try {
-      const isoDate = formVals.date.toISOString();
-      const payload = {
-        branch: formVals.branch,
-        branchNum: formVals.branchNum,
-        date: isoDate,
-        customerName: formVals.customerName,
-        cardNum: formVals.cardNum,
-        accountNum: formVals.accountNum,
-        beneficiary: formVals.beneficiary,
-        lineItems: formVals.lineItems,
-      };
-
-      const newItem = await createCheckRequest(payload);
+      const newItem = await createCheckRequest(formVals);
       setData((prev) => [newItem, ...prev]);
       setShowForm(false);
 

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
-import { FormikHelpers } from "formik";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
@@ -16,33 +15,19 @@ import { TCheckRequestFormValues } from "../types";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
 
-/* -------------------------------------------------------------------------- */
-/* Types                                                                      */
-/* -------------------------------------------------------------------------- */
-
-type CheckRequestFormProps = {
-  initialValues?: Partial<TCheckRequestFormValues>;
-  onSubmit: (
-    values: TCheckRequestFormValues,
-    helpers: FormikHelpers<TCheckRequestFormValues>
-  ) => void;
-  onCancel?: () => void;
-  readOnly?: boolean;
-};
+import { TCheckRequestFormProps } from "../types";
 
 /* -------------------------------------------------------------------------- */
 /* Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
-const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
+const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   initialValues,
   onSubmit,
   readOnly = false,
+  isSubmitting = false,
 }) => {
   const t = useTranslations("CheckRequest");
-
-  /* submitting flag */
-  const [submitting, setSubmitting] = useState(false);
 
   /* modal state (NEW) */
   const [modalOpen, setModalOpen] = useState(false);
@@ -125,28 +110,20 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
 
   /* wrapped submit */
   const handleSubmit = async (
-    values: TCheckRequestFormValues,
-    helpers: FormikHelpers<TCheckRequestFormValues>
+    values: TCheckRequestFormValues
   ) => {
-    if (submitting) return;
-    setSubmitting(true);
-
     try {
-      await onSubmit(values, helpers);
-
+      await onSubmit(values);
       setModalTitle(t("successTitle"));
       setModalMessage(t("successMessage"));
       setModalSuccess(true);
       setModalOpen(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("genericError");
-
       setModalTitle(t("errorTitle"));
       setModalMessage(msg);
       setModalSuccess(false);
       setModalOpen(true);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -172,13 +149,13 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
                   key={props.name}
                   {...props}
                   width="w-full"
-                  disabled={readOnly}
+                  disabled={readOnly || isSubmitting}
                 />
               ))}
             </div>
 
             <div className="mt-6">
-              <CheckRequestTable readOnly={readOnly} />
+              <CheckRequestTable readOnly={readOnly || isSubmitting} />
             </div>
 
             <Description
@@ -194,7 +171,7 @@ const CheckRequestForm: React.FC<CheckRequestFormProps> = ({
                   title="Submit"
                   Icon={FaPaperPlane}
                   color="info-dark"
-                  disabled={submitting}
+                  disabled={isSubmitting}
                   fullWidth={false}
                 />
               </div>

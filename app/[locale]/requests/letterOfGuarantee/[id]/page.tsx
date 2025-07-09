@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 import LetterOfGuaranteeForm from "../components/LetterOfGuaranteeForm";
 import type { TLetterOfGuarantee } from "../types";
-import { getLetterOfGuaranteeById } from "../services";
+import { getLetterOfGuaranteeById, updateLetterOfGuaranteeById } from "../services";
 
 // ⬇️ NEW: modal import
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -60,7 +60,7 @@ export default function LetterOfGuaranteeDetailPage() {
           curr: apiItem.curr,
           refferenceNumber: apiItem.referenceNumber,
           type: apiItem.type,
-          status: apiItem.status
+          status: apiItem.status,
         };
 
         setGuaranteeData(converted);
@@ -82,12 +82,38 @@ export default function LetterOfGuaranteeDetailPage() {
   }, [params.id]);
 
   /* ────────── handlers ───────────── */
-  const handleUpdate = (updated: TLetterOfGuarantee) => {
-    console.log("Updated letterOfGuarantee:", updated);
-    setModalTitle("تم التحديث");
-    setModalMsg("تم تحديث خطاب الضمان بنجاح!");
-    setModalSuccess(true);
-    setModalOpen(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleUpdate = async (updated: TLetterOfGuarantee) => {
+    if (!guaranteeData?.id || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const result = await updateLetterOfGuaranteeById(guaranteeData.id, updated);
+      setGuaranteeData({
+        id: result.id,
+        accountNumber: result.accountNumber,
+        date: result.date,
+        amount: result.amount,
+        purpose: result.purpose,
+        additionalInfo: result.additionalInfo,
+        curr: result.curr,
+        refferenceNumber: result.referenceNumber, // map field
+        type: result.type,
+        status: result.status,
+      });
+      setModalTitle("تم التحديث");
+      setModalMsg("تم تحديث خطاب الضمان بنجاح!");
+      setModalSuccess(true);
+      setModalOpen(true);
+      // Optionally redirect after a delay:
+      // setTimeout(() => router.push("/letterofguarantee"), 1500);
+    } catch (err) {
+      setModalTitle("خطأ");
+      setModalMsg(err instanceof Error ? err.message : "فشل تحديث خطاب الضمان");
+      setModalSuccess(false);
+      setModalOpen(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => router.push("/letterofguarantee");
@@ -115,7 +141,8 @@ export default function LetterOfGuaranteeDetailPage() {
         initialData={guaranteeData}
         onSubmit={handleUpdate}
         onCancel={handleCancel}
-        readOnly
+        readOnly={guaranteeData.status  !== "Pending"}
+        isSubmitting={isSubmitting}
       />
 
       {/* modal */}

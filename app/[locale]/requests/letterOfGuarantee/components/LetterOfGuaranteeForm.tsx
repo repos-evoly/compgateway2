@@ -37,6 +37,7 @@ type Props = {
   onSubmit: (vals: TLetterOfGuarantee) => void;
   onCancel: () => void;
   readOnly?: boolean;
+  isSubmitting?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -49,6 +50,7 @@ type InnerFormProps = FormikProps<TLetterOfGuarantee> & {
   currencyOptions: InputSelectComboOption[];
   accountOptions: InputSelectComboOption[];
   readOnly?: boolean;
+  isSubmitting?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -129,7 +131,7 @@ function InnerForm({
             options={accountOptions}
             width="w-full"
             maskingFormat="0000-000000-000"
-            disabled={readOnly}
+            disabled={readOnly || isSubmitting}
           />
           {availableBalance != null && (
             <p className="text-sm text-gray-500 mt-1">
@@ -141,14 +143,14 @@ function InnerForm({
         </div>
 
         {/* Date */}
-        <DatePickerValue name="date" label={t("date")} disabled={readOnly} />
+        <DatePickerValue name="date" label={t("date")} disabled={readOnly || isSubmitting} />
 
         {/* Amount */}
         <FormInputIcon
           name="amount"
           label={t("amount")}
           type="number"
-          disabled={readOnly}
+          disabled={readOnly || isSubmitting}
         />
 
         {/* Purpose */}
@@ -156,7 +158,7 @@ function InnerForm({
           name="purpose"
           label={t("purpose")}
           type="text"
-          disabled={readOnly}
+          disabled={readOnly || isSubmitting}
         />
 
         {/* Additional Info */}
@@ -164,7 +166,7 @@ function InnerForm({
           name="additionalInfo"
           label={t("additionalInfo")}
           type="text"
-          disabled={readOnly}
+          disabled={readOnly || isSubmitting}
         />
 
         {/* Currency */}
@@ -174,7 +176,7 @@ function InnerForm({
           options={currencyOptions}
           placeholder={tu("currencyPlaceholder")}
           width="w-full"
-          disabled={readOnly}
+          disabled={readOnly || isSubmitting}
         />
 
         {/* Reference Number */}
@@ -182,7 +184,7 @@ function InnerForm({
           name="refferenceNumber"
           label={t("referenceNumber")}
           type="text"
-          disabled={readOnly}
+          disabled={readOnly || isSubmitting}
         />
       </div>
 
@@ -208,7 +210,9 @@ function InnerForm({
 export default function LetterOfGuaranteeForm({
   initialData,
   onSubmit,
+  
   readOnly = false,
+  isSubmitting = false,
 }: Props) {
   const tv = useTranslations("letterOfGuarantee.form.validation");
   const tu = useTranslations("letterOfGuarantee.form.ui");
@@ -336,7 +340,8 @@ export default function LetterOfGuaranteeForm({
             setAvailableBalance={setAvailableBalance}
             currencyOptions={currencyOptions}
             accountOptions={accountOptions}
-            readOnly={readOnly}
+            readOnly={readOnly || isSubmitting}
+            isSubmitting={isSubmitting || formik.isSubmitting}
           />
         )}
       </Formik>

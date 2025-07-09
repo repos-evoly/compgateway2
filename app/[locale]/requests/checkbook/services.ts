@@ -117,5 +117,47 @@ export async function getCheckbookRequestById(
     return data as TCheckbookValues;
   }
 
+/**
+ * Updates a checkbook request (PUT) with all the data fields.
+ */
+export async function updateCheckBookById(
+  id: string | number,
+  values: TCheckbookFormValues
+): Promise<TCheckbookValues> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
 
-  
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  // Build the payload according to the API shape
+  const payload = {
+    fullName: values.fullName,
+    address: values.address,
+    accountNumber: values.accountNumber,
+    pleaseSend: values.pleaseSend,
+    branch: values.branch,
+    date: values.date, 
+    bookContaining: values.bookContaining,
+  };
+
+  const response = await fetch(`${baseUrl}/checkbookrequests/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, `Failed to update checkbook request with ID ${id}.`);
+  }
+
+  const responseData = await response.json();
+  return responseData as TCheckbookValues;
+}

@@ -777,14 +777,19 @@
         "passportNumber": "Passport Number",
         "passportNumberPlaceholder": "Enter passport number",
         "isActive": "Active Status",
-        "isActiveDescription": "Enable or disable this representative"
+        "isActiveDescription": "Enable or disable this representative",
+        "photo": "Photo"
       },
       "createButton": "Create",
       "updateButton": "Update",
       "cancelButton": "Cancel",
       "createSuccess": "Representative created successfully",
       "updateSuccess": "Representative updated successfully",
-      "unexpectedError": "An unexpected error occurred"
+      "unexpectedError": "An unexpected error occurred",
+      "validation":{
+        "required": "This field is required",
+        "photoRequired": "Representative photo is required"
+      }
     },
     "errorTitle": "Error",
     "successTitle": "Success",

@@ -2,12 +2,13 @@ import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import type {
   RepresentativesResponse,
-  CreateRepresentativeRequest,
-  UpdateRepresentativeRequest,
+  // CreateRepresentativeRequest,
+  // UpdateRepresentativeRequest,
   Representative,
+  RepresentativeFormValues,
 } from "./types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
 const token = getAccessTokenFromCookies();
 
 
@@ -50,64 +51,52 @@ export const getRepresentatives = async (
   }
 };
 
+// services.ts
 export const createRepresentative = async (
-  data: CreateRepresentativeRequest
+  values: RepresentativeFormValues
 ): Promise<Representative> => {
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  if (!token) throw new Error("No access token found in cookies");
 
-  try {
-    const response = await fetch(`${BASE_URL}/representatives`, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
+  const formData = new FormData();
+  formData.append("Name", values.name);
+  formData.append("Number", values.number);
+  formData.append("PassportNumber", values.passportNumber);
+  formData.append("IsActive", String(values.isActive));
+  if (values.photo[0]) formData.append("Photo", values.photo[0]); // single file
 
-    if (!response.ok) {
-      await throwApiError(response, "Failed to create representative");
-    }
+  const res = await fetch(`${BASE_URL}/representatives`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }, // 👈 let the browser add the boundary
+    body: formData,
+  });
 
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error creating representative:', error);
-    throw error;
-  }
+  if (!res.ok) await throwApiError(res, "Failed to create representative");
+  return res.json();
 };
 
 export const updateRepresentative = async (
   id: number,
-  data: UpdateRepresentativeRequest
+  values: RepresentativeFormValues
 ): Promise<Representative> => {
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  if (!token) throw new Error("No access token found in cookies");
 
-  try {
-    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
-      method: 'PUT',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
+  const formData = new FormData();
+  formData.append("Name", values.name);
+  formData.append("Number", values.number);
+  formData.append("PassportNumber", values.passportNumber);
+  formData.append("IsActive", String(values.isActive));
+  if (values.photo[0]) formData.append("Photo", values.photo[0]);
 
-    if (!response.ok) {
-      await throwApiError(response, "Failed to update representative");
-    }
+  const res = await fetch(`${BASE_URL}/representatives/${id}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
 
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error updating representative:', error);
-    throw error;
-  }
+  if (!res.ok) await throwApiError(res, "Failed to update representative");
+  return res.json();
 };
+
 
 export const getRepresentativeById = async (id: number): Promise<Representative> => {
   if (!token) {
@@ -115,7 +104,7 @@ export const getRepresentativeById = async (id: number): Promise<Representative>
   }
 
   try {
-    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
+    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
       method: 'GET',
       headers: {
         "Content-Type": "application/json",
@@ -141,7 +130,7 @@ export const deleteRepresentative = async (id: number): Promise<void> => {
   }
 
   try {
-    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
+    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
       method: 'DELETE',
       headers: {
         "Content-Type": "application/json",
@@ -186,7 +175,7 @@ export const toggleRepresentativeStatus = async (id: number): Promise<Representa
     console.log('Sending update with new status:', updatedData.isActive);
     console.log('Full update data:', updatedData);
 
-    const response = await fetch(`http://10.3.3.11/compgateapi/api/representatives/${id}`, {
+    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
       method: 'PUT',
       headers: {
         "Content-Type": "application/json",

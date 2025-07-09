@@ -3,6 +3,7 @@ export type Representative = {
   number: string;
   passportNumber: string;
   isActive: boolean;
+  photoUrl?: string;
 }
 
 export type RepresentativeListItem = {
@@ -42,4 +43,5 @@ export type RepresentativeFormValues = {
   number: string;
   passportNumber: string;
   isActive: boolean;
+  photo: File[];
 } 

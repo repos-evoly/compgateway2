@@ -781,14 +781,19 @@
             "passportNumber": "رقم جواز السفر",
             "passportNumberPlaceholder": "أدخل رقم جواز السفر",
             "isActive": "حالة التفعيل",
-            "isActiveDescription": "تفعيل أو إلغاء تفعيل هذا الممثل"
+            "isActiveDescription": "تفعيل أو إلغاء تفعيل هذا الممثل",
+            "photo": "الصورة"
           },
           "createButton": "إنشاء",
           "updateButton": "تحديث",
           "cancelButton": "إلغاء",
           "createSuccess": "تم إنشاء الممثل بنجاح",
           "updateSuccess": "تم تحديث الممثل بنجاح",
-          "unexpectedError": "حدث خطأ غير متوقع"
+          "unexpectedError": "حدث خطأ غير متوقع",
+          "validation":{
+            "required": "هذا الحقل مطلوب",
+            "photoRequired": "الصورة مطلوبة"
+          }
         },
         "errorTitle": "خطأ",
         "successTitle": "نجاح",

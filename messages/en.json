@@ -125,7 +125,14 @@
     "statusRequired": "Status is required",
     "loading": "Loading...",
     "createSuccessTitle": "Success",
-    "createSuccessMsg": "CBL request created successfully."
+    "createSuccessMsg": "CBL request created successfully.",
+    "createSuccessMessage": "CBL request created successfully.",
+    "updateSuccessTitle": "Success",
+    "updateSuccessMessage": "CBL request updated successfully.",
+    "updateError": "Failed to update CBL request",
+    "noItemFound": "CBL request not found",
+    "genericError": "An error occurred while fetching the CBL request",
+    "errorTitle": "Error"
   },
 
   "signaturePad": {
@@ -496,7 +503,9 @@
     "isRequired": "Required",
     "trasnferAmount": "Transfer Amount",
     "uploadDocuments": "Upload",
-    "mustBeNumber": "Must be a number"
+    "mustBeNumber": "Must be a number",
+    "error": "Error",
+    "fetchDetailError": "Failed to fetch foreign transfer details"
   },
 
   "tabsWizard": {
@@ -526,7 +535,13 @@
     "pldedge": "Pledge not to claim CBL fees",
 
     "isRequired": "Required",
-    "status":"Status"
+    "status": "Status",
+    "createSuccessTitle": "Success",
+    "createSuccessMsg": "VISA card request created successfully.",
+    "createErrorTitle": "Error",
+    "fetchError": "Failed to fetch VISA requests",
+    "unknownError": "An unexpected error occurred",
+    "submit": "Submit"
   },
 
   "bankStatement": {
@@ -563,7 +578,11 @@
     "mustBeNumber": "Must be a number",
     "createSuccessTitle": "Success",
     "createSuccessMsg": "Bank statement request created successfully.",
-    "status": "Status"
+    "createErrorTitle": "Error",
+    "fetchError": "Failed to fetch bank statements",
+    "unknownError": "An unexpected error occurred",
+    "status": "Status",
+    "id": "ID"
   },
 
   "dashboard": {

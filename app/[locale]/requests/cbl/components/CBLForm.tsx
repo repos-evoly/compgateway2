@@ -116,14 +116,16 @@ const CBLForm: React.FC<CBLFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await addCblRequest(values);
-
-      setModalTitle(t("createSuccessTitle"));
-      setModalMessage(t("createSuccessMessage"));
-      setModalSuccess(true);
-      setModalOpen(true);
-
-      onSubmit?.(values, helpers);
+      // If onSubmit is provided (edit mode), use it; otherwise use addCblRequest (create mode)
+      if (onSubmit) {
+        await onSubmit(values, helpers);
+      } else {
+        await addCblRequest(values);
+        setModalTitle(t("createSuccessTitle"));
+        setModalMessage(t("createSuccessMessage"));
+        setModalSuccess(true);
+        setModalOpen(true);
+      }
     } catch (error) {
       setModalTitle(t("createErrorTitle"));
       setModalMessage(

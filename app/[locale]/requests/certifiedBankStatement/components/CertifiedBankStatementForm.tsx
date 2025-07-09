@@ -89,8 +89,18 @@ export default function CertifiedBankStatementForm({
   ];
 
   const allInputs = [...step1StatementInputs, ...step2StatementInputs];
-  const xlate = (name: string) =>
-    t(allInputs.find((f) => f.name === name)?.label ?? name);
+  const xlate = (name: string) => {
+    const input = allInputs.find((f) => f.name === name);
+    if (input) {
+      return t(input.label);
+    }
+    // Handle special cases for fields not in allInputs
+    if (name === 'id') {
+      return t('id');
+    }
+    // Fallback to the name itself if no translation found
+    return name;
+  };
 
   const stepValidations = [
     Yup.object({

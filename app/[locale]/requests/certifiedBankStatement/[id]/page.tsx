@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import CertifiedBankStatementForm from "../components/CertifiedBankStatementForm";
-import { getCertifiedBankStatementById } from "../services";
-import type { CertifiedBankStatementRequestWithID } from "../types";
+import { getCertifiedBankStatementById, updateCertifiedBankStatement } from "../services";
+import type { CertifiedBankStatementRequestWithID, CertifiedBankStatementRequest } from "../types";
 import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function CertifiedBankStatementDetailPage() {
@@ -35,10 +35,19 @@ export default function CertifiedBankStatementDetailPage() {
     fetchStatement();
   }, [rowId]);
 
-  function handleSubmit(values: CertifiedBankStatementRequestWithID) {
-    console.log(`Editing statement row #${rowId}`, values);
-    alert("Certified Bank Statement updated (dummy)!");
-    router.push("/requests/certifiedBankStatement");
+  async function handleSubmit(values: CertifiedBankStatementRequestWithID) {
+    try {
+      // Remove the id field for the update payload
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...updatePayload } = values;
+      await updateCertifiedBankStatement(rowId, updatePayload as CertifiedBankStatementRequest);
+      
+      alert("Certified Bank Statement updated successfully!");
+      router.push("/requests/certifiedBankStatement");
+    } catch (error) {
+      console.error("Failed to update statement:", error);
+      alert("Failed to update Certified Bank Statement!");
+    }
   }
 
   if (loading) {
@@ -59,7 +68,7 @@ export default function CertifiedBankStatementDetailPage() {
       <CertifiedBankStatementForm
         initialValues={rowData}
         onSubmit={handleSubmit}
-        readOnly
+        readOnly={rowData.status === undefined ? false : rowData.status === "pending"}
       />
     </div>
   );

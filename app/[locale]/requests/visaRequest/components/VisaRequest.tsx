@@ -179,6 +179,16 @@ export default function VisaWizardForm({
                 fallbackPath="/requests/visaRequest"
                 isEditing={initialValues !== undefined}
               />
+              {/* Fallback submit button for add mode, only on last step */}
+              {!readOnly && initialValues === undefined && formik.submitCount > 0 && (
+                <button
+                  type="submit"
+                  className="mt-6 px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90 transition-colors duration-300 font-semibold w-full"
+                  disabled={formik.isSubmitting}
+                >
+                  {t("submit")}
+                </button>
+              )}
             </Form>
           );
         }}

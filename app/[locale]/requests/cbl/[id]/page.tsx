@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { TCBLValues } from "../types";
-import { getCblRequestById } from "../service";
+import { getCblRequestById, updateCblRequest } from "../service";
 import CBLForm from "../components/CBLForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
@@ -54,7 +54,25 @@ const CblDetailPage: React.FC = () => {
   const handleModalClose = () => setModalOpen(false);
   const handleModalConfirm = () => {
     setModalOpen(false);
-    router.back(); // optional: navigate user away
+    router.push("/requests/cbl"); // Navigate to main CBL page
+  };
+
+  /* handle form submission */
+  const handleSubmit = async (values: TCBLValues) => {
+    if (!id) return;
+    
+    try {
+      await updateCblRequest(id.toString(), values);
+      
+      setModalTitle(t("updateSuccessTitle"));
+      setModalMessage(t("updateSuccessMessage"));
+      setModalOpen(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t("updateError");
+      setModalTitle(t("errorTitle"));
+      setModalMessage(msg);
+      setModalOpen(true);
+    }
   };
 
   if (loading) {
@@ -63,12 +81,18 @@ const CblDetailPage: React.FC = () => {
 
   return (
     <div className="p-4">
-      {cblData && <CBLForm initialValues={cblData} readOnly />}
+      {cblData && (
+        <CBLForm 
+          initialValues={cblData} 
+          readOnly={cblData.status === undefined ? false : cblData.status === "pending"}
+          onSubmit={handleSubmit}
+        />
+      )}
 
       {/* error modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
-        isSuccess={false}
+        isSuccess={true}
         title={modalTitle}
         message={modalMessage}
         onClose={handleModalClose}

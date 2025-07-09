@@ -77,8 +77,10 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
 
   /* ─── Navigation helpers ─────────────────────────────────── */
   async function handleNext() {
+    console.log('handleNext called, currentStep:', currentStep, 'isLastStep:', isLastStep);
     if (!isLastStep) {
       const valid = await validateCurrentStep(currentStep);
+      console.log('Validation result for step', currentStep, ':', valid);
       if (!valid) return;
     }
     if (!completedSteps.includes(currentStep)) {
@@ -88,6 +90,8 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
   }
 
   function handleBack() {
+    console.log('handleBack called, currentStep:', currentStep, 'isFirstStep:', isFirstStep);
+    alert('Back button clicked! Current step: ' + currentStep);
     if (!isFirstStep) setCurrentStep((prev) => prev - 1);
   }
 

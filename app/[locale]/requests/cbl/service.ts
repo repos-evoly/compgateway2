@@ -49,6 +49,7 @@ type TApiCblRequest = {
   address: string;
   packingDate?: string | null;
   specialistName: string;
+  status?: string;
   officials?: TApiOfficial[];
   signatures?: TApiSignature[];
 };
@@ -65,7 +66,7 @@ export async function getCblRequests(
   searchTerm: string,
   searchBy: string
 ): Promise<TCblRequestsResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
@@ -103,7 +104,7 @@ export async function getCblRequests(
  * Add (POST) a new CBL request.
  */
 export async function addCblRequest(values: TCBLValues) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
   }
@@ -181,7 +182,7 @@ export async function addCblRequest(values: TCBLValues) {
  * and maps `officials` -> table1Data, `signatures` -> table2Data.
  */
 export async function getCblRequestById(id: string | number): Promise<TCBLValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
@@ -241,6 +242,7 @@ export async function getCblRequestById(id: string | number): Promise<TCBLValues
     address: data.address,
     packingDate: parseDate(data.packingDate) ?? new Date(),
     specialistName: data.specialistName,
+    status: data.status,
 
     // Convert "officials" -> "table1Data"
     table1Data:
@@ -258,4 +260,80 @@ export async function getCblRequestById(id: string | number): Promise<TCBLValues
   };
 
   return cblValues;
+}
+
+/**
+ * Update (PUT) an existing CBL request by ID.
+ */
+export async function updateCblRequest(id: string | number, values: TCBLValues) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
+  }
+
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  // Convert your form values to API payload shape
+  const payload = {
+    partyName: values.partyName,
+    capital: values.capital,
+    foundingDate: values.foundingDate?.toISOString() ?? null,
+    legalForm: values.legalForm,
+    branchOrAgency: values.branchOrAgency,
+    currentAccount: values.currentAccount,
+    accountOpening: values.accountOpening?.toISOString() ?? null,
+    commercialLicense: values.commercialLicense,
+    validatyLicense: values.validatyLicense?.toISOString() ?? null,
+    commercialRegistration: values.commercialRegistration,
+    validatyRegister: values.validatyRegister?.toISOString() ?? null,
+    statisticalCode: values.statisticalCode,
+    validatyCode: values.validatyCode?.toISOString() ?? null,
+    chamberNumber: values.chamberNumber,
+    validatyChamber: values.validatyChamber?.toISOString() ?? null,
+    taxNumber: values.taxNumber,
+    office: values.office,
+    legalRepresentative: values.legalRepresentative,
+    representativeNumber: values.representativeNumber,
+    birthDate: values.birthDate?.toISOString() ?? null,
+    passportNumber: values.passportNumber,
+    passportIssuance: values.passportIssuance?.toISOString() ?? null,
+    passportExpiry: values.passportExpiry?.toISOString() ?? null,
+    mobile: values.mobile,
+    address: values.address,
+    packingDate: values.packingDate?.toISOString() ?? null,
+    specialistName: values.specialistName,
+
+    // Convert table1Data -> officials
+    officials: values.table1Data.map((off) => ({
+      id: 0, // or omit if unnecessary
+      name: off.name,
+      position: off.position,
+    })),
+
+    // Convert table2Data -> signatures
+    signatures: values.table2Data.map((sig) => ({
+      id: 0, // or omit if unnecessary
+      name: sig.name,
+      signature: sig.signature,
+      status: "string", // or omit / adapt if your API doesn't need this
+    })),
+  };
+
+  const response = await fetch(`${baseUrl}/cblrequests/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to update CBL request.");
+  }
+
+  // Return whatever your API returns (assuming it returns the updated resource).
+  return (await response.json()) as TCBLValues;
 }

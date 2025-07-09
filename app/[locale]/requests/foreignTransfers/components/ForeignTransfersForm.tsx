@@ -19,7 +19,7 @@ import FormHeader from "@/app/components/reusable/FormHeader";
  * Types
  * ──────────────────────────────────────────────────────────────────────── */
 export type ForeignTransfersFormValues = {
-  status: string | undefined;
+  status?: string ;
   id: number;
 
   /* Step 1 */
@@ -78,7 +78,7 @@ const defaultValues: ForeignTransfersFormValues = {
   accountHolderName: "",
   permanentAddress: "",
   purposeOfTransfer: "",
-  status: undefined
+  status: undefined,
 };
 
 /* ──────────────────────────────────────────────────────────────────────────

@@ -75,6 +75,7 @@ export default function ForeignTransfersListPage() {
           accountHolderName: item.accountHolderName,
           permanentAddress: item.permanentAddress,
           purposeOfTransfer: item.purposeOfTransfer,
+          status: item.status
         })
       );
 
@@ -123,6 +124,7 @@ export default function ForeignTransfersListPage() {
         accountHolderName: values.accountHolderName,
         permanentAddress: values.permanentAddress,
         purposeOfTransfer: values.purposeOfTransfer,
+        status: values.status!
       });
 
       // After successful creation, re-fetch data so new entry is shown

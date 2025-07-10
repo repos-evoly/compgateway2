@@ -98,30 +98,25 @@ export const updateRepresentative = async (
 };
 
 
-export const getRepresentativeById = async (id: number): Promise<Representative> => {
+export const getRepresentativeById = async (
+  id: number,
+): Promise<Representative> => {
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  try {
-    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
-      method: 'GET',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  const res = await fetch(`${BASE_URL}/representatives/${id}`, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (!response.ok) {
-      await throwApiError(response, "Failed to fetch representative by ID");
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Error fetching representative by ID:', error);
-    throw error;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to fetch representative by ID");
   }
+
+  return (await res.json()) as Representative;   // ✅ typed result
 };
 
 export const deleteRepresentative = async (id: number): Promise<void> => {

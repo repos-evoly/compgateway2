@@ -1,5 +1,6 @@
 // =============================================================
-// DocumentUploader.tsx – v10 (Next-Image compliant)
+// DocumentUploader.tsx – v11  (Next-Image + Edit-Mode preview)
+// • Accepts an optional `initialPreviewUrl` for edit forms
 // • Label lives inside the drop-zone
 // • After first pick → drop-zone hides, “+” button appears
 // • “+” disappears at maxFiles; reappears if files removed
@@ -26,7 +27,6 @@ import {
   FiUpload,
   FiPlus,
   FiTrash2,
-  FiFileText,
   FiImage,
   FiChevronDown,
   FiChevronUp,
@@ -46,10 +46,16 @@ const LIMIT_BYTES = LIMIT_MB * 1024 * 1024;
 /* Props                                                              */
 /* ------------------------------------------------------------------ */
 export type DocumentUploaderProps = {
+  /** Formik field name (File[]) */
   name: string;
+  /** Maximum selectable files */
   maxFiles: number;
+  /** Utility classes */
   className?: string;
+  /** Label inside the drop-zone */
   label?: string;
+  /** Existing asset URL for edit mode */
+  initialPreviewUrl?: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -60,15 +66,18 @@ export const DocumentUploader = ({
   maxFiles,
   className,
   label = "Documents",
+  initialPreviewUrl,
 }: DocumentUploaderProps) => {
   /* ---------- Formik ---------- */
   const [field, meta, helpers] = useField<File[]>({ name });
   const files = field.value ?? [];
 
   /* ---------- State ---------- */
-  const [previews, setPreviews] = useState<(string | null)[]>([]);
+  const [previews, setPreviews] = useState<(string | null)[]>(
+    initialPreviewUrl ? [initialPreviewUrl] : []
+  );
   const [notice, setNotice] = useState<string | null>(null);
-  const [showFiles, setShowFiles] = useState(false);
+  const [showFiles, setShowFiles] = useState(Boolean(initialPreviewUrl));
   const [dragActive, setDragActive] = useState(false);
 
   /* ---------- Refs ---------- */
@@ -105,42 +114,49 @@ export const DocumentUploader = ({
     setNotice(rejected.length ? `${rejected.join(", ")} too large` : null);
 
     const nextFiles = [...files, ...allowed].slice(0, maxFiles);
-    const nextPrev = [...previews, ...newPrev].slice(0, maxFiles);
+    const nextPrev = [...previews.filter(Boolean), ...newPrev].slice(
+      0,
+      maxFiles
+    );
 
     helpers.setValue(nextFiles);
     setPreviews(nextPrev);
-    if (nextFiles.length > 0) setShowFiles(true);
+    setShowFiles(true);
   };
 
-  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const onInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
     handleFiles(Array.from(e.target.files ?? []));
-    e.target.value = ""; // allow same file re-select later
+    e.target.value = "";
   };
 
-  const onDrop = (e: DragEvent<HTMLDivElement>) => {
+  const onDrop = (e: DragEvent<HTMLDivElement>): void => {
     e.preventDefault();
     setDragActive(false);
     handleFiles(Array.from(e.dataTransfer.files));
   };
 
-  const openDialog = () => inputRef.current?.click();
+  const openDialog = (): void => inputRef.current?.click();
 
   /* ---------------------------------------------------------------- */
   /* Remove one                                                       */
   /* ---------------------------------------------------------------- */
-  const removeAt = (idx: number) => {
+  const removeAt = (idx: number): void => {
     const nextFiles = [...files];
     const nextPrev = [...previews];
+
+    // If removing a freshly picked file, adjust Formik value list
+    if (idx >= (initialPreviewUrl ? 1 : 0)) {
+      const fileIdx = idx - (initialPreviewUrl ? 1 : 0);
+      nextFiles.splice(fileIdx, 1);
+      helpers.setValue(nextFiles);
+    }
 
     const url = nextPrev[idx];
     if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
 
-    nextFiles.splice(idx, 1);
     nextPrev.splice(idx, 1);
-
-    helpers.setValue(nextFiles);
     setPreviews(nextPrev);
-    if (nextFiles.length === 0) setShowFiles(false);
+    if (nextPrev.length === 0) setShowFiles(false);
   };
 
   /* ---------------------------------------------------------------- */
@@ -185,7 +201,7 @@ export const DocumentUploader = ({
   /* ---------------------------------------------------------------- */
   return (
     <div className={className}>
-      {/* hidden input (for drop-zone and “+” button) */}
+      {/* hidden file input (for drop-zone & “+” button) */}
       <input
         ref={inputRef}
         type="file"
@@ -195,14 +211,14 @@ export const DocumentUploader = ({
         className="hidden"
       />
 
-      {/* initial drop-zone */}
-      {files.length === 0 && <DropZone />}
+      {/* drop-zone (only when no previews yet) */}
+      {previews.length === 0 && <DropZone />}
 
       {/* meta row */}
-      {files.length > 0 && (
+      {previews.length > 0 && (
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <span>
-            {files.length}/{maxFiles}
+            {previews.length}/{maxFiles}
           </span>
 
           <button
@@ -212,75 +228,77 @@ export const DocumentUploader = ({
           >
             {showFiles ? (
               <>
-                <FiChevronUp className="h-3 w-3" />
-                Hide
+                <FiChevronUp className="h-3 w-3" /> Hide
               </>
             ) : (
               <>
-                <FiChevronDown className="h-3 w-3" />
-                Show
+                <FiChevronDown className="h-3 w-3" /> Show
               </>
             )}
           </button>
 
-          {files.length < maxFiles && (
+          {previews.length < maxFiles && (
             <button
               type="button"
               onClick={openDialog}
               className="flex items-center gap-0.5 text-blue-600 hover:text-blue-800"
             >
-              <FiPlus className="h-3 w-3" />
-              Add
+              <FiPlus className="h-3 w-3" /> Add
             </button>
           )}
         </div>
       )}
 
       {/* file list */}
-      {files.length > 0 && showFiles && (
+      {previews.length > 0 && showFiles && (
         <ul className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded bg-gray-50 p-2 text-xs">
-          {files.map((file, i) => {
-            const previewSrc = previews[i];
-            return (
-              <li key={`${file.name}-${i}`} className="flex items-center gap-2">
-                {/* preview */}
-                {previewSrc ? (
-                  <Image
-                    src={previewSrc}
-                    alt={file.name}
-                    width={32}
-                    height={32}
-                    className="rounded-sm border object-cover"
-                    unoptimized
-                  />
-                ) : file.type === "application/pdf" ? (
-                  <FiFileText className="h-8 w-8 flex-shrink-0 text-red-500" />
+          {previews.map((src, i) => (
+            <li key={src ?? i} className="flex items-center gap-2">
+              {/* preview icon / image */}
+              {src ? (
+                <Image
+                  src={src}
+                  alt="preview"
+                  width={32}
+                  height={32}
+                  className="rounded-sm border object-cover"
+                  unoptimized
+                />
+              ) : (
+                <FiImage className="h-8 w-8 flex-shrink-0 text-blue-500" />
+              )}
+
+              {/* name & size (fresh picks only) */}
+              <div className="flex-1 truncate">
+                {src?.startsWith("blob:") ? (
+                  <>
+                    <span className="truncate font-medium">
+                      {files[i - (initialPreviewUrl ? 1 : 0)]?.name ?? "file"}
+                    </span>{" "}
+                    {files[i - (initialPreviewUrl ? 1 : 0)] && (
+                      <span className="text-gray-500">
+                        (
+                        {formatSize(
+                          files[i - (initialPreviewUrl ? 1 : 0)].size
+                        )}
+                        )
+                      </span>
+                    )}
+                  </>
                 ) : (
-                  <FiImage className="h-8 w-8 flex-shrink-0 text-blue-500" />
+                  <span className="font-medium">current-photo</span>
                 )}
+              </div>
 
-                {/* name & size */}
-                <div className="flex-1 truncate">
-                  <span className="truncate font-medium">{file.name}</span>{" "}
-                  <span className="text-gray-500">
-                    ({formatSize(file.size)})
-                  </span>
-                  {file.size > LIMIT_BYTES && (
-                    <span className="ml-0.5 text-amber-600">*</span>
-                  )}
-                </div>
-
-                {/* remove */}
-                <button
-                  type="button"
-                  onClick={() => removeAt(i)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <FiTrash2 className="h-4 w-4" />
-                </button>
-              </li>
-            );
-          })}
+              <button
+                type="button"
+                onClick={() => removeAt(i)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <FiTrash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
           {files.some((f) => f.size > LIMIT_BYTES) && (
             <p className="pt-1 text-[10px] text-amber-600">
               * files &gt; 1 MB will be compressed
@@ -418,14 +436,12 @@ export const mergeFilesToPdf = async (
           const jpegPages = await rasterisePdfToJpegs(f, limitBytes);
           for (const jpegBytes of jpegPages) {
             const img = await merged.embedJpg(jpegBytes);
-            merged
-              .addPage([img.width, img.height])
-              .drawImage(img, {
-                x: 0,
-                y: 0,
-                width: img.width,
-                height: img.height,
-              });
+            merged.addPage([img.width, img.height]).drawImage(img, {
+              x: 0,
+              y: 0,
+              width: img.width,
+              height: img.height,
+            });
           }
         }
       } catch {

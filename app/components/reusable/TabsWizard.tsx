@@ -77,10 +77,8 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
 
   /* ─── Navigation helpers ─────────────────────────────────── */
   async function handleNext() {
-    console.log('handleNext called, currentStep:', currentStep, 'isLastStep:', isLastStep);
     if (!isLastStep) {
       const valid = await validateCurrentStep(currentStep);
-      console.log('Validation result for step', currentStep, ':', valid);
       if (!valid) return;
     }
     if (!completedSteps.includes(currentStep)) {
@@ -90,8 +88,6 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
   }
 
   function handleBack() {
-    console.log('handleBack called, currentStep:', currentStep, 'isFirstStep:', isFirstStep);
-    alert('Back button clicked! Current step: ' + currentStep);
     if (!isFirstStep) setCurrentStep((prev) => prev - 1);
   }
 
@@ -109,13 +105,9 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
   const NextIcon = isRTL ? FiChevronLeft : FiChevronRight;
 
   return (
-    <div className={`flex flex-col w-full ${isRTL ? "rtl" : "ltr"}`}>
+    <div className={`flex flex-col w-full mt-5 ${isRTL ? "rtl" : "ltr"}`}>
       {/* Header with step circles */}
       <div className="flex flex-col w-full mb-8 relative">
-        <div className="flex items-center mb-4">
-          <BackButton fallbackPath={fallbackPath} isEditing={isEditing} />
-        </div>
-
         <div className="flex items-center justify-center w-full relative">
           {/* dashed track */}
           <div
@@ -185,7 +177,14 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
       </div>
       {/* Footer buttons */}
       <div className="flex items-center gap-4 mt-6 justify-end">
-        {/* Back */}
+        <BackButton
+          fallbackPath={fallbackPath}
+          isEditing={isEditing}
+          className="px-4 py-2 border border-info-main text-info-dark rounded-md hover:bg-info-main hover:text-white transition-colors duration-300 flex items-center gap-2"
+          label={t("backToPage")}
+        />
+
+        {/* Back (step) */}
         {!isFirstStep && (
           <button
             type="button"

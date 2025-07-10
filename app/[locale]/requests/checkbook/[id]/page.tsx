@@ -71,7 +71,7 @@ const CheckbookDetailPage: React.FC = () => {
     fullName: checkbookData.fullName ?? "",
     address: checkbookData.address ?? "",
     accountNumber: checkbookData.accountNumber ?? "",
-    pleaseSend: checkbookData.pleaseSend ?? "",
+    representativeId: checkbookData.representativeId ?? "",
     branch: checkbookData.branch ?? "",
     date: checkbookData.date ?? "",
     bookContaining: checkbookData.bookContaining ?? "",
@@ -81,17 +81,19 @@ const CheckbookDetailPage: React.FC = () => {
   // Handle form submission for updates
   const handleFormSubmit = async (updatedItem: TCheckbookFormValues) => {
     if (isSubmitting || !id) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const result = await updateCheckBookById(id.toString(), updatedItem);
-      
+
       // Update local state with the returned data
       setCheckbookData(result);
-      
+
       setModalTitle(t("successTitle"));
-      setModalMessage(t("updateSuccessMessage") || "Checkbook request updated successfully!");
+      setModalMessage(
+        t("updateSuccessMessage") || "Checkbook request updated successfully!"
+      );
       setModalSuccess(true);
       setModalOpen(true);
     } catch (error) {
@@ -112,7 +114,7 @@ const CheckbookDetailPage: React.FC = () => {
 
   const handleModalClose = () => {
     setModalOpen(false);
-    
+
     // If it was a successful update, optionally redirect back to the list
     if (modalSuccess) {
       // You can uncomment this if you want to redirect after successful update

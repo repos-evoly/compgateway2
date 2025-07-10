@@ -4,7 +4,7 @@ export type TCheckbookValues = {
   fullName: string;
   address: string;
   accountNumber: string;
-  pleaseSend: string;
+  representativeId: string;
   branch: string;
   date: string;
   bookContaining: string;
@@ -25,7 +25,7 @@ export type TCheckbookFormValues = {
   fullName: string;
   address: string;
   accountNumber: string;
-  pleaseSend: string;
+  representativeId: string;
   branch: string;
   date: string;
   bookContaining: string;

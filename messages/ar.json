@@ -841,7 +841,9 @@
           "unexpectedError": "حدث خطأ غير متوقع",
           "validation":{
             "required": "هذا الحقل مطلوب",
-            "photoRequired": "الصورة مطلوبة"
+            "photoRequired": "الصورة مطلوبة",
+            "invalidPhone": "رقم الهاتف غير صالح",
+            "invalidPassport": "رقم جواز السفر غير صالح"
           }
         },
         "errorTitle": "خطأ",

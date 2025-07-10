@@ -61,11 +61,25 @@ export default function RepresentativesForm({
     photo: [],
   };
 
+  /* ------------------------------------------------------------------ */
+  /* Updated Yup schema – length-only restrictions                      */
+  /* ------------------------------------------------------------------ */
   const validationSchema = Yup.object({
     name: Yup.string().required(t("validation.required")),
-    number: Yup.string().required(t("validation.required")),
-    passportNumber: Yup.string().required(t("validation.required")),
+
+    /* Phone number: 9–10 characters, no other checks */
+    number: Yup.string()
+      .required(t("validation.required"))
+      .min(9, t("validation.invalidPhone"))
+      .max(10, t("validation.invalidPhone")),
+
+    /* Passport number: exactly 8 characters, no other checks */
+    passportNumber: Yup.string()
+      .required(t("validation.required"))
+      .length(8, t("validation.invalidPassport")),
+
     isActive: Yup.boolean().required(),
+
     photo: Yup.array()
       .of(Yup.mixed<File>())
       .test("photo-required-on-create", t("validation.photoRequired"), (arr) =>
@@ -125,7 +139,7 @@ export default function RepresentativesForm({
                 <FormInputIcon
                   name="number"
                   label={t("fields.number")}
-                  type="text"
+                  type="number"
                   startIcon={<FaPhone />}
                   helpertext={t("fields.numberPlaceholder")}
                 />

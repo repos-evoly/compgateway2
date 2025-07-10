@@ -31,7 +31,6 @@ const CheckbookPage: React.FC = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
-
   /* ─── Fetch data ──────────────────────────────────────────── */
   useEffect(() => {
     async function fetchData() {
@@ -65,8 +64,8 @@ const CheckbookPage: React.FC = () => {
     { key: "accountNumber", label: t("accNum") },
     { key: "branch", label: t("branch") },
     { key: "date", label: t("date") },
-    { key: "pleaseSend", label: t("sendTo") },
-    {key:"status", label: t("status")}
+    { key: "representativeId", label: t("sendTo") },
+    { key: "status", label: t("status") },
   ];
 
   /* ─── Handlers ────────────────────────────────────────────── */

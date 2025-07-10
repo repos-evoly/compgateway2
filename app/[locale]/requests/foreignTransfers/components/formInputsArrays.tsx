@@ -53,7 +53,7 @@ export const step1Inputs = [
     type: "text",
   },
   {
-    name: "nonResidentSupplierPassportNumber",
+    name: "nonResidentPassportNumber",
     label: "nonResidentPassport",
     icon: <FiCreditCard />,
     type: "number",
@@ -71,7 +71,7 @@ export const step1Inputs = [
     type: "datePicker",
   },
   {
-    name: "nonResidentSupplierNationality",
+    name: "nonResidentNationality",
     label: "nonResidentSuppNationality",
     icon: <FiGlobe />,
     type: "text",
@@ -101,7 +101,7 @@ export const step1Inputs = [
 export const step2Inputs = [
   {
     name: "transferAmount",
-    label: "trasnferAmount",
+    label: "transferAmount",
     icon: <FiDollarSign />,
     type: "number",
   },
@@ -148,13 +148,13 @@ export const step2Inputs = [
     type: "text",
   },
   {
-    name: "accountholderName",
+    name: "accountHolderName",
     label: "accountHolderName",
     icon: <FiUser />,
     type: "text",
   },
   {
-    name: "permenantAddress",
+    name: "permanentAddress",
     label: "payementAddress",
     icon: <FiHome />,
     type: "text",

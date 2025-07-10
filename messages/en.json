@@ -177,6 +177,8 @@
     "payType": "Payment Type",
     "createSuccessTitle": "Success",
     "createSuccessMsg": "RTGS request created successfully.",
+    "fetchError": "Failed to fetch RTGS requests",
+    "unknownError": "An unexpected error occurred",
     "status":"Status"
   },
 
@@ -234,6 +236,7 @@
     "expenses": "Expenses",
     "totalAmount": "Total Amount",
     "accountNum": "Account Number",
+    "accountNumPlaceholder": "Enter account number",
     "beneficiary": "Beneficiary",
     "cust1Sign": "Customer Signature 1",
     "cust2Sign": "Customer Signature 2",
@@ -473,8 +476,11 @@
   },
 
   "foreignTransfers": {
+    "id": "ID",
     "toBank": "To Bank",
     "branch": "Branch",
+    "accountNum": "Account Number",
+    "accountNumPlaceholder": "Enter account number",
     "residentSuppName": "Seller / Party Name",
     "residentSuppNationality": "Nationality",
     "nonResidentPassport": "Seller's ID / Passport No. (non‑resident)",
@@ -512,7 +518,8 @@
     "review": "Review & Submit",
     "next": "Next",
     "back": "Back",
-    "submit": "Submit"
+    "submit": "Submit",
+    "backToPage": "Back to Page"
   },
 
   "visaRequest": {

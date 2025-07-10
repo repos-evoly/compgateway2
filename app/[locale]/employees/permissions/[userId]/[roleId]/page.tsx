@@ -21,6 +21,7 @@ import {
   FaTrashAlt,
   FaChartPie,
 } from "react-icons/fa";
+import { FiPlus, FiMinus } from "react-icons/fi";
 import BackButton from "@/app/components/reusable/BackButton";
 import { useTranslations } from "next-intl";
 import LoadingPage from "@/app/components/reusable/Loading";
@@ -33,6 +34,7 @@ export default function PermissionsPage() {
   const [companyPerms, setCompanyPerms] = useState<CompanyPermissions[]>([]);
   const [userPerms, setUserPerms] = useState<UserPermissions[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState<number>(6);
 
   const t = useTranslations("employees.permissionsPage");
 
@@ -125,17 +127,52 @@ export default function PermissionsPage() {
               </div>
             </FormHeader>
 
-            <Form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-              {companyPerms.map((cp) => (
-                <SettingsBox
-                  key={cp.id}
-                  title={t(cp.name)}
-                  description=""
-                  icon={iconMap[cp.name] ?? <FaLock />}
-                  controlType="switch"
-                  control={<SwitchWrapper name={`perm_${cp.id}`} label="" />}
-                />
-              ))}
+            <Form className="mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {companyPerms.slice(0, visibleCount).map((cp) => (
+                  <SettingsBox
+                    key={cp.id}
+                    title={t(cp.name)}
+                    description=""
+                    icon={iconMap[cp.name] ?? <FaLock />}
+                    controlType="switch"
+                    control={<SwitchWrapper name={`perm_${cp.id}`} label="" />}
+                  />
+                ))}
+              </div>
+
+              {/* Controls */}
+              {companyPerms.length > 6 && (
+                <div className="mt-6 flex justify-center gap-4">
+                  {visibleCount < companyPerms.length && (
+                    <button
+                      type="button"
+                      aria-label="Show more permissions"
+                      className="rounded-full bg-info-dark p-2 text-white shadow hover:bg-info-dark/90"
+                      onClick={() =>
+                        setVisibleCount((prev) =>
+                          Math.min(prev + 6, companyPerms.length)
+                        )
+                      }
+                    >
+                      <FiPlus className="text-lg" />
+                    </button>
+                  )}
+
+                  {visibleCount > 6 && (
+                    <button
+                      type="button"
+                      aria-label="Show less permissions"
+                      className="rounded-full bg-info-dark p-2 text-white shadow hover:bg-info-dark/90"
+                      onClick={() =>
+                        setVisibleCount((prev) => Math.max(prev - 6, 6))
+                      }
+                    >
+                      <FiMinus className="text-lg" />
+                    </button>
+                  )}
+                </div>
+              )}
             </Form>
           </>
         )}

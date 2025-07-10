@@ -37,16 +37,14 @@ const SettingsBox: React.FC<SettingsBoxProps> = ({
         {controlType === "switch" ? (
           /* SWITCH LAYOUT:
              Title and switch on the same line, description below */
-          <div className=" flex justify-between w-full">
-            <div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
-                  {title}
-                </h3>
-              </div>
-              <p className="text-sm text-gray-500 mt-1">{description}</p>
+          <div className="w-full">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-semibold text-gray-800 flex-1">
+                {title}
+              </h3>
+              <div className="flex-shrink-0">{control}</div>
             </div>
-            <div> {control}</div>
+            <p className="text-sm text-gray-500 mt-1">{description}</p>
           </div>
         ) : (
           /* INPUT LAYOUT:

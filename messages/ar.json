@@ -518,7 +518,8 @@
         "review":"مراجعة و تقديم",
         "next":"التالي",
         "back":"رجوع",
-        "submit":"تقديم"
+        "submit":"تقديم",
+        "backToPage":"العودة إلى الصفحة"
       },
       "visaRequest": {
         "step1Title": "الخطوة الأولى",

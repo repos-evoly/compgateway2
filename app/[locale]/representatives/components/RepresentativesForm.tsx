@@ -1,13 +1,11 @@
 // =============================================================
-// RepresentativesForm.tsx
-// Fully-typed, client-side form with conditional photo upload
-// • When **adding** → Passport Number + DocumentUploader share one row
-// • When **editing** → DocumentUploader moves to its own row
+// RepresentativesForm.tsx      (ONLY FILE UPDATED)
+// • Shows existing photo when editing
 // =============================================================
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import { useTranslations } from "next-intl";
@@ -41,6 +39,20 @@ export default function RepresentativesForm({
 
   const isEditMode = Boolean(initialData);
 
+  /* ------------------------------------------------------------------ */
+  /* Build preview URL for existing photo (edit mode only)              */
+  /* ------------------------------------------------------------------ */
+  const initialPreviewUrl = useMemo(() => {
+    if (!isEditMode || !initialData?.photoUrl) return undefined;
+
+    /*  NEXT_PUBLIC_IMAGE_URL holds the base - ensure trailing slash */
+    const base = (process.env.NEXT_PUBLIC_IMAGE_URL ?? "").replace(/\/$/, "");
+    return `${base}${initialData.photoUrl}`;
+  }, [isEditMode, initialData]);
+
+  /* ------------------------------------------------------------------ */
+  /* Formik                                                             */
+  /* ------------------------------------------------------------------ */
   const initialValues: RepresentativeFormValues = {
     name: initialData?.name ?? "",
     number: initialData?.number ?? "",
@@ -80,6 +92,9 @@ export default function RepresentativesForm({
     }
   };
 
+  /* ------------------------------------------------------------------ */
+  /* UI                                                                 */
+  /* ------------------------------------------------------------------ */
   return (
     <div className="p-4">
       <Formik
@@ -171,6 +186,7 @@ export default function RepresentativesForm({
                   name="photo"
                   maxFiles={1}
                   label={t("fields.photo")}
+                  initialPreviewUrl={initialPreviewUrl}
                 />
               )}
             </div>

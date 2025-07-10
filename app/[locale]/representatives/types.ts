@@ -1,10 +1,15 @@
 export type Representative = {
+  id?: number;                 // ← new  (always present in GET /:id)
   name: string;
   number: string;
   passportNumber: string;
   isActive: boolean;
-  photoUrl?: string;
-}
+  photoUrl?: string;          // ← was already there
+  createdAt?: string;          // ← new  (returned by the API)
+  updatedAt?: string;          // ← new  (returned by the API)
+};
+
+
 
 export type RepresentativeListItem = {
   id: number;

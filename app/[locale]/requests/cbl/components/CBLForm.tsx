@@ -27,9 +27,59 @@ import InfoBox from "@/app/[locale]/requests/cbl/components/InfoBox";
 import { getColumns, fields, initialValues as defaultVals } from "../data";
 import { CBLFormProps, TCBLValues } from "../types";
 
-import { addCblRequest } from "../service";
+import { addCblRequest, getKycByCode } from "../service";
 import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
+import { useFormikContext, useField } from "formik";
+
+/* -------------------------------------------------------------------------- */
+/* AccountNumberDropdown Component                                             */
+/* -------------------------------------------------------------------------- */
+
+interface AccountNumberDropdownProps {
+  name: string;
+  label: string;
+  options: InputSelectComboOption[];
+  placeholder: string;
+  width: string;
+  maskingFormat: string;
+  disabled: boolean;
+  onAccountChange: (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => void;
+  isLoadingKyc: boolean;
+}
+
+const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
+  onAccountChange,
+  isLoadingKyc,
+  name,
+  ...props
+}) => {
+  const { setFieldValue } = useFormikContext();
+  const [field] = useField(name);
+
+  // Watch for changes in the field value
+  useEffect(() => {
+    console.log('CBL AccountNumberDropdown: field.value changed to:', field.value);
+    if (field.value) {
+      console.log('CBL AccountNumberDropdown: Calling onAccountChange');
+      onAccountChange(field.value, setFieldValue);
+    }
+  }, [field.value, onAccountChange, setFieldValue]);
+
+  return (
+    <div className="relative">
+      <InputSelectCombo
+        name={name}
+        {...props}
+      />
+      {isLoadingKyc && (
+        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
@@ -53,6 +103,8 @@ const CBLForm: React.FC<CBLFormProps> = ({
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
+  const [isLoadingKyc, setIsLoadingKyc] = useState(false);
+
   useEffect(() => {
     const raw = Cookies.get("statementAccounts") ?? "[]";
     let list: string[] = [];
@@ -84,6 +136,71 @@ const CBLForm: React.FC<CBLFormProps> = ({
   const formFields = fields(t);
   const status =
     (initialValues as { status?: string } | undefined)?.status ?? undefined;
+
+  /* Function to extract company code from account number */
+  const extractCompanyCode = (accountNumber: string): string => {
+    // Remove any non-digit characters
+    const cleanAccount = accountNumber.replace(/\D/g, '');
+    
+    // Check if we have at least 10 digits (4 + 6)
+    if (cleanAccount.length >= 10) {
+      // Extract 6 digits after the first 4 digits
+      return cleanAccount.substring(4, 10);
+    }
+    
+    return '';
+  };
+
+  /* Function to fetch and populate KYC data */
+  const handleAccountNumberChange = async (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => {
+    console.log('CBL: handleAccountNumberChange called with:', accountNumber);
+    
+    if (!accountNumber) {
+      console.log('CBL: No account number provided');
+      return;
+    }
+
+    const companyCode = extractCompanyCode(accountNumber);
+    console.log('CBL: Extracted company code:', companyCode);
+    
+    if (!companyCode) {
+      console.log('CBL: No company code extracted');
+      return;
+    }
+
+    setIsLoadingKyc(true);
+    console.log('CBL: Fetching KYC data for code:', companyCode);
+    
+    try {
+      const kycData = await getKycByCode(companyCode);
+      console.log('CBL: KYC data received:', kycData);
+      
+      if (kycData.hasKyc && kycData.data) {
+        console.log('CBL: Populating form fields with KYC data');
+        
+        // Update form fields with KYC data
+        setFieldValue('partyName', kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName);
+        setFieldValue('branchOrAgency', kycData.data.branchName);
+        
+        // Build address from KYC data
+        const addressParts = [];
+        if (kycData.data.street) addressParts.push(kycData.data.street);
+        if (kycData.data.district) addressParts.push(kycData.data.district);
+        if (kycData.data.city) addressParts.push(kycData.data.city);
+        
+        const fullAddress = addressParts.join(', ');
+        setFieldValue('address', fullAddress);
+        
+        console.log('CBL: Form fields populated successfully');
+      } else {
+        console.log('CBL: No KYC data available');
+      }
+    } catch (error) {
+      console.error('CBL: Failed to fetch KYC data:', error);
+    } finally {
+      setIsLoadingKyc(false);
+    }
+  };
 
   const sections = [
     {
@@ -184,11 +301,14 @@ const CBLForm: React.FC<CBLFormProps> = ({
                       return (
                         <div key={fIdx} className="w-full">
                           {field.name === "currentAccount" ? (
-                            <InputSelectCombo
+                            <AccountNumberDropdown
                               {...commonProps}
                               options={accountOptions}
                               width="w-full"
                               maskingFormat="0000-000000-000"
+                              placeholder={t("currentAccount")}
+                              onAccountChange={handleAccountNumberChange}
+                              isLoadingKyc={isLoadingKyc}
                             />
                           ) : (
                             <FieldComponent
@@ -210,6 +330,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
               ) : (
                 <div className={`grid ${section.gridCols} gap-4 mt-4`}>
                   {section.fields.map((field, fIdx) => {
+                    console.log('CBL: Rendering field:', field.name);
                     const FieldComponent = field.component as React.ElementType;
                     const commonProps = {
                       name: field.name,
@@ -223,11 +344,14 @@ const CBLForm: React.FC<CBLFormProps> = ({
                     return (
                       <div key={fIdx} className="w-full">
                         {field.name === "currentAccount" ? (
-                          <InputSelectCombo
+                          <AccountNumberDropdown
                             {...commonProps}
                             options={accountOptions}
                             width="w-full"
                             maskingFormat="0000-000000-000"
+                            placeholder={t("currentAccount")}
+                            onAccountChange={handleAccountNumberChange}
+                            isLoadingKyc={isLoadingKyc}
                           />
                         ) : (
                           <FieldComponent

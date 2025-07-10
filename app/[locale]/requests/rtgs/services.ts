@@ -2,6 +2,7 @@
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // adjust path
 import { TRTGSResponse, TRTGSValues } from "./types";
+import { TKycResponse } from "@/app/auth/register/types";
 
 /**
  * GET /rtgsrequests?page={}&limit={}
@@ -212,4 +213,32 @@ export async function updateRtgsRequest(
 
   const updated = (await response.json()) as TRTGSValues;
   return updated;
+}
+
+/**
+ * Fetch KYC data by company code (6 digits after first 4 digits of account number)
+ */
+export async function getKycByCode(code: string): Promise<TKycResponse> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const response = await fetch(`${baseUrl}/companies/kyc/${code}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch KYC data");
+  }
+
+  return response.json();
 }

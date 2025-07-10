@@ -13,6 +13,7 @@ export type TKycResponse = {
       district: string | null;
       buildingNumber: string | null;
       city: string;
+      branchName: string;
     };
   };
   
@@ -89,3 +90,4 @@ export type TKycResponse = {
     lastName: string;
     phone: string;
   };
+  

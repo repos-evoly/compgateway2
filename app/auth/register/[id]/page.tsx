@@ -63,6 +63,7 @@ export default function SingleCompanyRegisterPage() {
     district: null,
     buildingNumber: null,
     city: companyInfo.kycCity ?? "",
+    branchName: companyInfo.kycBranchId ?? "", // Use branchId as branchName
   };
 
   // Pre-fill from adminContact

@@ -182,6 +182,8 @@
       "payType":"نوع الدفع",
       "createSuccessTitle": "نجاح",
       "createSuccessMsg": "تم إنشاء طلب RTGS بنجاح.",
+      "fetchError": "فشل في جلب طلبات RTGS",
+      "unknownError": "حدث خطأ غير متوقع",
       "status":"الحالة"
     },
   
@@ -240,6 +242,7 @@
       "expenses":"المصاريف",
       "totalAmount":"القيمة الكلية",
       "accountNum":"رقم الحساب",
+      "accountNumPlaceholder":"أدخل رقم الحساب",
       "beneficiary":"المستفيد",
       "cust1Sign":"توقيع الزبون 1",
       "cust2Sign":"توقيع الزبون 2",
@@ -478,8 +481,11 @@
         "button":"تسجيل الدخول"
       },
       "foreignTransfers":{
+        "id":"المعرف",
         "toBank":"إل مصرف",
         "branch":"الفرع",
+        "accountNum":"رقم الحساب",
+        "accountNumPlaceholder":"أدخل رقم الحساب",
         "residentSuppName":"اسم البائع أو الجهة",
         "residentSuppNationality":"الجنسية",
         "nonResidentPassport":"رقم البطاقة الشخصية أو جواز السفر للبائع (بالنسبة لغير المقيم)",

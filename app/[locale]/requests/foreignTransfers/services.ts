@@ -7,6 +7,7 @@ import type {
   CreateForeignTransferPayload,
 } from "./types";
 import { throwApiError } from "@/app/helpers/handleApiError";
+import { TKycResponse } from "@/app/auth/register/types";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
@@ -134,4 +135,25 @@ export async function updateForeignTransfer(
 
   const data = (await res.json()) as ForeignTransferDetailResponse;
   return data;
+}
+
+/**
+ * Fetch KYC data by company code (6 digits after first 4 digits of account number)
+ */
+export async function getKycByCode(code: string): Promise<TKycResponse> {
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+  const url = `${baseUrl}/companies/kyc/${code}`;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    await throwApiError(res, "Failed to fetch KYC data");
+  }
+  return (await res.json()) as TKycResponse;
 }

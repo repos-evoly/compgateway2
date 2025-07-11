@@ -130,6 +130,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
 }) => {
   const t = useTranslations("RTGSForm");
   const [isLoadingKyc, setIsLoadingKyc] = useState(false);
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
 
   /* ---- account dropdown from cookie ----------------------------------- */
   const [accountOptions, setAccountOptions] = useState<
@@ -207,6 +208,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     const companyCode = extractCompanyCode(accountNumber);
     if (!companyCode) return;
 
+    // Only autofill once per session
+    if (hasAutoFilled) return;
+
     setIsLoadingKyc(true);
     
     try {
@@ -216,7 +220,6 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         // Update form fields with KYC data
         setFieldValue('applicantName', kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName);
         setFieldValue('branchName', kycData.data.branchName);
-        
         // Build address from KYC data
         const addressParts = [];
         if (kycData.data.street) addressParts.push(kycData.data.street);
@@ -225,6 +228,9 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         
         const fullAddress = addressParts.join(', ');
         setFieldValue('address', fullAddress);
+        
+        // Mark as auto-filled to prevent overwriting user input
+        setHasAutoFilled(true);
       }
     } catch (error) {
       console.error('Failed to fetch KYC data:', error);

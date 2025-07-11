@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import Cookies from "js-cookie";
-import * as Yup from "yup";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
@@ -23,26 +22,6 @@ import FormHeader from "@/app/components/reusable/FormHeader";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
 
 import { TCheckRequestFormProps } from "../types";
-
-/* -------------------------------------------------------------------------- */
-/* Validation Schema                                                          */
-/* -------------------------------------------------------------------------- */
-const validationSchema = Yup.object({
-  accountNum: Yup.string().required("Account Number is required"),
-  branch: Yup.string().required("Branch is required"),
-  branchNum: Yup.string().required("Branch Number is required"),
-  date: Yup.date().required("Date is required").typeError("Invalid date"),
-  customerName: Yup.string().required("Customer Name is required"),
-  cardNum: Yup.string().required("Card Number is required"),
-  beneficiary: Yup.string().required("Beneficiary is required"),
-  lineItems: Yup.array().of(
-    Yup.object({
-      dirham: Yup.string().required("Dirham amount is required"),
-      lyd: Yup.string().required("LYD amount is required"),
-    })
-  ).required().min(1, "At least one line item is required"),
-  status: Yup.string().optional(),
-});
 
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
@@ -213,18 +192,6 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   /* form fields array */
   const formFields = [
     {
-      name: "accountNum",
-      label: t("accountNum"),
-      component: AccountNumberDropdown,
-      options: accountOptions,
-      placeholder: t("accountNumPlaceholder"),
-      width: "w-full",
-      maskingFormat: "0000-000000-000",
-      disabled: readOnly,
-      onAccountChange: handleAccountNumberChange,
-      isLoadingKyc,
-    },
-    {
       name: "branch",
       label: t("branch"),
       type: "text",
@@ -255,11 +222,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       type: "text",
       component: FormInputIcon,
     },
-  ];
-
-  // Split form fields
-  const accountNumberField = formFields.find(f => f.name === "accountNum");
-  const otherFields = formFields.filter(f => f.name !== "accountNum");
+  ] as const;
 
   /* wrapped submit */
   const handleSubmit = async (
@@ -295,41 +258,29 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
           <Form<TCheckRequestFormValues>
             initialValues={mergedValues}
             onSubmit={handleSubmit}
-            validationSchema={validationSchema}
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Render Account Number dropdown first */}
-              {accountNumberField && (
-                <AccountNumberDropdown
-                  key={accountNumberField.name}
-                  name={accountNumberField.name}
-                  label={accountNumberField.label}
-                  options={accountOptions}
-                  placeholder={accountNumberField.placeholder || t("accountNumPlaceholder")}
+              {formFields.map(({ component: Field, ...props }) => (
+                <Field
+                  key={props.name}
+                  {...props}
                   width="w-full"
-                  maskingFormat="0000-000000-000"
                   disabled={readOnly || isSubmitting}
-                  onAccountChange={handleAccountNumberChange}
-                  isLoadingKyc={isLoadingKyc}
                 />
-              )}
-              {/* Render the rest of the fields */}
-              {otherFields.map((field) => {
-                const { component: Field, name, label, type } = field;
-                if (Field === FormInputIcon || Field === DatePickerValue) {
-                  return (
-                    <Field
-                      key={name}
-                      name={name}
-                      label={label}
-                      type={type}
-                      width="w-full"
-                      disabled={readOnly || isSubmitting}
-                    />
-                  );
-                }
-                return null;
-              })}
+              ))}
+              
+              {/* Account Number dropdown */}
+              <AccountNumberDropdown
+                name="accountNum"
+                label={t("accountNum")}
+                options={accountOptions}
+                placeholder={t("accountNum")}
+                width="w-full"
+                maskingFormat="0000-000000-000"
+                disabled={readOnly || isSubmitting}
+                onAccountChange={handleAccountNumberChange}
+                isLoadingKyc={isLoadingKyc}
+              />
             </div>
 
             <div className="mt-6">

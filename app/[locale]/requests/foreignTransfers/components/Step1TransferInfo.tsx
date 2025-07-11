@@ -72,7 +72,7 @@ export function Step1TransferInfo({
   // Account dropdown state
   const [accountOptions, setAccountOptions] = React.useState<InputSelectComboOption[]>([]);
   const [isLoadingKyc, setIsLoadingKyc] = React.useState(false);
-  const { setFieldValue } = useFormikContext();
+  // const { setFieldValue } = useFormikContext();
 
   React.useEffect(() => {
     const raw = Cookies.get("statementAccounts") ?? "[]";

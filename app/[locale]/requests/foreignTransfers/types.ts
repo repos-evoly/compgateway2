@@ -57,6 +57,7 @@ export interface ForeignTransferDetailResponse {
   status?: string;
   createdAt: string;
   updatedAt: string;
+  accountNum?:string;
 }
 
 /** The shape of the listing response from /foreigntransfers (with pagination) */

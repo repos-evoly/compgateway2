@@ -23,7 +23,6 @@ import EditButton from "@/app/components/FormUI/EditButton";
 import InputSelectCombo, {
   InputSelectComboOption,
 } from "@/app/components/FormUI/InputSelectCombo";
-import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import ConfirmInfoModal from "./ConfirmInfoModal";
 
 import type {
@@ -32,6 +31,7 @@ import type {
   AdditionalData,
 } from "../types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
 
 /* -------------------------------------------------------------------------- */
 /*                               Helper                                       */
@@ -98,6 +98,24 @@ function InternalForm({
     InputSelectComboOption[]
   >([]);
 
+  const [commissionOnReceiver, setCommissionOnReceiver] = useState(false);
+
+  useEffect(() => {
+    const code = (Cookies.get("companyCode") ?? "").replace(/^"|"$/g, "");
+    if (!code) return;
+
+    (async () => {
+      try {
+        const info = await getCompannyInfoByCode(code);
+        setCommissionOnReceiver(info.commissionOnReceiver!);
+      } catch (err) {
+        console.error("Failed to fetch company info:", err);
+      }
+    })();
+  }, []);
+
+  console.log("Commission on receiver:", commissionOnReceiver);
+
   useEffect(() => {
     const rawCookie = Cookies.get("statementAccounts") ?? "[]";
     let accounts: string[] = [];
@@ -150,7 +168,11 @@ function InternalForm({
     transactionCategoryId: 2,
     economicSectorId: undefined, // ⬅️ new
   };
-  const initialValues: ExtendedValues = { ...defaults, ...initialData };
+  const initialValues: ExtendedValues = {
+    ...defaults,
+    ...initialData,
+    commissionOnRecipient: commissionOnReceiver, // controlled, never shown
+  };
 
   const schema = Yup.object({
     from: Yup.string().required(t("requiredFromAccount")),
@@ -165,7 +187,6 @@ function InternalForm({
       .required(t("requiredValue"))
       .positive(t("valueMustBePositive")),
     description: Yup.string().required(t("requiredDescription")),
-    commissionOnRecipient: Yup.boolean().required(),
     transactionCategoryId: Yup.number().required(),
     economicSectorId: Yup.number().required(t("requiredEconomicSector")),
   });
@@ -201,9 +222,7 @@ function InternalForm({
         commissionCurrency: currencyDesc,
 
         // NEW → what the user should see on top of the modal
-        displayAmount: vals.commissionOnRecipient
-          ? vals.value
-          : vals.value + fee,
+        displayAmount: commissionOnReceiver ? vals.value : vals.value + fee,
       });
       setModalOpen(true);
     } catch (err) {
@@ -219,7 +238,6 @@ function InternalForm({
       to,
       value,
       description,
-      commissionOnRecipient,
       transactionCategoryId,
       economicSectorId,
     } = modalData.formikData;
@@ -234,7 +252,6 @@ function InternalForm({
         amount: value,
         currencyId,
         description,
-        commissionOnRecipient,
       });
       onSubmit?.(modalData.formikData);
       onSuccess?.();
@@ -325,20 +342,6 @@ function InternalForm({
               />
             </div>
 
-            {/* Row 3 */}
-            <div className="mt-4">
-              <RadiobuttonWrapper
-                name="commissionOnRecipient"
-                label={t("commissionPaidBy")}
-                options={[
-                  { value: false, label: t("sender") },
-                  { value: true, label: t("recipient") },
-                ]}
-                disabled={fieldsDisabled}
-                flexDir={["row", "row"]}
-              />
-            </div>
-
             {/* Buttons – hide in viewOnly */}
             {!viewOnly && (
               <div className="mt-6 flex justify-center gap-4">
@@ -362,7 +365,6 @@ function InternalForm({
                     to: true,
                     value: true,
                     description: true,
-                    commissionOnRecipient: true,
                     transactionCategoryId: true,
                   }}
                   disabled={!!toError} // ⬅️ block submit if error

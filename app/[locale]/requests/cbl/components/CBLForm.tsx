@@ -264,6 +264,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
                 maxFiles={9}
                 label={t("documents")}
                 className="w-full"
+                canView
               />
             </div>
             <div className="flex-1">

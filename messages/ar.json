@@ -42,7 +42,8 @@
       "currencies":"العملات",
       "employees":"الموظفين",
       "companies":"الشركات",
-      "representatives":"الممثلين"
+      "representatives":"الممثلين",
+      "profile":"الملف الشخصي"
 
     },
     "mainHeader":{
@@ -863,6 +864,104 @@
         "confirmDeactivateMessage": "هل أنت متأكد من أنك تريد إلغاء تفعيل هذا الممثل؟",
         "confirmActivateMessage": "هل أنت متأكد من أنك تريد تفعيل هذا الممثل؟",
         "confirmDeleteMessage": "هل أنت متأكد من أنك تريد حذف هذا الممثل؟ لا يمكن التراجع عن هذا الإجراء."
+      },
+      "profile": {
+        "companyNotFound": {
+          "title": "لم يتم العثور على سجل الشركة",
+          "subtitle": "لم نتمكن من العثور على ملف الشركة المطلوب في قاعدة البيانات.",
+          "returnButton": "العودة إلى سجل الشركات"
+        },
+    
+       
+    
+        "contactLocationSection": {
+          "title": "معلومات الاتصال والموقع",
+          "primaryContactNumber": "رقم الاتصال الأساسي",
+          "cityOfOperations": "مدينة النشاط",
+          "nationalityJurisdiction": "الجنسية/الولاية القضائية",
+            "missingKyc":"معلومات مفقودة من KYC"
+
+        },
+    
+        "currentStatusSection": {
+          "title": "الحالة الحالية",
+          "subtitle1": "حالة تحقق KYC للشركة هي",
+          "additionalInfo": "معلومات إضافية"
+        },
+    
+        "headerSection": {
+          "backButton": "سجل الشركات",
+          "code": "الرمز:"
+        },
+    
+        "kycTimelineSection": {
+          "title": "الجدول الزمني للتحقق KYC",
+          "requestSubmitted": "تم تقديم الطلب",
+          "reviewCompleted": "تم مراجعة الطلب",
+          "at": "في",
+          "servicePackage": "حزمة الخدمة"
+        },
+    
+        "mainInformationSection": {
+          "title": "معلومات الشركة",
+          "legalCompanyName": "الاسم القانوني للشركة",
+          "legalNameArabic": "الاسم القانوني (بالعربية)",
+          "branchIdentifier": "معرف الفرع",
+          "operationalStatus": "الحالة التشغيلية"
+        },
+    
+        "reviewDecisionSection": {
+          "title": "قرار المراجعة",
+          "subtitle": "يرجى مراجعة معلومات الشركة واتخاذ قرار بشأن حالة تحقق KYC.",
+          "approveCompany": "اعتماد الشركة",
+          "rejectApplication": "رفض الطلب",
+          "missingButton": "مفقود",
+          "underReviewButton": "قيد المراجعة",
+          "rejectionReason": "سبب الرفض",
+          "reasonForMarkingMissing": "سبب تعيين الحالة مفقود",
+          "confirmRejection": "تأكيد الرفض",
+          "confirmMissing": "تأكيد المفقود"
+        },
+        "code": "رمز الشركة",
+        "name": "اسم الشركة",
+        "active": "نشط? ",
+        "kycStatus": "حالة KYC",
+        "requestedAt": "تاريخ الطلب",
+        "reviewedAt": "تاريخ المراجعة",
+        "servicePackageName": "اسم حزمة الخدمة",
+        "changeServicePackageSection": {
+          "title": "تغيير حزمة الخدمة",
+          "selectServicePackage": "اختر حزمة الخدمة",
+          "changeServicePackageButton": "تغيير حزمة الخدمة"
+        },
+        "updateStatus":{
+          "title": "تحديث الحالة",
+          "selectStatus": "اختر الحالة",
+          "messageReason": "الرجاء إدخال سبب التحديث",
+          "updateButton": "تحديث الحالة"
+        },
+        "documentsSection":{
+          "title":"المستندات",
+          "numberOfDocuments":"عدد المستندات المرفوعة",
+          "noDocs":"لا توجد مستندات مرفوعة",
+          "download":"تحميل",
+          "preview":"معاينة",
+          "noDescription":"لا توجد وصف للمستندات"
+        },
+        "confirmationModal": {
+          "title": "تأكيد التحديث",
+          "youAreAboutToSet": "أنت على وشك تعيين {company} إلى {status}.",
+          "messageLabel": "الرسالة",
+          "areYouSure": "هل أنت متأكد أنك تريد المتابعة؟",
+          "cancel": "إلغاء",
+          "confirm": "تأكيد"
+        },
+        "contactSupportSection":{
+          "title": "الاتصال بالدعم",
+          "phone": "الهاتف",
+          "email": "البريد الإلكتروني",
+          "availability": "متاح من الأحد إلى الخميس من 9:00 صباحًا حتى 5:00 مساءً"
+        }
       }
       
   }

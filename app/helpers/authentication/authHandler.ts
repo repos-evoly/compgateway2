@@ -268,17 +268,40 @@ export async function loginRoutingHandler(
   
 
   // Route based on companyStatus
-  if (userData.companyStatus === "approved") {
+  if (
+    userData.companyStatus === "approved" &&
+    (userData.isCompanyAdmin || userData.isActive)
+  ) {
     router.push("/dashboard");
-  } else if (userData.companyStatus === "missingInformation" && userData.isCompanyAdmin) {
+  }
+  
+  /* NEW branch – non-admin & inactive */
+  else if (!userData.isCompanyAdmin && !userData.isActive) {
+    if (onCompanyNotApproved) {
+      onCompanyNotApproved(
+        "inactiveUser",                 // any tag you like
+        "حساب المستخدم غير نشط"         // message: user is not active
+      );
+    }
+  }
+  
+  /* Existing branches stay the same */
+  else if (
+    userData.companyStatus === "missingInformation" &&
+    userData.isCompanyAdmin
+  ) {
     const encodedMsg = encodeURIComponent(userData.companyStatusMessage || "");
     router.push(`/auth/register/${userData.companyCode}?msg=${encodedMsg}`);
-  } else if (userData.companyStatus === "missingsDocuments" && userData.isCompanyAdmin) {
+  } else if (
+    userData.companyStatus === "missingsDocuments" &&
+    userData.isCompanyAdmin
+  ) {
     const encodedMsg = encodeURIComponent(userData.companyStatusMessage || "");
-    router.push(`/auth/register/uploadDocuments/${userData.companyCode}?msg=${encodedMsg}`);
+    router.push(
+      `/auth/register/uploadDocuments/${userData.companyCode}?msg=${encodedMsg}`
+    );
   } else {
-    console.log(" comany status not approved ", userData)
-    // If not approved => call onCompanyNotApproved callback
+    console.log("company status not approved", userData);
     if (onCompanyNotApproved) {
       onCompanyNotApproved(
         userData.companyStatus!,
@@ -286,4 +309,5 @@ export async function loginRoutingHandler(
       );
     }
   }
+  
 }

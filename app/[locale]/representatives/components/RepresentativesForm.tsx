@@ -201,6 +201,7 @@ export default function RepresentativesForm({
                   maxFiles={1}
                   label={t("fields.photo")}
                   initialPreviewUrl={initialPreviewUrl}
+                  canView
                 />
               )}
             </div>

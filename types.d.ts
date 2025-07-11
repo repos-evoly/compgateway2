@@ -317,6 +317,7 @@ export type DetailedUser = {
   isCompanyAdmin?: boolean;
 
   enabledTransactionCategories:string[];
+  isActive?: boolean;
 
   /** The 'role' object from the API. */
   role: {

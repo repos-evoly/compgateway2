@@ -1,8 +1,6 @@
 // =============================================================
-// DocumentUploader.tsx – v15
-// • Thumbnail list: click thumbnail OR “View” button opens modal
-// • “Edit”, “Download”, “Delete” controls
-// • Full utility functions included
+// DocumentUploader.tsx – v19
+// • Modal preview now limited to 50 % of viewport (less blur)
 // =============================================================
 
 "use client";
@@ -47,11 +45,15 @@ const LIMIT_BYTES = LIMIT_MB * 1024 * 1024;
 /* Props                                                              */
 /* ------------------------------------------------------------------ */
 export type DocumentUploaderProps = {
-  name: string; // Formik field name (File[])
-  maxFiles: number; // Maximum selectable files
-  className?: string; // Utility classes
-  label?: string; // Label inside the drop-zone
-  initialPreviewUrl?: string; // Existing asset URL (edit mode)
+  name: string;
+  maxFiles: number;
+  className?: string;
+  label?: string;
+  initialPreviewUrl?: string;
+  canView?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canDownload?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -63,7 +65,17 @@ export const DocumentUploader = ({
   className,
   label = "Documents",
   initialPreviewUrl,
+  canView,
+  canEdit,
+  canDelete,
+  canDownload,
 }: DocumentUploaderProps) => {
+  /* ---------- Action guards ---------- */
+  const allowView = Boolean(canView);
+  const allowEdit = Boolean(canEdit);
+  const allowDelete = Boolean(canDelete);
+  const allowDownload = Boolean(canDownload);
+
   /* ---------- Formik ---------- */
   const [field, meta, helpers] = useField<File[]>({ name });
   const files = field.value ?? [];
@@ -111,7 +123,6 @@ export const DocumentUploader = ({
 
     setNotice(rejected.length ? `${rejected.join(", ")} too large` : null);
 
-    /* Replace flow */
     if (editIdx !== null) {
       const nextPrev = [...previews];
       const nextFiles = [...files];
@@ -130,7 +141,6 @@ export const DocumentUploader = ({
       return;
     }
 
-    /* Add flow */
     const nextFiles = [...files, ...allowed].slice(0, maxFiles);
     const nextPrev = [...previews.filter(Boolean), ...newPrev].slice(
       0,
@@ -183,12 +193,12 @@ export const DocumentUploader = ({
   /* Helpers --------------------------------------------------------- */
   const formatSize = (b: number): string =>
     b < 1024
-      ? `${b} B`
+      ? `${b} B`
       : b < 1_048_576
-      ? `${Math.round(b / 1024)} KB`
-      : `${(b / 1_048_576).toFixed(1)} MB`;
+      ? `${Math.round(b / 1024)} KB`
+      : `${(b / 1_048_576).toFixed(1)} MB`;
 
-  /* Drop-zone component -------------------------------------------- */
+  /* Drop‑zone component -------------------------------------------- */
   const DropZone = (props: HTMLAttributes<HTMLDivElement>) => (
     <div
       {...props}
@@ -206,7 +216,7 @@ export const DocumentUploader = ({
       <FiUpload className="h-4 w-4 opacity-70" />
       <span className="text-sm font-medium">{label}</span>
       <span className="text-[10px] opacity-80">
-        Click or drop&nbsp;({maxFiles} max)
+        Click or drop&nbsp;({maxFiles} max)
       </span>
     </div>
   );
@@ -214,7 +224,6 @@ export const DocumentUploader = ({
   /* UI -------------------------------------------------------------- */
   return (
     <div className={className}>
-      {/* hidden file input */}
       <input
         ref={inputRef}
         type="file"
@@ -224,10 +233,8 @@ export const DocumentUploader = ({
         className="hidden"
       />
 
-      {/* drop-zone */}
       {previews.length === 0 && <DropZone />}
 
-      {/* meta row */}
       {previews.length > 0 && (
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <span>
@@ -260,106 +267,129 @@ export const DocumentUploader = ({
         </div>
       )}
 
-      {/* list */}
       {previews.length > 0 && showFiles && (
         <ul className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded bg-gray-50 p-2 text-xs">
-          {previews.map((src, i) => (
-            <li key={src ?? i} className="flex items-center gap-2">
-              {/* thumbnail – clicking opens modal */}
-              {src ? (
-                <button
-                  type="button"
-                  onClick={() => setModalUrl(src)}
-                  className="rounded-sm border focus:outline-none"
-                >
-                  <Image
-                    src={src}
-                    alt="preview"
-                    width={32}
-                    height={32}
-                    className="object-cover"
-                    unoptimized
-                  />
-                </button>
-              ) : (
-                <FiImage className="h-8 w-8 flex-shrink-0 text-blue-500" />
-              )}
+          {previews.map((src, i) => {
+            const isInitial = i < (initialPreviewUrl ? 1 : 0);
+            const fileIdx = isInitial ? -1 : i - (initialPreviewUrl ? 1 : 0);
+            const fileObj = fileIdx >= 0 ? files[fileIdx] : null;
+            const isPdf = fileObj?.type === "application/pdf";
 
-              {/* filename / size */}
-              <div className="flex-1 truncate">
-                {src?.startsWith("blob:") ? (
-                  <>
-                    <span className="truncate font-medium">
-                      {files[i - (initialPreviewUrl ? 1 : 0)]?.name ?? "file"}
-                    </span>{" "}
-                    {files[i - (initialPreviewUrl ? 1 : 0)] && (
-                      <span className="text-gray-500">
-                        (
-                        {formatSize(
-                          files[i - (initialPreviewUrl ? 1 : 0)].size
-                        )}
-                        )
-                      </span>
-                    )}
-                  </>
+            const handleOpen = () => {
+              if (!allowView || !src) return;
+              if (isPdf && fileObj) {
+                const pdfUrl = URL.createObjectURL(fileObj);
+                window.open(pdfUrl, "_blank", "noopener,noreferrer");
+              } else {
+                setModalUrl(src);
+              }
+            };
+
+            const downloadHref =
+              isPdf && fileObj ? URL.createObjectURL(fileObj) : src;
+
+            return (
+              <li key={src ?? i} className="flex items-center gap-2">
+                {src ? (
+                  allowView ? (
+                    <button
+                      type="button"
+                      onClick={handleOpen}
+                      className="rounded-sm border focus:outline-none"
+                    >
+                      <Image
+                        src={src}
+                        alt="preview"
+                        width={32}
+                        height={32}
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </button>
+                  ) : (
+                    <div className="rounded-sm border">
+                      <Image
+                        src={src}
+                        alt="preview"
+                        width={32}
+                        height={32}
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  )
                 ) : (
-                  <span className="font-medium">current-photo</span>
+                  <FiImage className="h-8 w-8 flex-shrink-0 text-blue-500" />
                 )}
-              </div>
 
-              {/* actions */}
-              {src && (
-                <>
-                  {/* View */}
+                <div className="flex-1 truncate">
+                  {src?.startsWith("blob:") ? (
+                    <>
+                      <span className="truncate font-medium">
+                        {fileObj?.name ?? "file"}
+                      </span>{" "}
+                      {fileObj && (
+                        <span className="text-gray-500">
+                          ({formatSize(fileObj.size)})
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="font-medium">
+                      {isPdf ? "current-document" : "current-photo"}
+                    </span>
+                  )}
+                </div>
+
+                {src && allowView && (
                   <button
                     type="button"
-                    onClick={() => setModalUrl(src)}
-                    className=" hover:text-blue-700"
+                    onClick={handleOpen}
+                    className="hover:text-blue-700"
                   >
                     <FiEye className="h-4 w-4" />
                   </button>
-
-                  {/* Download */}
+                )}
+                {src && allowDownload && (
                   <a
-                    href={src}
+                    href={downloadHref ?? undefined}
                     download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className=" hover:text-green-800"
+                    className="hover:text-green-800"
                   >
                     <FiDownload className="h-4 w-4" />
                   </a>
-
-                  {/* Edit */}
+                )}
+                {src && allowEdit && (
                   <button
                     type="button"
                     onClick={() => startEdit(i)}
-                    className=" hover:text-amber-700"
+                    className="hover:text-amber-700"
                   >
                     <FiEdit className="h-4 w-4" />
                   </button>
-                </>
-              )}
-
-              {/* Delete */}
-              <button
-                type="button"
-                onClick={() => removeAt(i)}
-                className=" hover:text-red-700"
-              >
-                <FiTrash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
+                )}
+                {allowDelete && (
+                  <button
+                    type="button"
+                    onClick={() => removeAt(i)}
+                    className="hover:text-red-700"
+                  >
+                    <FiTrash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </li>
+            );
+          })}
           {files.some((f) => f.size > LIMIT_BYTES) && (
             <p className="pt-1 text-[10px] text-amber-600">
-              * files &gt; 1 MB will be compressed
+              * files &gt; 1 MB will be compressed
             </p>
           )}
         </ul>
       )}
 
-      {/* alerts */}
       {notice && (
         <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">
           {notice}
@@ -371,17 +401,16 @@ export const DocumentUploader = ({
         </p>
       )}
 
-      {/* modal */}
       {modalUrl && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4">
-          <div className="relative max-h-full max-w-full">
+          <div className="relative" style={{ width: "50vw", height: "50vh" }}>
             <Image
               src={modalUrl}
               alt="large preview"
-              width={1200}
-              height={1200}
-              className="max-h-[90vh] w-auto rounded-lg"
+              fill
+              className="object-contain rounded-lg"
               unoptimized
+              sizes="50vw"
             />
             <button
               type="button"

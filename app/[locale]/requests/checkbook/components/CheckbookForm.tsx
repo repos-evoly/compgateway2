@@ -211,7 +211,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
           const {
             legalCompanyName,
             legalCompanyNameLT,
-            branchId,
+            branchName,
             street,
             district,
             buildingNumber,
@@ -225,7 +225,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
 
           setFieldValue("fullName", name);
           setFieldValue("address", addressParts.join(" "));
-          setFieldValue("branch", branchId);
+          setFieldValue("branch", branchName);
         } catch (error) {
           console.error("Failed to fetch KYC:", error);
         }

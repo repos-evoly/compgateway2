@@ -1,16 +1,21 @@
 /* --------------------------------------------------------------------------
-   app/[locale]/requests/cbl/components/CBLForm.tsx
-   – Current Account uses <InputSelectCombo> with cookie options
+   CBLForm – copy-paste ready, no `any` usage
    -------------------------------------------------------------------------- */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {
+  ElementType,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Cookies from "js-cookie";
-import { FormikHelpers } from "formik";
+import { FormikHelpers, useField, useFormikContext } from "formik";
 import { useTranslations } from "use-intl";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
@@ -18,25 +23,27 @@ import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import InputSelectCombo, {
   InputSelectComboOption,
 } from "@/app/components/FormUI/InputSelectCombo";
-
+import { DocumentUploader } from "@/app/components/reusable/DocumentUploader";
+import InfoBox from "@/app/[locale]/requests/cbl/components/InfoBox";
 import { FaUser } from "react-icons/fa";
 
-import Table from "@/app/[locale]/requests/cbl/components/Table";
-import InfoBox from "@/app/[locale]/requests/cbl/components/InfoBox";
-
-import { getColumns, fields, initialValues as defaultVals } from "../data";
+import { fields, initialValues as defaultVals } from "../data";
 import { CBLFormProps, TCBLValues } from "../types";
-
-import { addCblRequest, getKycByCode } from "../service";
+import { addCblRequest, getKycByCode, updateCblRequest } from "../service";
 import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
-import { useFormikContext, useField } from "formik";
 
-/* -------------------------------------------------------------------------- */
-/* AccountNumberDropdown Component                                             */
-/* -------------------------------------------------------------------------- */
+/* ---------- helper types ---------- */
+type FieldMeta = {
+  name: string;
+  label: string;
+  component: ElementType;
+  type?: string;
+  icon?: ReactNode;
+};
 
-interface AccountNumberDropdownProps {
+/* ---------- dropdown component ---------- */
+type AccountDropdownProps = {
   name: string;
   label: string;
   options: InputSelectComboOption[];
@@ -44,366 +51,232 @@ interface AccountNumberDropdownProps {
   width: string;
   maskingFormat: string;
   disabled: boolean;
-  onAccountChange: (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => void;
-  isLoadingKyc: boolean;
-}
+  onAccountChange: (
+    acc: string,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => void;
+  loading: boolean;
+};
 
-const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
+const AccountNumberDropdown: React.FC<AccountDropdownProps> = ({
   onAccountChange,
-  isLoadingKyc,
+  loading,
   name,
-  ...props
+  ...rest
 }) => {
   const { setFieldValue } = useFormikContext();
   const [field] = useField(name);
 
-  // Watch for changes in the field value
   useEffect(() => {
-    console.log('CBL AccountNumberDropdown: field.value changed to:', field.value);
     if (field.value) {
-      console.log('CBL AccountNumberDropdown: Calling onAccountChange');
-      onAccountChange(field.value, setFieldValue);
+      onAccountChange(field.value as string, setFieldValue);
     }
   }, [field.value, onAccountChange, setFieldValue]);
 
   return (
     <div className="relative">
-      <InputSelectCombo
-        name={name}
-        {...props}
-      />
-      {isLoadingKyc && (
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+      <InputSelectCombo name={name} {...rest} />
+      {loading && (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600" />
         </div>
       )}
     </div>
   );
 };
 
-/* ------------------------------------------------------------------ */
-/* Component                                                           */
-/* ------------------------------------------------------------------ */
+/* ---------- main form ---------- */
 const CBLForm: React.FC<CBLFormProps> = ({
   initialValues,
   onSubmit,
+  onCancel,
   readOnly = false,
 }) => {
   const t = useTranslations("cblForm");
 
+  /* UI state */
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modal, setModal] = useState({
+    open: false,
+    success: false,
+    title: "",
+    msg: "",
+  });
 
-  /* ---- modal state ---- */
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalSuccess, setModalSuccess] = useState(false);
-  const [modalTitle, setModalTitle] = useState("");
-  const [modalMessage, setModalMessage] = useState("");
-
-  /* ---- account dropdown options (cookie) ---- */
+  /* account options from cookie */
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
-  const [isLoadingKyc, setIsLoadingKyc] = useState(false);
-
   useEffect(() => {
     const raw = Cookies.get("statementAccounts") ?? "[]";
-    let list: string[] = [];
+    let arr: string[] = [];
     try {
-      list = JSON.parse(raw);
+      arr = JSON.parse(raw);
     } catch {
       try {
-        list = JSON.parse(decodeURIComponent(raw));
+        arr = JSON.parse(decodeURIComponent(raw));
       } catch {
-        list = [];
+        arr = [];
       }
     }
-    setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
+    setAccountOptions(arr.map((v) => ({ label: v, value: v })));
   }, []);
 
-  /* ---- merged initial values ---- */
-  const mergedValues: TCBLValues = {
+  /* initial values */
+  const mergedValues: TCBLValues & { files: File[] } = {
     id: 0,
     ...defaultVals,
     ...initialValues,
+    files: (initialValues as { files?: File[] })?.files ?? [],
   };
+  const isEdit = Boolean(initialValues?.id);
 
-  /* ---- dynamic columns ---- */
-  const columns = getColumns(t);
-  const columns1 = columns.table1;
-  const columns2 = columns.table2;
+  /* KYC autofill */
+  const [kycBusy, setKycBusy] = useState(false);
+  const lastCodeRef = useRef<string | null>(null);
+  const extractCode = (acc: string) => acc.replace(/\D/g, "").substring(4, 10);
+  const handleAccChange = useCallback(
+    async (acc: string, setField: (field: string, value: unknown) => void) => {
+      if (!acc || acc === lastCodeRef.current) return;
+      const code = extractCode(acc);
+      if (!code) return;
 
-  /* ---- dynamic field schema ---- */
-  const formFields = fields(t);
-  const status =
-    (initialValues as { status?: string } | undefined)?.status ?? undefined;
-
-  /* Function to extract company code from account number */
-  const extractCompanyCode = (accountNumber: string): string => {
-    // Remove any non-digit characters
-    const cleanAccount = accountNumber.replace(/\D/g, '');
-    
-    // Check if we have at least 10 digits (4 + 6)
-    if (cleanAccount.length >= 10) {
-      // Extract 6 digits after the first 4 digits
-      return cleanAccount.substring(4, 10);
-    }
-    
-    return '';
-  };
-
-  /* Function to fetch and populate KYC data */
-  const handleAccountNumberChange = async (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => {
-    console.log('CBL: handleAccountNumberChange called with:', accountNumber);
-    
-    if (!accountNumber) {
-      console.log('CBL: No account number provided');
-      return;
-    }
-
-    const companyCode = extractCompanyCode(accountNumber);
-    console.log('CBL: Extracted company code:', companyCode);
-    
-    if (!companyCode) {
-      console.log('CBL: No company code extracted');
-      return;
-    }
-
-    setIsLoadingKyc(true);
-    console.log('CBL: Fetching KYC data for code:', companyCode);
-    
-    try {
-      const kycData = await getKycByCode(companyCode);
-      console.log('CBL: KYC data received:', kycData);
-      
-      if (kycData.hasKyc && kycData.data) {
-        console.log('CBL: Populating form fields with KYC data');
-        
-        // Update form fields with KYC data
-        setFieldValue('partyName', kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName);
-        setFieldValue('branchOrAgency', kycData.data.branchName);
-        
-        // Build address from KYC data
-        const addressParts = [];
-        if (kycData.data.street) addressParts.push(kycData.data.street);
-        if (kycData.data.district) addressParts.push(kycData.data.district);
-        if (kycData.data.city) addressParts.push(kycData.data.city);
-        
-        const fullAddress = addressParts.join(', ');
-        setFieldValue('address', fullAddress);
-        
-        console.log('CBL: Form fields populated successfully');
-      } else {
-        console.log('CBL: No KYC data available');
+      setKycBusy(true);
+      try {
+        const kyc = await getKycByCode(code);
+        if (kyc.hasKyc && kyc.data) {
+          lastCodeRef.current = acc;
+          setField(
+            "partyName",
+            kyc.data.legalCompanyNameLT || kyc.data.legalCompanyName
+          );
+          setField("branchOrAgency", kyc.data.branchName);
+          setField(
+            "address",
+            [kyc.data.street, kyc.data.district, kyc.data.city]
+              .filter(Boolean)
+              .join(", ")
+          );
+        }
+      } finally {
+        setKycBusy(false);
       }
-    } catch (error) {
-      console.error('CBL: Failed to fetch KYC data:', error);
-    } finally {
-      setIsLoadingKyc(false);
-    }
-  };
+    },
+    []
+  );
 
-  const sections = [
-    {
-      title: t("generalInformation"),
-      fields: formFields.slice(0, 5),
-      gridCols: "grid-cols-1 md:grid-cols-3",
-    },
-    {
-      title: t("financialInformation"),
-      fields: formFields.slice(5, 15),
-      gridCols: "grid-cols-1 md:grid-cols-4",
-    },
-    {
-      title: t("representativeInformation"),
-      fieldGroups: [
-        { fields: formFields.slice(15, 17), gridCols: "grid-cols-2" },
-        { fields: formFields.slice(17, 20), gridCols: "grid-cols-3" },
-        { fields: formFields.slice(20, 23), gridCols: "grid-cols-3" },
-        { fields: formFields.slice(23), gridCols: "grid-cols-2" },
-      ],
-    },
-  ];
-
-  /* ---- submit ---- */
+  /* submit */
   const handleSubmit = async (
-    values: TCBLValues,
-    helpers: FormikHelpers<TCBLValues>
+    values: TCBLValues & { files: File[] },
+    helpers: FormikHelpers<TCBLValues & { files: File[] }>
   ) => {
     if (readOnly || isSubmitting) return;
-
     setIsSubmitting(true);
     try {
-      // If onSubmit is provided (edit mode), use it; otherwise use addCblRequest (create mode)
-      if (onSubmit) {
-        await onSubmit(values, helpers);
-      } else {
-        await addCblRequest(values);
-        setModalTitle(t("createSuccessTitle"));
-        setModalMessage(t("createSuccessMessage"));
-        setModalSuccess(true);
-        setModalOpen(true);
-      }
-    } catch (error) {
-      setModalTitle(t("createErrorTitle"));
-      setModalMessage(
-        error instanceof Error ? error.message : t("unknownError")
-      );
-      setModalSuccess(false);
-      setModalOpen(true);
+      const result: TCBLValues = isEdit
+        ? await updateCblRequest(values.id, values)
+        : await addCblRequest(values);
+
+      setModal({
+        open: true,
+        success: true,
+        title: t(isEdit ? "updateSuccessTitle" : "createSuccessTitle"),
+        msg: t(isEdit ? "updateSuccessMessage" : "createSuccessMessage"),
+      });
+
+      /* propagate to parent */
+      onSubmit?.(result, helpers as unknown as FormikHelpers<TCBLValues>);
+    } catch (e) {
+      setModal({
+        open: true,
+        success: false,
+        title: t(isEdit ? "updateErrorTitle" : "createErrorTitle"),
+        msg: e instanceof Error ? e.message : t("unknownError"),
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /* ------------------------------------------------------------------ */
-  /* JSX                                                                 */
-  /* ------------------------------------------------------------------ */
+  /* field metadata */
+  const formFields: FieldMeta[] = fields(t);
+  const sections = [
+    { title: t("generalInformation"), start: 0, end: 6, grid: 3 },
+    { title: t("financialInformation"), start: 6, end: 16, grid: 4 },
+  ];
+  const repGroups = [
+    { start: 16, end: 18, grid: 2 },
+    { start: 18, end: 21, grid: 3 },
+    { start: 21, end: 24, grid: 3 },
+    { start: 24, end: formFields.length, grid: 2 },
+  ];
+
+  /* render */
   return (
     <>
-      <FormHeader status={status}>
+      <FormHeader status={initialValues?.status}>
         <div className="pb-5">
-          <BackButton
-            fallbackPath="/requests/cbl"
-            isEditing={initialValues !== undefined}
-          />
+          <BackButton fallbackPath="/requests/cbl" isEditing={isEdit} />
         </div>
       </FormHeader>
 
-      <div className="px-6 bg-gray-100 -mt-6 py-2">
+      <div className="-mt-6 bg-gray-100 px-6 py-2">
         <Form initialValues={mergedValues} onSubmit={handleSubmit}>
-          {/* ---------------- Sections ---------------- */}
-          {sections.map((section, idx) => (
-            <div className="mt-6" key={idx}>
-              <h2 className="text-lg font-bold text-gray-800">
-                {section.title}
-              </h2>
-
-              {section.fieldGroups ? (
-                section.fieldGroups.map((group, gIdx) => (
-                  <div
-                    key={gIdx}
-                    className={`grid ${group.gridCols} gap-4 mt-4`}
-                  >
-                    {group.fields.map((field, fIdx) => {
-                      const FieldComponent =
-                        field.component as React.ElementType;
-                      const commonProps = {
-                        name: field.name,
-                        label: field.label,
-                        disabled: readOnly,
-                        textColor: "text-gray-700",
-                        titlePosition:
-                          field.component === DatePickerValue
-                            ? "top"
-                            : undefined,
-                      };
-
-                      return (
-                        <div key={fIdx} className="w-full">
-                          {field.name === "currentAccount" ? (
-                            <AccountNumberDropdown
-                              {...commonProps}
-                              options={accountOptions}
-                              width="w-full"
-                              maskingFormat="0000-000000-000"
-                              placeholder={t("currentAccount")}
-                              onAccountChange={handleAccountNumberChange}
-                              isLoadingKyc={isLoadingKyc}
-                            />
-                          ) : (
-                            <FieldComponent
-                              {...commonProps}
-                              type={field.type}
-                              startIcon={field.icon || null}
-                              maskingFormat={
-                                field.name === "currentAccount"
-                                  ? "0000-000000-000"
-                                  : undefined
-                              }
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))
-              ) : (
-                <div className={`grid ${section.gridCols} gap-4 mt-4`}>
-                  {section.fields.map((field, fIdx) => {
-                    console.log('CBL: Rendering field:', field.name);
-                    const FieldComponent = field.component as React.ElementType;
-                    const commonProps = {
-                      name: field.name,
-                      label: field.label,
-                      disabled: readOnly,
-                      textColor: "text-gray-700",
-                      titlePosition:
-                        field.component === DatePickerValue ? "top" : undefined,
-                    };
-
-                    return (
-                      <div key={fIdx} className="w-full">
-                        {field.name === "currentAccount" ? (
-                          <AccountNumberDropdown
-                            {...commonProps}
-                            options={accountOptions}
-                            width="w-full"
-                            maskingFormat="0000-000000-000"
-                            placeholder={t("currentAccount")}
-                            onAccountChange={handleAccountNumberChange}
-                            isLoadingKyc={isLoadingKyc}
-                          />
-                        ) : (
-                          <FieldComponent
-                            {...commonProps}
-                            type={field.type}
-                            startIcon={field.icon || null}
-                            maskingFormat={
-                              field.name === "currentAccount"
-                                ? "0000-000000-000"
-                                : undefined
-                            }
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+          {/* sections */}
+          {sections.map((sec) => (
+            <Section
+              key={sec.title}
+              title={sec.title}
+              fields={formFields.slice(sec.start, sec.end)}
+              grid={sec.grid}
+              accountOptions={accountOptions}
+              onAccChange={handleAccChange}
+              kycBusy={kycBusy}
+              readOnly={readOnly}
+              t={t}
+            />
           ))}
 
-          {/* -------------- Tables + InfoBox -------------- */}
-          <div className="flex w-full gap-6">
-            <div className="flex flex-1 flex-col gap-6">
-              <Table
-                title={t("table1.title")}
-                columns={columns1}
-                fieldNamePrefix="table1Rows"
+          {/* representative groups */}
+          <div className="mt-6">
+            <h2 className="text-lg font-bold text-gray-800">
+              {t("representativeInformation")}
+            </h2>
+            {repGroups.map((g, idx) => (
+              <FieldGrid
+                key={idx}
+                fields={formFields.slice(g.start, g.end)}
+                grid={g.grid}
+                accountOptions={accountOptions}
+                onAccChange={handleAccChange}
+                kycBusy={kycBusy}
                 readOnly={readOnly}
+                t={t}
               />
+            ))}
+          </div>
 
-              <div className="flex-grow rounded-lg border border-gray-300 bg-gray-100 shadow-sm" />
-
-              <Table
-                title={t("table2.title")}
-                columns={columns2}
-                fieldNamePrefix="table2Rows"
-                readOnly={readOnly}
+          {/* documents + info */}
+          <div className="mt-6 flex w-full gap-6">
+            <div className="flex flex-1 flex-col">
+              <DocumentUploader
+                name="files"
+                maxFiles={9}
+                label={t("documents")}
+                className="w-full"
               />
             </div>
-
             <div className="flex-1">
               <InfoBox />
             </div>
           </div>
 
-          {/* -------------- Additional Info -------------- */}
+          {/* additional */}
           <div className="mt-6">
             <h2 className="text-lg font-bold text-gray-800">
               {t("additionalInformation")}
             </h2>
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="mt-4 grid grid-cols-2 gap-4">
               <DatePickerValue
                 name="packingDate"
                 label={t("packingDate")}
@@ -421,30 +294,109 @@ const CBLForm: React.FC<CBLFormProps> = ({
             </div>
           </div>
 
-          {/* -------------- Buttons -------------- */}
+          {/* buttons */}
           {!readOnly && (
-            <div className="px-6 pb-6 flex justify-center gap-2">
+            <div className="flex justify-center gap-3 px-6 pb-6">
               <SubmitButton
-                title="Submit"
+                title={t(isEdit ? "update" : "submit")}
                 color="info-dark"
+                isSubmitting={isSubmitting}
                 disabled={isSubmitting}
               />
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
+                >
+                  {t("cancel")}
+                </button>
+              )}
             </div>
           )}
         </Form>
       </div>
 
-      {/* Modal */}
       <ErrorOrSuccessModal
-        isOpen={modalOpen}
-        isSuccess={modalSuccess}
-        title={modalTitle}
-        message={modalMessage}
-        onClose={() => setModalOpen(false)}
-        onConfirm={() => setModalOpen(false)}
+        isOpen={modal.open}
+        isSuccess={modal.success}
+        title={modal.title}
+        message={modal.msg}
+        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        onConfirm={() => setModal((m) => ({ ...m, open: false }))}
       />
     </>
   );
 };
+
+/* ---------- helpers ---------- */
+type SectionProps = {
+  title: string;
+  fields: FieldMeta[];
+  grid: number;
+  accountOptions: InputSelectComboOption[];
+  onAccChange: (
+    acc: string,
+    setField: (field: string, value: unknown) => void
+  ) => void;
+  kycBusy: boolean;
+  readOnly: boolean;
+  t: (k: string) => string;
+};
+
+const Section: React.FC<SectionProps> = (p) => (
+  <div className="mt-6">
+    <h2 className="text-lg font-bold text-gray-800">{p.title}</h2>
+    <FieldGrid {...p} />
+  </div>
+);
+
+type FieldGridProps = Omit<SectionProps, "title">;
+
+const FieldGrid: React.FC<FieldGridProps> = ({
+  fields,
+  grid,
+  accountOptions,
+  onAccChange,
+  kycBusy,
+  readOnly,
+  t,
+}) => (
+  <div className={`grid grid-cols-1 md:grid-cols-${grid} gap-4 mt-4`}>
+    {fields.map((f) => {
+      const Comp = f.component;
+      const commonProps = {
+        name: f.name,
+        label: f.label,
+        disabled: readOnly,
+        textColor: "text-gray-700",
+        titlePosition: f.component === DatePickerValue ? "top" : undefined,
+      };
+
+      if (f.name === "currentAccount")
+        return (
+          <AccountNumberDropdown
+            key={f.name}
+            {...commonProps}
+            options={accountOptions}
+            width="w-full"
+            maskingFormat="0000-000000-000"
+            placeholder={t("currentAccount")}
+            onAccountChange={onAccChange}
+            loading={kycBusy}
+          />
+        );
+
+      return (
+        <Comp
+          key={f.name}
+          {...commonProps}
+          {...(f.type ? { type: f.type } : {})}
+          {...(f.icon ? { startIcon: f.icon } : {})}
+        />
+      );
+    })}
+  </div>
+);
 
 export default CBLForm;

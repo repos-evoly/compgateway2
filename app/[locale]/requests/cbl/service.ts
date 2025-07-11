@@ -3,6 +3,7 @@ import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // adjus
 import { TCblRequestsResponse, TCBLValues } from "./types";
 import { throwApiError } from "@/app/helpers/handleApiError";      // ← NEW
 import { TKycResponse } from "@/app/auth/register/types";
+import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
 
 
 /** Minimal shape of an "official" from the API */
@@ -101,23 +102,20 @@ export async function getCblRequests(
   return (await response.json()) as TCblRequestsResponse;
 }
 
-/**
- * Add (POST) a new CBL request.
- */
-export async function addCblRequest(values: TCBLValues) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
-  }
+export async function addCblRequest(
+  values: TCBLValues & { files?: File[] }
+): Promise<TCBLValues> {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+  if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  const token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  // Convert your form values to API payload shape
-  const payload = {
+  /* ---------- 1 · build JSON payload ---------- */
+  const dto = {
     partyName: values.partyName,
-    capital: values.capital,
+    capital: values.capital as number,
     foundingDate: values.foundingDate?.toISOString() ?? null,
     legalForm: values.legalForm,
     branchOrAgency: values.branchOrAgency,
@@ -143,37 +141,45 @@ export async function addCblRequest(values: TCBLValues) {
     address: values.address,
     packingDate: values.packingDate?.toISOString() ?? null,
     specialistName: values.specialistName,
-
-    // Convert table1Data -> officials
-    officials: values.table1Data.map((off) => ({
-      id: 0, // or omit if unnecessary
-      name: off.name,
-      position: off.position,
+    officials: values.table1Data.map((o) => ({
+      id: 0,
+      name: o.name,
+      position: o.position,
     })),
-
-    // Convert table2Data -> signatures
-    signatures: values.table2Data.map((sig) => ({
-      id: 0, // or omit if unnecessary
-      name: sig.name,
-      signature: sig.signature,
-      status: "string", // or omit / adapt if your API doesn't need this
+    signatures: values.table2Data.map((s) => ({
+      id: 0,
+      name: s.name,
+      signature: s.signature,
+      status: "string",
     })),
   };
 
+  /* ---------- 2 · FormData ---------- */
+  const formData = new FormData();
+  formData.append("Dto", JSON.stringify(dto)); // key MUST be "Dto"
+
+  const files = values.files ?? [];
+  if (files.length > 1) {
+    const { blob } = await mergeFilesToPdf(files, 5); // 5 MB cap
+    formData.append("files", blob, "documents.pdf");
+  } else if (files.length === 1) {
+    formData.append("files", files[0], files[0].name);
+  }
+
+  /* ---------- 3 · POST ---------- */
   const response = await fetch(`${baseUrl}/cblrequests`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+      Accept: "application/json",
     },
-    body: JSON.stringify(payload),
+    body: formData,
   });
 
   if (!response.ok) {
     await throwApiError(response, "Failed to create CBL.");
   }
 
-  // Return whatever your API returns (assuming it returns the newly-created resource).
   return (await response.json()) as TCBLValues;
 }
 

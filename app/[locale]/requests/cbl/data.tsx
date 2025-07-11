@@ -1,3 +1,8 @@
+/* --------------------------------------------------------------------------
+   app/[locale]/requests/cbl/data.ts
+   – Field order updated so currentAccount is first
+   – No interfaces; using `type`
+   -------------------------------------------------------------------------- */
 import * as Yup from "yup";
 import React from "react";
 import {
@@ -10,13 +15,16 @@ import {
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 
+/* ------------------------------------------------------------------ */
+/* Initial values                                                     */
+/* ------------------------------------------------------------------ */
 export const initialValues = {
+  currentAccount: "", // moved to top
   partyName: "",
   capital: 0,
   foundingDate: new Date(),
   legalForm: "",
   branchOrAgency: "",
-  currentAccount: "",
   accountOpening: new Date(),
   commercialLicense: "",
   validatyLicense: new Date(),
@@ -36,24 +44,24 @@ export const initialValues = {
   passportExpiry: new Date(),
   mobile: "",
   address: "",
-  table1Data: [{ name: "", position: "" }], // Added for table 1
-  table2Data: [{ name: "", signature: "" }], // Added for table 2
-  packingDate: new Date(), // Added
-  specialistName: "", // Added
+  table1Data: [{ name: "", position: "" }],
+  table2Data: [{ name: "", signature: "" }],
+  packingDate: new Date(),
+  specialistName: "",
 };
 
-// data.ts (or equivalent file)
-
+/* ------------------------------------------------------------------ */
+/* Validation schema                                                  */
+/* ------------------------------------------------------------------ */
 export const validationSchema = Yup.object({
-  /** Add 'id' */
-  id: Yup.number().typeError("ID must be a number").required("ID is required"), // or .notRequired() if you prefer
+  id: Yup.number().typeError("ID must be a number").required("ID is required"),
 
+  currentAccount: Yup.string().required("Current account is required"),
   partyName: Yup.string().required("Party name is required"),
   capital: Yup.number().required("Capital is required"),
   foundingDate: Yup.date().required("Founding date is required"),
   legalForm: Yup.string().required("Legal form is required"),
   branchOrAgency: Yup.string().required("Branch or agency is required"),
-  currentAccount: Yup.string().required("Current account is required"),
   accountOpening: Yup.date().required("Account opening date is required"),
   commercialLicense: Yup.string().required("Commercial license is required"),
   validatyLicense: Yup.date().required("License validity date is required"),
@@ -83,6 +91,7 @@ export const validationSchema = Yup.object({
   passportExpiry: Yup.date().required("Passport expiry date is required"),
   mobile: Yup.string().required("Mobile number is required"),
   address: Yup.string().required("Address is required"),
+
   table1Data: Yup.array()
     .of(
       Yup.object({
@@ -91,6 +100,7 @@ export const validationSchema = Yup.object({
       })
     )
     .required("Table 1 data is required"),
+
   table2Data: Yup.array()
     .of(
       Yup.object({
@@ -99,16 +109,30 @@ export const validationSchema = Yup.object({
       })
     )
     .required("Table 2 data is required"),
+
   packingDate: Yup.date().required("Packing date is required"),
   specialistName: Yup.string().required("Specialist name is required"),
 });
 
+/* ------------------------------------------------------------------ */
+/* Column helpers                                                     */
+/* ------------------------------------------------------------------ */
 export const getColumns = (t: (key: string) => string) => ({
   table1: [t("table1.columns.name"), t("table1.columns.position")],
   table2: [t("table2.columns.name"), t("table2.columns.signature")],
 });
 
+/* ------------------------------------------------------------------ */
+/* Field metadata (currentAccount is first)                           */
+/* ------------------------------------------------------------------ */
 export const fields = (t: (key: string) => string) => [
+  {
+    name: "currentAccount",
+    label: t("currentAccount"),
+    component: FormInputIcon,
+    type: "text",
+    icon: <FaBuilding />,
+  },
   {
     name: "partyName",
     label: t("partyName"),
@@ -120,7 +144,7 @@ export const fields = (t: (key: string) => string) => [
     name: "capital",
     label: t("capital"),
     component: FormInputIcon,
-    type: "text",
+    type: "number",
     icon: <FaDollarSign />,
   },
   {
@@ -139,13 +163,6 @@ export const fields = (t: (key: string) => string) => [
   {
     name: "branchOrAgency",
     label: t("branchOrAgency"),
-    component: FormInputIcon,
-    type: "text",
-    icon: <FaBuilding />,
-  },
-  {
-    name: "currentAccount",
-    label: t("currentAccount"),
     component: FormInputIcon,
     type: "text",
     icon: <FaBuilding />,
@@ -281,11 +298,5 @@ export const fields = (t: (key: string) => string) => [
     component: DatePickerValue,
     type: "date",
   },
-  // {
-  //   name: "specialistName",
-  //   label: t("specialistName"),
-  //   component: FormInputIcon,
-  //   type: "text",
-  //   icon: <FaUser />,
-  // },
+  // specialistName is rendered separately
 ];

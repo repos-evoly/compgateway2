@@ -41,6 +41,8 @@ export type TCBLValues = {
     packingDate: Date;
     specialistName: string;
     status?: string;
+    files?: File[];
+
   };
   
   /** Props for the CBLForm component */

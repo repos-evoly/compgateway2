@@ -1,15 +1,15 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/visaRequest/components/Step1VisaRequest.tsx
- * Renders accountNumber with <InputSelectCombo> and KYC auto-population
+ * Renders accountNumber with <InputSelectCombo> + KYC auto-population
  * ----------------------------------------------------------------------- */
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useFormikContext, useField } from "formik";
-import { step1VisaInputs } from "./visaInputs";
 
+import { step1VisaInputs } from "./visaInputs";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import InputSelectCombo, {
@@ -29,65 +29,56 @@ export function Step1VisaRequest({
 }: Step1VisaRequestProps) {
   const t = useTranslations("visaRequest");
   const { setFieldValue } = useFormikContext();
-  const [field] = useField("accountNumber");
+  const [field] = useField<string>("accountNumber");
   const [isLoadingKyc, setIsLoadingKyc] = useState(false);
 
-  /* Function to extract company code from account number */
-  const extractCompanyCode = (accountNumber: string): string => {
-    // Remove any non-digit characters
-    const cleanAccount = accountNumber.replace(/\D/g, '');
-    
-    // Check if we have at least 10 digits (4 + 6)
-    if (cleanAccount.length >= 10) {
-      // Extract 6 digits after the first 4 digits
-      return cleanAccount.substring(4, 10);
-    }
-    
-    return '';
+  /* -- helpers ------------------------------------------------------ */
+  const extractCompanyCode = (acc: string): string => {
+    const digits = acc.replace(/\D/g, "");
+    return digits.length >= 10 ? digits.substring(4, 10) : "";
   };
 
-  /* Function to fetch and populate KYC data */
-  const handleAccountNumberChange = async (accountNumber: string) => {
-    if (!accountNumber) return;
+  const handleAccountNumberChange = useCallback(
+    async (accountNumber: string) => {
+      if (!accountNumber) return;
 
-    const companyCode = extractCompanyCode(accountNumber);
-    if (!companyCode) return;
+      const code = extractCompanyCode(accountNumber);
+      if (!code) return;
 
-    setIsLoadingKyc(true);
-    
-    try {
-      const kycData = await getKycByCode(companyCode);
-      
-      if (kycData.hasKyc && kycData.data) {
-        // Update form fields with KYC data
-        setFieldValue('accountHolderName', kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName);
-        setFieldValue('branch', kycData.data.branchName);
-        
-        // Build address from KYC data
-        const addressParts = [];
-        if (kycData.data.street) addressParts.push(kycData.data.street);
-        if (kycData.data.district) addressParts.push(kycData.data.district);
-        if (kycData.data.city) addressParts.push(kycData.data.city);
-        
-        const fullAddress = addressParts.join(', ');
-        setFieldValue('address', fullAddress);
+      setIsLoadingKyc(true);
+      try {
+        const kyc = await getKycByCode(code);
+        if (kyc.hasKyc && kyc.data) {
+          setFieldValue(
+            "accountHolderName",
+            kyc.data.legalCompanyNameLT || kyc.data.legalCompanyName
+          );
+          setFieldValue("branch", kyc.data.branchName);
+
+          const address = [kyc.data.street, kyc.data.district, kyc.data.city]
+            .filter(Boolean)
+            .join(", ");
+          setFieldValue("address", address);
+        }
+      } catch (err) {
+        console.error("Failed to fetch KYC data:", err);
+      } finally {
+        setIsLoadingKyc(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch KYC data:', error);
-    } finally {
-      setIsLoadingKyc(false);
-    }
-  };
+    },
+    [setFieldValue]
+  );
 
-  // Watch for changes in the account number field
+  /* -- effect: run when accountNumber changes ----------------------- */
   useEffect(() => {
     if (field.value) {
       handleAccountNumberChange(field.value);
     }
-  }, [field.value]);
+  }, [field.value, handleAccountNumberChange]);
 
+  /* -- render ------------------------------------------------------- */
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {step1VisaInputs.map(({ name, label, icon, type }) => {
         if (name === "accountNumber") {
           return (
@@ -101,8 +92,8 @@ export function Step1VisaRequest({
                 disabled={readOnly}
               />
               {isLoadingKyc && (
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 transform">
+                  <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
                 </div>
               )}
             </div>

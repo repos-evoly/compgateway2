@@ -1,11 +1,8 @@
 // =============================================================
-// DocumentUploader.tsx – v11  (Next-Image + Edit-Mode preview)
-// • Accepts an optional `initialPreviewUrl` for edit forms
-// • Label lives inside the drop-zone
-// • After first pick → drop-zone hides, “+” button appears
-// • “+” disappears at maxFiles; reappears if files removed
-// • Previews rendered with next/image (unoptimized) to avoid build errors
-// • React-Icons only, strict types, 1 MB rule preserved
+// DocumentUploader.tsx – v15
+// • Thumbnail list: click thumbnail OR “View” button opens modal
+// • “Edit”, “Download”, “Delete” controls
+// • Full utility functions included
 // =============================================================
 
 "use client";
@@ -30,6 +27,10 @@ import {
   FiImage,
   FiChevronDown,
   FiChevronUp,
+  FiEye,
+  FiX,
+  FiEdit,
+  FiDownload,
 } from "react-icons/fi";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker as string;
@@ -46,16 +47,11 @@ const LIMIT_BYTES = LIMIT_MB * 1024 * 1024;
 /* Props                                                              */
 /* ------------------------------------------------------------------ */
 export type DocumentUploaderProps = {
-  /** Formik field name (File[]) */
-  name: string;
-  /** Maximum selectable files */
-  maxFiles: number;
-  /** Utility classes */
-  className?: string;
-  /** Label inside the drop-zone */
-  label?: string;
-  /** Existing asset URL for edit mode */
-  initialPreviewUrl?: string;
+  name: string; // Formik field name (File[])
+  maxFiles: number; // Maximum selectable files
+  className?: string; // Utility classes
+  label?: string; // Label inside the drop-zone
+  initialPreviewUrl?: string; // Existing asset URL (edit mode)
 };
 
 /* ------------------------------------------------------------------ */
@@ -79,11 +75,13 @@ export const DocumentUploader = ({
   const [notice, setNotice] = useState<string | null>(null);
   const [showFiles, setShowFiles] = useState(Boolean(initialPreviewUrl));
   const [dragActive, setDragActive] = useState(false);
+  const [modalUrl, setModalUrl] = useState<string | null>(null);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
 
   /* ---------- Refs ---------- */
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /* ---------- Clean up Object URLs ---------- */
+  /* ---------- Cleanup ---------- */
   useEffect(
     () => () =>
       previews.forEach(
@@ -113,6 +111,26 @@ export const DocumentUploader = ({
 
     setNotice(rejected.length ? `${rejected.join(", ")} too large` : null);
 
+    /* Replace flow */
+    if (editIdx !== null) {
+      const nextPrev = [...previews];
+      const nextFiles = [...files];
+
+      if (editIdx < (initialPreviewUrl ? 1 : 0)) {
+        nextPrev[editIdx] = newPrev[0];
+      } else {
+        const fileOffset = editIdx - (initialPreviewUrl ? 1 : 0);
+        nextFiles[fileOffset] = allowed[0];
+        nextPrev[editIdx] = newPrev[0];
+      }
+
+      helpers.setValue(nextFiles);
+      setPreviews(nextPrev);
+      setEditIdx(null);
+      return;
+    }
+
+    /* Add flow */
     const nextFiles = [...files, ...allowed].slice(0, maxFiles);
     const nextPrev = [...previews.filter(Boolean), ...newPrev].slice(
       0,
@@ -124,27 +142,30 @@ export const DocumentUploader = ({
     setShowFiles(true);
   };
 
-  const onInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
+  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     handleFiles(Array.from(e.target.files ?? []));
     e.target.value = "";
   };
 
-  const onDrop = (e: DragEvent<HTMLDivElement>): void => {
+  const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragActive(false);
     handleFiles(Array.from(e.dataTransfer.files));
   };
 
-  const openDialog = (): void => inputRef.current?.click();
+  const openDialog = () => inputRef.current?.click();
+  const startEdit = (idx: number) => {
+    setEditIdx(idx);
+    openDialog();
+  };
 
   /* ---------------------------------------------------------------- */
-  /* Remove one                                                       */
+  /* Remove                                                            */
   /* ---------------------------------------------------------------- */
-  const removeAt = (idx: number): void => {
+  const removeAt = (idx: number) => {
     const nextFiles = [...files];
     const nextPrev = [...previews];
 
-    // If removing a freshly picked file, adjust Formik value list
     if (idx >= (initialPreviewUrl ? 1 : 0)) {
       const fileIdx = idx - (initialPreviewUrl ? 1 : 0);
       nextFiles.splice(fileIdx, 1);
@@ -159,9 +180,7 @@ export const DocumentUploader = ({
     if (nextPrev.length === 0) setShowFiles(false);
   };
 
-  /* ---------------------------------------------------------------- */
-  /* Helpers                                                          */
-  /* ---------------------------------------------------------------- */
+  /* Helpers --------------------------------------------------------- */
   const formatSize = (b: number): string =>
     b < 1024
       ? `${b} B`
@@ -169,11 +188,7 @@ export const DocumentUploader = ({
       ? `${Math.round(b / 1024)} KB`
       : `${(b / 1_048_576).toFixed(1)} MB`;
 
-  const error = meta.error as string | undefined;
-
-  /* ---------------------------------------------------------------- */
-  /* Drop-zone                                                         */
-  /* ---------------------------------------------------------------- */
+  /* Drop-zone component -------------------------------------------- */
   const DropZone = (props: HTMLAttributes<HTMLDivElement>) => (
     <div
       {...props}
@@ -196,22 +211,20 @@ export const DocumentUploader = ({
     </div>
   );
 
-  /* ---------------------------------------------------------------- */
-  /* UI                                                               */
-  /* ---------------------------------------------------------------- */
+  /* UI -------------------------------------------------------------- */
   return (
     <div className={className}>
-      {/* hidden file input (for drop-zone & “+” button) */}
+      {/* hidden file input */}
       <input
         ref={inputRef}
         type="file"
         accept={ACCEPT}
-        multiple
+        multiple={editIdx === null}
         onChange={onInputChange}
         className="hidden"
       />
 
-      {/* drop-zone (only when no previews yet) */}
+      {/* drop-zone */}
       {previews.length === 0 && <DropZone />}
 
       {/* meta row */}
@@ -220,7 +233,6 @@ export const DocumentUploader = ({
           <span>
             {previews.length}/{maxFiles}
           </span>
-
           <button
             type="button"
             onClick={() => setShowFiles(!showFiles)}
@@ -236,7 +248,6 @@ export const DocumentUploader = ({
               </>
             )}
           </button>
-
           {previews.length < maxFiles && (
             <button
               type="button"
@@ -249,26 +260,32 @@ export const DocumentUploader = ({
         </div>
       )}
 
-      {/* file list */}
+      {/* list */}
       {previews.length > 0 && showFiles && (
         <ul className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded bg-gray-50 p-2 text-xs">
           {previews.map((src, i) => (
             <li key={src ?? i} className="flex items-center gap-2">
-              {/* preview icon / image */}
+              {/* thumbnail – clicking opens modal */}
               {src ? (
-                <Image
-                  src={src}
-                  alt="preview"
-                  width={32}
-                  height={32}
-                  className="rounded-sm border object-cover"
-                  unoptimized
-                />
+                <button
+                  type="button"
+                  onClick={() => setModalUrl(src)}
+                  className="rounded-sm border focus:outline-none"
+                >
+                  <Image
+                    src={src}
+                    alt="preview"
+                    width={32}
+                    height={32}
+                    className="object-cover"
+                    unoptimized
+                  />
+                </button>
               ) : (
                 <FiImage className="h-8 w-8 flex-shrink-0 text-blue-500" />
               )}
 
-              {/* name & size (fresh picks only) */}
+              {/* filename / size */}
               <div className="flex-1 truncate">
                 {src?.startsWith("blob:") ? (
                   <>
@@ -290,10 +307,45 @@ export const DocumentUploader = ({
                 )}
               </div>
 
+              {/* actions */}
+              {src && (
+                <>
+                  {/* View */}
+                  <button
+                    type="button"
+                    onClick={() => setModalUrl(src)}
+                    className=" hover:text-blue-700"
+                  >
+                    <FiEye className="h-4 w-4" />
+                  </button>
+
+                  {/* Download */}
+                  <a
+                    href={src}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className=" hover:text-green-800"
+                  >
+                    <FiDownload className="h-4 w-4" />
+                  </a>
+
+                  {/* Edit */}
+                  <button
+                    type="button"
+                    onClick={() => startEdit(i)}
+                    className=" hover:text-amber-700"
+                  >
+                    <FiEdit className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+
+              {/* Delete */}
               <button
                 type="button"
                 onClick={() => removeAt(i)}
-                className="text-red-500 hover:text-red-700"
+                className=" hover:text-red-700"
               >
                 <FiTrash2 className="h-4 w-4" />
               </button>
@@ -313,18 +365,41 @@ export const DocumentUploader = ({
           {notice}
         </p>
       )}
-      {error && (
+      {meta.error && (
         <p className="mt-1 rounded bg-red-50 px-2 py-1 text-xs text-red-600">
-          {error}
+          {meta.error as string}
         </p>
+      )}
+
+      {/* modal */}
+      {modalUrl && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4">
+          <div className="relative max-h-full max-w-full">
+            <Image
+              src={modalUrl}
+              alt="large preview"
+              width={1200}
+              height={1200}
+              className="max-h-[90vh] w-auto rounded-lg"
+              unoptimized
+            />
+            <button
+              type="button"
+              onClick={() => setModalUrl(null)}
+              className="absolute -right-3 -top-3 rounded-full bg-white p-1.5 text-black shadow"
+            >
+              <FiX className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
-/* -------------------------------------------------------------------------- */
-/*                       PREVIEW / COMPRESSION UTILITIES                      */
-/* -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+ * PREVIEW / COMPRESSION UTILITIES
+ * ----------------------------------------------------------------------- */
 const generatePreview = async (file: File): Promise<string | null> => {
   if (file.type.startsWith("image/")) return URL.createObjectURL(file);
 
@@ -347,7 +422,6 @@ const generatePreview = async (file: File): Promise<string | null> => {
   return null;
 };
 
-/* ---------------- compression & merge helpers (unchanged) ---------------- */
 type Uint8ArrayPromise = Promise<Uint8Array>;
 
 const compressImage = async (

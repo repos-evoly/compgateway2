@@ -7,7 +7,8 @@ import * as Yup from "yup";
 import { useTranslations } from "next-intl";
 
 import { FaSearch, FaDownload } from "react-icons/fa";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import InputSelectCombo, {
@@ -79,10 +80,103 @@ const Page: React.FC = () => {
     }
   };
 
-  // Excel download
+  // Excel download using ExcelJS for styles
+  const handleDownloadExcel = async () => {
+    if (!lines.length) return;
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("StatementData");
+
+    // Title row
+    worksheet.mergeCells("A1:E1");
+    worksheet.getCell("A1").value = t("statementOfAccount");
+    worksheet.getCell("A1").font = { size: 18, bold: true };
+    worksheet.getCell("A1").alignment = { horizontal: "center" };
+
+    // Header: Export date only
+    worksheet.mergeCells("A2:E2");
+    worksheet.getCell("A2").value = `Exported on: ${new Date().toLocaleDateString()}`;
+    worksheet.getCell("A2").font = { italic: true, size: 12 };
+    worksheet.getCell("A2").alignment = { horizontal: "center" };
+
+    worksheet.addRow([]);
+
+    // Table header (with larger font and dark green background)
+    const tableHeader = [
+      t("postingDate"),
+      t("amount"),
+      t("debit"),
+      t("credit"),
+      t("narrative"),
+    ];
+    const headerRow = worksheet.addRow(tableHeader);
+    // Style only the actual data columns (A–E)
+    for (let i = 1; i <= tableHeader.length; i++) {
+      const cell = headerRow.getCell(i);
+      cell.font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF145A32" }, // dark green
+      };
+      cell.alignment = { horizontal: "center" };
+    }
+
+    // Data rows (remove time from date)
+    lines.forEach((line) => {
+      const narratives = [line.nr1, line.nr2, line.nr3]
+        .filter((n) => n && n.trim() !== "")
+        .join(" ");
+      const isDebit = line.drCr === "DR";
+      const isCredit = line.drCr === "CR";
+      // Remove time from postingDate (show only YYYY-MM-DD)
+      let dateOnly = line.postingDate;
+      if (dateOnly && dateOnly.includes("T")) {
+        dateOnly = dateOnly.split("T")[0];
+      }
+      worksheet.addRow([
+        dateOnly,
+        line.amount,
+        isDebit ? line.amount : "",
+        isCredit ? line.amount : "",
+        narratives || "-",
+      ]);
+    });
+
+    // Footer
+    worksheet.addRow([]);
+    if (worksheet.lastRow) {
+      const footerRowNum = worksheet.lastRow.number + 1;
+      worksheet.mergeCells(`A${footerRowNum}:E${footerRowNum}`);
+      worksheet.getCell(`A${footerRowNum}`).value = "Thank you for your business!";
+      worksheet.getCell(`A${footerRowNum}`).font = { italic: true, color: { argb: "FF305496" } };
+      worksheet.getCell(`A${footerRowNum}`).alignment = { horizontal: "center" };
+    }
+
+    // Column widths
+    worksheet.columns = [
+      { width: 16 },
+      { width: 14 },
+      { width: 14 },
+      { width: 14 },
+      { width: 40 },
+    ];
+
+    // Download
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), "Statement.xlsx");
+  };
+
+  /*
+  // Old SheetJS version (commented out)
   const handleDownloadExcel = () => {
     if (!lines.length) return;
-    const headerRow = [
+    const headerRows = [
+      ["Statement of Account"],
+      ["Exported on:", new Date().toLocaleDateString()],
+      [""]
+    ];
+    const tableHeader = [
       t("postingDate"),
       t("amount"),
       t("debit"),
@@ -90,22 +184,35 @@ const Page: React.FC = () => {
       t("narrative"),
     ];
     const dataRows = lines.map((line) => {
-      const narratives = [line.nr1, line.nr2, line.nr3].filter(n => n && n.trim() !== '').join(' ');
-      const isDebit = line.drCr === 'DR';
-      const isCredit = line.drCr === 'CR';
+      const narratives = [line.nr1, line.nr2, line.nr3]
+        .filter((n) => n && n.trim() !== "")
+        .join(" ");
+      const isDebit = line.drCr === "DR";
+      const isCredit = line.drCr === "CR";
       return [
         line.postingDate,
         line.amount,
-        isDebit ? line.amount : '',
-        isCredit ? line.amount : '',
-        narratives || '-',
+        isDebit ? line.amount : "",
+        isCredit ? line.amount : "",
+        narratives || "-",
       ];
     });
-    const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
+    const footerRows = [
+      [""],
+      ["Thank you for your business!"]
+    ];
+    const aoa = [
+      ...headerRows,
+      tableHeader,
+      ...dataRows,
+      ...footerRows,
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "StatementData");
     XLSX.writeFile(wb, "Statement.xlsx");
   };
+  */
 
   // Grid columns & pagination
   const columns = [

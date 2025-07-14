@@ -41,7 +41,8 @@
     "currencies": "Currencies",
     "employees": "Employees",
     "companies": "Companies",
-    "representatives": "Representatives"
+    "representatives": "Representatives",
+    "profile": "Profile"
   },
 
   "mainHeader": {
@@ -177,6 +178,8 @@
     "payType": "Payment Type",
     "createSuccessTitle": "Success",
     "createSuccessMsg": "RTGS request created successfully.",
+    "fetchError": "Failed to fetch RTGS requests",
+    "unknownError": "An unexpected error occurred",
     "status":"Status"
   },
 
@@ -234,6 +237,7 @@
     "expenses": "Expenses",
     "totalAmount": "Total Amount",
     "accountNum": "Account Number",
+    "accountNumPlaceholder": "Enter account number",
     "beneficiary": "Beneficiary",
     "cust1Sign": "Customer Signature 1",
     "cust2Sign": "Customer Signature 2",
@@ -473,8 +477,11 @@
   },
 
   "foreignTransfers": {
+    "id": "ID",
     "toBank": "To Bank",
     "branch": "Branch",
+    "accountNum": "Account Number",
+    "accountNumPlaceholder": "Enter account number",
     "residentSuppName": "Seller / Party Name",
     "residentSuppNationality": "Nationality",
     "nonResidentPassport": "Seller's ID / Passport No. (non‑resident)",
@@ -512,7 +519,8 @@
     "review": "Review & Submit",
     "next": "Next",
     "back": "Back",
-    "submit": "Submit"
+    "submit": "Submit",
+    "backToPage": "Back to Page"
   },
 
   "visaRequest": {
@@ -855,6 +863,97 @@
     "confirmDeactivateMessage": "Are you sure you want to deactivate this representative?",
     "confirmActivateMessage": "Are you sure you want to activate this representative?",
     "confirmDeleteMessage": "Are you sure you want to delete this representative? This action cannot be undone."
+  },
+  "profile": {
+    "companyNotFound": {
+      "title": "Company Record Not Found",
+      "subtitle": "We could not find the requested company record in the database.",
+      "returnButton": "Return to Company Records"
+    },
+
+
+
+    "contactLocationSection": {
+      "title": "Contact & Location Information",
+      "primaryContactNumber": "Primary Contact Number",
+      "cityOfOperations": "City of Operations",
+      "nationalityJurisdiction": "Nationality / Jurisdiction",
+      "missingKyc":"Missing info from kyc"
+    },
+
+    "currentStatusSection": {
+      "title": "Current Status",
+      "subtitle1": "The company's KYC verification status is",
+      "additionalInfo": "Additional Information"
+    },
+
+    "headerSection": {
+      "backButton": "Company Records",
+      "code": "Code:"
+    },
+
+    "kycTimelineSection": {
+      "title": "KYC Verification Timeline",
+      "requestSubmitted": "KYC Request Submitted",
+      "reviewCompleted": "KYC Review Completed",
+      "at": "at",
+      "servicePackage": "Service Package"
+    },
+
+    "mainInformationSection": {
+      "title": "Company Information",
+      "legalCompanyName": "Legal Company Name",
+      "legalNameArabic": "Legal Name (Arabic)",
+      "branchIdentifier": "Branch Identifier",
+      "operationalStatus": "Operational Status"
+    },
+
+    "reviewDecisionSection": {
+      "title": "Review Decision",
+      "subtitle": "Please review the company information and decide the KYC status.",
+      "approveCompany": "Approve Company",
+      "rejectApplication": "Reject Application",
+      "missingButton": "Missing",
+      "underReviewButton": "Under Review",
+      "rejectionReason": "Reason for Rejection",
+      "reasonForMarkingMissing": "Reason for marking missing",
+      "confirmRejection": "Confirm Rejection",
+      "confirmMissing": "Confirm Missing"
+    },
+    "code": "Company Code",
+    "name": "Company Name",
+    "active": "Active?",
+    "kycStatus": "KYC Status",
+    "requestedAt": "Request Date",
+    "reviewedAt": "Review Date",
+    "servicePackageName": "Service Package Name",
+    "changeServicePackageSection": {
+      "title": "Change Service Package",
+      "selectServicePackage": "Select Service Package",
+      "changeServicePackageButton": "Change Service Package"
+    },
+    "updateStatus":{
+      "title": "Update Status",
+      "selectStatus": "Select Status",
+      "messageReason": "Please enter the reason for the update",
+      "updateButton": "Update Status"
+    },
+    "documentsSection":{
+      "title":"Documents",
+      "numberOfDocuments":"Number of Uploaded Documents",
+      "noDocs":"No Documents Uploaded",
+      "download":"Download",
+      "preview":"Preview",
+      "noDescription":"No description available"
+    },
+      "confirmationModal": {
+    "title": "Confirm update",
+    "youAreAboutToSet": "You are about to set {company} to {status}.",
+    "messageLabel": "Message",
+    "areYouSure": "Are you sure you want to continue?",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  }
   }
 
 

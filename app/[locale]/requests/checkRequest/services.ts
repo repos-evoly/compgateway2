@@ -3,6 +3,7 @@
 import { TCheckRequestFormValues, TCheckRequestsResponse, TCheckRequestValues } from "./types";
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { throwApiError } from "@/app/helpers/handleApiError";
+import { TKycResponse } from "@/app/auth/register/types";
 
 /**
  * Fetch all check requests (GET), with optional pagination & search.
@@ -164,4 +165,32 @@ export async function updateCheckRequestById(
 
   const responseData = await response.json();
   return responseData as TCheckRequestValues;
+}
+
+/**
+ * Fetch KYC data by company code (6 digits after first 4 digits of account number)
+ */
+export async function getKycByCode(code: string): Promise<TKycResponse> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  const token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const response = await fetch(`${baseUrl}/companies/kyc/${code}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch KYC data");
+  }
+
+  return response.json();
 }

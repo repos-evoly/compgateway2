@@ -20,15 +20,16 @@ const BackButton = ({
   fallbackPath,
   label,
   className,
+  isEditing,
 }: BackButtonProps): JSX.Element => {
   const t = useTranslations("backButton");
   const router = useRouter();
 
-  const handleBack = (): void => {
-    if (fallbackPath) {
+  const handleBack = () => {
+    if (fallbackPath && isEditing) {
       router.push(fallbackPath);
     } else {
-      router.back();
+      window.location.reload();
     }
   };
 

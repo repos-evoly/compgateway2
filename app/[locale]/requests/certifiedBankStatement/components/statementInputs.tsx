@@ -53,6 +53,13 @@ export type CertifiedBankStatementRequest = {
 //   accountHolderName, authorizedOnTheAccountName, accountNumber, serviceRequests
 export const step1StatementInputs = [
   {
+    name: "accountNumber",
+    label: "accountNumber",
+    icon: <FiCreditCard />,
+    type: "number",
+    maskingFormat: "0000-000000-000",
+  },
+  {
     name: "accountHolderName",
     label: "accountHolderName",
     icon: <FiUser />,
@@ -64,13 +71,7 @@ export const step1StatementInputs = [
     icon: <FiUser />,
     type: "text",
   },
-  {
-    name: "accountNumber",
-    label: "accountNumber",
-    icon: <FiCreditCard />,
-    type: "number",
-    maskingFormat: "0000-000000-000",
-  },
+
   // For serviceRequests, you may handle it in a special UI
   // (like multiple checkboxes). We'll treat it as a single "group" for now.
   {

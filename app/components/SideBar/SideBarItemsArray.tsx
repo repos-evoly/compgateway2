@@ -16,12 +16,21 @@ import {
   // FaTasks,
   FaFileSignature,
   FaLanguage,
+  FaUserCircle, // profile
 } from "react-icons/fa";
 import { MdRequestQuote } from "react-icons/md";
 // import { HiOutlineCurrencyDollar } from "react-icons/hi";
 // import { BiDollarCircle, BiUpload, BiTransferAlt } from "react-icons/bi"; // New icons for Salary Localization children
 
 export const sidebarItems = [
+  {
+    id: 0,
+    label: "profile",
+    path: "/profile",
+    icon: FaUserCircle,
+    children: [],
+    permissions: [],
+  },
   {
     id: 31,
     label: "dashboard",
@@ -39,7 +48,7 @@ export const sidebarItems = [
     permissions: ["CompanyCanStatementOfAccount"],
   },
   {
-    id: 31,
+    id: 33,
     label: "employees",
     path: "/employees",
     icon: FaUsers, // was FaCog

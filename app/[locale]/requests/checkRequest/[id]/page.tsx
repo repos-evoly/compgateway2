@@ -59,13 +59,13 @@ const CheckRequestDetailPage = () => {
   // Convert the API shape -> form shape
   const initialFormValues: TCheckRequestFormValues = {
     branch: checkData.branch,
-    branchNum: checkData.branchNum,
     /** Convert date string to a JS Date for the form */
     date: new Date(checkData.date),
     customerName: checkData.customerName,
     cardNum: checkData.cardNum,
     accountNum: checkData.accountNum,
     beneficiary: checkData.beneficiary,
+    representativeId: checkData.representativeId,
     lineItems: checkData.lineItems.map((li) => ({
       dirham: li.dirham,
       lyd: li.lyd,

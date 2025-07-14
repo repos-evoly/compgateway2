@@ -216,7 +216,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
     <>
       <FormHeader status={initialValues?.status}>
         <div className="pb-5">
-          <BackButton fallbackPath="/requests/cbl" isEditing={isEdit} />
+          <BackButton fallbackPath="/requests/cbl" />
         </div>
       </FormHeader>
 

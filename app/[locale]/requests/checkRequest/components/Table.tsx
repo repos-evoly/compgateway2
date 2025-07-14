@@ -19,8 +19,8 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
         {/* Table Header */}
         <div className="grid grid-cols-3 bg-info-dark text-white rounded-t-lg">
           <div className="p-4 text-center font-bold">&nbsp;</div>
-          <div className="p-4 text-center font-bold">{t("dirham")}</div>
-          <div className="p-4 text-center font-bold">{t("lyd")}</div>
+          <div className="p-4 text-center font-bold">{t("dirham")} *</div>
+          <div className="p-4 text-center font-bold">{t("lyd")} *</div>
         </div>
 
         {/* Row 1: Amount */}
@@ -103,6 +103,11 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
             />
           </div>
         </div>
+      </div>
+      
+      {/* Note about required amounts */}
+      <div className="mt-4 text-center text-sm text-gray-600">
+        {t("amountNote")}
       </div>
     </div>
   );

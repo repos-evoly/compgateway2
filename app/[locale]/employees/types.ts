@@ -14,6 +14,7 @@ export type EmployeesFormPayload = {
   roleId?: number;
   branchId?: number;
   phone?: string;
+  isActive?: boolean; // Added for active/inactive functionality
 };
 
 /**
@@ -74,7 +75,7 @@ export type CompanyEmployee = {
   phone: string;
   roleId: number;
   permissions: string[];
-
+  isActive?: boolean; // Added for active/inactive functionality
 };
 
 
@@ -115,4 +116,5 @@ export type EditEmployeePayload = {
   email: string;
   phone: string;
   roleId: number;
+  isActive?: boolean; // Added for active/inactive functionality
 };

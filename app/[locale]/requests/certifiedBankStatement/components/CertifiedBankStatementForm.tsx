@@ -170,7 +170,11 @@ export default function CertifiedBankStatementForm({
 
           return (
             <Form>
-              <FormHeader status={status}/>
+              <FormHeader
+                showBackButton
+                fallbackPath="/requests/certifiedBankStatement"
+                status={status}
+              />
               <TabsWizard<CertifiedBankStatementRequestWithID>
                 steps={steps}
                 formik={formik}

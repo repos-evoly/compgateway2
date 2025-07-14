@@ -3,6 +3,7 @@ import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { VisaRequestApiResponse, VisaRequestApiItem, VisaRequestFormValues } from "./types";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import { TKycResponse } from "@/app/auth/register/types";
+import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
 
 
 const token = getAccessTokenFromCookies();
@@ -74,7 +75,7 @@ export const getVisaRequestById = async (
 
 
 export const createVisaRequest = async (
-    formValues: VisaRequestFormValues
+    formValues: VisaRequestFormValues & { files?: File[] }
   ): Promise<VisaRequestApiItem> => {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
     if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
@@ -87,7 +88,7 @@ export const createVisaRequest = async (
   
     // The API requires all fields (string/number).
     // We'll convert `undefined` => "" or 0.
-    const body = {
+    const dto = {
       branch: formValues.branch ?? "",
       date: isoDate,
       accountHolderName: formValues.accountHolderName ?? "",
@@ -114,15 +115,27 @@ export const createVisaRequest = async (
       cardUsingAcknowledgment: formValues.cardUsingAcknowledgment ?? "",
       pldedge: formValues.pldedge ?? "",
     } as const;
+
+    /* ---------- FormData ---------- */
+    const formData = new FormData();
+    formData.append("Dto", JSON.stringify(dto)); // key MUST be "Dto"
+
+    const files = formValues.files ?? [];
+    if (files.length > 1) {
+      const { blob } = await mergeFilesToPdf(files, 5); // 5 MB cap
+      formData.append("files", blob, "documents.pdf");
+    } else if (files.length === 1) {
+      formData.append("files", files[0], files[0].name);
+    }
     
   
     const response = await fetch(`${baseUrl}/visarequests`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      body: JSON.stringify(body),
+      body: formData,
     });
   
     if (!response.ok) {
@@ -136,7 +149,7 @@ export const createVisaRequest = async (
 
 export const updateVisaRequest = async (
   id: number,
-  formValues: VisaRequestFormValues
+  formValues: VisaRequestFormValues & { files?: File[] }
 ): Promise<VisaRequestApiItem> => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
@@ -149,7 +162,7 @@ export const updateVisaRequest = async (
 
   // The API requires all fields (string/number).
   // We'll convert `undefined` => "" or 0.
-  const body = {
+  const dto = {
     branch: formValues.branch ?? "",
     date: isoDate,
     accountHolderName: formValues.accountHolderName ?? "",
@@ -177,13 +190,25 @@ export const updateVisaRequest = async (
     pldedge: formValues.pldedge ?? "",
   } as const;
 
+  /* ---------- FormData ---------- */
+  const formData = new FormData();
+  formData.append("Dto", JSON.stringify(dto)); // key MUST be "Dto"
+
+  const files = formValues.files ?? [];
+  if (files.length > 1) {
+    const { blob } = await mergeFilesToPdf(files, 5); // 5 MB cap
+    formData.append("files", blob, "documents.pdf");
+  } else if (files.length === 1) {
+    formData.append("files", files[0], files[0].name);
+  }
+
   const response = await fetch(`${baseUrl}/visarequests/${id}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-    body: JSON.stringify(body),
+    body: formData,
   });
 
   if (!response.ok) {

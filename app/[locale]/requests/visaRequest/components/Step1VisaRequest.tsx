@@ -80,6 +80,10 @@ export function Step1VisaRequest({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {step1VisaInputs.map(({ name, label, icon, type }) => {
+        // Make branch and accountHolderName always read-only
+        const isReadOnlyField = name === "branch" || name === "accountHolderName";
+        const isDisabled = readOnly || isReadOnlyField;
+
         if (name === "accountNumber") {
           return (
             <div key={name} className="relative">
@@ -106,7 +110,7 @@ export function Step1VisaRequest({
               key={name}
               name={name}
               label={t(label)}
-              disabled={readOnly}
+              disabled={isDisabled}
             />
           );
         }
@@ -118,7 +122,7 @@ export function Step1VisaRequest({
             label={t(label)}
             startIcon={icon}
             type={type}
-            disabled={readOnly}
+            disabled={isDisabled}
             maskingFormat={name === "accountNumber" ? "0000-000000-000" : ""}
           />
         );

@@ -167,7 +167,6 @@ export default function CreditFacilityForm({
               <FormHeader
                 showBackButton
                 fallbackPath="/requests/creditFacility"
-                isEditing={readOnly}
                 status={status}
               />
 

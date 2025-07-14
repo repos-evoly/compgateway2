@@ -9,6 +9,7 @@ import { FaUser, FaKey, FaEnvelope, FaPhone } from "react-icons/fa";
 import type { EmployeesFormPayload, RoleOption } from "../types";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import InputSelectCombo from "@/app/components/FormUI/InputSelectCombo";
+import RadiobuttonWrapper from "@/app/components/FormUI/Radio";
 import BackButton from "@/app/components/reusable/BackButton";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import { getRoles } from "../services";
@@ -17,31 +18,36 @@ type EmployeeFormProps = {
   initialValues?: EmployeesFormPayload;
   onSubmit: (values: EmployeesFormPayload) => Promise<void>;
   onCancel?: () => void;
+  employeeStatus?: boolean;
+  onStatusChange?: (newStatus: boolean) => void;
 };
-
-const EmployeeFormSchema = Yup.object().shape({
-  firstName: Yup.string().required("Required"),
-  lastName: Yup.string().required("Required"),
-  username: Yup.string().required("Required"),
-  email: Yup.string().email("Invalid email").required("Required"),
-  password: Yup.string()
-    .required("كلمة المرور مطلوبة")
-    .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل")
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{6,}$/,
-      "يجب أن تحتوي كلمة المرور على حرف صغير، حرف كبير، رقم، ورمز خاص"
-    ),
-  phone: Yup.string().required("Required").min(8, "رقم الهاتف قصير جداً"),
-  roleId: Yup.number().required("Please select a role"),
-});
 
 export default function EmployeeForm({
   initialValues,
   onSubmit,
   onCancel,
+  employeeStatus = true,
+  onStatusChange,
 }: EmployeeFormProps) {
   // Check if we're editing
   const isEditMode = Boolean(initialValues);
+
+  // Validation schema - different rules for edit vs create mode
+  const EmployeeFormSchema = Yup.object().shape({
+    firstName: Yup.string().required("Required"),
+    lastName: Yup.string().required("Required"),
+    username: isEditMode ? Yup.string() : Yup.string().required("Required"),
+    email: isEditMode ? Yup.string().email("Invalid email") : Yup.string().email("Invalid email").required("Required"),
+    password: isEditMode ? Yup.string() : Yup.string()
+      .required("كلمة المرور مطلوبة")
+      .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل")
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{6,}$/,
+        "يجب أن تحتوي كلمة المرور على حرف صغير، حرف كبير، رقم، ورمز خاص"
+      ),
+    phone: Yup.string().required("Required").min(8, "رقم الهاتف قصير جداً"),
+    roleId: Yup.number().required("Please select a role"),
+  });
 
   // Default form values if none provided
   const defaultValues: EmployeesFormPayload = {
@@ -85,17 +91,23 @@ export default function EmployeeForm({
       <div className="bg-info-dark py-8 h-10 flex items-center gap-4">
         <BackButton
           fallbackPath={isEditMode ? "/employees" : undefined}
-          isEditing={isEditMode}
         />
       </div>
 
       <div className="p-6">
         <Formik
-          initialValues={formInitialValues}
+          initialValues={{
+            ...formInitialValues,
+            isActive: employeeStatus
+          }}
           validationSchema={EmployeeFormSchema}
           // Call parent onSubmit => manage loading state with setSubmitting
           onSubmit={async (values, { setSubmitting }) => {
             try {
+              // Call onStatusChange if the status changed
+              if (onStatusChange && values.isActive !== employeeStatus) {
+                onStatusChange(values.isActive);
+              }
               await onSubmit(values);
             } finally {
               // Ensure loading is turned off even if there's an error
@@ -136,6 +148,13 @@ export default function EmployeeForm({
                   <h3 className="text-lg font-medium text-gray-700 mb-3 border-b pb-2">
                     {t("accountInformation")}
                   </h3>
+                  {isEditMode && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        {t("editModeNote")}
+                      </p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <FormInputIcon
                       name="email"
@@ -173,6 +192,28 @@ export default function EmployeeForm({
                     />
                   </div>
                 </div>
+
+                {/* Status Section - Only show in edit mode */}
+                {isEditMode && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-700 mb-3 border-b pb-2">
+                      {t("status")}
+                    </h3>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <RadiobuttonWrapper
+                        name="isActive"
+                        label={t("status")}
+                        options={[
+                          { value: true, label: "active" },
+                          { value: false, label: "inactive" }
+                        ]}
+                        flexDir={["row", "row"]}
+                        t={(key) => t(key)}
+                        disabled={false}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Form Actions */}

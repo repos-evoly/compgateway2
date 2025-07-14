@@ -84,7 +84,7 @@ export default function SingleVisaRequestPage() {
   };
 
   /*──────────────────────────── Submit (edit) handler ───────────────────────*/
-  const handleSubmit = async (vals: VisaRequestFormValues) => {
+  const handleSubmit = async (vals: VisaRequestFormValues & { files?: File[] }) => {
     try {
       await updateVisaRequest(numericId, vals);
       

@@ -7,14 +7,21 @@ import EmployeeForm from "../components/EmployeesForm";
 import { getEmployeeById, editEmployee } from "../services";
 import type { CompanyEmployee } from "../types";
 import LoadingPage from "@/app/components/reusable/Loading";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+// import { useTranslations } from "next-intl"; // Removed unused import
 
 export default function SingleEmployeePage() {
   const router = useRouter();
   const { id } = useParams(); // e.g. /employees/123
   const numericId = Number(id);
+  // const t = useTranslations("employees"); // Removed unused variable
 
   const [employee, setEmployee] = useState<CompanyEmployee | null>(null);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
   // 1) On mount => fetch the employee by ID from the API
   useEffect(() => {
@@ -29,6 +36,10 @@ export default function SingleEmployeePage() {
         setEmployee(data);
       } catch (err) {
         console.error("Failed to fetch employee by ID:", err);
+        setModalOpen(true);
+        setModalSuccess(false);
+        setModalTitle("Error");
+        setModalMessage(err instanceof Error ? err.message : "Failed to fetch employee");
       } finally {
         setLoading(false);
       }
@@ -68,6 +79,12 @@ export default function SingleEmployeePage() {
     roleId: employee.roleId || 0,
   };
 
+  // Ensure employee has isActive field, default to true if not present
+  const employeeWithStatus = {
+    ...employee,
+    isActive: employee.isActive !== undefined ? employee.isActive : true
+  };
+
   // 3) On form submit => call editEmployee, then redirect
   const handleSubmit = async (values: EmployeesFormPayload) => {
     try {
@@ -78,11 +95,21 @@ export default function SingleEmployeePage() {
         email: values.email!,
         phone: values.phone!,
         roleId: values.roleId!,
+        isActive: values.isActive !== undefined ? values.isActive : employeeWithStatus.isActive, // Use form value or current status
       });
       router.push("/employees");
     } catch (error) {
       console.error("Error updating employee:", error);
+      setModalOpen(true);
+      setModalSuccess(false);
+      setModalTitle("Error");
+      setModalMessage(error instanceof Error ? error.message : "Failed to update employee");
     }
+  };
+
+  // Handle status change
+  const handleStatusChange = (newStatus: boolean) => {
+    setEmployee(prev => prev ? { ...prev, isActive: newStatus } : null);
   };
 
   return (
@@ -91,6 +118,17 @@ export default function SingleEmployeePage() {
         initialValues={initialValues}
         onSubmit={handleSubmit}
         onCancel={() => router.push("/employees")}
+        employeeStatus={employeeWithStatus.isActive}
+        onStatusChange={handleStatusChange}
+      />
+
+      <ErrorOrSuccessModal
+        isOpen={modalOpen}
+        isSuccess={modalSuccess}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => setModalOpen(false)}
       />
     </div>
   );

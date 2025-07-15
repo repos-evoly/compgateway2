@@ -32,6 +32,7 @@ import type {
 } from "../types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
+import FormHeader from "@/app/components/reusable/FormHeader";
 
 /* -------------------------------------------------------------------------- */
 /*                               Helper                                       */
@@ -290,7 +291,7 @@ function InternalForm({
 
   /* --------------------------- JSX ------------------------- */
   return (
-    <div className="p-6">
+    <div className="p-2">
       <Formik<ExtendedValues>
         initialValues={initialValues}
         validationSchema={schema}
@@ -299,10 +300,12 @@ function InternalForm({
       >
         {({ values }) => (
           <Form>
+            <FormHeader showBackButton fallbackPath="/transfers/internal" />
+
             <FormValidator />
 
             {/* Row 1 */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3 mt-4">
               <InputSelectCombo
                 name="from"
                 label={t("from")}

@@ -106,12 +106,14 @@ export default function VisaWizardForm({
       accountNumber: Yup.string().required(
         t("accountNumber") + " " + t("isRequired")
       ),
-      nationalId: Yup.number().required(
-        t("nationalId") + " " + t("isRequired")
-      ),
-      phoneNumberLinkedToNationalId: Yup.string().required(
-        t("phoneNumberLinkedToNationalId") + " " + t("isRequired")
-      ),
+      nationalId: Yup.number()
+        .required(t("nationalId") + " " + t("isRequired"))
+        .test('len', t("nationalId") + " must be exactly 12 digits", val => 
+          val ? val.toString().length === 12 : false
+        ),
+      phoneNumberLinkedToNationalId: Yup.string()
+        .required(t("phoneNumberLinkedToNationalId") + " " + t("isRequired"))
+        .matches(/^\d{10}$/, t("phoneNumberLinkedToNationalId") + " must be exactly 10 digits"),
     }),
     Yup.object({
       cbl: Yup.string().required(t("cbl") + " " + t("isRequired")),

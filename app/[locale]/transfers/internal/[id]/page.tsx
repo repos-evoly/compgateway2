@@ -25,6 +25,7 @@ export default function InternalTransferDetailsPage() {
           to: res.toAccount,
           value: res.amount,
           description: res.description,
+          economicSectorId: res.economicSectorId,
         });
       } catch (err) {
         console.error("Fetch transfer failed:", err);
@@ -53,11 +54,7 @@ export default function InternalTransferDetailsPage() {
   }
 
   return (
-    <div className="p-4">
-      <h2 className="mb-4 text-xl font-semibold">
-        Transfer&nbsp;Details&nbsp;#{id}
-      </h2>
-
+    <div className="">
       {/* viewOnly disables all inputs & buttons */}
       <InternalForm initialData={initial} viewOnly />
     </div>

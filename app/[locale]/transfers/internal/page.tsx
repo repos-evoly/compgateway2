@@ -2,10 +2,10 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 // import FormTypeSelect from "./components/FormTypeSelect";
-import InternalForm from "./components/InternalForm";
 // import BetweenForm from "./components/BetweenForm";
 import { TransfersApiResponse } from "./types";
 
@@ -15,6 +15,7 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 const Page = () => {
   const t = useTranslations("internalTransferForm");
+  const router = useRouter();
 
   // Table/pagination states
   const [data, setData] = useState<TransfersApiResponse["data"]>([]);
@@ -29,8 +30,7 @@ const Page = () => {
   const [modalMessage, setModalMessage] = useState("");
 
   // Show/hide form
-  const [showForm, setShowForm] = useState(false);
-  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+
   // const [formType, setFormType] = useState("internal");
 
   // We'll create a function to fetch data
@@ -78,73 +78,33 @@ const Page = () => {
 
   // Show/hide form
   const handleAddClick = () => {
-    setSelectedRowIndex(null);
-    setShowForm(true);
-  };
-  const handleFormClose = () => {
-    setShowForm(false);
-  };
-
-  // Called after the transfer is successfully created in InternalForm
-  const handleTransferCreated = () => {
-    // Hide form
-    setShowForm(false);
-    // Re-fetch data
-    fetchTransfers();
-
-    setModalTitle(t("createSuccessTitle"));
-    setModalMessage(t("createSuccessMsg"));
-    setModalSuccess(true);
-    setModalOpen(true);
+    // pushes to /internalTransfer/add (locale prefix is preserved automatically)
+    router.push("/transfers/internal/add");
   };
 
   return (
     <div className="p-1">
-      {!showForm ? (
-        <CrudDataGrid
-          data={data}
-          columns={columns}
-          // pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={(page) => setCurrentPage(page)}
-          // Searching
-          showSearchBar
-          showSearchInput
-          onSearch={handleSearch}
-          // Example dropdown
-          showDropdown
-          dropdownOptions={[{ label: "Category", value: "categoryName" }]}
-          onDropdownSelect={handleDropdownSelect}
-          // Add button
-          showAddButton
-          onAddClick={handleAddClick}
-          loading={loading}
-        />
-      ) : (
-        <div className="bg-white rounded">
-          <div className="w-full bg-info-dark p-4 rounded-md rounded-b-none flex items-center gap-8">
-            <button
-              onClick={handleFormClose}
-              className="text-white border px-4 py-2 rounded-md hover:bg-warning-light hover:text-info-dark hover:border-transparent transition duration-300"
-            >
-              {t("back")}
-            </button>
+      <CrudDataGrid
+        data={data}
+        columns={columns}
+        // pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+        // Searching
+        showSearchBar
+        showSearchInput
+        onSearch={handleSearch}
+        // Example dropdown
+        showDropdown
+        dropdownOptions={[{ label: "Category", value: "categoryName" }]}
+        onDropdownSelect={handleDropdownSelect}
+        // Add button
+        showAddButton
+        onAddClick={handleAddClick}
+        loading={loading}
+      />
 
-            {/* <FormTypeSelect
-              selectedFormType={formType}
-              onFormTypeChange={setFormType}
-            /> */}
-          </div>
-
-          <div>
-            <InternalForm
-              initialData={selectedRowIndex !== null ? {} : {}}
-              onSuccess={handleTransferCreated}
-            />
-          </div>
-        </div>
-      )}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

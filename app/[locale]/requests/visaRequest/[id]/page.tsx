@@ -55,6 +55,8 @@ export default function SingleVisaRequestPage() {
     })();
   }, [numericId]);
 
+  console.log("request data:", requestData);
+
   /*──────────────────────────── Modal handlers ────────────────────────────*/
   const closeModal = () => setModalOpen(false);
   const confirmModal = () => {
@@ -82,20 +84,23 @@ export default function SingleVisaRequestPage() {
     pldedge: requestData.pldedge,
     status: requestData.status,
     // Add attachment URLs for display
-    attachmentUrls: requestData.attachments?.map(att => att.displayUrl || att.attUrl) || []
+    attachmentUrls: requestData.attachments?.map((att) => att.attUrl) || [],
   };
 
   /*──────────────────────────── Submit (edit) handler ───────────────────────*/
-  const handleSubmit = async (vals: VisaRequestFormValues & { files?: File[] }) => {
+  const handleSubmit = async (
+    vals: VisaRequestFormValues & { files?: File[] }
+  ) => {
     try {
       await updateVisaRequest(numericId, vals);
-      
+
       setModalTitle("Success");
       setModalMessage("Visa request updated successfully.");
       setModalSuccess(true);
       setModalOpen(true);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to update visa request";
+      const msg =
+        err instanceof Error ? err.message : "Failed to update visa request";
       setModalTitle("Error");
       setModalMessage(msg);
       setModalSuccess(false);
@@ -109,7 +114,11 @@ export default function SingleVisaRequestPage() {
       <VisaWizardForm
         initialValues={initialValues}
         onSubmit={handleSubmit}
-        readOnly={requestData.status === undefined ? false : requestData.status === "pending"}
+        readOnly={
+          requestData.status === undefined
+            ? false
+            : requestData.status === "pending"
+        }
       />
 
       {/*──────── Error / Success Modal ────────*/}

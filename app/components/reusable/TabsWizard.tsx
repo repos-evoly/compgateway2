@@ -1,9 +1,16 @@
+// =============================================================
+// TabsWizard.tsx – v2
+// • Adds reusable <BackButton> beside wizard controls
+// =============================================================
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import type { FormikProps } from "formik";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useTranslations } from "next-intl";
+
+import BackButton from "@/app/components/reusable/BackButton"; // NEW
 import { ReviewStep } from "./ReviewStep";
 
 type WizardStep = {
@@ -22,6 +29,10 @@ type TabsWizardProps<FormValues extends Record<string, unknown>> = {
   readOnly?: boolean;
   /** true ⇒ editing mode (submit hidden) */
   isEditing?: boolean;
+  /** Optional path if router.back() is not enough */
+  backFallbackPath?: string; // NEW
+  /** Optional custom back handler */
+  onBackPage?: () => void; // NEW
 };
 
 export function TabsWizard<FormValues extends Record<string, unknown>>({
@@ -32,6 +43,8 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
   translateFieldName,
   readOnly = false,
   isEditing = false,
+  backFallbackPath, // NEW
+  onBackPage, // NEW
 }: TabsWizardProps<FormValues>) {
   const t = useTranslations("tabsWizard");
 
@@ -174,13 +187,27 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
       </div>
       {/* Footer buttons */}
       <div className="flex items-center gap-4 mt-6 justify-end">
+        {/* Back to page (always visible) */}
+        {/* Back to page (always visible) */}
+        <BackButton
+          fallbackPath={backFallbackPath}
+          onBack={onBackPage}
+          label={t("backToPage")}
+          isEditing={isEditing}
+          className="px-6 py-2 bg-info-dark text-white rounded-md hover:bg-warning-light
+            hover:text-info-dark transition-colors duration-300 flex items-center gap-2"
+        />
+
         {/* Back (step) */}
         {!isFirstStep && (
           <button
             type="button"
             onClick={handleBack}
-            className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600
-                 transition-colors duration-300 flex items-center gap-2"
+            className={`
+            px-4 py-2 border border-info-main text-info-dark rounded-md
+            hover:bg-info-main hover:text-white transition-colors duration-300
+            flex items-center gap-2
+          `}
           >
             <BackIcon />
             {t("back")}

@@ -61,6 +61,7 @@ type TApiCblRequest = {
 
 // Grab the token at module-level once. (If your logic must handle token refresh, adapt accordingly.)
 const token = getAccessTokenFromCookies();
+const baseImgUrl = process.env.NEXT_PUBLIC_IMAGE_URL;
 
 /**
  * Fetch a list of CBL requests from the API, with optional pagination and search.
@@ -214,15 +215,7 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
   return response.json();
 }
 
-/**
- * Convert API attachment URLs to displayable URLs
- */
-const convertAttachmentToUrl = (attachment: { attUrl: string }): string => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  // Convert Windows path to URL format
-  const urlPath = attachment.attUrl.replace(/\\/g, '/');
-  return `${baseUrl}/${urlPath}`;
-};
+
 
 /**
  * Fetch a single CBL request by ID (GET /cblrequests/{id}).
@@ -230,7 +223,7 @@ const convertAttachmentToUrl = (attachment: { attUrl: string }): string => {
  * and maps `officials` -> table1Data, `signatures` -> table2Data.
  */
 export async function getCblRequestById(id: string | number): Promise<TCBLValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API ;
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
@@ -308,8 +301,11 @@ export async function getCblRequestById(id: string | number): Promise<TCBLValues
 
     // Process attachments
     attachments: data.attachments || [],
-    attachmentUrls: data.attachments?.map(att => convertAttachmentToUrl(att)) || [],
-  };
+    attachmentUrls:
+      data.attachments?.map(
+        (att) =>
+          `${baseImgUrl!.replace(/\/$/, "")}/${String(att.attUrl).replace(/^\//, "")}`
+      ) ?? [],  };
 
   return cblValues;
 }
@@ -318,7 +314,7 @@ export async function getCblRequestById(id: string | number): Promise<TCBLValues
  * Update (PUT) an existing CBL request by ID.
  */
 export async function updateCblRequest(id: string | number, values: TCBLValues & { files?: File[]; newFiles?: File[] }) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
   }

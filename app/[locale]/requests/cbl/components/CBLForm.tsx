@@ -95,6 +95,11 @@ const CBLForm: React.FC<CBLFormProps> = ({
 }) => {
   const t = useTranslations("cblForm");
 
+  console.log(
+    "CBLForm rendered with initialValues:",
+    initialValues?.attachmentUrls
+  );
+
   /* UI state */
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modal, setModal] = useState({
@@ -176,14 +181,11 @@ const CBLForm: React.FC<CBLFormProps> = ({
     setIsSubmitting(true);
     try {
       // Merge existing files with new files
-      const allFiles = [
-        ...(values.files || []),
-        ...(values.newFiles || [])
-      ];
-      
+      const allFiles = [...(values.files || []), ...(values.newFiles || [])];
+
       const submitValues = {
         ...values,
-        files: allFiles
+        files: allFiles,
       };
 
       const result: TCBLValues = isEdit

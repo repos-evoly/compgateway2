@@ -8,22 +8,27 @@ import { FaArrowLeft } from "react-icons/fa";
 export type BackButtonProps = {
   /** Optional path to navigate to instead of router.back() */
   fallbackPath?: string;
-  /** Custom label text; defaults to the i18n “back” string */
+  /** Custom label text; defaults to the i18n "back" string */
   label?: string;
   /** Tailwind (or other) classes to fully override the default design */
   className?: string;
+  /** Custom back handler function */
+  onBack?: () => void;
 };
 
 const BackButton = ({
   fallbackPath,
   label,
   className,
+  onBack,
 }: BackButtonProps): JSX.Element => {
   const t = useTranslations("backButton");
   const router = useRouter();
 
   const handleBack = () => {
-    if (fallbackPath) {
+    if (onBack) {
+      onBack();
+    } else if (fallbackPath) {
       router.push(fallbackPath);
     } else {
       router.back();

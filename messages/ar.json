@@ -130,6 +130,7 @@
       "status":"الحالة",
       "statusRequired":"الحالة مطلوبة",
       "documents": "المستندات",
+      "addNewDocuments": "إضافة مستندات جديدة",
       "update": "تحديث",
       "submit": "إرسال",
       "cancel": "إلغاء",

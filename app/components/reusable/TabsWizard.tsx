@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import type { FormikProps } from "formik";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { useTranslations } from "next-intl";
-import BackButton from "./BackButton";
 import { ReviewStep } from "./ReviewStep";
 
 type WizardStep = {
@@ -21,7 +20,6 @@ type TabsWizardProps<FormValues extends Record<string, unknown>> = {
   validateCurrentStep: (stepIndex: number) => Promise<boolean>;
   translateFieldName: TranslateFieldNameFn;
   readOnly?: boolean;
-  fallbackPath?: string;
   /** true ⇒ editing mode (submit hidden) */
   isEditing?: boolean;
 };
@@ -33,7 +31,6 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
   validateCurrentStep,
   translateFieldName,
   readOnly = false,
-  fallbackPath,
   isEditing = false,
 }: TabsWizardProps<FormValues>) {
   const t = useTranslations("tabsWizard");
@@ -177,18 +174,13 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
       </div>
       {/* Footer buttons */}
       <div className="flex items-center gap-4 mt-6 justify-end">
-        <BackButton
-          fallbackPath={fallbackPath}
-        />
-
         {/* Back (step) */}
         {!isFirstStep && (
           <button
             type="button"
             onClick={handleBack}
-            className="px-4 py-2 border border-info-main text-info-dark rounded-md
-                 hover:bg-info-main hover:text-white transition-colors duration-300
-                 flex items-center gap-2"
+            className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600
+                 transition-colors duration-300 flex items-center gap-2"
           >
             <BackIcon />
             {t("back")}

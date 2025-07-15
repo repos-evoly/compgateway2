@@ -199,14 +199,13 @@ export default function ForeignTransfersForm({
                 fallbackPath="/requests/foreignTransfers"
                 status={status}
               />
-              <TabsWizard<ForeignTransfersFormValues>
+              <TabsWizard
                 steps={steps}
                 formik={formik}
                 onSubmit={() => formik.handleSubmit()}
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                fallbackPath="/requests/foreignTransfers"
                 isEditing={!!initialValues}
               />
             </Form>

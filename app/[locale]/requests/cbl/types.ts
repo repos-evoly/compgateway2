@@ -1,5 +1,23 @@
 import { FormikHelpers } from "formik";
 
+export type Attachment = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  cblRequestId: string | null;
+  visaRequestId: string | null;
+  attSubject: string;
+  attFileName: string;
+  attMime: string;
+  attUrl: string;
+  attOriginalFileName: string;
+  createdBy: string;
+  description: string;
+  attSize: number;
+  companyId: string;
+  displayUrl?: string; // Added for display purposes
+};
+
 export type TCblRequestsResponse = {
     data: TCBLValues[];
     page: number;
@@ -42,7 +60,9 @@ export type TCBLValues = {
     specialistName: string;
     status?: string;
     files?: File[];
-
+    newFiles?: File[]; // Added for new document uploads in edit mode
+    attachmentUrls?: string[]; // Added for displaying existing attachments
+    attachments?: Attachment[]; // Added for API response
   };
   
   /** Props for the CBLForm component */
@@ -53,6 +73,8 @@ export type TCBLValues = {
     onSubmit?: (values: TCBLValues, helpers: FormikHelpers<TCBLValues>) => void;
     /** If present, show a "Cancel" button that calls this. */
     onCancel?: () => void;
+    /** If present, handle back button functionality. */
+    onBack?: () => void;
     readOnly?: boolean; 
   };
   

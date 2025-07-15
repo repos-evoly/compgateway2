@@ -23,12 +23,14 @@ type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
   onSubmit: (values: VisaRequestFormValues & { files?: File[] }) => void;
   readOnly?: boolean;
+  onBack?: () => void;
 };
 
 export default function VisaWizardForm({
   initialValues,
   onSubmit,
   readOnly = false,
+  onBack,
 }: VisaWizardFormProps) {
   const t = useTranslations("visaRequest");
 
@@ -80,7 +82,7 @@ export default function VisaWizardForm({
     },
     {
       title: t("step2Title"),
-      component: <Step2VisaRequest readOnly={readOnly} attachmentUrls={initialValues?.attachmentUrls} />,
+      component: <Step2VisaRequest readOnly={readOnly} attachmentUrls={initialValues?.attachmentUrls} isEditMode={Boolean(initialValues)} />,
     },
   ];
 
@@ -185,6 +187,7 @@ export default function VisaWizardForm({
                 showBackButton
                 fallbackPath="/requests/visaRequest"
                 status={status}
+                onBack={onBack}
               />
               <TabsWizard
                 steps={steps}
@@ -193,7 +196,6 @@ export default function VisaWizardForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                fallbackPath="/requests/visaRequest"
                 isEditing={initialValues !== undefined}
               />
             </Form>

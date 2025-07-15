@@ -27,9 +27,16 @@ const CBLListPage: React.FC = () => {
     (async () => {
       setLoading(true);
       try {
+        console.log('Fetching CBL requests with:', { page, limit, searchTerm, searchBy });
         const res = await getCblRequests(page, limit, searchTerm, searchBy);
+        console.log('CBL API Response:', res); // Debug log
         setRows(res.data);
         setTotalPages(res.totalPages);
+        console.log('Updated state:', { 
+          rowsCount: res.data.length, 
+          totalPages: res.totalPages, 
+          currentPage: page 
+        });
       } catch (e) {
         console.error("fetch CBLs", e);
       } finally {
@@ -45,6 +52,13 @@ const CBLListPage: React.FC = () => {
     setShowForm(false);
   };
   const onFormCancel = () => setShowForm(false);
+  const onFormBack = () => setShowForm(false);
+
+  /* ------------ pagination handler ------------ */
+  const handlePageChange = (newPage: number) => {
+    console.log('Page change requested:', { from: page, to: newPage });
+    setPage(newPage);
+  };
 
   /* ------------ grid columns ------------ */
   const cols = [
@@ -64,14 +78,14 @@ const CBLListPage: React.FC = () => {
   return (
     <div className="p-4">
       {showForm ? (
-        <CBLForm onSubmit={onFormSave} onCancel={onFormCancel} />
+        <CBLForm onSubmit={onFormSave} onCancel={onFormCancel} onBack={onFormBack} />
       ) : (
         <CrudDataGrid
           data={rows}
           columns={cols}
           currentPage={page}
           totalPages={totalPages}
-          onPageChange={setPage}
+          onPageChange={handlePageChange}
           showSearchInput
           showDropdown
           showSearchBar

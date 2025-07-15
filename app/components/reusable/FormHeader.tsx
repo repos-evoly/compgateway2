@@ -17,9 +17,11 @@ export type FormHeaderProps = BackButtonProps & {
   className?: string;
   /** Makes the header sticky at the top of the scroll container */
   isFixedOnScroll?: boolean;
-  /** Optional status badge text (any string). Always appears at the row’s end
+  /** Optional status badge text (any string). Always appears at the row's end
    *  (right in LTR, left in RTL) without affecting the Back button. */
   status?: string;
+  /** Custom back handler function */
+  onBack?: () => void;
 };
 
 /* ------------------------------------------------------------------ */
@@ -33,6 +35,7 @@ const FormHeader: React.FC<FormHeaderProps> = ({
   showBackButton,
   fallbackPath,
   status,
+  onBack,
 }) => {
   /* ---------------- logic ---------------- */
   const displayBackButton =
@@ -53,6 +56,7 @@ const FormHeader: React.FC<FormHeaderProps> = ({
           {displayBackButton && (
             <BackButton
               fallbackPath={fallbackPath}
+              onBack={onBack}
             />
           )}
           {text && <h2 className="text-lg font-semibold">{text}</h2>}

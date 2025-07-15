@@ -125,6 +125,7 @@
     "status": "Status",
     "statusRequired": "Status is required",
     "documents": "Documents",
+    "addNewDocuments": "Add New Documents",
     "update": "Update",
     "submit": "Submit",
     "cancel": "Cancel",

@@ -47,7 +47,7 @@ export const getVisaRequests = async (
 /**
  * Convert API attachment URLs to displayable URLs
  */
-const convertAttachmentToUrl = (attachment: any): string => {
+const convertAttachmentToUrl = (attachment: { attUrl: string }): string => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
   // Convert Windows path to URL format
   const urlPath = attachment.attUrl.replace(/\\/g, '/');

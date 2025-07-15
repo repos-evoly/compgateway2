@@ -13,9 +13,11 @@ type Step2VisaRequestProps = {
   readOnly?: boolean;
   /** URLs of existing attachments to display */
   attachmentUrls?: string[];
+  /** If true, show the add new documents section */
+  isEditMode?: boolean;
 };
 
-export function Step2VisaRequest({ readOnly = false, attachmentUrls = [] }: Step2VisaRequestProps) {
+export function Step2VisaRequest({ readOnly = false, attachmentUrls = [], isEditMode = false }: Step2VisaRequestProps) {
   const t = useTranslations("visaRequest");
 
   return (
@@ -68,8 +70,8 @@ export function Step2VisaRequest({ readOnly = false, attachmentUrls = [] }: Step
         />
       </div>
 
-      {/* New Document Uploader Section */}
-      {!readOnly && (
+      {/* New Document Uploader Section - Only in edit mode */}
+      {!readOnly && isEditMode && (
         <div className="mt-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">
             {t("addNewDocuments")}

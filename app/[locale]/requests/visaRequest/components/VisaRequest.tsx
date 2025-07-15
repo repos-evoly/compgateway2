@@ -66,6 +66,7 @@ export default function VisaWizardForm({
     localAmount: undefined,
     pldedge: "",
     files: (initialValues as { files?: File[] })?.files ?? [],
+    newFiles: (initialValues as { newFiles?: File[] })?.newFiles ?? [],
     ...initialValues,
   };
 
@@ -129,8 +130,19 @@ export default function VisaWizardForm({
   ];
 
   /* ---- Submit -------------------------------------------------------- */
-  async function handleSubmit(values: VisaRequestFormValues & { files?: File[] }) {
-    onSubmit(values);
+  async function handleSubmit(values: VisaRequestFormValues & { files?: File[]; newFiles?: File[] }) {
+    // Merge existing files with new files
+    const allFiles = [
+      ...(values.files || []),
+      ...(values.newFiles || [])
+    ];
+    
+    const submitValues = {
+      ...values,
+      files: allFiles
+    };
+    
+    onSubmit(submitValues);
   }
 
   /* ---- JSX ----------------------------------------------------------- */

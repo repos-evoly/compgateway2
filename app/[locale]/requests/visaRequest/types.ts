@@ -33,6 +33,7 @@ export type VisaRequestFormValues = {
     pldedge?: string;
     status?: string;
     files?: File[]; // Added for document uploads
+    newFiles?: File[]; // Added for new document uploads in edit mode
     attachmentUrls?: string[]; // Added for displaying existing attachments
   }
 

@@ -106,10 +106,6 @@ export default function SingleVisaRequestPage() {
   /*──────────────────────────── Render ────────────────────────────────────*/
   return (
     <div className="p-4">
-      <h1 className="text-xl font-semibold mb-4">
-        Visa Request Details — ID {numericId}
-      </h1>
-
       <VisaWizardForm
         initialValues={initialValues}
         onSubmit={handleSubmit}

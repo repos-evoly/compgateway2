@@ -561,6 +561,7 @@
         "isRequired": "مطلوب",
         "status":"الحالة",
         "documents": "المستندات",
+        "addNewDocuments": "إضافة مستندات جديدة",
         "createSuccessTitle": "نجاح",
         "createSuccessMsg": "تم إنشاء طلب بطاقة الفيزا بنجاح.",
         "createErrorTitle": "خطأ",

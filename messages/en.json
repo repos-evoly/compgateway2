@@ -556,6 +556,7 @@
     "isRequired": "Required",
     "status": "Status",
     "documents": "Documents",
+    "addNewDocuments": "Add New Documents",
     "createSuccessTitle": "Success",
     "createSuccessMsg": "VISA card request created successfully.",
     "createErrorTitle": "Error",

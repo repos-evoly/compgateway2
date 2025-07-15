@@ -67,6 +67,26 @@ export function Step2VisaRequest({ readOnly = false, attachmentUrls = [] }: Step
           initialPreviewUrls={attachmentUrls}
         />
       </div>
+
+      {/* New Document Uploader Section */}
+      {!readOnly && (
+        <div className="mt-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">
+            {t("addNewDocuments")}
+          </h2>
+          <DocumentUploader
+            name="newFiles"
+            maxFiles={9}
+            label={t("addNewDocuments")}
+            className="w-full"
+            canView={true}
+            canEdit={true}
+            canDelete={true}
+            canDownload={true}
+            disabled={false}
+          />
+        </div>
+      )}
     </div>
   );
 }

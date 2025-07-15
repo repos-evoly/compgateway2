@@ -391,7 +391,11 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       >
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0">
-          <FormHeader status={status}/>
+          <FormHeader
+            showBackButton
+            fallbackPath="/requests/rtgs"
+            status={status}
+          />
           <div className="flex-1">
             <DatePickerValue
               name="refNum"
@@ -465,7 +469,6 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           )}
           <BackButton
             fallbackPath="/requests/rtgs"
-            isEditing={initialValues !== undefined}
           />
         </div>
       </Form>

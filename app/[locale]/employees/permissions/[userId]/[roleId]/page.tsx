@@ -117,7 +117,7 @@ export default function PermissionsPage() {
           <>
             <FormHeader>
               <div className="flex">
-                <BackButton fallbackPath="/employees" isEditing />
+                <BackButton fallbackPath="/employees" />
                 <SubmitButton
                   title={t("save")}
                   color="info-dark"

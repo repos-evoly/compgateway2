@@ -65,12 +65,25 @@ const CheckRequestPage: React.FC = () => {
   /* ─── Columns ─────────────────────────────────────────────── */
   const columns = [
     { key: "branch", label: t("branch") },
-    { key: "branchNum", label: t("branchNum") },
     { key: "date", label: t("date") },
     { key: "customerName", label: t("customerName") },
     { key: "cardNum", label: t("cardNum") },
     { key: "accountNum", label: t("accountNum") },
     { key: "beneficiary", label: t("beneficiary") },
+    { 
+      key: "representativeId", 
+      label: t("delegate"),
+      renderCell: (row: Record<string, unknown>) => {
+        // Debug: Log the row data to see what we're getting
+        console.log('Representative row data:', {
+          representativeId: row.representativeId,
+          representativeName: row.representativeName,
+          representative: row.representative
+        });
+        // Show representative name from the representativeName field or fallback to ID
+        return row.representativeName || (row.representativeId ? `ID: ${row.representativeId}` : '-');
+      }
+    },
     { key: "status", label: t("status") },
   ];
 

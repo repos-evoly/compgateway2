@@ -118,7 +118,6 @@ function InnerForm({
       <FormHeader
         showBackButton
         fallbackPath="/requests/letterOfGuarantee"
-        isEditing={readOnly}
         status={status}
       />
 

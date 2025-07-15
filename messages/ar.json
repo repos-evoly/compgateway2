@@ -129,6 +129,10 @@
       "changeStatus":"تغيير الحالة",
       "status":"الحالة",
       "statusRequired":"الحالة مطلوبة",
+      "documents": "المستندات",
+      "update": "تحديث",
+      "submit": "إرسال",
+      "cancel": "إلغاء",
       "loading":"جار التحميل...",
       "createSuccessTitle": "نجاح",
       "createSuccessMsg": "تم إنشاء طلب CBL بنجاح.",
@@ -230,7 +234,7 @@
     "CheckRequest":{
       "title":"طلب صك مصدق",
       "branch":"الفرع",
-      "branchNum":"رقم الفرع",
+      "branchNum":"الفرع",
       "date":"التاريخ",
       "f":"ف",
       "customerName":"اسم الزبون",
@@ -261,7 +265,14 @@
       "loading":"جار التحميل...",
       "successTitle": "نجاح",
       "successMessage": "تم تقديم طلب الصك بنجاح.",
-      "status":"الحالة"
+      "status":"الحالة",
+      "amountRequired": "مطلوب مبلغ واحد على الأقل (درهم أو د.ل).",
+      "amountNote": "* مطلوب مبلغ واحد على الأقل (درهم أو د.ل)",
+      "numericAmountRequired": "يرجى إدخال مبالغ رقمية صحيحة لحقول الدرهم والد.ل.",
+      "errorTitle": "خطأ",
+      "genericError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+      "noItemFound": "لم يتم العثور على طلب الصك",
+      "updateSuccessMessage": "تم تحديث طلب الصك بنجاح!"
     },
   
 
@@ -548,12 +559,13 @@
         "pldedge": "تعهد بعدم المطالبة بالرسوم المفروضة من مصرف ليبيا المركزي",
     
         "isRequired": "مطلوب",
+        "status":"الحالة",
+        "documents": "المستندات",
         "createSuccessTitle": "نجاح",
         "createSuccessMsg": "تم إنشاء طلب بطاقة الفيزا بنجاح.",
         "createErrorTitle": "خطأ",
         "fetchError": "فشل في جلب طلبات الفيزا",
         "unknownError": "حدث خطأ غير متوقع",
-        "status":"الحالة",
         "submit": "إرسال"
       },
       "bankStatement": {
@@ -620,6 +632,32 @@
         "role":"الدور",
         "permissions":"الصلاحيات",
         "editPermissions":"تعديل الصلاحيات",
+        "status":"الحالة",
+        "active":"نشط",
+        "inactive":"غير نشط",
+        "activate":"تفعيل",
+        "deactivate":"إلغاء التفعيل",
+        "statusUpdated":"تم تحديث الحالة",
+        "activatedSuccess":"تم تفعيل الموظف بنجاح",
+        "deactivatedSuccess":"تم إلغاء تفعيل الموظف بنجاح",
+        "form":{
+          "personalInformation":"المعلومات الشخصية",
+          "accountInformation":"معلومات الحساب",
+          "contactAndRole":"جهة الاتصال والدور",
+          "firstName":"الاسم الأول",
+          "lastName":"الاسم الأخير",
+          "username":"اسم المستخدم",
+          "email":"البريد الإلكتروني",
+          "password":"كلمة المرور",
+          "phone":"الهاتف",
+          "role":"الدور",
+          "status":"الحالة",
+          "active":"نشط",
+          "inactive":"غير نشط",
+          "cancel":"إلغاء",
+          "save":"حفظ",
+          "editModeNote":"ملاحظة: لا يمكن تغيير اسم المستخدم والبريد الإلكتروني وكلمة المرور في وضع التحرير"
+        },
         "permissionsPage":{
           "back": "رجوع",
           "save": "حفظ",
@@ -672,20 +710,6 @@
           "EmployeeCanCurrencies": "يمكنه إدارة العملات",
           "EmployeeCanServicePackages": "يمكنه إدارة حزم الخدمات",
           "EmployeeCanCompanies": "يمكنه إدارة الشركات"
-        },
-        "form":{
-          "personalInformation":"المعلومات الشخصية",
-          "firstName":"الاسم الأول",
-          "lastName":"الاسم الأخير",
-          "username":"اسم المستخدم",
-          "accountInformation":"معلومات الحساب",
-          "email":"البريد الإلكتروني",
-          "password":"كلمة المرور",
-          "contactAndRole":"جهات الاتصال والدور",
-          "phone":"الهاتف",
-          "role":"الدور",
-          "save":"حفظ",
-          "cancel":"إلغاء"
         }
       },
       "backButton": {

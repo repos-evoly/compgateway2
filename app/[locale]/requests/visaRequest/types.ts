@@ -14,6 +14,7 @@ export type VisaRequestFormValues = {
     localAmount?: number;
     pldedge?: string;
     status?: string;
+    files?: File[]; // Added for document uploads
   }
 
 

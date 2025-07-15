@@ -8,8 +8,6 @@ import { FaArrowLeft } from "react-icons/fa";
 export type BackButtonProps = {
   /** Optional path to navigate to instead of router.back() */
   fallbackPath?: string;
-  /** Whether the parent wizard is in editing mode (kept for future use) */
-  isEditing?: boolean;
   /** Custom label text; defaults to the i18n “back” string */
   label?: string;
   /** Tailwind (or other) classes to fully override the default design */
@@ -20,16 +18,15 @@ const BackButton = ({
   fallbackPath,
   label,
   className,
-  isEditing,
 }: BackButtonProps): JSX.Element => {
   const t = useTranslations("backButton");
   const router = useRouter();
 
   const handleBack = () => {
-    if (fallbackPath && isEditing) {
+    if (fallbackPath) {
       router.push(fallbackPath);
     } else {
-      window.location.reload();
+      router.back();
     }
   };
 

@@ -179,9 +179,6 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
       <div className="flex items-center gap-4 mt-6 justify-end">
         <BackButton
           fallbackPath={fallbackPath}
-          isEditing={isEditing}
-          className="px-4 py-2 border border-info-main text-info-dark rounded-md hover:bg-info-main hover:text-white transition-colors duration-300 flex items-center gap-2"
-          label={t("backToPage")}
         />
 
         {/* Back (step) */}
@@ -211,8 +208,21 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
           </button>
         )}
 
-        {/* Submit (only when adding ― not read-only, not editing, final step) */}
-        {isLastStep && !readOnly && !isEditing && (
+        {/* Submit button in edit mode (next to Next button) */}
+        {!isLastStep && !readOnly && isEditing && (
+          <button
+            type="button"
+            onClick={onSubmit}
+            className="px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90
+                 transition-colors duration-300 font-semibold"
+            disabled={formik.isSubmitting}
+          >
+            {t("submit")}
+          </button>
+        )}
+
+        {/* Submit (when adding or editing ― not read-only, final step) */}
+        {isLastStep && !readOnly && (
           <button
             type="button"
             onClick={onSubmit}

@@ -68,6 +68,23 @@ export default function EmployeesPage() {
     { key: "phone", label: t("phone") },
     { key: "roleId", label: t("role") },
     { key: "permissions", label: t("permissions") },
+    { 
+      key: "isActive", 
+      label: t("status"),
+      renderCell: (row: CompanyEmployee) => {
+        // Default to true if isActive is not present
+        const isActive = row.isActive !== undefined ? row.isActive : true;
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            isActive 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-gray-100 text-gray-800'
+          }`}>
+            {isActive ? t("active") : t("inactive")}
+          </span>
+        );
+      }
+    },
   ];
 
   const actions: Action[] = [

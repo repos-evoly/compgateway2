@@ -61,7 +61,7 @@ export default function VisaRequestListPage() {
   const handleAddClick = () => setShowForm(true);
 
   /*─────────────────────────── Form submit  ────────────────────────────────*/
-  async function handleFormSubmit(values: VisaRequestFormValues) {
+  async function handleFormSubmit(values: VisaRequestFormValues & { files?: File[] }) {
     try {
       await createVisaRequest(values);
       await fetchData();

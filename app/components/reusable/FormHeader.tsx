@@ -32,13 +32,11 @@ const FormHeader: React.FC<FormHeaderProps> = ({
   isFixedOnScroll = false,
   showBackButton,
   fallbackPath,
-  isEditing,
   status,
-  ...restBackButtonProps
 }) => {
   /* ---------------- logic ---------------- */
   const displayBackButton =
-    showBackButton ?? (Boolean(fallbackPath) || Boolean(isEditing));
+    showBackButton ?? (Boolean(fallbackPath));
 
   const hasLeftContent = displayBackButton || Boolean(text);
 
@@ -55,8 +53,6 @@ const FormHeader: React.FC<FormHeaderProps> = ({
           {displayBackButton && (
             <BackButton
               fallbackPath={fallbackPath}
-              isEditing={isEditing}
-              {...restBackButtonProps}
             />
           )}
           {text && <h2 className="text-lg font-semibold">{text}</h2>}

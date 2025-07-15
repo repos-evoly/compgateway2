@@ -13,6 +13,10 @@ type StatementApiResponseItem = {
   narratives: string[];
   amount: number;
   drCr: string;
+  isActive: boolean;
+  isDeleted: boolean;
+  debit: number | string;
+  credit: number | string;
 };
 
 export type StatementLine = {
@@ -22,7 +26,11 @@ export type StatementLine = {
   nr1: string;
   nr2: string;
   nr3: string;
-};
+  isActive: boolean;
+  isDeleted: boolean;
+  debit: number | string;
+  credit: number | string;
+  };
 
 /**
  * Retrieves the statement of account from the external API via GET,
@@ -82,6 +90,10 @@ export async function getStatement({
       nr1,
       nr2,
       nr3,
+      isActive: item.isActive,
+      isDeleted: item.isDeleted,
+      debit: item.debit,
+      credit: item.credit,
     };
   });
 

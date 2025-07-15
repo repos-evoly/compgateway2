@@ -124,6 +124,10 @@
     "changeStatus": "Change Status",
     "status": "Status",
     "statusRequired": "Status is required",
+    "documents": "Documents",
+    "update": "Update",
+    "submit": "Submit",
+    "cancel": "Cancel",
     "loading": "Loading...",
     "createSuccessTitle": "Success",
     "createSuccessMsg": "CBL request created successfully.",
@@ -224,7 +228,7 @@
   "CheckRequest": {
     "title": "Certified‑Check Request",
     "branch": "Branch",
-    "branchNum": "Branch Number",
+    "branchNum": "Branch",
     "date": "Date",
     "f": "No.",
     "customerName": "Customer Name",
@@ -255,7 +259,14 @@
     "loading": "Loading...",
     "successTitle": "Success",
     "successMessage": "Check request submitted successfully.",
-    "status": "Status"
+    "status": "Status",
+    "amountRequired": "At least one amount (Dirham or LYD) is required.",
+    "amountNote": "* At least one amount (Dirham or LYD) is required",
+    "numericAmountRequired": "Please enter valid numeric amounts for Dirham and LYD fields.",
+    "errorTitle": "Error",
+    "genericError": "An unexpected error occurred. Please try again.",
+    "noItemFound": "Check request not found",
+    "updateSuccessMessage": "Check request updated successfully!"
   },
 
   "notFound": {
@@ -544,6 +555,7 @@
 
     "isRequired": "Required",
     "status": "Status",
+    "documents": "Documents",
     "createSuccessTitle": "Success",
     "createSuccessMsg": "VISA card request created successfully.",
     "createErrorTitle": "Error",
@@ -617,6 +629,32 @@
     "role": "Role",
     "permissions": "Permissions",
     "editPermissions": "Edit Permissions",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "statusUpdated": "Status Updated",
+    "activatedSuccess": "Employee activated successfully",
+    "deactivatedSuccess": "Employee deactivated successfully",
+    "form": {
+      "personalInformation": "Personal Information",
+      "accountInformation": "Account Information",
+      "contactAndRole": "Contact & Role",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "phone": "Phone",
+      "role": "Role",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "cancel": "Cancel",
+      "save": "Save",
+      "editModeNote": "Note: Username, Email, and Password cannot be changed in edit mode"
+    },
     "permissionsPage": {
       "back": "Back",
       "save": "Save",
@@ -669,20 +707,6 @@
       "EmployeeCanCurrencies": "Can manage currencies",
       "EmployeeCanServicePackages": "Can manage service packages",
       "EmployeeCanCompanies": "Can manage companies"
-    },
-    "form":{
-      "personalInformation":"Personal Information",
-      "firstName":"First Name",
-      "lastName":"Last Name",
-      "username":"Username",
-      "accountInformation":"Account Information",
-      "email":"Email",
-      "password":"Password",
-      "contactAndRole":"Contacts and Role",
-      "phone":"Phone",
-      "role":"Role",
-      "save":"Save",
-      "cancel":"Cancel"
     }
   },
 
@@ -849,7 +873,8 @@
       "unexpectedError": "An unexpected error occurred",
       "validation":{
         "required": "This field is required",
-        "photoRequired": "Representative photo is required"
+        "photoRequired": "Representative photo is required",
+        "invalidPhone": "Phone number must be between 9 and 10 digits"
       }
     },
     "errorTitle": "Error",

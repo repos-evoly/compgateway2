@@ -23,6 +23,9 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // 
 
 import { TCheckRequestFormProps } from "../types";
 
+/* Representatives query --------------------------------------------------- */
+import { getRepresentatives } from "@/app/[locale]/representatives/services";
+
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
 /* -------------------------------------------------------------------------- */
@@ -92,15 +95,19 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   const [accountOptions, setAccountOptions] = useState<InputSelectComboOption[]>([]);
   const [isLoadingKyc, setIsLoadingKyc] = useState(false);
 
+  /* representative options state */
+  const [representativeOptions, setRepresentativeOptions] = useState<InputSelectComboOption[]>([]);
+  const [isLoadingRepresentatives, setIsLoadingRepresentatives] = useState(false);
+
   /* default values */
   const defaultValues: TCheckRequestFormValues = {
     branch: "",
-    branchNum: "",
     date: new Date(),
     customerName: "",
     cardNum: "",
     accountNum: "",
     beneficiary: "",
+    representativeId: undefined,
     lineItems: [
       { dirham: "", lyd: "" },
       { dirham: "", lyd: "" },
@@ -140,6 +147,28 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
     }
 
     setAccountOptions(accounts.map((acc) => ({ label: acc, value: acc })));
+  }, []);
+
+  /* Load representative options */
+  useEffect(() => {
+    const fetchRepresentatives = async () => {
+      setIsLoadingRepresentatives(true);
+      try {
+        const response = await getRepresentatives(1, 100); // Fetch up to 100 representatives
+        const options = response.data.map((rep) => ({
+          label: rep.name,
+          value: rep.id,
+        }));
+        setRepresentativeOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch representatives:', error);
+        setRepresentativeOptions([]);
+      } finally {
+        setIsLoadingRepresentatives(false);
+      }
+    };
+
+    fetchRepresentatives();
   }, []);
 
   /* Function to extract company code from account number */
@@ -196,38 +225,71 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       label: t("branch"),
       type: "text",
       component: FormInputIcon,
+      readOnly: true, // Make branch read-only
     },
-    {
-      name: "branchNum",
-      label: t("branchNum"),
-      type: "text",
-      component: FormInputIcon,
+    { 
+      name: "date", 
+      label: t("date"), 
+      component: DatePickerValue,
+      readOnly: false,
     },
-    { name: "date", label: t("date"), component: DatePickerValue },
     {
       name: "customerName",
       label: t("customerName"),
       type: "text",
       component: FormInputIcon,
+      readOnly: true, // Make customer name read-only
     },
     {
       name: "cardNum",
       label: t("cardNum"),
       type: "text",
       component: FormInputIcon,
+      readOnly: false,
     },
     {
       name: "beneficiary",
       label: t("beneficiary"),
       type: "text",
       component: FormInputIcon,
+      readOnly: false,
     },
-  ] as const;
+  ];
 
   /* wrapped submit */
   const handleSubmit = async (
     values: TCheckRequestFormValues
   ) => {
+    // Validate that at least one amount is provided and is numeric
+    const hasValidAmount = values.lineItems.some(item => {
+      const dirhamValid = item.dirham && item.dirham.trim() !== '' && !isNaN(Number(item.dirham));
+      const lydValid = item.lyd && item.lyd.trim() !== '' && !isNaN(Number(item.lyd));
+      return dirhamValid || lydValid;
+    });
+
+    // Check if there are any non-numeric values
+    const hasNonNumericValues = values.lineItems.some(item => {
+      const dirhamNonNumeric = item.dirham && item.dirham.trim() !== '' && isNaN(Number(item.dirham));
+      const lydNonNumeric = item.lyd && item.lyd.trim() !== '' && isNaN(Number(item.lyd));
+      return dirhamNonNumeric || lydNonNumeric;
+    });
+
+    if (hasNonNumericValues) {
+      setModalTitle(t("errorTitle"));
+      setModalMessage(t("numericAmountRequired"));
+      setModalSuccess(false);
+      setModalOpen(true);
+      return;
+    }
+
+    if (!hasValidAmount) {
+      setModalTitle(t("errorTitle"));
+      setModalMessage(t("amountRequired"));
+      setModalSuccess(false);
+      setModalOpen(true);
+      return;
+    }
+
     try {
       await onSubmit(values);
       setModalTitle(t("successTitle"));
@@ -250,8 +312,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
         <FormHeader
           status={status}
           showBackButton
-          fallbackPath="/requests/checkRequest"
-          isEditing={readOnly}
+          fallbackPath={readOnly ? "/requests/checkRequest" : "/requests/checkRequest"}
         />
 
         <div className="px-6 pb-6">
@@ -260,16 +321,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
             onSubmit={handleSubmit}
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {formFields.map(({ component: Field, ...props }) => (
-                <Field
-                  key={props.name}
-                  {...props}
-                  width="w-full"
-                  disabled={readOnly || isSubmitting}
-                />
-              ))}
-              
-              {/* Account Number dropdown */}
+              {/* Account Number dropdown - First field */}
               <AccountNumberDropdown
                 name="accountNum"
                 label={t("accountNum")}
@@ -281,6 +333,26 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
                 onAccountChange={handleAccountNumberChange}
                 isLoadingKyc={isLoadingKyc}
               />
+
+              {/* Representative dropdown */}
+              <InputSelectCombo
+                name="representativeId"
+                label={t("delegate")}
+                options={representativeOptions}
+                placeholder={t("delegate")}
+                width="w-full"
+                disabled={readOnly || isSubmitting || isLoadingRepresentatives}
+              />
+
+              {/* Other form fields */}
+              {formFields.map(({ component: Field, readOnly: fieldReadOnly, ...props }) => (
+                <Field
+                  key={props.name}
+                  {...props}
+                  width="w-full"
+                  disabled={readOnly || isSubmitting || fieldReadOnly}
+                />
+              ))}
             </div>
 
             <div className="mt-6">

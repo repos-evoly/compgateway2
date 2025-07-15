@@ -194,7 +194,11 @@ export default function ForeignTransfersForm({
 
           return (
             <Form>
-              <FormHeader status={status} />
+              <FormHeader
+                showBackButton
+                fallbackPath="/requests/foreignTransfers"
+                status={status}
+              />
               <TabsWizard<ForeignTransfersFormValues>
                 steps={steps}
                 formik={formik}

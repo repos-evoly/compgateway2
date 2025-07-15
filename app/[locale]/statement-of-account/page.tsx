@@ -217,19 +217,59 @@ const Page: React.FC = () => {
   // Grid columns & pagination
   const columns = [
     { key: "postingDate", label: t("postingDate") },
-    { key: "amount", label: t("amount") },
+    { 
+      key: "amount", 
+      label: t("amount"),
+      renderCell: (row: StatementLine) => {
+        // Format the amount with proper number formatting
+        if (row.amount !== null && row.amount !== undefined) {
+          return typeof row.amount === 'number' 
+            ? row.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : row.amount;
+        }
+        return '';
+      }
+    },
     { 
       key: "debit", 
       label: t("debit"),
       renderCell: (row: StatementLine) => {
-        return row.drCr === 'DR' ? row.amount : '';
+        // Show debit amount if drCr is 'DR', otherwise show the debit field value
+        let debitValue = null;
+        if (row.drCr === 'DR') {
+          debitValue = row.amount;
+        } else if (row.debit && row.debit !== 0) {
+          debitValue = row.debit;
+        }
+        
+        // Format the number if it exists
+        if (debitValue !== null && debitValue !== undefined) {
+          return typeof debitValue === 'number' 
+            ? debitValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : debitValue;
+        }
+        return '';
       }
     },
     { 
       key: "credit", 
       label: t("credit"),
       renderCell: (row: StatementLine) => {
-        return row.drCr === 'CR' ? row.amount : '';
+        // Show credit amount if drCr is 'CR', otherwise show the credit field value
+        let creditValue = null;
+        if (row.drCr === 'CR') {
+          creditValue = row.amount;
+        } else if (row.credit && row.credit !== 0) {
+          creditValue = row.credit;
+        }
+        
+        // Format the number if it exists
+        if (creditValue !== null && creditValue !== undefined) {
+          return typeof creditValue === 'number' 
+            ? creditValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : creditValue;
+        }
+        return '';
       }
     },
     { 

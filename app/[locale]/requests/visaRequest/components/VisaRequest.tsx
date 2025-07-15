@@ -21,7 +21,7 @@ import FormHeader from "@/app/components/reusable/FormHeader";
 
 type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
-  onSubmit: (values: VisaRequestFormValues) => void;
+  onSubmit: (values: VisaRequestFormValues & { files?: File[] }) => void;
   readOnly?: boolean;
 };
 
@@ -65,6 +65,7 @@ export default function VisaWizardForm({
     foreignAmount: undefined,
     localAmount: undefined,
     pldedge: "",
+    files: (initialValues as { files?: File[] })?.files ?? [],
     ...initialValues,
   };
 
@@ -128,7 +129,7 @@ export default function VisaWizardForm({
   ];
 
   /* ---- Submit -------------------------------------------------------- */
-  async function handleSubmit(values: VisaRequestFormValues) {
+  async function handleSubmit(values: VisaRequestFormValues & { files?: File[] }) {
     onSubmit(values);
   }
 
@@ -168,7 +169,11 @@ export default function VisaWizardForm({
 
           return (
             <Form>
-              <FormHeader status={status} />
+              <FormHeader
+                showBackButton
+                fallbackPath="/requests/visaRequest"
+                status={status}
+              />
               <TabsWizard
                 steps={steps}
                 formik={formik}
@@ -179,16 +184,6 @@ export default function VisaWizardForm({
                 fallbackPath="/requests/visaRequest"
                 isEditing={initialValues !== undefined}
               />
-              {/* Fallback submit button for add mode, only on last step */}
-              {!readOnly && initialValues === undefined && formik.submitCount > 0 && (
-                <button
-                  type="submit"
-                  className="mt-6 px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90 transition-colors duration-300 font-semibold w-full"
-                  disabled={formik.isSubmitting}
-                >
-                  {t("submit")}
-                </button>
-              )}
             </Form>
           );
         }}

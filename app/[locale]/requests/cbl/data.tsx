@@ -86,10 +86,14 @@ export const validationSchema = Yup.object({
     "Representative number is required"
   ),
   birthDate: Yup.date().required("Birth date is required"),
-  passportNumber: Yup.string().required("Passport number is required"),
+  passportNumber: Yup.string()
+    .required("Passport number is required")
+    .length(8, "Passport number must be exactly 8 characters"),
   passportIssuance: Yup.date().required("Passport issuance date is required"),
   passportExpiry: Yup.date().required("Passport expiry date is required"),
-  mobile: Yup.string().required("Mobile number is required"),
+  mobile: Yup.string()
+    .required("Mobile number is required")
+    .matches(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
   address: Yup.string().required("Address is required"),
 
   table1Data: Yup.array()

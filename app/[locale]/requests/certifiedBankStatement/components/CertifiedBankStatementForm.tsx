@@ -175,14 +175,13 @@ export default function CertifiedBankStatementForm({
                 fallbackPath="/requests/certifiedBankStatement"
                 status={status}
               />
-              <TabsWizard<CertifiedBankStatementRequestWithID>
+              <TabsWizard
                 steps={steps}
                 formik={formik}
                 onSubmit={() => formik.handleSubmit()}
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={xlate}
                 readOnly={readOnly}
-                fallbackPath="/requests/certifiedBankStatement"
                 isEditing={!!initialValues}
               />
             </Form>

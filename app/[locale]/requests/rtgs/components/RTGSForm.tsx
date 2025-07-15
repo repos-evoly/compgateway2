@@ -33,8 +33,8 @@ import {
 
 import type { TRTGSFormValues } from "../types";
 import { getKycByCode } from "../services";
-import FormHeader from "@/app/components/reusable/FormHeader";
 import { useFormikContext, useField } from "formik";
+import StatusBanner from "@/app/components/reusable/StatusBanner";
 
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
@@ -48,7 +48,10 @@ interface AccountNumberDropdownProps {
   width: string;
   maskingFormat: string;
   disabled: boolean;
-  onAccountChange: (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => void;
+  onAccountChange: (
+    accountNumber: string,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => void;
   isLoadingKyc: boolean;
 }
 
@@ -70,10 +73,7 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
 
   return (
     <div className="relative">
-      <InputSelectCombo
-        name={name}
-        {...props}
-      />
+      <InputSelectCombo name={name} {...props} />
       {isLoadingKyc && (
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -169,7 +169,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     contract: false,
     claim: false,
     otherDoc: false,
-    status: ""
+    status: "",
   };
 
   const mergedValues: TRTGSFormValues = {
@@ -190,19 +190,22 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
   /* Function to extract company code from account number */
   const extractCompanyCode = (accountNumber: string): string => {
     // Remove any non-digit characters
-    const cleanAccount = accountNumber.replace(/\D/g, '');
-    
+    const cleanAccount = accountNumber.replace(/\D/g, "");
+
     // Check if we have at least 10 digits (4 + 6)
     if (cleanAccount.length >= 10) {
       // Extract 6 digits after the first 4 digits
       return cleanAccount.substring(4, 10);
     }
-    
-    return '';
+
+    return "";
   };
 
   /* Function to fetch and populate KYC data */
-  const handleAccountNumberChange = async (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => {
+  const handleAccountNumberChange = async (
+    accountNumber: string,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => {
     if (!accountNumber) return;
 
     const companyCode = extractCompanyCode(accountNumber);
@@ -212,28 +215,31 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     if (hasAutoFilled) return;
 
     setIsLoadingKyc(true);
-    
+
     try {
       const kycData = await getKycByCode(companyCode);
-      
+
       if (kycData.hasKyc && kycData.data) {
         // Update form fields with KYC data
-        setFieldValue('applicantName', kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName);
-        setFieldValue('branchName', kycData.data.branchName);
+        setFieldValue(
+          "applicantName",
+          kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName
+        );
+        setFieldValue("branchName", kycData.data.branchName);
         // Build address from KYC data
         const addressParts = [];
         if (kycData.data.street) addressParts.push(kycData.data.street);
         if (kycData.data.district) addressParts.push(kycData.data.district);
         if (kycData.data.city) addressParts.push(kycData.data.city);
-        
-        const fullAddress = addressParts.join(', ');
-        setFieldValue('address', fullAddress);
-        
+
+        const fullAddress = addressParts.join(", ");
+        setFieldValue("address", fullAddress);
+
         // Mark as auto-filled to prevent overwriting user input
         setHasAutoFilled(true);
       }
     } catch (error) {
-      console.error('Failed to fetch KYC data:', error);
+      console.error("Failed to fetch KYC data:", error);
     } finally {
       setIsLoadingKyc(false);
     }
@@ -390,12 +396,11 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         validationSchema={validationSchema}
       >
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0">
-          <FormHeader
-            showBackButton
-            fallbackPath="/requests/rtgs"
-            status={status}
-          />
+        <div
+          className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6
+            bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0"
+        >
+          {/* ------- Existing fields ------- */}
           <div className="flex-1">
             <DatePickerValue
               name="refNum"
@@ -405,6 +410,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               disabled={readOnly}
             />
           </div>
+
           <div className="flex-1">
             <DatePickerValue
               name="date"
@@ -414,6 +420,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               disabled={readOnly}
             />
           </div>
+
           <div className="flex-1">
             <RadiobuttonWrapper
               name="paymentType"
@@ -427,6 +434,11 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               disabled={readOnly}
             />
           </div>
+
+          {/* ------- NEW: status badge (always at row-end) ------- */}
+          {status && (
+            <StatusBanner status={status} className="ltr:ml-auto rtl:mr-auto" />
+          )}
         </div>
 
         {/* Sections */}
@@ -469,6 +481,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           )}
           <BackButton
             fallbackPath="/requests/rtgs"
+            isEditing={initialValues !== undefined}
           />
         </div>
       </Form>

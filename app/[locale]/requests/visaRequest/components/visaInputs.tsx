@@ -54,12 +54,14 @@ export const step1VisaInputs = [
     label: "nationalId",
     icon: <FiCreditCard />,
     type: "number",
+    maskingFormat: "000000000000",
   },
   {
     name: "phoneNumberLinkedToNationalId",
     label: "phoneNumberLinkedToNationalId",
     icon: <FiSmartphone />,
     type: "number",
+    maskingFormat: "000-0000000",
   },
 ];
 

@@ -1,6 +1,7 @@
 // =============================================================
-// DocumentUploader.tsx – v19
-// • Modal preview now limited to 50 % of viewport (less blur)
+// DocumentUploader.tsx – v20
+// • Shows a PDF icon instead of a broken image thumbnail
+// • Modal preview still limited to 50 % of viewport (less blur)
 // =============================================================
 
 "use client";
@@ -29,6 +30,7 @@ import {
   FiX,
   FiEdit,
   FiDownload,
+  FiFileText, // NEW
 } from "react-icons/fi";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker as string;
@@ -50,10 +52,12 @@ export type DocumentUploaderProps = {
   className?: string;
   label?: string;
   initialPreviewUrl?: string;
+  initialPreviewUrls?: string[];
   canView?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
   canDownload?: boolean;
+  disabled?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -65,10 +69,12 @@ export const DocumentUploader = ({
   className,
   label = "Documents",
   initialPreviewUrl,
+  initialPreviewUrls,
   canView,
   canEdit,
   canDelete,
   canDownload,
+  disabled,
 }: DocumentUploaderProps) => {
   /* ---------- Action guards ---------- */
   const allowView = Boolean(canView);
@@ -81,11 +87,11 @@ export const DocumentUploader = ({
   const files = field.value ?? [];
 
   /* ---------- State ---------- */
-  const [previews, setPreviews] = useState<(string | null)[]>(
-    initialPreviewUrl ? [initialPreviewUrl] : []
-  );
+  const initialPreviews =
+    initialPreviewUrls ?? (initialPreviewUrl ? [initialPreviewUrl] : []);
+  const [previews, setPreviews] = useState<(string | null)[]>(initialPreviews);
   const [notice, setNotice] = useState<string | null>(null);
-  const [showFiles, setShowFiles] = useState(Boolean(initialPreviewUrl));
+  const [showFiles, setShowFiles] = useState(Boolean(initialPreviews.length));
   const [dragActive, setDragActive] = useState(false);
   const [modalUrl, setModalUrl] = useState<string | null>(null);
   const [editIdx, setEditIdx] = useState<number | null>(null);
@@ -127,10 +133,12 @@ export const DocumentUploader = ({
       const nextPrev = [...previews];
       const nextFiles = [...files];
 
-      if (editIdx < (initialPreviewUrl ? 1 : 0)) {
+      const initialCount =
+        initialPreviewUrls?.length ?? (initialPreviewUrl ? 1 : 0);
+      if (editIdx < initialCount) {
         nextPrev[editIdx] = newPrev[0];
       } else {
-        const fileOffset = editIdx - (initialPreviewUrl ? 1 : 0);
+        const fileOffset = editIdx - initialCount;
         nextFiles[fileOffset] = allowed[0];
         nextPrev[editIdx] = newPrev[0];
       }
@@ -176,8 +184,10 @@ export const DocumentUploader = ({
     const nextFiles = [...files];
     const nextPrev = [...previews];
 
-    if (idx >= (initialPreviewUrl ? 1 : 0)) {
-      const fileIdx = idx - (initialPreviewUrl ? 1 : 0);
+    const initialCount =
+      initialPreviewUrls?.length ?? (initialPreviewUrl ? 1 : 0);
+    if (idx >= initialCount) {
+      const fileIdx = idx - initialCount;
       nextFiles.splice(fileIdx, 1);
       helpers.setValue(nextFiles);
     }
@@ -193,12 +203,12 @@ export const DocumentUploader = ({
   /* Helpers --------------------------------------------------------- */
   const formatSize = (b: number): string =>
     b < 1024
-      ? `${b} B`
+      ? `${b} B`
       : b < 1_048_576
-      ? `${Math.round(b / 1024)} KB`
-      : `${(b / 1_048_576).toFixed(1)} MB`;
+      ? `${Math.round(b / 1024)} KB`
+      : `${(b / 1_048_576).toFixed(1)} MB`;
 
-  /* Drop‑zone component -------------------------------------------- */
+  /* Drop-zone component -------------------------------------------- */
   const DropZone = (props: HTMLAttributes<HTMLDivElement>) => (
     <div
       {...props}
@@ -216,7 +226,7 @@ export const DocumentUploader = ({
       <FiUpload className="h-4 w-4 opacity-70" />
       <span className="text-sm font-medium">{label}</span>
       <span className="text-[10px] opacity-80">
-        Click or drop&nbsp;({maxFiles} max)
+        Click or drop&nbsp;({maxFiles} max)
       </span>
     </div>
   );
@@ -231,9 +241,19 @@ export const DocumentUploader = ({
         multiple={editIdx === null}
         onChange={onInputChange}
         className="hidden"
+        disabled={disabled}
       />
 
-      {previews.length === 0 && <DropZone />}
+      {!disabled && previews.length === 0 && <DropZone />}
+      {disabled && previews.length === 0 && (
+        <div className="relative flex flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed p-3 text-xs border-gray-300 bg-gray-50">
+          <FiUpload className="h-4 w-4 opacity-50" />
+          <span className="text-sm font-medium text-gray-500">{label}</span>
+          <span className="text-[10px] opacity-60 text-gray-400">
+            Read-only mode
+          </span>
+        </div>
+      )}
 
       {previews.length > 0 && (
         <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -255,7 +275,7 @@ export const DocumentUploader = ({
               </>
             )}
           </button>
-          {previews.length < maxFiles && (
+          {!disabled && allowEdit && previews.length < maxFiles && (
             <button
               type="button"
               onClick={openDialog}
@@ -270,16 +290,22 @@ export const DocumentUploader = ({
       {previews.length > 0 && showFiles && (
         <ul className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded bg-gray-50 p-2 text-xs">
           {previews.map((src, i) => {
-            const isInitial = i < (initialPreviewUrl ? 1 : 0);
-            const fileIdx = isInitial ? -1 : i - (initialPreviewUrl ? 1 : 0);
+            const initialCount =
+              initialPreviewUrls?.length ?? (initialPreviewUrl ? 1 : 0);
+            const isInitial = i < initialCount;
+            const fileIdx = isInitial ? -1 : i - initialCount;
             const fileObj = fileIdx >= 0 ? files[fileIdx] : null;
-            const isPdf = fileObj?.type === "application/pdf";
+            const isPdf =
+              fileObj?.type === "application/pdf" ||
+              (src ? src.toLowerCase().endsWith(".pdf") : false);
 
             const handleOpen = () => {
               if (!allowView || !src) return;
               if (isPdf && fileObj) {
                 const pdfUrl = URL.createObjectURL(fileObj);
                 window.open(pdfUrl, "_blank", "noopener,noreferrer");
+              } else if (isPdf && src) {
+                window.open(src, "_blank", "noopener,noreferrer");
               } else {
                 setModalUrl(src);
               }
@@ -291,7 +317,21 @@ export const DocumentUploader = ({
             return (
               <li key={src ?? i} className="flex items-center gap-2">
                 {src ? (
-                  allowView ? (
+                  isPdf ? (
+                    allowView ? (
+                      <button
+                        type="button"
+                        onClick={handleOpen}
+                        className="flex h-8 w-8 items-center justify-center rounded-sm border text-red-600 focus:outline-none"
+                      >
+                        <FiFileText className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-sm border text-red-600">
+                        <FiFileText className="h-4 w-4" />
+                      </div>
+                    )
+                  ) : allowView ? (
                     <button
                       type="button"
                       onClick={handleOpen}
@@ -384,7 +424,7 @@ export const DocumentUploader = ({
           })}
           {files.some((f) => f.size > LIMIT_BYTES) && (
             <p className="pt-1 text-[10px] text-amber-600">
-              * files &gt; 1 MB will be compressed
+              * files &gt; 1 MB will be compressed
             </p>
           )}
         </ul>

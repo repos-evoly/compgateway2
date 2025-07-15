@@ -80,6 +80,11 @@ export default function VisaRequestListPage() {
     }
   }
 
+  /*─────────────────────────── Handle back button  ─────────────────────────*/
+  const handleBackFromForm = () => {
+    setShowForm(false);
+  };
+
   /*─────────────────────────── Data for grid  ──────────────────────────────*/
   const gridData = apiData.map((item) => ({
     id: item.id,
@@ -106,7 +111,7 @@ export default function VisaRequestListPage() {
   return (
     <div className="p-4">
       {showForm ? (
-        <VisaWizardForm onSubmit={handleFormSubmit} />
+        <VisaWizardForm onSubmit={handleFormSubmit} onBack={handleBackFromForm} />
       ) : (
         <CrudDataGrid
           data={gridData}

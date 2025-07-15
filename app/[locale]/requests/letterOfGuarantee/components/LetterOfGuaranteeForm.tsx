@@ -117,7 +117,6 @@ function InnerForm({
     <Form>
       <FormHeader
         showBackButton
-        fallbackPath="/requests/letterOfGuarantee"
         status={status}
       />
 

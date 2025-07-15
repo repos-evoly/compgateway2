@@ -166,7 +166,6 @@ export default function CreditFacilityForm({
             <Form>
               <FormHeader
                 showBackButton
-                fallbackPath="/requests/creditFacility"
                 status={status}
               />
 

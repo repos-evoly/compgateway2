@@ -44,6 +44,16 @@ export const getVisaRequests = async (
   return data;
 };
 
+/**
+ * Convert API attachment URLs to displayable URLs
+ */
+const convertAttachmentToUrl = (attachment: { attUrl: string }): string => {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+  // Convert Windows path to URL format
+  const urlPath = attachment.attUrl.replace(/\\/g, '/');
+  return `${baseUrl}/${urlPath}`;
+};
+
 /** New function: get by ID => returns a single VisaRequestApiItem */
 export const getVisaRequestById = async (
   id: number
@@ -70,6 +80,15 @@ export const getVisaRequestById = async (
   }
 
   const data = (await response.json()) as VisaRequestApiItem;
+  
+  // Convert attachment URLs to displayable URLs
+  if (data.attachments && data.attachments.length > 0) {
+    data.attachments = data.attachments.map(attachment => ({
+      ...attachment,
+      displayUrl: convertAttachmentToUrl(attachment)
+    }));
+  }
+  
   return data;
 };
 

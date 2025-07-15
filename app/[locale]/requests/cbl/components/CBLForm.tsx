@@ -90,9 +90,15 @@ const CBLForm: React.FC<CBLFormProps> = ({
   initialValues,
   onSubmit,
   onCancel,
+  onBack,
   readOnly = false,
 }) => {
   const t = useTranslations("cblForm");
+
+  console.log(
+    "CBLForm rendered with initialValues:",
+    initialValues?.attachmentUrls
+  );
 
   /* UI state */
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,11 +129,12 @@ const CBLForm: React.FC<CBLFormProps> = ({
   }, []);
 
   /* initial values */
-  const mergedValues: TCBLValues & { files: File[] } = {
+  const mergedValues: TCBLValues & { files: File[]; newFiles: File[] } = {
     id: 0,
     ...defaultVals,
     ...initialValues,
     files: (initialValues as { files?: File[] })?.files ?? [],
+    newFiles: (initialValues as { newFiles?: File[] })?.newFiles ?? [],
   };
   const isEdit = Boolean(initialValues?.id);
 
@@ -167,15 +174,23 @@ const CBLForm: React.FC<CBLFormProps> = ({
 
   /* submit */
   const handleSubmit = async (
-    values: TCBLValues & { files: File[] },
-    helpers: FormikHelpers<TCBLValues & { files: File[] }>
+    values: TCBLValues & { files: File[]; newFiles: File[] },
+    helpers: FormikHelpers<TCBLValues & { files: File[]; newFiles: File[] }>
   ) => {
     if (readOnly || isSubmitting) return;
     setIsSubmitting(true);
     try {
+      // Merge existing files with new files
+      const allFiles = [...(values.files || []), ...(values.newFiles || [])];
+
+      const submitValues = {
+        ...values,
+        files: allFiles,
+      };
+
       const result: TCBLValues = isEdit
-        ? await updateCblRequest(values.id, values)
-        : await addCblRequest(values);
+        ? await updateCblRequest(values.id, submitValues)
+        : await addCblRequest(submitValues);
 
       setModal({
         open: true,
@@ -214,9 +229,9 @@ const CBLForm: React.FC<CBLFormProps> = ({
   /* render */
   return (
     <>
-      <FormHeader status={initialValues?.status}>
+      <FormHeader status={initialValues?.status} onBack={onBack}>
         <div className="pb-5">
-          <BackButton fallbackPath="/requests/cbl" />
+          <BackButton fallbackPath="/requests/cbl" onBack={onBack} />
         </div>
       </FormHeader>
 
@@ -264,13 +279,38 @@ const CBLForm: React.FC<CBLFormProps> = ({
                 maxFiles={9}
                 label={t("documents")}
                 className="w-full"
-                canView
+                canView={true}
+                canEdit={false}
+                canDelete={false}
+                canDownload={true}
+                disabled={readOnly}
+                initialPreviewUrls={initialValues?.attachmentUrls}
               />
             </div>
             <div className="flex-1">
               <InfoBox />
             </div>
           </div>
+
+          {/* New Document Uploader Section - Only in edit mode */}
+          {!readOnly && isEdit && (
+            <div className="mt-6">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">
+                {t("addNewDocuments")}
+              </h2>
+              <DocumentUploader
+                name="newFiles"
+                maxFiles={9}
+                label={t("addNewDocuments")}
+                className="w-full"
+                canView={true}
+                canEdit={true}
+                canDelete={true}
+                canDownload={true}
+                disabled={false}
+              />
+            </div>
+          )}
 
           {/* additional */}
           <div className="mt-6">
@@ -297,7 +337,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
 
           {/* buttons */}
           {!readOnly && (
-            <div className="flex justify-center gap-3 px-6 pb-6">
+            <div className="flex gap-2 px-6 pb-6">
               <SubmitButton
                 title={t(isEdit ? "update" : "submit")}
                 color="info-dark"

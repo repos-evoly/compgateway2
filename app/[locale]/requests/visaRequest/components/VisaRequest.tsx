@@ -17,12 +17,12 @@ import { Step2VisaRequest } from "./Step2VisaRequest";
 import { step1VisaInputs, step2VisaInputs } from "./visaInputs";
 import { VisaRequestFormValues } from "../types";
 import type { InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
-import FormHeader from "@/app/components/reusable/FormHeader";
 
 type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
   onSubmit: (values: VisaRequestFormValues & { files?: File[] }) => void;
   readOnly?: boolean;
+  onBack?: () => void;
 };
 
 export default function VisaWizardForm({
@@ -31,6 +31,9 @@ export default function VisaWizardForm({
   readOnly = false,
 }: VisaWizardFormProps) {
   const t = useTranslations("visaRequest");
+  const baseImgUrl = process.env.NEXT_PUBLIC_IMAGE_URL;
+
+  console.log("initial values in VisaWizardForm:", initialValues);
 
   /* ---- Account dropdown (cookie) ------------------------------------- */
   const [accountOptions, setAccountOptions] = useState<
@@ -66,6 +69,7 @@ export default function VisaWizardForm({
     localAmount: undefined,
     pldedge: "",
     files: (initialValues as { files?: File[] })?.files ?? [],
+    newFiles: (initialValues as { newFiles?: File[] })?.newFiles ?? [],
     ...initialValues,
   };
 
@@ -79,20 +83,31 @@ export default function VisaWizardForm({
     },
     {
       title: t("step2Title"),
-      component: <Step2VisaRequest readOnly={readOnly} />,
+      component: (
+        <Step2VisaRequest
+          readOnly={readOnly}
+          /* --------------------------------------------------------------
+             Prefix each stored file path with the public image-base URL.
+             If baseImgUrl is undefined (env not set), fall back to the
+             original path so nothing breaks.
+           -------------------------------------------------------------- */
+          attachmentUrls={initialValues?.attachmentUrls?.map((url) =>
+            baseImgUrl ? `${baseImgUrl}/${url}` : url
+          )}
+          isEditMode={Boolean(initialValues)}
+        />
+      ),
     },
   ];
 
-  /* ---- Field‑name translator (for review) ---------------------------- */
+  /* ---- Field-name translator (for review) ---------------------------- */
   function translateFieldName(fieldName: string): string {
     const allInputs = [...step1VisaInputs, ...step2VisaInputs];
     const found = allInputs.find((i) => i.name === fieldName);
     return found ? t(found.label) : fieldName;
   }
-  const status =
-    (initialValues as { status?: string } | undefined)?.status ?? undefined;
 
-  /* ---- Per‑step validation ------------------------------------------ */
+  /* ---- Per-step validation ------------------------------------------ */
   const stepValidations = [
     Yup.object({
       branch: Yup.string().required(t("branch") + " " + t("isRequired")),
@@ -103,12 +118,17 @@ export default function VisaWizardForm({
       accountNumber: Yup.string().required(
         t("accountNumber") + " " + t("isRequired")
       ),
-      nationalId: Yup.number().required(
-        t("nationalId") + " " + t("isRequired")
-      ),
-      phoneNumberLinkedToNationalId: Yup.string().required(
-        t("phoneNumberLinkedToNationalId") + " " + t("isRequired")
-      ),
+      nationalId: Yup.number()
+        .required(t("nationalId") + " " + t("isRequired"))
+        .test("len", t("nationalId") + " must be exactly 12 digits", (val) =>
+          val ? val.toString().length === 12 : false
+        ),
+      phoneNumberLinkedToNationalId: Yup.string()
+        .required(t("phoneNumberLinkedToNationalId") + " " + t("isRequired"))
+        .matches(
+          /^\d{10}$/,
+          t("phoneNumberLinkedToNationalId") + " must be exactly 10 digits"
+        ),
     }),
     Yup.object({
       cbl: Yup.string().required(t("cbl") + " " + t("isRequired")),
@@ -129,8 +149,18 @@ export default function VisaWizardForm({
   ];
 
   /* ---- Submit -------------------------------------------------------- */
-  async function handleSubmit(values: VisaRequestFormValues & { files?: File[] }) {
-    onSubmit(values);
+  async function handleSubmit(
+    values: VisaRequestFormValues & { files?: File[]; newFiles?: File[] }
+  ) {
+    // Merge existing files with new files
+    const allFiles = [...(values.files || []), ...(values.newFiles || [])];
+
+    const submitValues = {
+      ...values,
+      files: allFiles,
+    };
+
+    onSubmit(submitValues);
   }
 
   /* ---- JSX ----------------------------------------------------------- */
@@ -169,11 +199,12 @@ export default function VisaWizardForm({
 
           return (
             <Form>
-              <FormHeader
+              {/* <FormHeader
                 showBackButton
                 fallbackPath="/requests/visaRequest"
                 status={status}
-              />
+                onBack={onBack}
+              /> */}
               <TabsWizard
                 steps={steps}
                 formik={formik}
@@ -181,8 +212,8 @@ export default function VisaWizardForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                fallbackPath="/requests/visaRequest"
                 isEditing={initialValues !== undefined}
+                backFallbackPath="/requests/visaRequest"
               />
             </Form>
           );

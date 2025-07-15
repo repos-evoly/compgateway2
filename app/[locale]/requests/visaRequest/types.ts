@@ -1,5 +1,23 @@
 
 
+export type Attachment = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  cblRequestId: string | null;
+  visaRequestId: string | null;
+  attSubject: string;
+  attFileName: string;
+  attMime: string;
+  attUrl: string;
+  attOriginalFileName: string;
+  createdBy: string;
+  description: string;
+  attSize: number;
+  companyId: string;
+  displayUrl?: string; // Added for display purposes
+};
+
 export type VisaRequestFormValues = {
     branch?: string;
     date?: string;
@@ -15,6 +33,7 @@ export type VisaRequestFormValues = {
     pldedge?: string;
     status?: string;
     files?: File[]; // Added for document uploads
+    attachmentUrls?: string[]; // Added for displaying existing attachments
   }
 
 
@@ -34,6 +53,9 @@ export type VisaRequestFormValues = {
     localAmount: number;
     pldedge: string;
     status: string;
+    reason: string | null;
+    attachmentId: string | null;
+    attachments: Attachment[];
     createdAt: string;
     updatedAt: string;
   };

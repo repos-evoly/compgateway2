@@ -80,7 +80,9 @@ export default function SingleVisaRequestPage() {
     foreignAmount: requestData.foreignAmount,
     localAmount: requestData.localAmount,
     pldedge: requestData.pldedge,
-    status: requestData.status
+    status: requestData.status,
+    // Add attachment URLs for display
+    attachmentUrls: requestData.attachments?.map(att => att.displayUrl || att.attUrl) || []
   };
 
   /*──────────────────────────── Submit (edit) handler ───────────────────────*/

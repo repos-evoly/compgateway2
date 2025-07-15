@@ -50,10 +50,12 @@ export type DocumentUploaderProps = {
   className?: string;
   label?: string;
   initialPreviewUrl?: string;
+  initialPreviewUrls?: string[]; // Added for multiple initial preview URLs
   canView?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
   canDownload?: boolean;
+  disabled?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -65,10 +67,12 @@ export const DocumentUploader = ({
   className,
   label = "Documents",
   initialPreviewUrl,
+  initialPreviewUrls,
   canView,
   canEdit,
   canDelete,
   canDownload,
+  disabled,
 }: DocumentUploaderProps) => {
   /* ---------- Action guards ---------- */
   const allowView = Boolean(canView);
@@ -81,11 +85,11 @@ export const DocumentUploader = ({
   const files = field.value ?? [];
 
   /* ---------- State ---------- */
-  const [previews, setPreviews] = useState<(string | null)[]>(
-    initialPreviewUrl ? [initialPreviewUrl] : []
-  );
+  // Initialize previews with initialPreviewUrls or initialPreviewUrl
+  const initialPreviews = initialPreviewUrls || (initialPreviewUrl ? [initialPreviewUrl] : []);
+  const [previews, setPreviews] = useState<(string | null)[]>(initialPreviews);
   const [notice, setNotice] = useState<string | null>(null);
-  const [showFiles, setShowFiles] = useState(Boolean(initialPreviewUrl));
+  const [showFiles, setShowFiles] = useState(Boolean(initialPreviews.length));
   const [dragActive, setDragActive] = useState(false);
   const [modalUrl, setModalUrl] = useState<string | null>(null);
   const [editIdx, setEditIdx] = useState<number | null>(null);
@@ -127,10 +131,11 @@ export const DocumentUploader = ({
       const nextPrev = [...previews];
       const nextFiles = [...files];
 
-      if (editIdx < (initialPreviewUrl ? 1 : 0)) {
+      const initialCount = initialPreviewUrls?.length || (initialPreviewUrl ? 1 : 0);
+      if (editIdx < initialCount) {
         nextPrev[editIdx] = newPrev[0];
       } else {
-        const fileOffset = editIdx - (initialPreviewUrl ? 1 : 0);
+        const fileOffset = editIdx - initialCount;
         nextFiles[fileOffset] = allowed[0];
         nextPrev[editIdx] = newPrev[0];
       }
@@ -176,8 +181,9 @@ export const DocumentUploader = ({
     const nextFiles = [...files];
     const nextPrev = [...previews];
 
-    if (idx >= (initialPreviewUrl ? 1 : 0)) {
-      const fileIdx = idx - (initialPreviewUrl ? 1 : 0);
+    const initialCount = initialPreviewUrls?.length || (initialPreviewUrl ? 1 : 0);
+    if (idx >= initialCount) {
+      const fileIdx = idx - initialCount;
       nextFiles.splice(fileIdx, 1);
       helpers.setValue(nextFiles);
     }
@@ -231,9 +237,19 @@ export const DocumentUploader = ({
         multiple={editIdx === null}
         onChange={onInputChange}
         className="hidden"
+        disabled={disabled}
       />
 
-      {previews.length === 0 && <DropZone />}
+      {!disabled && previews.length === 0 && <DropZone />}
+      {disabled && previews.length === 0 && (
+        <div className="relative flex flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed p-3 text-xs border-gray-300 bg-gray-50">
+          <FiUpload className="h-4 w-4 opacity-50" />
+          <span className="text-sm font-medium text-gray-500">{label}</span>
+          <span className="text-[10px] opacity-60 text-gray-400">
+            Read-only mode
+          </span>
+        </div>
+      )}
 
       {previews.length > 0 && (
         <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -255,7 +271,7 @@ export const DocumentUploader = ({
               </>
             )}
           </button>
-          {previews.length < maxFiles && (
+          {!disabled && allowEdit && previews.length < maxFiles && (
             <button
               type="button"
               onClick={openDialog}
@@ -270,8 +286,9 @@ export const DocumentUploader = ({
       {previews.length > 0 && showFiles && (
         <ul className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded bg-gray-50 p-2 text-xs">
           {previews.map((src, i) => {
-            const isInitial = i < (initialPreviewUrl ? 1 : 0);
-            const fileIdx = isInitial ? -1 : i - (initialPreviewUrl ? 1 : 0);
+            const initialCount = initialPreviewUrls?.length || (initialPreviewUrl ? 1 : 0);
+            const isInitial = i < initialCount;
+            const fileIdx = isInitial ? -1 : i - initialCount;
             const fileObj = fileIdx >= 0 ? files[fileIdx] : null;
             const isPdf = fileObj?.type === "application/pdf";
 

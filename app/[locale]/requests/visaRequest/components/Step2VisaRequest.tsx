@@ -11,9 +11,11 @@ import { DocumentUploader } from "@/app/components/reusable/DocumentUploader";
 type Step2VisaRequestProps = {
   /** If true, disable all inputs in this step */
   readOnly?: boolean;
+  /** URLs of existing attachments to display */
+  attachmentUrls?: string[];
 };
 
-export function Step2VisaRequest({ readOnly = false }: Step2VisaRequestProps) {
+export function Step2VisaRequest({ readOnly = false, attachmentUrls = [] }: Step2VisaRequestProps) {
   const t = useTranslations("visaRequest");
 
   return (
@@ -57,7 +59,12 @@ export function Step2VisaRequest({ readOnly = false }: Step2VisaRequestProps) {
           maxFiles={9}
           label={t("documents")}
           className="w-full"
-          canView
+          canView={true}
+          canEdit={false}
+          canDelete={false}
+          canDownload={true}
+          disabled={readOnly}
+          initialPreviewUrls={attachmentUrls}
         />
       </div>
     </div>

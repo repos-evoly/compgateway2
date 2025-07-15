@@ -79,7 +79,7 @@ export default function VisaWizardForm({
     },
     {
       title: t("step2Title"),
-      component: <Step2VisaRequest readOnly={readOnly} />,
+      component: <Step2VisaRequest readOnly={readOnly} attachmentUrls={initialValues?.attachmentUrls} />,
     },
   ];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CBLForm from "./components/CBLForm";
@@ -27,15 +27,20 @@ const CBLListPage: React.FC = () => {
     (async () => {
       setLoading(true);
       try {
-        console.log('Fetching CBL requests with:', { page, limit, searchTerm, searchBy });
+        console.log("Fetching CBL requests with:", {
+          page,
+          limit,
+          searchTerm,
+          searchBy,
+        });
         const res = await getCblRequests(page, limit, searchTerm, searchBy);
-        console.log('CBL API Response:', res); // Debug log
+        console.log("CBL API Response:", res); // Debug log
         setRows(res.data);
         setTotalPages(res.totalPages);
-        console.log('Updated state:', { 
-          rowsCount: res.data.length, 
-          totalPages: res.totalPages, 
-          currentPage: page 
+        console.log("Updated state:", {
+          rowsCount: res.data.length,
+          totalPages: res.totalPages,
+          currentPage: page,
         });
       } catch (e) {
         console.error("fetch CBLs", e);
@@ -56,7 +61,7 @@ const CBLListPage: React.FC = () => {
 
   /* ------------ pagination handler ------------ */
   const handlePageChange = (newPage: number) => {
-    console.log('Page change requested:', { from: page, to: newPage });
+    console.log("Page change requested:", { from: page, to: newPage });
     setPage(newPage);
   };
 
@@ -74,11 +79,30 @@ const CBLListPage: React.FC = () => {
     { value: "status", label: t("status") },
   ];
 
+  const handleDropdownSelect = useCallback(
+    (value: string) => {
+      if (value !== searchBy) {
+        setSearchBy(value);
+        setPage(1);
+      }
+    },
+    [searchBy]
+  );
+
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setPage(1);
+  }, []);
+
   /* ------------ render ------------ */
   return (
     <div className="p-4">
       {showForm ? (
-        <CBLForm onSubmit={onFormSave} onCancel={onFormCancel} onBack={onFormBack} />
+        <CBLForm
+          onSubmit={onFormSave}
+          onCancel={onFormCancel}
+          onBack={onFormBack}
+        />
       ) : (
         <CrudDataGrid
           data={rows}
@@ -90,14 +114,8 @@ const CBLListPage: React.FC = () => {
           showDropdown
           showSearchBar
           dropdownOptions={dropdownOptions}
-          onDropdownSelect={(v) => {
-            setSearchBy(v);
-            setPage(1);
-          }}
-          onSearch={(term) => {
-            setSearchTerm(term);
-            setPage(1);
-          }}
+          onDropdownSelect={handleDropdownSelect}
+          onSearch={handleSearch}
           showAddButton
           onAddClick={() => setShowForm(true)}
           loading={loading}

@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
-
+import { Attachment } from "./types";
 
 /* ------------------------------------------------------------------ */
 /* Initial values                                                     */
@@ -56,73 +56,95 @@ export const initialValues = {
 /* Validation schema                                                  */
 /* ------------------------------------------------------------------ */
 
-export const validationSchema = (t: (key: string) => string) => Yup.object({
-  id: Yup.number().typeError("ID must be a number").required("ID is required"),
+/* ------------------------------------------------------------------
+   Validation schema  – now includes `files` and `newFiles`
+   ------------------------------------------------------------------ */
+export const validationSchema = (t: (key: string) => string) =>
+  Yup.object({
+    id: Yup.number()
+      .typeError("ID must be a number")
+      .required("ID is required"),
 
-  currentAccount: Yup.string().required("Current account is required"),
-  partyName: Yup.string().required("Party name is required"),
-  capital: Yup.number().required("Capital is required"),
-  foundingDate: Yup.date().required("Founding date is required"),
-  legalForm: Yup.string().required("Legal form is required"),
-  branchOrAgency: Yup.string().required("Branch or agency is required"),
-  accountOpening: Yup.date().required("Account opening date is required"),
-  commercialLicense: Yup.string().required("Commercial license is required"),
-  validatyLicense: Yup.date().required("License validity date is required"),
-  commercialRegistration: Yup.string().required(
-    "Commercial registration is required"
-  ),
-  validatyRegister: Yup.date().required(
-    "Registration validity date is required"
-  ),
-  statisticalCode: Yup.string().required("Statistical code is required"),
-  validatyCode: Yup.date().required(
-    "Statistical code validity date is required"
-  ),
-  chamberNumber: Yup.string().required("Chamber number is required"),
-  validatyChamber: Yup.date().required("Chamber validity date is required"),
-  taxNumber: Yup.string().required("Tax number is required"),
-  office: Yup.string().required("Office is required"),
-  legalRepresentative: Yup.string().required(
-    "Legal representative name is required"
-  ),
-  representativeNumber: Yup.string().required(
-    "Representative number is required"
-  ),
-  birthDate: Yup.date().required("Birth date is required"),
-  passportNumber: Yup.string()
-    .required(t("passportNumber") + " " + t("isRequired"))
-    .test("len", t("passportNumber") + " must be exactly 8 characters", (val) =>
-      val ? val.length === 8 : false
+    /* ───────── business fields (unchanged) ───────── */
+    currentAccount: Yup.string().required("Current account is required"),
+    partyName: Yup.string().required("Party name is required"),
+    capital: Yup.number().required("Capital is required"),
+    foundingDate: Yup.date().required("Founding date is required"),
+    legalForm: Yup.string().required("Legal form is required"),
+    branchOrAgency: Yup.string().required("Branch or agency is required"),
+    accountOpening: Yup.date().required("Account opening date is required"),
+    commercialLicense: Yup.string().required("Commercial license is required"),
+    validatyLicense: Yup.date().required("License validity date is required"),
+    commercialRegistration: Yup.string().required(
+      "Commercial registration is required"
     ),
-  passportIssuance: Yup.date().required("Passport issuance date is required"),
-  passportExpiry: Yup.date().required("Passport expiry date is required"),
-  address: Yup.string().required("Address is required"),
-  mobile: Yup.string()
-    .required(t("mobile") + " " + t("isRequired"))
-    .test("len", t("mobile") + " must be exactly 10 digits", (val) =>
-      val ? val.length === 10 : false
+    validatyRegister: Yup.date().required(
+      "Registration validity date is required"
     ),
-  table1Data: Yup.array()
-    .of(
-      Yup.object({
-        name: Yup.string().required("Name is required"),
-        position: Yup.string().required("Position is required"),
-      })
-    )
-    .required("Table 1 data is required"),
+    statisticalCode: Yup.string().required("Statistical code is required"),
+    validatyCode: Yup.date().required(
+      "Statistical code validity date is required"
+    ),
+    chamberNumber: Yup.string().required("Chamber number is required"),
+    validatyChamber: Yup.date().required("Chamber validity date is required"),
+    taxNumber: Yup.string().required("Tax number is required"),
+    office: Yup.string().required("Office is required"),
+    legalRepresentative: Yup.string().required(
+      "Legal representative name is required"
+    ),
+    representativeNumber: Yup.string().required(
+      "Representative number is required"
+    ),
+    birthDate: Yup.date().required("Birth date is required"),
+    passportNumber: Yup.string()
+      .required(t("passportNumber") + " " + t("isRequired"))
+      .matches(/^\d{8,}$/, t("passportNumber") + " must be at least 8 digits"),
+    passportIssuance: Yup.date().required("Passport issuance date is required"),
+    passportExpiry: Yup.date().required("Passport expiry date is required"),
+    address: Yup.string().required("Address is required"),
+    mobile: Yup.string()
+      .required(t("mobile") + " " + t("isRequired"))
+      .test("len", t("mobile") + " must be exactly 10 digits", (val) =>
+        val ? val.length === 10 : false
+      ),
+    table1Data: Yup.array()
+      .of(
+        Yup.object({
+          name: Yup.string().required("Name is required"),
+          position: Yup.string().required("Position is required"),
+        })
+      )
+      .required("Table 1 data is required"),
+    table2Data: Yup.array()
+      .of(
+        Yup.object({
+          name: Yup.string().required("Name is required"),
+          signature: Yup.string().required("Signature is required"),
+        })
+      )
+      .required("Table 2 data is required"),
+    packingDate: Yup.date().required("Packing date is required"),
+    specialistName: Yup.string().required("Specialist name is required"),
 
-  table2Data: Yup.array()
-    .of(
-      Yup.object({
-        name: Yup.string().required("Name is required"),
-        signature: Yup.string().required("Signature is required"),
-      })
-    )
-    .required("Table 2 data is required"),
+    /* ───────── FILE ARRAYS (new) ───────── */
+    /* 1. existing attachments */
+    /* attachment arrays */
+    files: Yup.array()
+      .of(Yup.mixed<File>().defined())
+      .min(1, t("atLeastOneFile"))
+      .max(9, t("maxFiles"))
+      .defined(), //  ←—  not undefined any more
 
-  packingDate: Yup.date().required("Packing date is required"),
-  specialistName: Yup.string().required("Specialist name is required"),
-});
+    newFiles: Yup.array()
+      .of(Yup.mixed<File>().defined())
+      .max(9, t("maxFiles"))
+      .defined(), //  ←—  same here
+
+    status: Yup.string().optional(),
+    attachmentUrls: Yup.array().of(Yup.string().url().required()).optional(),
+    /* ---------- THE MISSING ONE ---------- */
+    attachments: Yup.array<Attachment>().defined(),
+  });
 
 /* ------------------------------------------------------------------ */
 /* Column helpers                                                     */
@@ -271,9 +293,9 @@ export const fields = (t: (key: string) => string) => [
   },
   {
     name: "passportNumber",
-    label: t("passportNumber"),
+    label: t("passportNumbers"),
     component: FormInputIcon,
-    type: "text",
+    type: "number",
     icon: <FaIdBadge />,
   },
   {

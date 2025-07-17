@@ -8,6 +8,7 @@ import React, {
   ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -32,6 +33,7 @@ import { CBLFormProps, TCBLValues } from "../types";
 import { addCblRequest, getKycByCode, updateCblRequest } from "../service";
 import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
+import { validationSchema as makeSchema } from "../data";
 
 /* ---------- helper types ---------- */
 type FieldMeta = {
@@ -226,6 +228,8 @@ const CBLForm: React.FC<CBLFormProps> = ({
     { start: 24, end: formFields.length, grid: 2 },
   ];
 
+  const schema = useMemo(() => makeSchema(t), [t]);
+
   /* render */
   return (
     <>
@@ -236,7 +240,11 @@ const CBLForm: React.FC<CBLFormProps> = ({
       </FormHeader>
 
       <div className="-mt-6 bg-gray-100 px-6 py-2">
-        <Form initialValues={mergedValues} onSubmit={handleSubmit}>
+        <Form
+          initialValues={mergedValues}
+          onSubmit={handleSubmit}
+          validationSchema={schema}
+        >
           {/* sections */}
           {sections.map((sec) => (
             <Section

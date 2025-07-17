@@ -81,6 +81,7 @@
       "representativeNumber":"الرقم الوطني للممثل القانوني",
       "birthDate":"تاريخ الميلاد",
       "passportNumber":"رقم جواز السفر",
+      "passportNumbers":"أرقام جوازات السفر",
       "passportIssuance":"تاريخ اصدار الجواز",
       "passportExpiry":"تاريخ انتهاء صلاحية الجواز",
       "mobile":"رقم الهاتف النقال",
@@ -145,7 +146,10 @@
       "createErrorTitle": "خطأ",
       "noItemFound": "لم يتم العثور على طلب CBL",
       "genericError": "حدث خطأ أثناء جلب طلب CBL",
-      "errorTitle": "خطأ"
+      "errorTitle": "خطأ",
+      "isRequired": "مطلوب",
+      "atLeastOneFile": "يجب تحميل ملف واحد على الأقل",
+      "maxFiles": "الحد الأقصى 9 ملفات مسموح بها"
   
     },
   

@@ -141,6 +141,8 @@
       "updateSuccessTitle": "نجاح",
       "updateSuccessMessage": "تم تحديث طلب CBL بنجاح.",
       "updateError": "فشل في تحديث طلب CBL",
+      "updateErrorTitle": "خطأ",
+      "createErrorTitle": "خطأ",
       "noItemFound": "لم يتم العثور على طلب CBL",
       "genericError": "حدث خطأ أثناء جلب طلب CBL",
       "errorTitle": "خطأ"

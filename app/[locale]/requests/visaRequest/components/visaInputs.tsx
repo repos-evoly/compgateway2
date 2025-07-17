@@ -61,7 +61,7 @@ export const step1VisaInputs = [
     label: "phoneNumberLinkedToNationalId",
     icon: <FiSmartphone />,
     type: "number",
-    maskingFormat: "000-0000000",
+    maskingFormat: "0000000000",
   },
 ];
 

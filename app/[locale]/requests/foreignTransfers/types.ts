@@ -5,16 +5,17 @@
  * "id?" if you might store an ID, or define it if it’s needed. 
  */
 export type ForeignTransfersFormValues = {
-  status: string;
+  status?: string;
+  reason?: string;
   id?: number; // if you want to keep track of the row ID as well
   toBank?: string;
   branch?: string;
   residentSupplierName?: string;
   residentSupplierNationality?: string;
-  nonResidentSupplierPassportNumber?: number;
+  nonResidentPassportNumber?: string;
   placeOfIssue?: string;
   dateOfIssue?: string;
-  nonResidentSupplierNationality?: string;
+  nonResidentNationality?: string;
   nonResidentAddress?: string;
 
   transferAmount?: number;
@@ -23,10 +24,10 @@ export type ForeignTransfersFormValues = {
   beneficiaryAddress?: string;
   externalBankName?: string;
   externalBankAddress?: string;
-  transferToAccountNumber?: number;
+  transferToAccountNumber?: string;
   transferToAddress?: string;
-  accountholderName?: string;
-  permenantAddress?: string;
+  accountHolderName?: string;
+  permanentAddress?: string;
   purposeOfTransfer?: string;
 };
 
@@ -54,10 +55,10 @@ export interface ForeignTransferDetailResponse {
   accountHolderName: string;
   permanentAddress: string;
   purposeOfTransfer: string;
-  status?: string;
+  status: string;
+  reason: string;
   createdAt: string;
   updatedAt: string;
-  accountNum?:string;
 }
 
 /** The shape of the listing response from /foreigntransfers (with pagination) */
@@ -95,5 +96,6 @@ export interface CreateForeignTransferPayload {
   accountHolderName: string;
   permanentAddress: string;
   purposeOfTransfer: string;
-  status?: string;
+  status: string;
+  reason: string;
 }

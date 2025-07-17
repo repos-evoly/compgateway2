@@ -123,11 +123,10 @@ export default function VisaWizardForm({
         .test("len", t("nationalId") + " must be exactly 12 digits", (val) =>
           val ? val.toString().length === 12 : false
         ),
-      phoneNumberLinkedToNationalId: Yup.string()
+      phoneNumberLinkedToNationalId: Yup.number()
         .required(t("phoneNumberLinkedToNationalId") + " " + t("isRequired"))
-        .matches(
-          /^\d{10}$/,
-          t("phoneNumberLinkedToNationalId") + " must be exactly 10 digits"
+        .test("len", t("phoneNumberLinkedToNationalId") + " must be exactly 10 digits",
+          (val) => val ? val.toString().length === 10 : false
         ),
     }),
     Yup.object({

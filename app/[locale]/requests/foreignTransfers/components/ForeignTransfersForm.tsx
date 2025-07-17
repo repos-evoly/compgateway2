@@ -19,15 +19,15 @@ import { step1Inputs, step2Inputs } from "./formInputsArrays";
  * ──────────────────────────────────────────────────────────────────────── */
 export type ForeignTransfersFormValues = {
   status?: string;
-  id: number;
+  reason?: string;
+  id?: number;
 
   /* Step 1 */
-  accountNum: string;
   toBank: string;
   branch: string;
   residentSupplierName: string;
   residentSupplierNationality: string;
-  nonResidentPassportNumber: number;
+  nonResidentPassportNumber: string;
   placeOfIssue: string;
   dateOfIssue: string;
   nonResidentNationality: string;
@@ -40,7 +40,7 @@ export type ForeignTransfersFormValues = {
   beneficiaryAddress: string;
   externalBankName: string;
   externalBankAddress: string;
-  transferToAccountNumber: number;
+  transferToAccountNumber: string;
   transferToAddress: string;
   accountHolderName: string;
   permanentAddress: string;
@@ -59,12 +59,11 @@ type ForeignTransfersFormProps = {
  * ──────────────────────────────────────────────────────────────────────── */
 const defaultValues: ForeignTransfersFormValues = {
   id: 0,
-  accountNum: "",
   toBank: "",
   branch: "",
   residentSupplierName: "",
   residentSupplierNationality: "",
-  nonResidentPassportNumber: 0,
+  nonResidentPassportNumber: "",
   placeOfIssue: "",
   dateOfIssue: "",
   nonResidentNationality: "",
@@ -75,13 +74,14 @@ const defaultValues: ForeignTransfersFormValues = {
   beneficiaryAddress: "",
   externalBankName: "",
   externalBankAddress: "",
-  transferToAccountNumber: 0,
+  transferToAccountNumber: "",
   transferToAddress: "",
   accountHolderName: "",
   permanentAddress: "",
   purposeOfTransfer: "",
   uploadDocuments: undefined,
   status: undefined,
+  reason: "",
 };
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -117,9 +117,6 @@ export default function ForeignTransfersForm({
   /* Step-scoped validation */
   const stepValidations = [
     Yup.object({
-      accountNum: Yup.string().required(
-        `${t("accountNum")} ${t("isRequired")}`
-      ),
       toBank: Yup.string().required(`${t("toBank")} ${t("isRequired")}`),
       branch: Yup.string().required(`${t("branch")} ${t("isRequired")}`),
       residentSupplierName: Yup.string().required(
@@ -128,8 +125,7 @@ export default function ForeignTransfersForm({
       residentSupplierNationality: Yup.string().required(
         `${t("residentSuppNationality")} ${t("isRequired")}`
       ),
-      nonResidentPassportNumber: Yup.number()
-        .typeError(`${t("nonResidentPassport")} ${t("mustBeNumber")}`)
+      nonResidentPassportNumber: Yup.string()
         .required(`${t("nonResidentPassport")} ${t("isRequired")}`),
       placeOfIssue: Yup.string().required(
         `${t("placeOfIssue")} ${t("isRequired")}`
@@ -163,8 +159,7 @@ export default function ForeignTransfersForm({
       externalBankAddress: Yup.string().required(
         `${t("externalBankAddress")} ${t("isRequired")}`
       ),
-      transferToAccountNumber: Yup.number()
-        .typeError(`${t("transferToAccount")} ${t("mustBeNumber")}`)
+      transferToAccountNumber: Yup.string()
         .required(`${t("transferToAccount")} ${t("isRequired")}`),
       transferToAddress: Yup.string().required(
         `${t("transferToAddress")} ${t("isRequired")}`

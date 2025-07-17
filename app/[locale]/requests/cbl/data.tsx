@@ -15,9 +15,11 @@ import {
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 
+
 /* ------------------------------------------------------------------ */
 /* Initial values                                                     */
 /* ------------------------------------------------------------------ */
+
 export const initialValues = {
   currentAccount: "", // moved to top
   partyName: "",
@@ -53,7 +55,8 @@ export const initialValues = {
 /* ------------------------------------------------------------------ */
 /* Validation schema                                                  */
 /* ------------------------------------------------------------------ */
-export const validationSchema = Yup.object({
+
+export const validationSchema = (t: (key: string) => string) => Yup.object({
   id: Yup.number().typeError("ID must be a number").required("ID is required"),
 
   currentAccount: Yup.string().required("Current account is required"),
@@ -87,15 +90,18 @@ export const validationSchema = Yup.object({
   ),
   birthDate: Yup.date().required("Birth date is required"),
   passportNumber: Yup.string()
-    .required("Passport number is required")
-    .length(8, "Passport number must be exactly 8 characters"),
+    .required(t("passportNumber") + " " + t("isRequired"))
+    .test("len", t("passportNumber") + " must be exactly 8 characters", (val) =>
+      val ? val.length === 8 : false
+    ),
   passportIssuance: Yup.date().required("Passport issuance date is required"),
   passportExpiry: Yup.date().required("Passport expiry date is required"),
-  mobile: Yup.string()
-    .required("Mobile number is required")
-    .matches(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
   address: Yup.string().required("Address is required"),
-
+  mobile: Yup.string()
+    .required(t("mobile") + " " + t("isRequired"))
+    .test("len", t("mobile") + " must be exactly 10 digits", (val) =>
+      val ? val.length === 10 : false
+    ),
   table1Data: Yup.array()
     .of(
       Yup.object({

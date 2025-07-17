@@ -136,6 +136,8 @@
     "updateSuccessTitle": "Success",
     "updateSuccessMessage": "CBL request updated successfully.",
     "updateError": "Failed to update CBL request",
+    "updateErrorTitle": "Error",
+    "createErrorTitle": "Error",
     "noItemFound": "CBL request not found",
     "genericError": "An error occurred while fetching the CBL request",
     "errorTitle": "Error"

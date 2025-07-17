@@ -52,14 +52,14 @@ export default function ForeignTransfersListPage() {
         searchBy
       );
       // Transform the API data => array of ForeignTransfersFormValues
-      const mapped: ForeignTransfersFormValues[] = response.data.map(
+      const mapped = response.data.map(
         (item) => ({
           id: item.id,
           toBank: item.toBank,
           branch: item.branch,
           residentSupplierName: item.residentSupplierName,
           residentSupplierNationality: item.residentSupplierNationality,
-          nonResidentPassportNumber: Number(item.nonResidentPassportNumber),
+          nonResidentPassportNumber: item.nonResidentPassportNumber,
           placeOfIssue: item.placeOfIssue,
           dateOfIssue: item.dateOfIssue,
           nonResidentNationality: item.nonResidentNationality,
@@ -70,15 +70,15 @@ export default function ForeignTransfersListPage() {
           beneficiaryAddress: item.beneficiaryAddress,
           externalBankName: item.externalBankName,
           externalBankAddress: item.externalBankAddress,
-          transferToAccountNumber: Number(item.transferToAccountNumber),
+          transferToAccountNumber: item.transferToAccountNumber,
           transferToAddress: item.transferToAddress,
           accountHolderName: item.accountHolderName,
           permanentAddress: item.permanentAddress,
           purposeOfTransfer: item.purposeOfTransfer,
           status: item.status,
-          accountNum: item.accountNum!,
+          reason: item.reason,
         })
-      );
+      ) as unknown as ForeignTransfersFormValues[];
 
       setData(mapped);
       setTotalPages(response.totalPages || 1);
@@ -105,27 +105,28 @@ export default function ForeignTransfersListPage() {
     try {
       // Convert needed fields to string if your API requires them:
       await createForeignTransfer({
-        toBank: values.toBank,
-        branch: values.branch,
-        residentSupplierName: values.residentSupplierName,
-        residentSupplierNationality: values.residentSupplierNationality,
-        nonResidentPassportNumber: values.nonResidentPassportNumber.toString(),
-        placeOfIssue: values.placeOfIssue,
-        dateOfIssue: values.dateOfIssue,
-        nonResidentNationality: values.nonResidentNationality,
-        nonResidentAddress: values.nonResidentAddress,
-        transferAmount: values.transferAmount,
-        toCountry: values.toCountry,
-        beneficiaryName: values.beneficiaryName,
-        beneficiaryAddress: values.beneficiaryAddress,
-        externalBankName: values.externalBankName,
-        externalBankAddress: values.externalBankAddress,
-        transferToAccountNumber: values.transferToAccountNumber.toString(),
-        transferToAddress: values.transferToAddress,
-        accountHolderName: values.accountHolderName,
-        permanentAddress: values.permanentAddress,
-        purposeOfTransfer: values.purposeOfTransfer,
-        status: values.status!,
+        toBank: values.toBank || "",
+        branch: values.branch || "",
+        residentSupplierName: values.residentSupplierName || "",
+        residentSupplierNationality: values.residentSupplierNationality || "",
+        nonResidentPassportNumber: String(values.nonResidentPassportNumber || ""),
+        placeOfIssue: values.placeOfIssue || "",
+        dateOfIssue: values.dateOfIssue || "",
+        nonResidentNationality: values.nonResidentNationality || "",
+        nonResidentAddress: values.nonResidentAddress || "",
+        transferAmount: values.transferAmount || 0,
+        toCountry: values.toCountry || "",
+        beneficiaryName: values.beneficiaryName || "",
+        beneficiaryAddress: values.beneficiaryAddress || "",
+        externalBankName: values.externalBankName || "",
+        externalBankAddress: values.externalBankAddress || "",
+        transferToAccountNumber: String(values.transferToAccountNumber || ""),
+        transferToAddress: values.transferToAddress || "",
+        accountHolderName: values.accountHolderName || "",
+        permanentAddress: values.permanentAddress || "",
+        purposeOfTransfer: values.purposeOfTransfer || "",
+        status: values.status || "",
+        reason: values.reason || "",
       });
 
       // After successful creation, re-fetch data so new entry is shown
@@ -145,7 +146,7 @@ export default function ForeignTransfersListPage() {
 
   // We'll create a smaller "gridData" with just a few columns displayed
   const gridData = data.map((item) => ({
-    id: item.id,
+    id: item.id ?? 0,
     toBank: item.toBank ?? "",
     branch: item.branch ?? "",
     transferAmount: item.transferAmount ?? 0,

@@ -79,6 +79,7 @@
     "representativeNumber": "Legal‑Rep National Number",
     "birthDate": "Date of Birth",
     "passportNumber": "Passport Number",
+    "passportNumbers": "Passport Numbers",
     "passportIssuance": "Passport Issue Date",
     "passportExpiry": "Passport Expiry Date",
     "mobile": "Mobile Phone",
@@ -136,9 +137,14 @@
     "updateSuccessTitle": "Success",
     "updateSuccessMessage": "CBL request updated successfully.",
     "updateError": "Failed to update CBL request",
+    "updateErrorTitle": "Error",
+    "createErrorTitle": "Error",
     "noItemFound": "CBL request not found",
     "genericError": "An error occurred while fetching the CBL request",
-    "errorTitle": "Error"
+    "errorTitle": "Error",
+    "isRequired": "Required",
+    "atLeastOneFile": "At least one file is required",
+    "maxFiles": "Maximum 9 files allowed"
   },
 
   "signaturePad": {

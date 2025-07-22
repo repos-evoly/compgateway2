@@ -2,13 +2,7 @@
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // adjust the import path
 
-type FilterValues = {
-  account: string;
-  fromDate: string;
-  toDate: string;
-};
-
-type StatementApiResponseItem = {
+interface StatementApiResponseItem {
   postingDate: string;
   narratives: string[];
   amount: number;
@@ -17,20 +11,23 @@ type StatementApiResponseItem = {
   isDeleted: boolean;
   debit: number | string;
   credit: number | string;
-};
+}
 
-export type StatementLine = {
+export interface StatementLine {
   postingDate: string;
   amount: number;
-  drCr: string;
-  nr1: string;
-  nr2: string;
-  nr3: string;
-  isActive: boolean;
-  isDeleted: boolean;
-  debit: number | string;
-  credit: number | string;
-  };
+  debit?: string | number;
+  credit?: string | number;
+  nr1?: string;
+  nr2?: string;
+  nr3?: string;
+  balance?: number;
+  reference?: string;
+  drCr?: string;
+  isActive?: string | number;
+  isDeleted?: string | number;
+  [key: string]: string | number | undefined;
+}
 
 /**
  * Retrieves the statement of account from the external API via GET,
@@ -41,9 +38,14 @@ export async function getStatement({
   account,
   fromDate,
   toDate,
-}: FilterValues): Promise<StatementLine[]> {
+}: {
+  account: string;
+  fromDate: string;
+  toDate: string;
+}): Promise<StatementLine[]> {
   // 1. Retrieve the token from cookies
   const token = getAccessTokenFromCookies();
+
   if (!token) {
     throw new Error("No access token found in cookies.");
   }
@@ -90,8 +92,8 @@ export async function getStatement({
       nr1,
       nr2,
       nr3,
-      isActive: item.isActive,
-      isDeleted: item.isDeleted,
+      isActive: item.isActive ? 1 : 0,
+      isDeleted: item.isDeleted ? 1 : 0,
       debit: item.debit,
       credit: item.credit,
     };

@@ -41,7 +41,7 @@ const PdfDownloadButton: React.FC<PdfDownloadButtonProps> = ({
         branchAgency: '0015',
         timePeriod: `${fromDateFormatted} - ${toDateFormatted}`
       }, bgImageBase64);
-    } catch (error) {
+    } catch {
       alert('Failed to generate PDF.');
     } finally {
       setIsLoading(false);

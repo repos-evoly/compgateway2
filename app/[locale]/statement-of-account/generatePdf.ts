@@ -5,7 +5,6 @@ import type { StatementLine } from './services';
 registerAmiriFont();
 
 type Rgb = { r: number; g: number; b: number };
-const primary: Rgb   = { r: 0x2a, g: 0x6c, b: 0x57 }; // #2A6C57
 const textCol: Rgb   = { r: 0x1f, g: 0x29, b: 0x37 }; // #1F2937
 
 export function generateStatementPdf(
@@ -84,7 +83,7 @@ export function generateStatementPdf(
   for (let row = 0; row < 3; row++) {
     // Value cell (left col)
     let x = leftBoxLeft;
-    let y = boxTop + row * cellHeight;
+    const y = boxTop + row * cellHeight;
     doc.setFont('Amiri', 'normal').setFontSize(10);
     doc.text(leftBoxLabels[row].value, x + cellWidth / 2, y + cellHeight / 2 + 1, { align: 'center', baseline: 'middle' });
     // Label cell (right col)
@@ -98,7 +97,7 @@ export function generateStatementPdf(
   for (let row = 0; row < 3; row++) {
     // Value cell (left col)
     let x = rightBoxLeft;
-    let y = boxTop + row * cellHeight;
+    const y = boxTop + row * cellHeight;
     doc.setFont('Amiri', 'normal').setFontSize(10);
     doc.text(rightBoxLabels[row].value, x + cellWidth / 2, y + cellHeight / 2 + 1, { align: 'center', baseline: 'middle' });
     // Label cell (right col)
@@ -155,7 +154,6 @@ export function generateStatementPdf(
   while (rowIdx < lines.length) {
     // For first page, fill as many rows as fit
     let rowsOnThisPage = 0;
-    let yStart = y;
     while (rowIdx < lines.length && rowsOnThisPage < 20 && y + rowHeight < pageHeight - margin - 20) {
       x = tableLeft;
       // Prepare all cell texts and wrapped lines for this row

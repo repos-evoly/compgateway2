@@ -16,6 +16,7 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
   isModal,
   modalComponent,
   onModalOpen,
+  canEdit = true,
 }) => {
   const t = useTranslations("crudDataGrid");
   const router = useRouter();
@@ -152,6 +153,7 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
    * We do: /currentPath/[rowId].
    */
   const handleRowDoubleClick = (rowIndex: number) => {
+    if (!canEdit) return;
     if (isModal && onModalOpen) {
       onModalOpen(rowIndex, data[rowIndex]);
       setActiveRow(rowIndex);

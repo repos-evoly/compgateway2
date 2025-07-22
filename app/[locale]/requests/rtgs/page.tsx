@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
@@ -10,6 +10,24 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import type { TRTGSValues, TRTGSFormValues } from "./types";
 import { getRtgsRequests, createRtgsRequest } from "./services";
+
+// Permission helpers (copied from other pages)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
 
 const RTGSListPage: React.FC = () => {
   const t = useTranslations("RTGSForm");
@@ -104,10 +122,18 @@ const RTGSListPage: React.FC = () => {
     setModalOpen(false);
   };
 
+  // Permissions
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("RTGSCanAdd");
+  const canEdit = permissionsSet.has("RTGSCanEdit");
+
   /* ─────────────────────────── Render ───────────────────────────────────── */
   return (
     <div className="p-4">
-      {showForm ? (
+      {showForm && canAdd ? (
         <RTGSForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} />
       ) : (
         <CrudDataGrid
@@ -116,9 +142,10 @@ const RTGSListPage: React.FC = () => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          showAddButton
+          showAddButton={canAdd}
           onAddClick={handleAddClick}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
 

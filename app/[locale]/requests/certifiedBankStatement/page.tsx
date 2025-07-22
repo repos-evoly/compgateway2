@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -16,6 +16,24 @@ import type {
   CertifiedBankStatementRequest,
   CertifiedBankStatementRequestWithID,
 } from "./types";
+
+// Permission helpers (copied from CBL page)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
 
 export default function CertifiedBankStatementPage() {
   const t = useTranslations("bankStatement");
@@ -106,9 +124,17 @@ export default function CertifiedBankStatementPage() {
   };
 
   /*──────────────────────────── Render ──────────────────────────────────*/
+  // Permissions
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("CertifiedBankStatementCanAdd");
+  const canEdit = permissionsSet.has("CertifiedBankStatementCanEdit");
+
   return (
     <div className="p-6">
-      {showForm ? (
+      {showForm && canAdd ? (
         <CertifiedBankStatementForm onSubmit={handleFormSubmit} />
       ) : (
         <CrudDataGrid
@@ -117,9 +143,10 @@ export default function CertifiedBankStatementPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          showAddButton
+          showAddButton={canAdd}
           onAddClick={handleAddClick}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
 

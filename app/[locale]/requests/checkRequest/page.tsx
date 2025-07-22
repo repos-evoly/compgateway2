@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -11,6 +11,24 @@ import { getCheckRequests, createCheckRequest } from "./services";
 import { TCheckRequestFormValues } from "./types";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
+
+// Permission helpers (copied from other pages)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
 
 const CheckRequestPage: React.FC = () => {
   const t = useTranslations("CheckRequest");
@@ -34,6 +52,14 @@ const CheckRequestPage: React.FC = () => {
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
+
+  /* ─── Permissions ─────────────────────────────────────────── */
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("CheckRequestCanAdd");
+  const canEdit = permissionsSet.has("CheckRequestCanEdit");
 
   /* ─── Fetch data ──────────────────────────────────────────── */
   useEffect(() => {
@@ -126,7 +152,7 @@ const CheckRequestPage: React.FC = () => {
   /* ─── Render ──────────────────────────────────────────────── */
   return (
     <div className="p-4">
-      {showForm ? (
+      {showForm && canAdd ? (
         <CheckRequestForm
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
@@ -143,9 +169,10 @@ const CheckRequestPage: React.FC = () => {
           showDropdown
           onSearch={handleSearch}
           onDropdownSelect={handleDropdownSelect}
-          showAddButton
+          showAddButton={canAdd}
           onAddClick={handleAddClick}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
 

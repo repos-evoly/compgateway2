@@ -141,7 +141,8 @@ export type CrudDataGridBodyProps = {
   isComponent?: boolean;
   componentToRender?: React.ReactNode;
   onComponentRender?: (rowIndex: number, row: T) => void;
-  actionsPosition?:string
+  actionsPosition?:string;
+  canEdit?: boolean;
 };
 
 export type Action = {
@@ -223,6 +224,7 @@ export type AddButtonProps =
       onDropdownSelect?: (optionValue: string ) => void;
       dropdownOptions?: DropdownOption[];
       loading?: boolean;
+      canEdit?: boolean;
     } & ActionsProps & {
       isModal?: boolean;
       modalComponent?: React.ReactNode;

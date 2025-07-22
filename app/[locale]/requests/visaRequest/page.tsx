@@ -1,7 +1,7 @@
 // app/visarequests/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -10,6 +10,24 @@ import VisaWizardForm from "./components/VisaRequest";
 
 import type { VisaRequestApiItem, VisaRequestFormValues } from "./types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+
+// Permission helpers (copied from other pages)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
 
 export default function VisaRequestListPage() {
   const t = useTranslations("visaRequest");
@@ -32,6 +50,14 @@ export default function VisaRequestListPage() {
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Permissions
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("VisaRequestCanAdd");
+  const canEdit = permissionsSet.has("VisaRequestCanEdit");
 
 
   /*─────────────────────────── Fetch list  ─────────────────────────────────*/
@@ -110,7 +136,7 @@ export default function VisaRequestListPage() {
   /*─────────────────────────── Render  ─────────────────────────────────────*/
   return (
     <div className="p-4">
-      {showForm ? (
+      {showForm && canAdd ? (
         <VisaWizardForm onSubmit={handleFormSubmit} onBack={handleBackFromForm} />
       ) : (
         <CrudDataGrid
@@ -125,9 +151,10 @@ export default function VisaRequestListPage() {
             setSearchTerm(term);
             setCurrentPage(1);
           }}
-          showAddButton
+          showAddButton={canAdd}
           onAddClick={handleAddClick}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
 

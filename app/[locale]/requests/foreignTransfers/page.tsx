@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -10,6 +10,24 @@ import ForeignTransfersForm, {
 } from "./components/ForeignTransfersForm";
 
 import { getForeignTransfers, createForeignTransfer } from "./services";
+
+// Permission helpers (copied from other pages)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
 
 export default function ForeignTransfersListPage() {
   const t = useTranslations("foreignTransfers");
@@ -32,6 +50,14 @@ export default function ForeignTransfersListPage() {
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Permissions
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("ForeignTransfersCanAdd");
+  const canEdit = permissionsSet.has("ForeignTransfersCanEdit");
 
   // Each page => limit=10
   const limit = 10;
@@ -162,7 +188,7 @@ export default function ForeignTransfersListPage() {
 
   return (
     <div className="p-4">
-      {showForm ? (
+      {showForm && canAdd ? (
         <ForeignTransfersForm onSubmit={handleFormSubmit} />
       ) : (
         <CrudDataGrid
@@ -188,9 +214,10 @@ export default function ForeignTransfersListPage() {
             { value: "toBank", label: t("toBank") },
           ]}
           // Show "Add" button => open form wizard
-          showAddButton
+          showAddButton={canAdd}
           onAddClick={handleAddClick}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
       <ErrorOrSuccessModal

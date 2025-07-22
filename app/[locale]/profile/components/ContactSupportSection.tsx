@@ -6,15 +6,15 @@ import { FiLifeBuoy, FiPhone, FiMail } from "react-icons/fi";
 import { useTranslations } from "next-intl";
 
 /**
- * A static “Contact Support” card – **no props, no API calls**.
- * Hard-coded support phone, e-mail, and availability.
+ * “Contact Support” card showing the real phone numbers.
+ * Keeps the same layout, icons, and translation keys as before.
  */
 export default function ContactSupportSection() {
   const t = useTranslations("profile.contactSupportSection");
 
-  /* Hard-coded details */
-  const SUPPORT_PHONE = "+961 1 234 567";
-  const SUPPORT_EMAIL = "support@compgateway.com";
+  /* Real support numbers */
+  const LOCAL_PHONE = "1595"; // داخل ليبيا
+  const INTERNATIONAL_PHONE = "+218 21 366 0451";
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg">
@@ -28,24 +28,22 @@ export default function ContactSupportSection() {
 
       {/* Body */}
       <div className="px-6 py-6 space-y-4">
-        {/* Phone */}
+        {/* Local phone number */}
         <div className="flex items-start gap-3">
           <FiPhone className="text-gray-400 mt-1.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium text-gray-500">{t("phone")}</p>
-            <p className="text-sm font-semibold text-gray-900">
-              {SUPPORT_PHONE}
-            </p>
+            <p className="text-sm font-semibold text-gray-900">{LOCAL_PHONE}</p>
           </div>
         </div>
 
-        {/* Email */}
+        {/* International phone number */}
         <div className="flex items-start gap-3">
           <FiMail className="text-gray-400 mt-1.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium text-gray-500">{t("email")}</p>
             <p className="text-sm font-semibold text-gray-900">
-              {SUPPORT_EMAIL}
+              {INTERNATIONAL_PHONE}
             </p>
           </div>
         </div>

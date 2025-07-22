@@ -159,6 +159,17 @@ export default function LoginForm(): JSX.Element {
             color="info-dark"
           />
         </Form>
+        {/* Emergency contact */}
+        <div className="mt-6 text-center text-gray-700 text-sm leading-relaxed">
+          في حال الطوارئ، يرجى الاتصال بمركز خدمة الزبائن على:
+          <br />
+          <span className="font-bold text-lg">1595</span> (داخل ليبيا)
+          <br />
+          <span className="font-bold text-lg">
+            218&nbsp;21&nbsp;366&nbsp;0451+
+          </span>{" "}
+          (دوليًا)
+        </div>
       </div>
 
       {/* 2FA Verification Overlay */}

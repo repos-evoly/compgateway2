@@ -1,11 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CBLForm from "./components/CBLForm";
 import { getCblRequests } from "./service";
 import { TCBLValues } from "./types";
+
+// Permission helpers (copied from SideBar2.tsx)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
 
 const CBLListPage: React.FC = () => {
   const t = useTranslations("cblForm");
@@ -21,6 +39,13 @@ const CBLListPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
+
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("CBLCanAdd");
+  const canEdit = permissionsSet.has("CBLCanEdit");
 
   /* ------------ fetch list ------------ */
   useEffect(() => {
@@ -116,9 +141,10 @@ const CBLListPage: React.FC = () => {
           dropdownOptions={dropdownOptions}
           onDropdownSelect={handleDropdownSelect}
           onSearch={handleSearch}
-          showAddButton
+          showAddButton={canAdd}
           onAddClick={() => setShowForm(true)}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
     </div>

@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -23,6 +23,24 @@ import type {
 /* ------------------------------------------------------------------ */
 /* Component                                                          */
 /* ------------------------------------------------------------------ */
+// Permission helpers (copied from other pages)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
+
 export default function CreditFacilityPage() {
   /* ─── i18n hooks ──────────────────────────────────────────────── */
   const tCol = useTranslations("creditFacility.page.columns");
@@ -129,10 +147,18 @@ export default function CreditFacilityPage() {
 
   const handleFormCancel = () => setShowForm(false);
 
+  /* ─── Permissions ─────────────────────────────────────────────── */
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("CreditFacilityCanAdd");
+  const canEdit = permissionsSet.has("CreditFacilityCanEdit");
+
   /* ─── JSX ────────────────────────────────────────────────────── */
   return (
     <div className="p-4">
-      {showForm ? (
+      {showForm && canAdd ? (
         <CreditFacilityForm
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
@@ -155,10 +181,11 @@ export default function CreditFacilityPage() {
           ]}
           onDropdownSelect={handleDropdownSelect}
           /* add */
-          showAddButton
+          showAddButton={canAdd}
           addButtonLabel={tUi("addButton")}
           onAddClick={() => setShowForm(true)}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
 

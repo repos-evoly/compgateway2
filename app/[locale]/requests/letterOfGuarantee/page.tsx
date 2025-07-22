@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -23,6 +23,24 @@ import type {
 /* ------------------------------------------------------------------ */
 /* Component                                                          */
 /* ------------------------------------------------------------------ */
+// Permission helpers (copied from other pages)
+const getCookieValue = (key: string): string | undefined =>
+  typeof document !== "undefined"
+    ? document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${key}=`))
+        ?.split("=")[1]
+    : undefined;
+
+const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
+  if (!value) return new Set<string>();
+  try {
+    return new Set(JSON.parse(decodeURIComponent(value)));
+  } catch {
+    return new Set<string>();
+  }
+};
+
 export default function LetterOfGuaranteePage() {
   /* --------------------------------------------------------------
    * Translation hooks
@@ -51,6 +69,13 @@ export default function LetterOfGuaranteePage() {
   const [modalMsg, setModalMsg] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
+  /* Permissions */
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canAdd = permissionsSet.has("LetterOfGuaranteeCanAdd");
+  const canEdit = permissionsSet.has("LetterOfGuaranteeCanEdit");
 
   /* --------------------------------------------------------------
    * Fetch helper
@@ -98,7 +123,6 @@ export default function LetterOfGuaranteePage() {
     { key: "type", label: tCol("type") },
     { key: "status", label: tCol("status") },
     { key: "createdAt", label: tCol("createdAt") },
-    
   ];
 
   /* --------------------------------------------------------------
@@ -147,7 +171,7 @@ export default function LetterOfGuaranteePage() {
   return (
     <div className="p-4">
       {/* Add / grid toggle */}
-      {showForm ? (
+      {showForm && canAdd ? (
         <LetterOfGuaranteeForm
           onSubmit={handleFormSubmit}
           onCancel={() => setShowForm(false)}
@@ -170,10 +194,11 @@ export default function LetterOfGuaranteePage() {
           ]}
           onDropdownSelect={handleDropdownSelect}
           /* add button */
-          showAddButton
-          addButtonLabel={tUi("addButton")} /* if CrudDataGrid supports label */
+          showAddButton={canAdd}
+          addButtonLabel={tUi("addButton")}
           onAddClick={() => setShowForm(true)}
           loading={loading}
+          canEdit={canEdit}
         />
       )}
 

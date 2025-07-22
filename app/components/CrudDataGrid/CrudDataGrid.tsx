@@ -37,6 +37,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   currentPage,
   totalPages,
   loading = false,
+  canEdit,
 }) => {
   const t = useTranslations("crudDataGrid");
 
@@ -140,6 +141,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
         isModal={isModal}
         modalComponent={modalComponent}
         onModalOpen={onModalOpen}
+        canEdit={canEdit}
       />
 
       {/* Pagination */}

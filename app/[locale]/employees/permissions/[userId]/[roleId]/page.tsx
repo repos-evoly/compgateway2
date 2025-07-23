@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation"; // useParams hook
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { Formik, Form } from "formik";
 import {
   getPermissionsByUserId,
@@ -9,38 +10,44 @@ import {
   updateEmployeePermissions,
 } from "../../../services";
 import type { CompanyPermissions, UserPermissions } from "../../../types";
-import SettingsBox from "@/app/components/reusable/SettingsBox";
-import SwitchWrapper from "@/app/components/FormUI/Switch";
-import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import FormHeader from "@/app/components/reusable/FormHeader";
-import {
-  FaLock,
-  FaEye,
-  FaUserShield,
-  FaCog,
-  FaTrashAlt,
-  FaChartPie,
-} from "react-icons/fa";
-import { FiPlus, FiMinus } from "react-icons/fi";
-import BackButton from "@/app/components/reusable/BackButton";
-import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import LoadingPage from "@/app/components/reusable/Loading";
+import PermissionsContainer from "../../../components/PermissionsContainer";
+import BackButton from "@/app/components/reusable/BackButton";
+
+import {
+  FiSave,
+  FiShield,
+  FiEye,
+  FiSettings,
+  FiUsers,
+  FiCreditCard,
+  FiFileText,
+  FiDatabase,
+  FiLock,
+  FiBarChart2,
+} from "react-icons/fi";
+import SubmitButton from "@/app/components/FormUI/SubmitButton";
+
+/* ---------- util types ---------- */
+type GroupKey = "dashboard" | "financial" | "employees" | "requests" | "system";
 
 export default function PermissionsPage() {
-  // Read the dynamic route segments from the URL
+  /* ---------- route params ---------- */
   const { userId, roleId } = useParams() as { userId: string; roleId: string };
   const numericRoleId = Number(roleId);
 
+  /* ---------- locale ---------- */
+  const locale = useLocale();
+  const isArabic = locale === "ar";
+
+  /* ---------- data state ---------- */
   const [companyPerms, setCompanyPerms] = useState<CompanyPermissions[]>([]);
   const [userPerms, setUserPerms] = useState<UserPermissions[]>([]);
   const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState<number>(6);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const t = useTranslations("employees.permissionsPage");
-
-  console.log("PermissionsPage route params:", { userId, roleId });
-
-  // Fetch master list + user's current perms
+  /* ---------- data fetch ---------- */
   useEffect(() => {
     async function fetchAll() {
       try {
@@ -56,127 +63,157 @@ export default function PermissionsPage() {
         setLoading(false);
       }
     }
-
-    if (userId) {
-      fetchAll();
-    }
+    if (userId) void fetchAll();
   }, [userId]);
 
-  if (loading) {
-    return <LoadingPage />;
-  }
+  if (loading) return <LoadingPage />;
 
-  // Prepare Formik initial values
+  /* ---------- Formik initial values ---------- */
   const initialValues: Record<string, boolean> = {};
   companyPerms.forEach((cp) => {
     const assigned = userPerms.find((u) => u.permissionId === cp.id);
     initialValues[`perm_${cp.id}`] = Boolean(assigned?.hasPermission);
   });
 
-  // Icon mapping
+  /* ---------- grouping ---------- */
+  const groupPermissions = (perms: CompanyPermissions[]) => {
+    const groups: Record<GroupKey, CompanyPermissions[]> = {
+      dashboard: [],
+      financial: [],
+      employees: [],
+      requests: [],
+      system: [],
+    };
+
+    perms.forEach((perm) => {
+      const name = perm.nameEn.toLowerCase();
+      if (name.includes("dashboard") || name.includes("view")) {
+        groups.dashboard.push(perm);
+      } else if (
+        name.includes("transfer") ||
+        name.includes("currency") ||
+        name.includes("statement")
+      ) {
+        groups.financial.push(perm);
+      } else if (name.includes("employee") || name.includes("representative")) {
+        groups.employees.push(perm);
+      } else if (name.includes("request")) {
+        groups.requests.push(perm);
+      } else {
+        groups.system.push(perm);
+      }
+    });
+
+    return groups;
+  };
+
+  const grouped = groupPermissions(companyPerms);
+
+  /* ---------- icons ---------- */
+  const groupIcons: Record<GroupKey, React.ReactNode> = {
+    dashboard: <FiBarChart2 className="h-5 w-5" />,
+    financial: <FiCreditCard className="h-5 w-5" />,
+    employees: <FiUsers className="h-5 w-5" />,
+    requests: <FiFileText className="h-5 w-5" />,
+    system: <FiSettings className="h-5 w-5" />,
+  };
+
+  const groupTitles: Record<GroupKey, string> = {
+    dashboard: isArabic ? "لوحة التحكم" : "Dashboard",
+    financial: isArabic ? "العمليات المالية" : "Financial Operations",
+    employees: isArabic ? "إدارة الموظفين" : "Employee Management",
+    requests: isArabic ? "الطلبات" : "Requests",
+    system: isArabic ? "النظام" : "System",
+  };
+
   const iconMap: Record<string, React.ReactNode> = {
-    CompanyCanViewDashboard: <FaEye />,
-    CompanyCanStatementOfAccounts: <FaCog />,
-    CompanyCanTransfer: <FaChartPie />,
-    CompanyCanRequest: <FaCog />,
-    CompanyCanCurrency: <FaLock />,
-    CompanyCanInternalTransfer: <FaCog />,
-    CompanyCanExternalTransfer: <FaTrashAlt />,
-    CompanyCanAddEmployee: <FaUserShield />,
-    CompanyCanEditEmployee: <FaCog />,
-    CompanyCanRepresentatives: <FaUserShield />,
+    CompanyCanViewDashboard: <FiEye className="h-4 w-4" />,
+    CompanyCanStatementOfAccounts: <FiFileText className="h-4 w-4" />,
+    CompanyCanTransfer: <FiCreditCard className="h-4 w-4" />,
+    CompanyCanRequest: <FiFileText className="h-4 w-4" />,
+    CompanyCanCurrency: <FiDatabase className="h-4 w-4" />,
+    CompanyCanInternalTransfer: <FiCreditCard className="h-4 w-4" />,
+    CompanyCanExternalTransfer: <FiCreditCard className="h-4 w-4" />,
+    CompanyCanAddEmployee: <FiUsers className="h-4 w-4" />,
+    CompanyCanEditEmployee: <FiUsers className="h-4 w-4" />,
+    CompanyCanRepresentatives: <FiShield className="h-4 w-4" />,
+    default: <FiLock className="h-4 w-4" />,
+  };
+
+  /* ---------- submit ---------- */
+  const onSubmit = async (values: Record<string, boolean>) => {
+    setIsSubmitting(true);
+    const enabled = Object.entries(values)
+      .filter(([, v]) => v)
+      .map(([k]) => ({
+        permissionId: Number(k.replace("perm_", "")),
+        roleId: numericRoleId,
+      }));
+
+    try {
+      await updateEmployeePermissions(userId, enabled);
+    } catch (err) {
+      console.error("Failed to update permissions:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="p-4">
-      <Formik
-        initialValues={initialValues}
-        enableReinitialize
-        onSubmit={async (values) => {
-          const enabledPermissions = Object.entries(values)
-            .filter(([, isEnabled]) => isEnabled)
-            .map(([key]) => ({
-              permissionId: Number(key.replace("perm_", "")),
-              roleId: numericRoleId,
-            }));
+    <div className="min-h-screen bg-gray-50/50 p-6">
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-8 flex items-center gap-4">
+          <BackButton isEditing fallbackPath="/employees" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isArabic ? "صلاحيات الموظف" : "Employee Permissions"}
+            </h1>
+            <p className="text-sm text-gray-600">
+              {isArabic
+                ? "إدارة صلاحيات الوصول للموظف"
+                : "Manage employee access permissions"}
+            </p>
+          </div>
+        </div>
 
-          if (enabledPermissions.length === 0) {
-            console.log("No permissions to update.");
-            return;
-          }
+        <Formik initialValues={initialValues} onSubmit={onSubmit}>
+          {({ values, setFieldValue }) => (
+            <Form>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {(
+                  Object.entries(grouped) as [GroupKey, CompanyPermissions[]][]
+                ).map(([key, perms]) =>
+                  perms.length ? (
+                    <PermissionsContainer
+                      key={key}
+                      title={groupTitles[key]}
+                      icon={groupIcons[key]}
+                      permissions={perms}
+                      values={values}
+                      setFieldValue={setFieldValue}
+                      isArabic={isArabic}
+                      iconMap={iconMap}
+                      search={perms.length >= 25}
+                    />
+                  ) : null
+                )}
+              </div>
 
-          try {
-            await updateEmployeePermissions(userId, enabledPermissions);
-            console.log("Updated permissions:", enabledPermissions);
-          } catch (err) {
-            console.error("Failed to update permissions:", err);
-          }
-        }}
-      >
-        {({ isSubmitting }) => (
-          <>
-            <FormHeader>
-              <div className="flex">
-                <BackButton fallbackPath="/employees" />
+              {/* Footer */}
+              <div className="mt-8 flex justify-end">
                 <SubmitButton
-                  title={t("save")}
-                  color="info-dark"
-                  fullWidth={false}
+                  title={isArabic ? "حفظ الصلاحيات" : "Save Permissions"}
+                  Icon={FiSave}
+                  color="success-main"
                   isSubmitting={isSubmitting}
+                  disabled={false}
                 />
               </div>
-            </FormHeader>
-
-            <Form className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {companyPerms.slice(0, visibleCount).map((cp) => (
-                  <SettingsBox
-                    key={cp.id}
-                    title={t(cp.name)}
-                    description=""
-                    icon={iconMap[cp.name] ?? <FaLock />}
-                    controlType="switch"
-                    control={<SwitchWrapper name={`perm_${cp.id}`} label="" />}
-                  />
-                ))}
-              </div>
-
-              {/* Controls */}
-              {companyPerms.length > 6 && (
-                <div className="mt-6 flex justify-center gap-4">
-                  {visibleCount < companyPerms.length && (
-                    <button
-                      type="button"
-                      aria-label="Show more permissions"
-                      className="rounded-full bg-info-dark p-2 text-white shadow hover:bg-info-dark/90"
-                      onClick={() =>
-                        setVisibleCount((prev) =>
-                          Math.min(prev + 6, companyPerms.length)
-                        )
-                      }
-                    >
-                      <FiPlus className="text-lg" />
-                    </button>
-                  )}
-
-                  {visibleCount > 6 && (
-                    <button
-                      type="button"
-                      aria-label="Show less permissions"
-                      className="rounded-full bg-info-dark p-2 text-white shadow hover:bg-info-dark/90"
-                      onClick={() =>
-                        setVisibleCount((prev) => Math.max(prev - 6, 6))
-                      }
-                    >
-                      <FiMinus className="text-lg" />
-                    </button>
-                  )}
-                </div>
-              )}
             </Form>
-          </>
-        )}
-      </Formik>
+          )}
+        </Formik>
+      </div>
     </div>
   );
 }

@@ -74,8 +74,11 @@ export default function LetterOfGuaranteePage() {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("LetterOfGuaranteeCanAdd");
   const canEdit = permissionsSet.has("LetterOfGuaranteeCanEdit");
+  const canView = permissionsSet.has("LetterOfGuaranteeCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
   /* --------------------------------------------------------------
    * Fetch helper
@@ -171,10 +174,11 @@ export default function LetterOfGuaranteePage() {
   return (
     <div className="p-4">
       {/* Add / grid toggle */}
-      {showForm && canAdd ? (
+      {showForm && canOpenForm ? (
         <LetterOfGuaranteeForm
           onSubmit={handleFormSubmit}
           onCancel={() => setShowForm(false)}
+          readOnly={isReadOnly}
         />
       ) : (
         <CrudDataGrid
@@ -194,7 +198,7 @@ export default function LetterOfGuaranteePage() {
           ]}
           onDropdownSelect={handleDropdownSelect}
           /* add button */
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           addButtonLabel={tUi("addButton")}
           onAddClick={() => setShowForm(true)}
           loading={loading}

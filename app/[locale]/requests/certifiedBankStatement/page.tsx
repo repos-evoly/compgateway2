@@ -129,13 +129,16 @@ export default function CertifiedBankStatementPage() {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("CertifiedBankStatementCanAdd");
   const canEdit = permissionsSet.has("CertifiedBankStatementCanEdit");
+  const canView = permissionsSet.has("CertifiedBankStatementCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
   return (
     <div className="p-6">
-      {showForm && canAdd ? (
-        <CertifiedBankStatementForm onSubmit={handleFormSubmit} />
+      {showForm && canOpenForm ? (
+        <CertifiedBankStatementForm onSubmit={handleFormSubmit} readOnly={isReadOnly} />
       ) : (
         <CrudDataGrid
           data={data}
@@ -143,7 +146,7 @@ export default function CertifiedBankStatementPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
           canEdit={canEdit}

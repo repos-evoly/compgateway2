@@ -40,12 +40,14 @@ const CBLListPage: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
 
+  // Permissions
   const permissionsSet = useMemo(
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("CBLCanAdd");
   const canEdit = permissionsSet.has("CBLCanEdit");
+  const canView = permissionsSet.has("CBLCanView");
+  const showAddButton = canEdit;
 
   /* ------------ fetch list ------------ */
   useEffect(() => {
@@ -120,13 +122,16 @@ const CBLListPage: React.FC = () => {
   }, []);
 
   /* ------------ render ------------ */
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
   return (
     <div className="p-4">
-      {showForm ? (
+      {showForm && canOpenForm ? (
         <CBLForm
           onSubmit={onFormSave}
           onCancel={onFormCancel}
           onBack={onFormBack}
+          readOnly={isReadOnly}
         />
       ) : (
         <CrudDataGrid
@@ -141,7 +146,7 @@ const CBLListPage: React.FC = () => {
           dropdownOptions={dropdownOptions}
           onDropdownSelect={handleDropdownSelect}
           onSearch={handleSearch}
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           onAddClick={() => setShowForm(true)}
           loading={loading}
           canEdit={canEdit}

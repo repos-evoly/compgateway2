@@ -152,16 +152,20 @@ export default function CreditFacilityPage() {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("CreditFacilityCanAdd");
   const canEdit = permissionsSet.has("CreditFacilityCanEdit");
+  const canView = permissionsSet.has("CreditFacilityCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
   /* ─── JSX ────────────────────────────────────────────────────── */
   return (
     <div className="p-4">
-      {showForm && canAdd ? (
+      {showForm && canOpenForm ? (
         <CreditFacilityForm
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
+          readOnly={isReadOnly}
         />
       ) : (
         <CrudDataGrid
@@ -181,7 +185,7 @@ export default function CreditFacilityPage() {
           ]}
           onDropdownSelect={handleDropdownSelect}
           /* add */
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           addButtonLabel={tUi("addButton")}
           onAddClick={() => setShowForm(true)}
           loading={loading}

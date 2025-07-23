@@ -127,14 +127,17 @@ const RTGSListPage: React.FC = () => {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("RTGSCanAdd");
   const canEdit = permissionsSet.has("RTGSCanEdit");
+  const canView = permissionsSet.has("RTGSCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
   /* ─────────────────────────── Render ───────────────────────────────────── */
   return (
     <div className="p-4">
-      {showForm && canAdd ? (
-        <RTGSForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} />
+      {showForm && canOpenForm ? (
+        <RTGSForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} readOnly={isReadOnly} />
       ) : (
         <CrudDataGrid
           data={rowData}
@@ -142,7 +145,7 @@ const RTGSListPage: React.FC = () => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
           canEdit={canEdit}

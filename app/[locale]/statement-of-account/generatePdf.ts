@@ -84,13 +84,13 @@ export function generateStatementPdf(
     // Value cell (left col)
     let x = leftBoxLeft;
     const y = boxTop + row * cellHeight;
-    doc.setFont('Amiri', 'normal').setFontSize(10);
+    doc.setFont('Amiri', 'normal').setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
     doc.text(leftBoxLabels[row].value, x + cellWidth / 2, y + cellHeight / 2 + 1, { align: 'center', baseline: 'middle' });
     // Label cell (right col)
     x = leftBoxLeft + cellWidth;
-    doc.setFont('Amiri', 'normal').setFontSize(9).setTextColor(textCol.r, textCol.g, textCol.b);
+    doc.setFont('Amiri', 'normal').setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
     doc.text(leftBoxLabels[row].ar, x + cellWidth / 2, y + 4, { align: 'center', baseline: 'top' });
-    doc.setFont('Amiri', 'bold').setFontSize(9);
+    doc.setFont('Amiri', 'bold' ).setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
     doc.text(leftBoxLabels[row].en, x + cellWidth / 2, y + cellHeight - 2, { align: 'center', baseline: 'bottom' });
   }
   // Draw right box cells (labels right col, value left col)
@@ -98,22 +98,23 @@ export function generateStatementPdf(
     // Value cell (left col)
     let x = rightBoxLeft;
     const y = boxTop + row * cellHeight;
-    doc.setFont('Amiri', 'normal').setFontSize(10);
+    doc.setFont('Amiri', 'normal').setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
     doc.text(rightBoxLabels[row].value, x + cellWidth / 2, y + cellHeight / 2 + 1, { align: 'center', baseline: 'middle' });
     // Label cell (right col)
     x = rightBoxLeft + cellWidth;
-    doc.setFont('Amiri', 'normal').setFontSize(9).setTextColor(textCol.r, textCol.g, textCol.b);
+    doc.setFont('Amiri', 'normal').setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
     doc.text(rightBoxLabels[row].ar, x + cellWidth / 2, y + 4, { align: 'center', baseline: 'top' });
-    doc.setFont('Amiri', 'bold').setFontSize(9);
+    doc.setFont('Amiri', 'bold').setFontSize(8);
     doc.text(rightBoxLabels[row].en, x + cellWidth / 2, y + cellHeight - 2, { align: 'center', baseline: 'bottom' });
   }
 
   // Table (unchanged for first page)
   const tableTop = boxTop + boxHeight + 8;
-  const tableLeft = margin;
+  const tableTopSubsequent = margin + 45; // Raise table on non-first pages
   const colWidths = [24, 24, 24, 60, 32, 32];
   const tableCols = colWidths.length;
   const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+  const tableLeft = (pageWidth - tableWidth) / 2;
   const rowHeight = 13;
 
   // Table headers (bilingual)
@@ -214,8 +215,8 @@ export function generateStatementPdf(
     if (rowIdx < lines.length) {
       doc.addPage();
       doc.addImage(bgImageBase64, 'JPEG', 0, 0, pageWidth, pageHeight);
-      // On subsequent pages, start table at the same Y as first page (just under the mark)
-      y = tableTop;
+      // On subsequent pages, start table higher (just under the margin)
+      y = tableTopSubsequent;
       x = tableLeft;
       // Draw table header row again
       for (let i = 0; i < tableCols; i++) {

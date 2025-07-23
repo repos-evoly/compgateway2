@@ -20,6 +20,11 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
+
   /* Modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
@@ -32,10 +37,13 @@ export default function EmployeesPage() {
   /* --------------------------------------------------
    * Data helpers
    * -------------------------------------------------- */
+  // Modified fetchEmployees to support pagination
   const fetchEmployees = async () => {
+    setLoading(true);
     try {
-      const data = await getEmployees();
-      setEmployees(data);
+      const allEmployees = await getEmployees();
+      setEmployees(allEmployees);
+      setTotalPages(Math.max(1, Math.ceil(allEmployees.length / pageSize)));
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "An unknown error occurred.";
@@ -50,12 +58,12 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* --------------------------------------------------
-   * Datagrid config
-   * -------------------------------------------------- */
-  const rowData = employees.map((emp) => ({
+  // Compute the data for the current page
+  const pagedEmployees = employees.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const rowData = pagedEmployees.map((emp) => ({
     ...emp,
     permissions: emp.permissions.join(", "),
   }));
@@ -105,6 +113,10 @@ export default function EmployeesPage() {
     setShowForm(true);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const handleFormSubmit = async (values: EmployeesFormPayload) => {
     try {
       const newEmployee = await createEmployee({
@@ -150,9 +162,9 @@ export default function EmployeesPage() {
         <CrudDataGrid
           data={rowData}
           columns={columns}
-          currentPage={1}
-          totalPages={1}
-          onPageChange={() => {}}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
           showSearchBar={false}
           showSearchInput={false}
           showDropdown={false}

@@ -54,8 +54,11 @@ const CheckbookPage: React.FC = () => {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("CheckbookCanAdd");
   const canEdit = permissionsSet.has("CheckbookCanEdit");
+  const canView = permissionsSet.has("CheckbookCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
   /* ─── Fetch data ──────────────────────────────────────────── */
   useEffect(() => {
@@ -115,10 +118,11 @@ const CheckbookPage: React.FC = () => {
   /* ─── Render ──────────────────────────────────────────────── */
   return (
     <div className="p-4">
-      {showForm && canAdd ? (
+      {showForm && canOpenForm ? (
         <CheckbookForm
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
+          readOnly={isReadOnly}
         />
       ) : (
         <CrudDataGrid
@@ -144,7 +148,7 @@ const CheckbookPage: React.FC = () => {
             setSearchTerm(term);
             setCurrentPage(1);
           }}
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
           canEdit={canEdit}

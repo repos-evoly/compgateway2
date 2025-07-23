@@ -56,8 +56,11 @@ export default function ForeignTransfersListPage() {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("ForeignTransfersCanAdd");
   const canEdit = permissionsSet.has("ForeignTransfersCanEdit");
+  const canView = permissionsSet.has("ForeignTransfersCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
   // Each page => limit=10
   const limit = 10;
@@ -188,8 +191,8 @@ export default function ForeignTransfersListPage() {
 
   return (
     <div className="p-4">
-      {showForm && canAdd ? (
-        <ForeignTransfersForm onSubmit={handleFormSubmit} />
+      {showForm && canOpenForm ? (
+        <ForeignTransfersForm onSubmit={handleFormSubmit} readOnly={isReadOnly} />
       ) : (
         <CrudDataGrid
           data={gridData}
@@ -214,7 +217,7 @@ export default function ForeignTransfersListPage() {
             { value: "toBank", label: t("toBank") },
           ]}
           // Show "Add" button => open form wizard
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
           canEdit={canEdit}

@@ -56,8 +56,11 @@ export default function VisaRequestListPage() {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("VisaRequestCanAdd");
   const canEdit = permissionsSet.has("VisaRequestCanEdit");
+  const canView = permissionsSet.has("VisaRequestCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
 
   /*─────────────────────────── Fetch list  ─────────────────────────────────*/
@@ -136,8 +139,8 @@ export default function VisaRequestListPage() {
   /*─────────────────────────── Render  ─────────────────────────────────────*/
   return (
     <div className="p-4">
-      {showForm && canAdd ? (
-        <VisaWizardForm onSubmit={handleFormSubmit} onBack={handleBackFromForm} />
+      {showForm && canOpenForm ? (
+        <VisaWizardForm onSubmit={handleFormSubmit} onBack={handleBackFromForm} readOnly={isReadOnly} />
       ) : (
         <CrudDataGrid
           data={gridData}
@@ -151,7 +154,7 @@ export default function VisaRequestListPage() {
             setSearchTerm(term);
             setCurrentPage(1);
           }}
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
           canEdit={canEdit}

@@ -58,8 +58,11 @@ const CheckRequestPage: React.FC = () => {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canAdd = permissionsSet.has("CheckRequestCanAdd");
   const canEdit = permissionsSet.has("CheckRequestCanEdit");
+  const canView = permissionsSet.has("CheckRequestCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
 
   /* ─── Fetch data ──────────────────────────────────────────── */
   useEffect(() => {
@@ -152,10 +155,11 @@ const CheckRequestPage: React.FC = () => {
   /* ─── Render ──────────────────────────────────────────────── */
   return (
     <div className="p-4">
-      {showForm && canAdd ? (
+      {showForm && canOpenForm ? (
         <CheckRequestForm
           onSubmit={handleFormSubmit}
           onCancel={handleFormCancel}
+          readOnly={isReadOnly}
         />
       ) : (
         <CrudDataGrid
@@ -169,7 +173,7 @@ const CheckRequestPage: React.FC = () => {
           showDropdown
           onSearch={handleSearch}
           onDropdownSelect={handleDropdownSelect}
-          showAddButton={canAdd}
+          showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
           canEdit={canEdit}

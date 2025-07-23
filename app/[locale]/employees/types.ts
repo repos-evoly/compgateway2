@@ -105,9 +105,11 @@ export type UserPermissions = {
 
 export type CompanyPermissions = {
   id:number;
-  name:string;
+  // name:string;
   description:string;
   isGlobal: boolean;
+  nameEn: string;
+  nameAr: string;
 }
 
 export type EditEmployeePayload = {

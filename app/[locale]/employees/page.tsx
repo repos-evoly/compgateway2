@@ -58,7 +58,6 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Compute the data for the current page

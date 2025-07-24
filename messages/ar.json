@@ -397,22 +397,18 @@
         "continue": "متابعة"
       },
       "salaries": {
-        "columns": {
-          "id": "المعرف",
-          "name": "الاسم",
-          "salary": "الراتب",
-          "deduction": "الخصم"
-        },
-        "salariesPage": {
-          "columns": {
-            "date": "التاريخ",
-            "month": "الشهر",
-            "total": "الإجمالي",
-            "submittingDate": "تاريخ التقديم",
-            "accountNumber": "رقم الحساب"
-
-          }
-        }
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "phone": "رقم الهاتف",
+        "salary": "الراتب",
+        "date": "التاريخ",
+        "accountNumber": "رقم الحساب",
+        "submit": "إرسال",
+        "cancel": "إلغاء",
+        "add": "إضافة",
+        "setSalaries": "توطين الرواتب",
+        "selectAll": "تحديد الكل",
+        "deselectAll": "إلغاء تحديد الكل"
       },
       "customizations": {
         "banks": {
@@ -898,6 +894,17 @@
         "confirmDeleteMessage": "هل أنت متأكد من أنك تريد حذف هذا الممثل؟ لا يمكن التراجع عن هذا الإجراء."
       },
       "profile": {
+        "fetchError": "خطأ في الجلب",
+    
+        "noCompanyCode": "لا يوجد رمز شركة في الكوكيز.",
+        "active": "نشط",
+        "inactive": "غير نشط",
+        "approved": "معتمد",
+        "underReview": "قيد المراجعة",
+        "rejected": "مرفوض",
+        "missing": "ناقص",
+        "contactSupport": "دعم العملاء",
+        "documents": "المستندات",
         "companyNotFound": {
           "title": "لم يتم العثور على سجل الشركة",
           "subtitle": "لم نتمكن من العثور على ملف الشركة المطلوب في قاعدة البيانات.",
@@ -956,7 +963,7 @@
         },
         "code": "رمز الشركة",
         "name": "اسم الشركة",
-        "active": "نشط? ",
+       
         "kycStatus": "حالة KYC",
         "requestedAt": "تاريخ الطلب",
         "reviewedAt": "تاريخ المراجعة",

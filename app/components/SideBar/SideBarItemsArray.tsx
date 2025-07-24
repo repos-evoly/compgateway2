@@ -203,14 +203,14 @@ export const sidebarItems = [
   //   label: "salaryLocalization.title",
   //   path: "/localization",
   //   icon: HiOutlineCurrencyDollar,
-  //   permissions: ["CompanyCanSalaryLocalization"],
+   
   //   children: [
   //     {
   //       id: 25,
   //       label: "salaryLocalization.salaries",
   //       path: "/salaries",
   //       icon: BiDollarCircle, // Icon representing salaries/money
-  //       permissions: ["CompanyCanSalaryLocalizationSalaries"],
+        
   //     },
   //     {
   //       id: 26,

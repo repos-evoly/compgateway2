@@ -393,21 +393,18 @@
   },
 
   "salaries": {
-    "columns": {
-      "id": "ID",
-      "name": "Name",
-      "salary": "Salary",
-      "deduction": "Deduction"
-    },
-    "salariesPage": {
-      "columns": {
-        "date": "Date",
-        "month": "Month",
-        "total": "Total",
-        "submittingDate": "Submitting Date",
-        "accountNumber": "Account Number"
-      }
-    }
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "salary": "Salary",
+    "date": "Date",
+    "accountNumber": "Account Number",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "add": "Add",
+    "setSalaries": "Set Salaries",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All"
   },
 
   "customizations": {
@@ -898,6 +895,17 @@
     "confirmDeleteMessage": "Are you sure you want to delete this representative? This action cannot be undone."
   },
   "profile": {
+    "fetchError": "Fetch Error",
+    
+    "noCompanyCode": "No company code found in cookies.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "approved": "Approved",
+    "underReview": "Under Review",
+    "rejected": "Rejected",
+    "missing": "Missing",
+    "contactSupport": "Contact Support",
+    "documents": "Documents",
     "companyNotFound": {
       "title": "Company Record Not Found",
       "subtitle": "We could not find the requested company record in the database.",
@@ -955,7 +963,7 @@
     },
     "code": "Company Code",
     "name": "Company Name",
-    "active": "Active?",
+  
     "kycStatus": "KYC Status",
     "requestedAt": "Request Date",
     "reviewedAt": "Review Date",
@@ -986,7 +994,13 @@
     "areYouSure": "Are you sure you want to continue?",
     "cancel": "Cancel",
     "confirm": "Confirm"
-  }
+  },
+  "contactSupportSection":{
+          "title": "Contact Support",
+          "phone": "Phone",
+          "email": "Email",
+          "availability": "Available Sunday to Thursday, 9:00 AM to 5:00 PM"
+        }
   }
 
 

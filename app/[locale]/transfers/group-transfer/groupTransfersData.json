@@ -1,0 +1,42 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "userId": 1,
+      "categoryName": "Payroll",
+      "fromAccount": "1234-567890-001",
+      "toAccount": "2345-678901-002,3456-789012-003",
+      "amount": 10000,
+      "currencyCode": "USD",
+      "currencyId": 1,
+      "packageName": "Standard",
+      "status": "Completed",
+      "description": "Monthly payroll for staff",
+      "requestedAt": "2024-06-01T10:00:00Z",
+      "transactionCategoryId": 1,
+      "createdAt": "2024-06-01T10:00:00Z",
+      "updatedAt": "2024-06-01T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "userId": 1,
+      "categoryName": "Vendors",
+      "fromAccount": "1234-567890-001",
+      "toAccount": "4567-890123-004,5678-901234-005",
+      "amount": 5000,
+      "currencyCode": "USD",
+      "currencyId": 1,
+      "packageName": "Standard",
+      "status": "Pending",
+      "description": "Vendor payments for June",
+      "requestedAt": "2024-06-02T12:30:00Z",
+      "transactionCategoryId": 1,
+      "createdAt": "2024-06-02T12:30:00Z",
+      "updatedAt": "2024-06-02T12:30:00Z"
+    }
+  ],
+  "page": 1,
+  "limit": 10,
+  "totalPages": 1,
+  "totalRecords": 2
+} 

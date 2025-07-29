@@ -1091,7 +1091,7 @@
         "accountNotFound": "الحساب غير موجود",
         "accountCheckError": "خطأ في التحقق من الحساب",
         "modal": {
-          "title": "تأكيد التحويل",
+          "title": "التحويل",
           "subtitle": "يرجى مراجعة تفاصيل التحويل قبل التأكيد",
           "from": "من",
           "to": "إلى",
@@ -1104,6 +1104,7 @@
           "feeMessage": "الرسوم: {amount} {currency} ({payer})",
           "feePayerSender": "المرسل يدفع الرسوم",
           "feePayerRecipient": "المستلم يدفع الرسوم",
+          "accountNumber": "رقم الحساب",
           "cancel": "إلغاء",
           "confirm": "تأكيد"
         }

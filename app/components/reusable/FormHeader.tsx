@@ -22,6 +22,8 @@ export type FormHeaderProps = BackButtonProps & {
   status?: string;
   /** Custom back handler function */
   onBack?: () => void;
+  isEditing?: boolean;
+
 };
 
 /* ------------------------------------------------------------------ */
@@ -36,6 +38,7 @@ const FormHeader: React.FC<FormHeaderProps> = ({
   fallbackPath,
   status,
   onBack,
+  isEditing = false,
 }) => {
   /* ---------------- logic ---------------- */
   const displayBackButton =
@@ -57,6 +60,7 @@ const FormHeader: React.FC<FormHeaderProps> = ({
             <BackButton
               fallbackPath={fallbackPath}
               onBack={onBack}
+              isEditing={isEditing}
             />
           )}
           {text && <h2 className="text-lg font-semibold">{text}</h2>}

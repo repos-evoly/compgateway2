@@ -24,7 +24,7 @@ import {
   getEconomicSectors,
   getTransfersCommision,
 } from "../../internal/services";
-import { createTransfer } from "../services";
+import { createGroupTransfer } from "../services";
 
 
 
@@ -124,7 +124,7 @@ function GroupTransferForm({
   /* ---------------- form validation schema ---------------- */
   const validationSchema = Yup.object().shape({
     from: Yup.string().required(t("fromRequired")),
-    to: Yup.string().required(t("toRequired")),
+    to: Yup.array().of(Yup.string()).min(1, t("toRequired")).required(t("toRequired")),
     value: Yup.number()
       .required(t("valueRequired"))
       .positive(t("valuePositive")),
@@ -134,7 +134,7 @@ function GroupTransferForm({
   /* ---------------- initial values ---------------- */
   const initialValues: ExtendedValues = {
     from: initialData?.from || "",
-    to: initialData?.to || "",
+    to: initialData?.to || [], // Changed from string to array
     value: initialData?.value || 0,
     description: initialData?.description || "",
     beneficiaryId: initialData?.beneficiaryId,
@@ -166,16 +166,24 @@ function GroupTransferForm({
     if (!modalData) return;
 
     try {
+      // Handle multiple accounts by creating a single group transfer
+      const toAccounts = Array.isArray(modalData.formikData.to) 
+        ? modalData.formikData.to 
+        : [modalData.formikData.to];
+
+      // Create a single group transfer with all account numbers
       const payload = {
         fromAccount: modalData.formikData.from,
-        toAccount: modalData.formikData.to,
+        toAccounts: toAccounts,
         amount: modalData.formikData.value,
         description: modalData.formikData.description,
         currencyId: 1, // Replace with actual currency ID
         transactionCategoryId: modalData.formikData.transactionCategoryId,
+        economicSectorId: modalData.formikData.economicSectorId,
       };
 
-      await createTransfer(payload);
+      await createGroupTransfer(payload);
+
       setModalOpen(false);
       setModalData(null);
 
@@ -207,6 +215,7 @@ function GroupTransferForm({
               <FormHeader
                 showBackButton
                 fallbackPath="/transfers/group-transfer"
+                isEditing={true}
               />
 
               {/* Row 1 */}

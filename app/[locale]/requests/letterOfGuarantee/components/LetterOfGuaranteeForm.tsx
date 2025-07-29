@@ -118,6 +118,7 @@ function InnerForm({
       <FormHeader
         showBackButton
         status={status}
+        isEditing={true}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">

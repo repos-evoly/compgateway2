@@ -352,7 +352,7 @@ function InternalForm({
             <>
               <FormSyncBeneficiary values={values} setFieldValue={setFieldValue} />
               <Form>
-                <FormHeader showBackButton fallbackPath="/transfers/internal" />
+                <FormHeader showBackButton fallbackPath="/transfers/internal" isEditing={true} />
 
                 <FormValidator />
 

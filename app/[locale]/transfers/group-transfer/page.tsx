@@ -12,7 +12,7 @@ import { TransfersApiResponse } from "./types";
 // The new API function
 import { getTransfers } from "./services";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import { FaPrint } from "react-icons/fa";
+import TransferPdfDownloadButton from "./components/TransferPdfDownloadButton";
 
 const Page = () => {
   const t = useTranslations("groupTransferForm");
@@ -29,7 +29,6 @@ const Page = () => {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-  const [printRow, setPrintRow] = useState<Record<string, unknown> | null>(null);
 
   // Show/hide form
 
@@ -59,13 +58,6 @@ const Page = () => {
   }, [fetchTransfers]);
 
   // columns => minimal example
-  const handlePrint = (row: Record<string, unknown>) => {
-    setPrintRow(row);
-    setTimeout(() => {
-      window.print();
-      setPrintRow(null);
-    }, 100);
-  };
   const columns = [
     { key: "id", label: t("id") },
     { key: "categoryName", label: t("category") },
@@ -77,14 +69,11 @@ const Page = () => {
     {
       key: "actions",
       label: t("actions"),
-      renderCell: (row: Record<string, unknown>) => (
-        <button
-          className="p-1 text-blue-600 hover:text-blue-800"
-          onClick={() => handlePrint(row)}
-          title={t("print", { defaultValue: "Print" })}
-        >
-          <FaPrint size={18} />
-        </button>
+      renderCell: (row: TransfersApiResponse["data"][0]) => (
+        <TransferPdfDownloadButton
+          transfer={row}
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
       ),
       width: 60,
     },
@@ -108,21 +97,6 @@ const Page = () => {
   return (
     <div className="p-1">
       {/* Print-only div */}
-      {printRow && (
-        <div id="print-area">
-          <h2 style={{ marginBottom: 16 }}>Transfer Data</h2>
-          <table style={{ fontSize: 16 }}>
-            <tbody>
-              {Object.entries(printRow).map(([key, value]) => (
-                <tr key={key}>
-                  <td style={{ fontWeight: "bold", padding: "4px 12px 4px 0" }}>{key}</td>
-                  <td style={{ padding: "4px" }}>{String(value ?? "")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
       {/* Main app content */}
       <div id="main-app-content">
         <CrudDataGrid

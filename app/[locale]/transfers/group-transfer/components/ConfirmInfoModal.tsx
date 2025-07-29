@@ -6,7 +6,6 @@ import { AdditionalData } from "../types";
 import {
   FiCheckCircle,
   FiX,
-  FiUser,
   FiArrowRight,
   FiAlertTriangle,
 } from "react-icons/fi";
@@ -18,7 +17,7 @@ export type ConfirmInfoModalProps = {
   isOpen: boolean;
   formData: {
     from: string;
-    to: string;
+    to: string[]; // Changed from string to string[] for multiple accounts
     value: number;
     description: string;
     commissionOnRecipient: boolean;
@@ -66,17 +65,31 @@ export default function ConfirmInfoModal({
     ? t("feePayerRecipient")
     : t("feePayerSender");
 
+  // Format the 'to' field - handle both string and array cases
+  const formatToAccounts = (toValue: string | string[]) => {
+    if (Array.isArray(toValue)) {
+      return toValue.join(', ');
+    }
+    // If it's a string, it might be comma-separated values
+    if (typeof toValue === 'string' && toValue.includes(',')) {
+      return toValue.split(',').map(acc => acc.trim()).join(', ');
+    }
+    return toValue;
+  };
+
+  const formattedToAccounts = formatToAccounts(to);
+
   /* ------------------------------------------------------------------ */
   /* UI                                                                  */
   /* ------------------------------------------------------------------ */
   return (
     <div
       dir={dir}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4"
     >
-      <div className="w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-info-main/20 to-info-dark/10 px-8 py-6 border-b border-slate-200">
+        <div className="bg-gradient-to-r from-info-main/20 to-info-dark/10 px-8 py-6 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 rtl:space-x-reverse">
               <div className="w-10 h-10 bg-info-dark rounded-full flex items-center justify-center">
@@ -99,8 +112,8 @@ export default function ConfirmInfoModal({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-8 py-6">
+        {/* Content - Scrollable */}
+        <div className="px-8 py-6 overflow-y-auto flex-1">
           {/* Summary */}
           <div className="bg-gradient-to-br from-info-main/20 to-info-dark/10 rounded-xl p-6 mb-6 border border-info-main/30 text-center">
             <div className="text-3xl font-bold text-slate-900 mb-1">
@@ -111,22 +124,32 @@ export default function ConfirmInfoModal({
             </div>
 
             {/* Flow */}
-            <div className="flex items-center justify-center space-x-4 rtl:space-x-reverse">
-              {/* FROM */}
-              <div className="flex-1 text-center">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-info-main/20">
-                  <FiUser className="w-6 h-6 text-info-dark" />
-                </div>
-                <div className="text-xs text-slate-600 font-medium mb-1">
-                  {t("from")}
-                </div>
-                <div className="text-xs text-slate-900 font-mono truncate px-1">
-                  {from}
+            <div className="mt-6">
+              {/* From Account Table */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-slate-700 mb-2">{t("from")}</h4>
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 border-b border-slate-200">
+                          {t("accountNumber", { defaultValue: "Account Number" })}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="px-4 py-3 text-sm font-mono text-slate-900">
+                          {from}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
               {/* Arrow */}
-              <div className="flex-shrink-0">
+              <div className="flex justify-center my-4">
                 <FiArrowRight
                   className={`w-8 h-8 text-info-dark ${
                     dir === "rtl" ? "rotate-180" : ""
@@ -134,16 +157,36 @@ export default function ConfirmInfoModal({
                 />
               </div>
 
-              {/* TO */}
-              <div className="flex-1 text-center">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-info-main/20">
-                  <FiUser className="w-6 h-6 text-info-dark" />
-                </div>
-                <div className="text-xs text-slate-600 font-medium mb-1">
-                  {t("to")}
-                </div>
-                <div className="text-xs text-slate-900 font-mono truncate px-1">
-                  {to}
+              {/* To Accounts Table */}
+              <div>
+                <h4 className="text-sm font-medium text-slate-700 mb-2">{t("to")}</h4>
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="max-h-48 overflow-y-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 sticky top-0">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 border-b border-slate-200">
+                            #
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 border-b border-slate-200">
+                            {t("accountNumber", { defaultValue: "Account Number" })}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formattedToAccounts.split(', ').map((account, index) => (
+                          <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                            <td className="px-4 py-2 text-sm font-medium text-slate-600 border-b border-slate-100">
+                              {index + 1}
+                            </td>
+                            <td className="px-4 py-2 text-sm font-mono text-slate-900 border-b border-slate-100">
+                              {account.trim()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -189,7 +232,7 @@ export default function ConfirmInfoModal({
         </div>
 
         {/* Actions */}
-        <div className="bg-slate-50 px-8 py-6 border-t border-slate-200">
+        <div className="bg-slate-50 px-8 py-6 border-t border-slate-200 flex-shrink-0">
           <div className="flex justify-end space-x-3 rtl:space-x-reverse">
             <button
               type="button"

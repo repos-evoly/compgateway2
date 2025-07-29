@@ -1089,7 +1089,7 @@
     "accountNotFound": "Account not found",
     "accountCheckError": "Error checking account",
     "modal": {
-      "title": "Confirm Transfer",
+      "title": "Transfer",
       "subtitle": "Please review the transfer details before confirming",
       "from": "From",
       "to": "To",
@@ -1102,6 +1102,7 @@
       "feeMessage": "Fee: {amount} {currency} ({payer})",
       "feePayerSender": "Sender pays fee",
       "feePayerRecipient": "Recipient pays fee",
+      "accountNumber": "Account Number",
       "cancel": "Cancel",
       "confirm": "Confirm"
     }

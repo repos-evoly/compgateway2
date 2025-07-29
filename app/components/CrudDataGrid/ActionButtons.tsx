@@ -35,8 +35,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <div className={`flex ${isRTL 
-      ? "flex-row-reverse space-x-reverse space-x-3 justify-start" 
-      : "flex-row space-x-3 justify-end"}`}>
+      ? "flex-row-reverse space-x-reverse space-x-3 justify-center" 
+      : "flex-row space-x-3 justify-center"}`}>
       {actions.map((action) => (
         <Tooltip tooltip={action.tip} position="top" key={action.name}>
          

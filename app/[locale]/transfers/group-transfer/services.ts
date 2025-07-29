@@ -104,6 +104,47 @@ export async function createTransfer(payload: TransferPayload): Promise<Transfer
   return ensureTransferResponse(newTransfer);
 }
 
+// New function for creating group transfers with multiple accounts
+export async function createGroupTransfer(payload: {
+  fromAccount: string;
+  toAccounts: string[];
+  amount: number;
+  description: string;
+  currencyId?: number;
+  transactionCategoryId?: number;
+  commissionOnRecipient?: boolean;
+  economicSectorId?: number;
+}): Promise<TransferResponse> {
+  await delay(500);
+  const now = new Date().toISOString();
+  
+  // Join multiple account numbers with commas for storage
+  const toAccountString = payload.toAccounts.join(', ');
+  
+  const newTransfer: Record<string, unknown> = {
+    id: nextId++,
+    transactionCategoryId: payload.transactionCategoryId ?? 1,
+    fromAccount: payload.fromAccount,
+    toAccount: toAccountString, // Store as comma-separated string
+    amount: payload.amount,
+    currencyId: payload.currencyId ?? 1,
+    description: payload.description,
+    createdAt: now,
+    updatedAt: now,
+    userId: 1,
+    categoryName: "Group Transfer", // Different category for group transfers
+    currencyCode: "USD",
+    packageName: "Standard",
+    status: "Pending",
+    requestedAt: now,
+    commissionOnRecipient: payload.commissionOnRecipient,
+    economicSectorId: payload.economicSectorId,
+    isGroupTransfer: true, // Flag to identify group transfers
+  };
+  groupTransfers.push(newTransfer);
+  return ensureTransferResponse(newTransfer);
+}
+
 export async function updateTransfer(id: number, payload: TransferPayload): Promise<TransferResponse> {
   await delay(500);
   const index = groupTransfers.findIndex((t) => t.id === id);

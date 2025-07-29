@@ -91,6 +91,7 @@ export default function EmployeeForm({
       <div className="bg-info-dark py-8 h-10 flex items-center gap-4">
         <BackButton
           fallbackPath={isEditMode ? "/employees" : undefined}
+          isEditing={true}
         />
       </div>
 

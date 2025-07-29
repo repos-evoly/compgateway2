@@ -122,6 +122,7 @@ export default function RepresentativesForm({
               text={isEditMode ? t("editTitle") : t("addTitle")}
               showBackButton
               fallbackPath="/representatives"
+              isEditing={true}
             />
 
             <div className="mt-6 space-y-6">

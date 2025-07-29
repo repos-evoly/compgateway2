@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Tooltip from "../reusable/Tooltip"; // Adjust import path if needed
 import SelectWrapper from "@/app/components/FormUI/Select"; // <--- Import your SelectWrapper
 import { ActionButtonsProps } from "@/types"; // <--- The updated types
@@ -25,16 +25,21 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   actions,
   onActionClick,
 }) => {
+  // Detect direction (LTR/RTL)
+  const [isRTL, setIsRTL] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsRTL(document.dir === "rtl" || document.body.dir === "rtl");
+    }
+  }, []);
+
   return (
-    <div className="flex space-x-3">
+    <div className={`flex ${isRTL 
+      ? "flex-row-reverse space-x-reverse space-x-3 justify-start" 
+      : "flex-row space-x-3 justify-end"}`}>
       {actions.map((action) => (
         <Tooltip tooltip={action.tip} position="top" key={action.name}>
-          {/*
-            Priority:
-            1) If action.selectProps is defined => render a <SelectWrapper/>
-            2) Else if action.component is defined => render that component
-            3) Else => render the default button
-          */}
+         
           {action.selectProps ? (
             <SelectWrapper
               name={action.selectProps.name}

@@ -1,6 +1,4 @@
-import React from "react";
-
-export type InternalFormValues = {
+export type GroupTransferFormValues = {
   from: string;
   to: string;
   value: number;
@@ -18,9 +16,9 @@ export type InternalFormValues = {
   economicSectorId?: number;
 };
 
-export type InternalFormProps = {
-  initialData?: Partial<InternalFormValues>;
-  onSubmit?: (values: InternalFormValues) => void;
+export type GroupTransferFormProps = {
+  initialData?: Partial<GroupTransferFormValues>;
+  onSubmit?: (values: GroupTransferFormValues) => void;
 };
 
 // For the confirmation modal data
@@ -71,6 +69,7 @@ export interface TransferResponse {
   createdAt: string;
   updatedAt: string;
   economicSectorId?: number; // optional if your API supports it
+  commissionOnRecipient?: boolean;
 }
 
 export interface TransfersApiResponse {

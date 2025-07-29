@@ -6,6 +6,7 @@
     "transfer": {
       "label": "Transfer",
       "in": "Internal Transfer",
+      "group": "Group Transfer",
       "out": "External Transfer"
     },
     "requests": {
@@ -41,8 +42,11 @@
     "currencies": "Currencies",
     "employees": "Employees",
     "companies": "Companies",
-    "representatives": "Representatives",
-    "profile": "Profile"
+      "representatives": "Representatives",
+  "beneficiaries": "Beneficiaries",
+  "profile": "Profile",
+  "representativesDescription": "Manage company representatives and their permissions",
+  "beneficiariesDescription": "Manage beneficiaries and their account information"
   },
 
   "mainHeader": {
@@ -341,6 +345,12 @@
     "recipient": "Recipient",
     "economicSector": "Economic Sector",
     "requiredEconomicSector": "Economic Sector is required",
+    "beneficiary": "Beneficiary",
+    "selectBeneficiary": "Select a beneficiary",
+    "print": "Print",
+    "actions": "Actions",
+    "unknownError": "An unknown error occurred",
+    "fetchErrorTitle": "Error",
     "modal": {
       "title": "Transfer Confirmation",
       "subtitle": "Please review the details carefully",
@@ -447,6 +457,7 @@
     "statementOfAccountDescription": "Display and download account statements",
     "employeesDescription": "Manage employee records and details",
     "representativesDescription": "Manage company representatives",
+    "beneficiariesDescription": "Manage beneficiaries and their account information",
 
     "transferDescription": "Handle all money transfers",
     "transferInDescription": "Move funds into your own account",
@@ -1001,7 +1012,98 @@
           "email": "Email",
           "availability": "Available Sunday to Thursday, 9:00 AM to 5:00 PM"
         }
+  },
+
+  "beneficiaries": {
+    "id": "ID",
+    "name": "Name",
+    "type": "Type",
+    "local": "Local",
+    "international": "International",
+    "accountNumber": "Account Number",
+    "address": "Address",
+    "country": "Country",
+    "bank": "Bank",
+    "amount": "Amount",
+    "intermediaryBankSwift": "Intermediary Bank Swift",
+    "intermediaryBankName": "Intermediary Bank Name",
+    "createdAt": "Created At",
+    "addTitle": "Add New Beneficiary",
+    "editTitle": "Edit Beneficiary",
+    "createButton": "Create Beneficiary",
+    "updateButton": "Update Beneficiary",
+    "editButton": "Edit",
+    "nameRequired": "Name is required",
+    "nameMinLength": "Name must be at least 2 characters",
+    "nameMaxLength": "Name must be less than 100 characters",
+    "accountNumberRequired": "Account number is required",
+    "accountNumberFormat": "Account number must be in format: 0000-000000-000",
+    "addressRequired": "Address is required",
+    "countryRequired": "Country is required",
+    "bankRequired": "Bank is required",
+    "amountFormat": "Amount must be a valid number",
+    "amountMin": "Amount must be greater than 0",
+    "namePlaceholder": "Enter beneficiary name",
+    "accountNumberPlaceholder": "Enter account number",
+    "addressPlaceholder": "Enter beneficiary address",
+    "countryPlaceholder": "Choose country",
+    "bankPlaceholder": "Choose bank",
+    "amountPlaceholder": "Enter the transaction's amount",
+    "intermediaryBankSwiftPlaceholder": "Enter intermediary bank swift code",
+    "intermediaryBankNamePlaceholder": "Enter intermediary bank name",
+    "createSuccessTitle": "Success",
+    "createSuccessMsg": "Beneficiary created successfully",
+    "updateSuccessTitle": "Success",
+    "updateSuccessMsg": "Beneficiary updated successfully",
+    "errorTitle": "Error",
+    "unknownError": "An unknown error occurred",
+    "fetchErrorTitle": "Error",
+    "submit": "Submit"
+  },
+
+  "groupTransferForm": {
+    "id": "ID",
+    "category": "Category",
+    "from": "From Account",
+    "to": "To Account",
+    "amount": "Amount",
+    "status": "Status",
+    "requestedAt": "Requested At",
+    "actions": "Actions",
+    "print": "Print",
+    "fromRequired": "From account is required",
+    "toRequired": "To account is required",
+    "valueRequired": "Amount is required",
+    "valuePositive": "Amount must be positive",
+    "descriptionRequired": "Description is required",
+    "economicSector": "Economic Sector",
+    "beneficiary": "Beneficiary",
+    "selectBeneficiary": "Select beneficiary",
+    "description": "Description",
+    "delete": "Delete",
+    "createSuccessTitle": "Success",
+    "createSuccessMsg": "Group transfer created successfully",
+    "errorTitle": "Error",
+    "unknownError": "An unknown error occurred",
+    "fetchErrorTitle": "Error",
+    "accountNotFound": "Account not found",
+    "accountCheckError": "Error checking account",
+    "modal": {
+      "title": "Confirm Transfer",
+      "subtitle": "Please review the transfer details before confirming",
+      "from": "From",
+      "to": "To",
+      "amount": "Amount",
+      "amountPlusFee": "Amount + Fee",
+      "transactionDetails": "Transaction Details",
+      "description": "Description",
+      "noDescription": "No description provided",
+      "transferFee": "Transfer Fee",
+      "feeMessage": "Fee: {amount} {currency} ({payer})",
+      "feePayerSender": "Sender pays fee",
+      "feePayerRecipient": "Recipient pays fee",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
   }
-
-
 }

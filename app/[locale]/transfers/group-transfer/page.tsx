@@ -14,9 +14,8 @@ import { getTransfers } from "./services";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { FaPrint } from "react-icons/fa";
 
-
 const Page = () => {
-  const t = useTranslations("internalTransferForm");
+  const t = useTranslations("groupTransferForm");
   const router = useRouter();
 
   // Table/pagination states
@@ -102,8 +101,8 @@ const Page = () => {
 
   // Show/hide form
   const handleAddClick = () => {
-    // pushes to /internalTransfer/add (locale prefix is preserved automatically)
-    router.push("/transfers/internal/add");
+    // pushes to /group-transfer/add (locale prefix is preserved automatically)
+    router.push("/transfers/group-transfer/add");
   };
 
   return (
@@ -114,15 +113,12 @@ const Page = () => {
           <h2 style={{ marginBottom: 16 }}>Transfer Data</h2>
           <table style={{ fontSize: 16 }}>
             <tbody>
-              {Object.entries(printRow).map(([key, value]) => {
-                const displayValue: string = String(value ?? '');
-                return (
-                  <tr key={key}>
-                    <td style={{ fontWeight: "bold", padding: "4px 12px 4px 0" }}>{key}</td>
-                    <td style={{ padding: "4px" }}>{displayValue}</td>
-                  </tr>
-                );
-              })}
+              {Object.entries(printRow).map(([key, value]) => (
+                <tr key={key}>
+                  <td style={{ fontWeight: "bold", padding: "4px 12px 4px 0" }}>{key}</td>
+                  <td style={{ padding: "4px" }}>{String(value ?? "")}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

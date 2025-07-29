@@ -18,6 +18,7 @@ import {
   FaLanguage,
   FaUserCircle, // profile
 } from "react-icons/fa";
+import { IoEarth } from "react-icons/io5";
 import { MdRequestQuote } from "react-icons/md";
 // import { HiOutlineCurrencyDollar } from "react-icons/hi";
 // import { BiDollarCircle, BiUpload, BiTransferAlt } from "react-icons/bi"; // New icons for Salary Localization children
@@ -65,6 +66,15 @@ export const sidebarItems = [
     // permissions: ["CompanyCanRepresentatives"],
   },
   {
+    id: 34,
+    label: "beneficiaries",
+    path: "/beneficiaries",
+    icon: FaUsers,
+    children: [],
+    // No permissions → always visible (for testing)
+    // permissions: ["CompanyCanBeneficiaries"],
+  },
+  {
     id: 2, // Divider
     label: "divider",
     path: "",
@@ -77,7 +87,6 @@ export const sidebarItems = [
     label: "transfer.label",
     path: "/transfer",
     icon: FaExchangeAlt, // was IoWalletSharp
-    permissions: ["CompanyCanTransfer"],
     enabledTransactionCategories: ["Transfers"],
     children: [
       {
@@ -85,17 +94,21 @@ export const sidebarItems = [
         label: "transfer.in",
         path: "/transfers/internal",
         icon: FaUniversity,
-        permissions: ["CompanyCanTransferInternal"],
         enabledTransactionCategories: ["InternalTransfer"],
       },
-
-      // {
-      //   id: 6,
-      //   label: "transfer.out",
-      //   path: "/transfer/external",
-      //   icon: IoEarth,
-      //   permissions: ["CompanyCanTransferExternal"],
-      // },
+      {
+        id: 5,
+        label: "transfer.group",
+        path: "/transfers/group-transfer",
+        icon: FaUsers,
+        enabledTransactionCategories: ["GroupTransfer"],
+      },
+      {
+        id: 6,
+        label: "transfer.out",
+        path: "/transfer/external",
+        icon: IoEarth,
+      },
     ],
   },
   {
@@ -203,14 +216,14 @@ export const sidebarItems = [
   //   label: "salaryLocalization.title",
   //   path: "/localization",
   //   icon: HiOutlineCurrencyDollar,
-   
+
   //   children: [
   //     {
   //       id: 25,
   //       label: "salaryLocalization.salaries",
   //       path: "/salaries",
   //       icon: BiDollarCircle, // Icon representing salaries/money
-        
+
   //     },
   //     {
   //       id: 26,

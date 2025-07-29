@@ -68,6 +68,10 @@ const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
     icon: <FaUsers />,
     description: "representativesDescription",
   },
+  beneficiaries: {
+    icon: <FaUsers />,
+    description: "beneficiariesDescription",
+  },
   "transfer.label": {
     icon: <IoWalletSharp />,
     description: "transferDescription",

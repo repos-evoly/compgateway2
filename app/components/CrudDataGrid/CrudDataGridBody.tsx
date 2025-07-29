@@ -71,7 +71,7 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
       cmw[idx] = computeMinWidth(col);
     });
     if (showActions) {
-      cmw[columns.length] = 180; // actions column
+      cmw[columns.length] = 80; // actions column (reduced width)
     }
     return cmw;
   }, [columns, showActions, computeMinWidth]);

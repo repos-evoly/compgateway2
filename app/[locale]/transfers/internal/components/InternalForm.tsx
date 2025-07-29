@@ -15,6 +15,7 @@ import {
   getEconomicSectors,
   checkAccount,
 } from "../services";
+import { getBeneficiaries } from "@/app/[locale]/beneficiaries/services";
 
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import ResetButton from "@/app/components/FormUI/ResetButton";
@@ -159,6 +160,27 @@ function InternalForm({
     })();
   }, []);
 
+  /* ---------------- beneficiary options ------------------------- */
+  const [beneficiaryOptions, setBeneficiaryOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getBeneficiaries(1, 1000); // Get all beneficiaries
+        setBeneficiaryOptions(
+          res.data.map((b) => ({
+            value: b.id,
+            label: `${b.name} (${b.accountNumber})`,
+          }))
+        );
+      } catch (err) {
+        console.error("Fetch beneficiaries failed:", err);
+      }
+    })();
+  }, []);
+
   /* ---------------- values & schema ------------------------- */
   const defaults: ExtendedValues = {
     from: "",
@@ -168,6 +190,7 @@ function InternalForm({
     commissionOnRecipient: false,
     transactionCategoryId: 2,
     economicSectorId: undefined, // ⬅️ new
+    beneficiaryId: undefined, // ⬅️ new
   };
   const initialValues: ExtendedValues = {
     ...defaults,
@@ -190,6 +213,7 @@ function InternalForm({
     description: Yup.string().required(t("requiredDescription")),
     transactionCategoryId: Yup.number().required(),
     economicSectorId: Yup.number().required(t("requiredEconomicSector")),
+    beneficiaryId: Yup.number().optional(), // Beneficiary is optional
   });
 
   /* -------- open confirmation modal (skipped in viewOnly) --- */
@@ -289,6 +313,31 @@ function InternalForm({
     }
   };
 
+  const handleBeneficiaryChange = (
+    beneficiaryId: number,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => {
+    const selectedBeneficiary = beneficiaryOptions.find(
+      (b) => b.value === beneficiaryId
+    );
+    if (selectedBeneficiary) {
+      // Extract account number from the label (format: "Name (AccountNumber)")
+      const accountNumber = selectedBeneficiary.label.match(/\(([^)]+)\)/)?.[1];
+      if (accountNumber) {
+        setFieldValue("to", accountNumber);
+      }
+    }
+  };
+
+  const FormSyncBeneficiary = ({ values, setFieldValue }: { values: ExtendedValues, setFieldValue: (field: string, value: unknown) => void }) => {
+    useEffect(() => {
+      if (values.beneficiaryId) {
+        handleBeneficiaryChange(values.beneficiaryId, setFieldValue);
+      }
+    }, [values.beneficiaryId, setFieldValue]);
+    return null;
+  };
+
   /* --------------------------- JSX ------------------------- */
   return (
     <div className="p-2">
@@ -298,84 +347,98 @@ function InternalForm({
         onSubmit={() => {}}
         enableReinitialize
       >
-        {({ values }) => (
-          <Form>
-            <FormHeader showBackButton fallbackPath="/transfers/internal" />
+        {({ values, setFieldValue }) => {
+          return (
+            <>
+              <FormSyncBeneficiary values={values} setFieldValue={setFieldValue} />
+              <Form>
+                <FormHeader showBackButton fallbackPath="/transfers/internal" />
 
-            <FormValidator />
+                <FormValidator />
 
-            {/* Row 1 */}
-            <div className="grid gap-4 md:grid-cols-3 mt-4">
-              <InputSelectCombo
-                name="from"
-                label={t("from")}
-                options={accountOptions}
-                disabled={fieldsDisabled}
-                maskingFormat="0000-000000-000"
-              />
+                {/* Row 1 */}
+                <div className="grid gap-4 md:grid-cols-3 mt-4">
+                  <InputSelectCombo
+                    name="from"
+                    label={t("from")}
+                    options={accountOptions}
+                    disabled={fieldsDisabled}
+                    maskingFormat="0000-000000-000"
+                  />
 
-              <FormInputIcon
-                name="to"
-                label={t("to")}
-                maskingFormat="0000-000000-000"
-                disabled={fieldsDisabled}
-                onBlurAdditional={handleCheckAccount}
-                errorMessage={toError}
-              />
-              <FormInputIcon
-                name="value"
-                label={t("value")}
-                type="number"
-                disabled={fieldsDisabled}
-              />
-            </div>
-            <InputSelectCombo
-              name="economicSectorId"
-              label={t("economicSector")}
-              options={sectorOptions}
-              disabled={fieldsDisabled}
-            />
-
-            {/* Row 2 */}
-            <div className="mt-4">
-              <FormInputIcon
-                name="description"
-                label={t("description")}
-                disabled={fieldsDisabled}
-              />
-            </div>
-
-            {/* Buttons – hide in viewOnly */}
-            {!viewOnly && (
-              <div className="mt-6 flex justify-center gap-4">
-                {!isNew && (
-                  <>
-                    <EditButton
-                      fieldsDisabled={fieldsDisabled}
-                      setFieldsDisabled={setFieldsDisabled}
-                    />
-                    <ResetButton
-                      title={t("delete")}
-                      Icon={FaTrash}
-                      color="warning-light"
-                    />
-                  </>
-                )}
-                <ContinueButton
-                  onClick={() => openModal(values)}
-                  touchedFields={{
-                    from: true,
-                    to: true,
-                    value: true,
-                    description: true,
-                    transactionCategoryId: true,
-                  }}
-                  disabled={!!toError} // ⬅️ block submit if error
+                  <FormInputIcon
+                    name="to"
+                    label={t("to")}
+                    maskingFormat="0000-000000-000"
+                    disabled={fieldsDisabled}
+                    onBlurAdditional={handleCheckAccount}
+                    errorMessage={toError}
+                  />
+                  <FormInputIcon
+                    name="value"
+                    label={t("value")}
+                    type="number"
+                    disabled={fieldsDisabled}
+                  />
+                </div>
+                <InputSelectCombo
+                  name="economicSectorId"
+                  label={t("economicSector")}
+                  options={sectorOptions}
+                  disabled={fieldsDisabled}
                 />
-              </div>
-            )}
-          </Form>
-        )}
+
+                {/* Beneficiary Selection */}
+                <InputSelectCombo
+                  name="beneficiaryId"
+                  label={t("beneficiary")}
+                  options={beneficiaryOptions}
+                  disabled={fieldsDisabled}
+                  placeholder={t("selectBeneficiary")}
+                />
+
+                {/* Row 2 */}
+                <div className="mt-4">
+                  <FormInputIcon
+                    name="description"
+                    label={t("description")}
+                    disabled={fieldsDisabled}
+                  />
+                </div>
+
+                {/* Buttons – hide in viewOnly */}
+                {!viewOnly && (
+                  <div className="mt-6 flex justify-center gap-4">
+                    {!isNew && (
+                      <>
+                        <EditButton
+                          fieldsDisabled={fieldsDisabled}
+                          setFieldsDisabled={setFieldsDisabled}
+                        />
+                        <ResetButton
+                          title={t("delete")}
+                          Icon={FaTrash}
+                          color="warning-light"
+                        />
+                      </>
+                    )}
+                    <ContinueButton
+                      onClick={() => openModal(values)}
+                      touchedFields={{
+                        from: true,
+                        to: true,
+                        value: true,
+                        description: true,
+                        transactionCategoryId: true,
+                      }}
+                      disabled={!!toError} // ⬅️ block submit if error
+                    />
+                  </div>
+                )}
+              </Form>
+            </>
+          );
+        }}
       </Formik>
 
       {/* Modal – disabled in viewOnly */}

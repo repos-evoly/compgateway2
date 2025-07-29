@@ -1,0 +1,172 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "type": "local",
+      "name": "Ahmed Hassan",
+      "accountNumber": "1234-567890-001",
+      "bank": "National Bank",
+      "amount": 5000,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": 2,
+      "type": "international",
+      "name": "Fatima Al-Zahra",
+      "address": "123 Main Street, Dubai, UAE",
+      "country": "UAE",
+      "accountNumber": "AE123456789012345678901",
+      "intermediaryBankSwift": "UBSWCHZH80A",
+      "intermediaryBankName": "UBS Switzerland",
+      "createdAt": "2024-01-16T14:20:00Z",
+      "updatedAt": "2024-01-16T14:20:00Z"
+    },
+    {
+      "id": 3,
+      "type": "local",
+      "name": "Mohammed Ali",
+      "accountNumber": "3456-789012-003",
+      "bank": "Commercial Bank",
+      "amount": 7500,
+      "createdAt": "2024-01-17T09:15:00Z",
+      "updatedAt": "2024-01-17T09:15:00Z"
+    },
+    {
+      "id": 4,
+      "type": "international",
+      "name": "Aisha Rahman",
+      "address": "456 Park Avenue, London, UK",
+      "country": "UK",
+      "accountNumber": "GB29NWBK60161331926819",
+      "intermediaryBankSwift": "BARCGB22",
+      "intermediaryBankName": "Barclays Bank",
+      "createdAt": "2024-01-18T16:45:00Z",
+      "updatedAt": "2024-01-18T16:45:00Z"
+    },
+    {
+      "id": 5,
+      "type": "local",
+      "name": "Omar Khalil",
+      "accountNumber": "5678-901234-005",
+      "bank": "Islamic Bank",
+      "amount": 3000,
+      "createdAt": "2024-01-19T11:30:00Z",
+      "updatedAt": "2024-01-19T11:30:00Z"
+    },
+    {
+      "id": 6,
+      "type": "international",
+      "name": "Layla Ibrahim",
+      "address": "789 Broadway, New York, USA",
+      "country": "USA",
+      "accountNumber": "US1234567890123456789012",
+      "intermediaryBankSwift": "CHASUS33",
+      "intermediaryBankName": "JPMorgan Chase",
+      "createdAt": "2024-01-20T13:20:00Z",
+      "updatedAt": "2024-01-20T13:20:00Z"
+    },
+    {
+      "id": 7,
+      "type": "local",
+      "name": "Yusuf Mahmoud",
+      "accountNumber": "7890-123456-007",
+      "bank": "Central Bank",
+      "amount": 12000,
+      "createdAt": "2024-01-21T08:45:00Z",
+      "updatedAt": "2024-01-21T08:45:00Z"
+    },
+    {
+      "id": 8,
+      "type": "international",
+      "name": "Nour El-Din",
+      "address": "321 Queen Street, Toronto, Canada",
+      "country": "Canada",
+      "accountNumber": "CA1234567890123456789012",
+      "intermediaryBankSwift": "ROYCCAT2",
+      "intermediaryBankName": "Royal Bank of Canada",
+      "createdAt": "2024-01-22T15:10:00Z",
+      "updatedAt": "2024-01-22T15:10:00Z"
+    },
+    {
+      "id": 9,
+      "type": "local",
+      "name": "Zainab Hassan",
+      "accountNumber": "9012-345678-009",
+      "bank": "Investment Bank",
+      "amount": 8500,
+      "createdAt": "2024-01-23T12:25:00Z",
+      "updatedAt": "2024-01-23T12:25:00Z"
+    },
+    {
+      "id": 10,
+      "type": "international",
+      "name": "Khalid Abdullah",
+      "address": "654 Collins Street, Melbourne, Australia",
+      "country": "Australia",
+      "accountNumber": "AU1234567890123456789012",
+      "intermediaryBankSwift": "ANZBAU3M",
+      "intermediaryBankName": "ANZ Bank",
+      "createdAt": "2024-01-24T17:35:00Z",
+      "updatedAt": "2024-01-24T17:35:00Z"
+    },
+    {
+      "id": 11,
+      "type": "local",
+      "name": "Mariam Saleh",
+      "accountNumber": "1234-567890-011",
+      "bank": "Savings Bank",
+      "amount": 4500,
+      "createdAt": "2024-01-25T10:50:00Z",
+      "updatedAt": "2024-01-25T10:50:00Z"
+    },
+    {
+      "id": 12,
+      "type": "international",
+      "name": "Hassan Al-Rashid",
+      "address": "987 Champs-Élysées, Paris, France",
+      "country": "France",
+      "accountNumber": "FR1234567890123456789012",
+      "intermediaryBankSwift": "BNPAFRPP",
+      "intermediaryBankName": "BNP Paribas",
+      "createdAt": "2024-01-26T14:15:00Z",
+      "updatedAt": "2024-01-26T14:15:00Z"
+    },
+    {
+      "id": 13,
+      "type": "local",
+      "name": "Amina Khalil",
+      "accountNumber": "3456-789012-013",
+      "bank": "Development Bank",
+      "amount": 6000,
+      "createdAt": "2024-01-27T09:40:00Z",
+      "updatedAt": "2024-01-27T09:40:00Z"
+    },
+    {
+      "id": 14,
+      "type": "international",
+      "name": "Rashid Omar",
+      "address": "456 Unter den Linden, Berlin, Germany",
+      "country": "Germany",
+      "accountNumber": "DE1234567890123456789012",
+      "intermediaryBankSwift": "DEUTDEFF",
+      "intermediaryBankName": "Deutsche Bank",
+      "createdAt": "2024-01-28T16:20:00Z",
+      "updatedAt": "2024-01-28T16:20:00Z"
+    },
+    {
+      "id": 15,
+      "type": "local",
+      "name": "Sara Ahmed",
+      "accountNumber": "5678-901234-015",
+      "bank": "Cooperative Bank",
+      "amount": 9000,
+      "createdAt": "2024-01-29T11:55:00Z",
+      "updatedAt": "2024-01-29T11:55:00Z"
+    }
+  ],
+  "page": 1,
+  "limit": 10,
+  "totalPages": 2,
+  "totalRecords": 15
+} 

@@ -22,7 +22,7 @@ export default function GroupTransferDetailsPage() {
         /* map API response → GroupTransferFormValues */
         setInitial({
           from: res.fromAccount,
-          to: res.toAccount,
+          to: res.toAccount.split(',').map(acc => acc.trim()), // Convert comma-separated string to array
           value: res.amount,
           description: res.description,
           economicSectorId: res.economicSectorId,

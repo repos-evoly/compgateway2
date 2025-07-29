@@ -233,7 +233,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
   /* render */
   return (
     <>
-      <FormHeader status={initialValues?.status} onBack={onBack}>
+      <FormHeader status={initialValues?.status} onBack={onBack} isEditing={true}>
         <div className="pb-5">
           <BackButton fallbackPath="/requests/cbl" onBack={onBack} />
         </div>

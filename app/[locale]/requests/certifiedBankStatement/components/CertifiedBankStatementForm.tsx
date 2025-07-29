@@ -174,6 +174,7 @@ export default function CertifiedBankStatementForm({
                 showBackButton
                 fallbackPath="/requests/certifiedBankStatement"
                 status={status}
+                isEditing={true}
               />
               <TabsWizard
                 steps={steps}

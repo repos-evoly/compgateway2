@@ -312,6 +312,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
         <FormHeader
           status={status}
           showBackButton
+          isEditing={true}
         />
 
         <div className="px-6 pb-6">

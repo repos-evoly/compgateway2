@@ -211,7 +211,7 @@ export default function VisaWizardForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                isEditing={initialValues !== undefined}
+                isEditing={true}
                 backFallbackPath="/requests/visaRequest"
               />
             </Form>

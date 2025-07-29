@@ -1,6 +1,6 @@
 export type GroupTransferFormValues = {
   from: string;
-  to: string;
+  to: string[]; // Changed from string to string[] for multiple accounts
   value: number;
   description: string;
   beneficiaryId?: number; // New field for beneficiary selection
@@ -85,6 +85,7 @@ export interface TransfersApiResponse {
     status: string;
     description: string;
     requestedAt: string;
+    isGroupTransfer?: boolean; // Flag to identify group transfers
   }>;
   page: number;
   limit: number;

@@ -12,7 +12,19 @@ type OptionType = { value: string | number; label: string };
 export default function MultiSelect({ name, label, options }: Props) {
   const [field] = useField(name);
   const { setFieldValue } = useFormikContext();
-  const initialValues = field.value ? field.value.split(",") : [];
+  
+  // Handle both string and array values
+  const getInitialValues = (value: string | string[] | undefined): string[] => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value) {
+      return value.split(",");
+    }
+    return [];
+  };
+  
+  const initialValues = getInitialValues(field.value);
   const [selectedItems, setSelectedItems] = useState<string[]>(initialValues);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -24,11 +36,11 @@ export default function MultiSelect({ name, label, options }: Props) {
       newSelectedItems = [...selectedItems, value];
     }
     setSelectedItems(newSelectedItems);
-    setFieldValue(name, newSelectedItems.join(","));
+    setFieldValue(name, newSelectedItems); // Store as array instead of string
   };
 
   useEffect(() => {
-    setSelectedItems(field.value ? field.value.split(",") : []);
+    setSelectedItems(getInitialValues(field.value));
   }, [field.value]);
 
   return (

@@ -182,6 +182,7 @@ const BeneficiaryForm: React.FC<BeneficiaryFormProps> = ({
         <FormHeader
           showBackButton
           fallbackPath="/beneficiaries"
+          isEditing={true}
         >
           {/* Type Selector */}
           {!isEditMode && (

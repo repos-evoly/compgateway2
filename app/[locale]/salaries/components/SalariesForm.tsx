@@ -48,6 +48,7 @@ const SalariesForm: React.FC<SalariesFormProps> = ({ initialValues, onSubmit, on
             showBackButton={true}
             fallbackPath="/salaries"
             onBack={onCancel}
+            isEditing={true}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInputIcon name="name" label={t("name")} type="text" />

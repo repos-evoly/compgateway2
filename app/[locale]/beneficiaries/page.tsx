@@ -10,6 +10,8 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { BeneficiariesApiResponse } from "./types";
 import { getBeneficiaries } from "./services";
 import { BeneficiaryResponse } from "./types";
+import { FaEdit } from "react-icons/fa";
+import type { Action } from "@/types";
 
 const Page = () => {
   const t = useTranslations("beneficiaries");
@@ -50,9 +52,33 @@ const Page = () => {
     fetchBeneficiaries();
   }, [fetchBeneficiaries]);
 
+  // Define actions for the data grid
+  const actions: Action[] = [
+    {
+      name: "edit",
+      tip: t("editBeneficiary", { defaultValue: "Edit Beneficiary" }),
+      icon: <FaEdit />,
+      onClick: (row) => {
+        router.push(`/beneficiaries/${row.id}/edit`);
+      },
+    },
+  ];
+
   // columns => minimal example
   const columns = [
-    { key: "id", label: t("id") },
+    { 
+      key: "id", 
+      label: t("id"),
+      renderCell: (row: BeneficiaryResponse) => (
+        <div 
+          className="cursor-pointer hover:bg-gray-100 p-1 rounded"
+          onDoubleClick={() => router.push(`/beneficiaries/${row.id}/edit`)}
+          title={t("doubleClickToEdit", { defaultValue: "Double-click to edit" })}
+        >
+          {row.id}
+        </div>
+      )
+    },
     { key: "name", label: t("name") },
     {
       key: "type",
@@ -61,8 +87,8 @@ const Page = () => {
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
             row.type === "international"
-              ? "bg-blue-100 text-blue-800"
-              : "bg-green-100 text-green-800"
+              ? " text-black"
+              : " text-black"
           }`}
         >
           {row.type === "international" ? t("international") : t("local")}
@@ -114,6 +140,11 @@ const Page = () => {
         // Add button
         showAddButton
         onAddClick={handleAddClick}
+        // Actions
+        showActions
+        actions={actions}
+        // Enable double-click on ID
+        canEdit={false}
         loading={loading}
       />
 

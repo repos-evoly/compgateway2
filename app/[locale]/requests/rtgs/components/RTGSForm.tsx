@@ -481,7 +481,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           )}
           <BackButton
             fallbackPath="/requests/rtgs"
-            isEditing={initialValues !== undefined}
+            isEditing={true}
           />
         </div>
       </Form>

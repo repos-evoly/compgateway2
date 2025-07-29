@@ -1,197 +1,271 @@
-// /* src/lib/pdf/transferPdf.ts
-//    --------------------------------------------------------------
-//    Generates (1) a full-page “transfer confirmation” PDF (A4) and
-//    (2) a narrow receipt-style PDF (80 mm) – both Arabic-ready.
-//    Requires pdfFonts.ts to have registered Amiri. No “any”, no
-//    interface, strict TypeScript.
-// ----------------------------------------------------------------- */
+/* src/lib/pdf/transferPdf.ts
+   --------------------------------------------------------------
+   Generates (1) a full-page "transfer confirmation" PDF (A4) and
+   (2) a narrow receipt-style PDF (80 mm) – both Arabic-ready.
+   Requires pdfFonts.ts to have registered Amiri. No "any", no
+   interface, strict TypeScript.
+----------------------------------------------------------------- */
 
-// import { jsPDF } from 'jspdf';
-// import { registerAmiriFont } from './pdfFonts';
-// import type { TransferResponse } from '../[locale]/transfers/internal/types';
+import { jsPDF } from 'jspdf';
+import { registerAmiriFont } from './pdfFonts';
 
-// registerAmiriFont();
+registerAmiriFont();
 
-// /* ---------- helpers ---------- */
-// type Rgb = { r: number; g: number; b: number };
-// const primary: Rgb   = { r: 0x2a, g: 0x6c, b: 0x57 }; // #2A6C57
-// const secondary: Rgb = { r: 0xa9, g: 0xc7, b: 0xbf }; // #A9C7BF
-// const textCol: Rgb   = { r: 0x1f, g: 0x29, b: 0x37 }; // #1F2937
+/* ---------- helpers ---------- */
+type Rgb = { r: number; g: number; b: number };
+const primary: Rgb   = { r: 0x2A, g: 0x6C, b: 0x57 }; // Project's info.dark green (#2A6C57)
+const textCol: Rgb   = { r: 0x1f, g: 0x29, b: 0x37 }; // #2A6C57
 
-// /* -------------------------------------------------------------- */
-// /* 1 · Full-page transfer confirmation (A4)                       */
-// /* -------------------------------------------------------------- */
-// export const generateTransferPdf = (transfer: TransferResponse): void => {
-//   const doc = new jsPDF({ putOnlyUsedFonts: true, hotfixes: ['px_scaling'] });
-//   doc.setLanguage('ar');
+// Define the transfer type based on the data structure
+type TransferData = {
+  id: number;
+  categoryName: string;
+  fromAccount: string;
+  toAccount: string | string[]; // Support both single and multiple accounts
+  amount: number;
+  status: string;
+  requestedAt: string;
+  currencyId: string;
+  description: string;
+  economicSectorId: string;
+};
 
-//   const pageWidth = doc.internal.pageSize.getWidth();
-//   const margin = 20;
+/* -------------------------------------------------------------- */
+/* 1 · Full-page transfer confirmation (A4)                       */
+/* -------------------------------------------------------------- */
+export const generateTransferPdf = (transfer: TransferData): void => {
+  const doc = new jsPDF({ putOnlyUsedFonts: true, hotfixes: ['px_scaling'] });
+  doc.setLanguage('ar');
 
-//   /* header bar ------------------------------------------------- */
-//   doc.setFillColor(primary.r, primary.g, primary.b).rect(0, 0, pageWidth, 35, 'F');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 20;
 
-//   /* logo circle was removed in the previous revision ----------- */
+  /* header ------------------------------------------------ */
+  doc
+    .setFillColor(primary.r, primary.g, primary.b)
+    .rect(0, 0, pageWidth, 40, 'F');
 
-//   doc.setFont('Amiri', 'normal').setFontSize(8);
-//   doc
-//     .setTextColor(255, 255, 255)
-//     .setFontSize(16)
-//     .text('تأكيد التحويل', pageWidth / 2, 20, { align: 'center' });
+  doc
+    .setTextColor(255, 255, 255)
+    .setFont('Amiri', 'normal')
+    .setFontSize(14)
+    .text('تحويل', pageWidth / 2, 25, { align: 'center' });
 
-//   doc.setFont('Amiri', 'normal').setFontSize(8);
-//   const currentDate = new Date().toLocaleDateString('ar-SA');
-//   const currentTime = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  // Fix Arabic text and use Gregorian date
+  const currentDate = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit', 
+    year: 'numeric'
+  }); // Format: DD/MM/YYYY (solar/Gregorian)
+  
+  const currentTime = new Date().toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }); // Format: HH:MM (24-hour format)
 
-//   doc.text(`رقم المستند: TRF-${transfer.id}`, pageWidth - margin, 15, { align: 'right' });
-//   doc.text(`التاريخ: ${currentDate} | الوقت: ${currentTime}`, pageWidth - margin, 25, { align: 'right' });
+  doc
+    .setFont('Amiri', 'normal')
+    .setFontSize(10)
+    .text(`${transfer.id} : TRF - رقم المستند `, pageWidth - margin, 15, { align: 'right' });
+    doc.text(`${currentDate} : الوقت : ${currentTime} | التاريخ`, pageWidth - margin, 25, { align: 'right' });
 
-//   /* amount panel ---------------------------------------------- */
-//   let y = 50;
-//   doc
-//     .setFillColor(secondary.r, secondary.g, secondary.b)
-//     .roundedRect(margin, y, pageWidth - margin * 2, 25, 3, 3, 'F');
+  /* Transaction details above the table ----------------------- */
+  let y = 50; // Define y variable
+  
+  const formattedAmount = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: transfer.currencyId ?? 'USD',
+    minimumFractionDigits: 2,
+  }).format(+(transfer.amount || 0));
 
-//   doc.setFont('Amiri', 'normal').setFontSize(8);
-//   doc
-//     .setTextColor(primary.r, primary.g, primary.b)
-//     .setFontSize(12)
-//     .text('المبلغ المحول', pageWidth / 2, y + 10, { align: 'center' });
+  type Field = { label: string; value: string | number };
 
-//   const formattedAmount = new Intl.NumberFormat('en-US', {
-//     style: 'currency',
-//     currency: transfer.currencyId ?? 'USD',
-//     minimumFractionDigits: 2,
-//   }).format(+transfer.amount);
+  const left: readonly Field[] = [
+    { label: 'المبلغ',           value: formattedAmount },
+    { label: 'الوصف',            value: transfer.description || '—' },
+    { label: 'رقم التحويل',      value: transfer.id },
+  ];
 
-//   doc
-//     .setFont('Amiri', 'bold')
-//     .setFontSize(14)
-//     .text(formattedAmount, pageWidth / 2, y + 20, { align: 'center' });
+  const right: readonly Field[] = [
+    { label: 'العملة',           value: transfer.currencyId ?? 'USD' },
+    { label: 'القطاع الاقتصادي', value: transfer.economicSectorId ?? '—' },
+    { label: 'الحالة',           value: transfer.status || 'مكتمل' },
+  ];
 
-//   y += 40;
+  doc.setTextColor(textCol.r, textCol.g, textCol.b).setFontSize(10);
 
-//   /* details header (now right-aligned) ------------------------ */
-//   doc.setFont('Amiri', 'normal').setFontSize(8);
-//   doc
-//     .setTextColor(primary.r, primary.g, primary.b)
-//     .setFontSize(16)
-//     .text('تفاصيل التحويل', pageWidth - margin, y, { align: 'right' });
+  /* positioning helpers --------------------------------------- */
+  const spacing      = 30;               // distance between value and label
+  const labelRightX  = pageWidth - margin;          // outer-most label column
+  const valueRightX  = labelRightX - spacing;       // its value
+  const labelLeftX   = labelRightX - 120;           // inner label column
+  const valueLeftX   = labelLeftX - spacing;        // its value
 
-//   doc
-//     .setDrawColor(primary.r, primary.g, primary.b)
-//     .setLineWidth(0.5)
-//     .line(pageWidth - margin - 40, y + 2, pageWidth - margin, y + 2);
+  /* inner (formerly "left") column ---------------------------- */
+  left.forEach(({ label, value }, idx) => {
+    const lineY = y + idx * 12;
 
-//   y += 15;
+    doc.setFont('Amiri', 'normal').setFontSize(10);
+    doc.text(String(value), valueLeftX, lineY, { align: 'right' });
 
-//   /* left + right column data (now anchored on the right) ------ */
-//   type Field = { label: string; value: string | number };
+    doc.setFont('Amiri', 'normal').setFontSize(10);
+    doc.text(`${label}:`, labelLeftX, lineY, { align: 'right' });
+  });
 
-//   const left: readonly Field[] = [
-//     { label: 'من الحساب',        value: transfer.fromAccount },
-//     { label: 'المبلغ',           value: formattedAmount },
-//     { label: 'الوصف',            value: transfer.description || '—' },
-//     { label: 'رقم التحويل',      value: transfer.id },
-//   ];
+  /* outer (formerly "right") column --------------------------- */
+  right.forEach(({ label, value }, idx) => {
+    const lineY = y + idx * 12;
 
-//   const right: readonly Field[] = [
-//     { label: 'إلى الحساب',       value: transfer.toAccount },
-//     { label: 'العملة',           value: transfer.currencyId ?? 'USD' },
-//     { label: 'القطاع الاقتصادي', value: transfer.economicSectorId ?? '—' },
-//     { label: 'الحالة',           value: 'مكتمل' },
-//   ];
+    doc.setFont('Amiri', 'normal').setFontSize(12);
+    doc.text(String(value), valueRightX, lineY, { align: 'right' });
 
-//   doc.setTextColor(textCol.r, textCol.g, textCol.b).setFontSize(10);
+    doc.setFont('Amiri', 'normal').setFontSize(12);
+    doc.text(`${label}:`, labelRightX, lineY, { align: 'right' });
+  });
 
-//   /* positioning helpers --------------------------------------- */
-//   const spacing      = 35;               // distance between value and label
-//   const labelRightX  = pageWidth - margin;          // outer-most label column
-//   const valueRightX  = labelRightX - spacing;       // its value
-//   const labelLeftX   = labelRightX - 120;           // inner label column
-//   const valueLeftX   = labelLeftX - spacing;        // its value
+  y += 50; // Space between transaction details and table
 
-//   /* inner (formerly “left”) column ---------------------------- */
-//   left.forEach(({ label, value }, idx) => {
-//     const lineY = y + idx * 12;
+  /* Account details table below the transaction details ------- */
+  const tableWidth = 150;
+  const tableLeft = (pageWidth - tableWidth) / 2;
+  const tableTop = y;
+  const rowHeight = 20; // Base row height
+  const colWidth = tableWidth / 2;
 
-//     doc.setFont('Amiri', 'normal').setFontSize(10);
-//     doc.text(String(value), valueLeftX, lineY, { align: 'right' });
+  // Calculate dynamic row height based on number of account numbers
+  const toAccounts = Array.isArray(transfer.toAccount) 
+    ? transfer.toAccount 
+    : (transfer.toAccount || '—').split(',').map(acc => acc.trim());
+  
+  const fromAccounts = Array.isArray(transfer.fromAccount) 
+    ? transfer.fromAccount 
+    : [transfer.fromAccount || '—'];
+  
+  const maxAccounts = Math.max(toAccounts.length, fromAccounts.length);
+  const dynamicRowHeight = Math.max(rowHeight, maxAccounts * 15); // 15pt per account line
 
-//     doc.setFont('Amiri', 'normal').setFontSize(10);
-//     doc.text(`${label}:`, labelLeftX, lineY, { align: 'right' });
-//   });
+  // Table header
+  doc
+    .setFillColor(primary.r, primary.g, primary.b)
+    .rect(tableLeft, tableTop, tableWidth, rowHeight, 'F');
 
-//   /* outer (formerly “right”) column --------------------------- */
-//   right.forEach(({ label, value }, idx) => {
-//     const lineY = y + idx * 12;
+  doc
+    .setTextColor(255, 255, 255)
+    .setFont('Amiri', 'normal')
+    .setFontSize(12)
+    .text('تفاصيل الحسابات', tableLeft + tableWidth / 2, tableTop + 13, { align: 'center' });
 
-//     doc.setFont('Amiri', 'normal').setFontSize(12);
-//     doc.text(String(value), valueRightX, lineY, { align: 'right' });
+  // First row - Labels
+  doc
+    .setFillColor(255, 255, 255) // White background
+    .setDrawColor(primary.r, primary.g, primary.b) // Green borders
+    .setLineWidth(0.5)
+    .rect(tableLeft, tableTop + rowHeight, tableWidth, rowHeight, 'F')
+    .line(tableLeft + colWidth, tableTop + rowHeight, tableLeft + colWidth, tableTop + rowHeight * 2) // Vertical divider
+    .line(tableLeft, tableTop + rowHeight, tableLeft + tableWidth, tableTop + rowHeight) // Top border
+    .line(tableLeft, tableTop + rowHeight * 2, tableLeft + tableWidth, tableTop + rowHeight * 2); // Bottom border
 
-//     doc.setFont('Amiri', 'normal').setFontSize(12);
-//     doc.text(`${label}:`, labelRightX, lineY, { align: 'right' });
-//   });
+  // Labels row
+  doc
+    .setTextColor(0, 0, 0) // Black text
+    .setFont('Amiri', 'normal')
+    .setFontSize(10)
+    .text('إلى الحساب', tableLeft + colWidth / 2, tableTop + rowHeight + 12, { align: 'center' });
 
-//   doc.save(`transfer_${transfer.id}_${new Date().toISOString().split('T')[0]}.pdf`);
-// };
+  doc
+    .setTextColor(0, 0, 0) // Black text
+    .setFont('Amiri', 'normal')
+    .setFontSize(10)
+    .text('من الحساب', tableLeft + colWidth + colWidth / 2, tableTop + rowHeight + 12, { align: 'center' });
 
-// /* -------------------------------------------------------------- */
-// /* 2 · Compact receipt (80 mm × 100 mm)                           */
-// /* -------------------------------------------------------------- */
-// export const generateTransferReceipt = (transfer: TransferResponse): void => {
-//   const doc = new jsPDF({
-//     orientation: 'portrait',
-//     unit: 'mm',
-//     format: [80, 100],
-//     putOnlyUsedFonts: true,
-//   });
-//   doc.setLanguage('ar');
+  // Second row - Account numbers with dynamic height
+  doc
+    .setFillColor(255, 255, 255) // White background
+    .setDrawColor(primary.r, primary.g, primary.b) // Green borders
+    .setLineWidth(0.5)
+    .rect(tableLeft, tableTop + rowHeight * 2, tableWidth, dynamicRowHeight, 'F')
+    .line(tableLeft + colWidth, tableTop + rowHeight * 2, tableLeft + colWidth, tableTop + rowHeight * 2 + dynamicRowHeight) // Vertical divider
+    .line(tableLeft, tableTop + rowHeight * 2 + dynamicRowHeight, tableLeft + tableWidth, tableTop + rowHeight * 2 + dynamicRowHeight); // Bottom border
 
-//   const width = doc.internal.pageSize.getWidth();
+  // Account numbers row - display each account on its own line
+  doc
+    .setTextColor(0, 0, 0) // Black text
+    .setFont('Amiri', 'normal')
+    .setFontSize(10);
 
-//   doc
-//     .setFillColor(primary.r, primary.g, primary.b)
-//     .rect(0, 0, width, 15, 'F');
+  // Display To Accounts (left column) - each on its own line
+  toAccounts.forEach((account, index) => {
+    const yPosition = tableTop + rowHeight * 2 + 12 + (index * 15);
+    doc.text(account, tableLeft + colWidth / 2, yPosition, { align: 'center' });
+  });
 
-//   doc
-//     .setTextColor(255, 255, 255)
-//     .setFont('Amiri', 'bold')
-//     .setFontSize(10)
-//     .text('إيصال التحويل', width / 2, 10, { align: 'center' });
+  // Display From Account (right column) - each on its own line
+  fromAccounts.forEach((account, index) => {
+    const yPosition = tableTop + rowHeight * 2 + 12 + (index * 15);
+    doc.text(account, tableLeft + colWidth + colWidth / 2, yPosition, { align: 'center' });
+  });
 
-//   doc.setFont('Amiri', 'normal').setTextColor(0, 0, 0).setFontSize(7);
+  doc.save(`transfer_${transfer.id}_${new Date().toISOString().split('T')[0]}.pdf`);
+};
 
-//   const lines: readonly string[] = [
-//     `التاريخ: ${new Date().toLocaleDateString('ar-SA')} | الوقت: ${new Date().toLocaleTimeString('ar-SA', {
-//       hour: '2-digit',
-//       minute: '2-digit',
-//     })}`,
-//     `المرجع: TRF-${transfer.id}`,
-//     '',
-//     `من: ${transfer.fromAccount}`,
-//     `إلى: ${transfer.toAccount}`,
-//     '',
-//     `المبلغ: ${new Intl.NumberFormat('en-US', {
-//       style: 'currency',
-//       currency: transfer.currencyId ?? 'USD',
-//     }).format(+transfer.amount)}`,
-//     '',
-//     `الوصف: ${transfer.description || 'تحويل'}`,
-//     'الحالة: مكتمل',
-//     '',
-//     'شكراً لتعاملكم معنا!',
-//   ];
+/* -------------------------------------------------------------- */
+/* 2 · Compact receipt (80 mm × 100 mm)                           */
+/* -------------------------------------------------------------- */
+export const generateTransferReceipt = (transfer: TransferData): void => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: [80, 100],
+    putOnlyUsedFonts: true,
+  });
+  doc.setLanguage('ar');
 
-//   let y = 22;
-//   lines.forEach((line) => {
-//     if (line === '') {
-//       y += 2;
-//     } else {
-//       doc.text(line, 3, y);
-//       y += 4;
-//     }
-//   });
+  const width = doc.internal.pageSize.getWidth();
 
-//   doc.save(`transfer_receipt_${transfer.id}.pdf`);
-// };
+  doc
+    .setFillColor(primary.r, primary.g, primary.b)
+    .rect(0, 0, width, 15, 'F');
+
+  doc
+    .setTextColor(255, 255, 255)
+    .setFont('Amiri', 'bold')
+    .setFontSize(10)
+    .text('إيصال التحويل', width / 2, 10, { align: 'center' });
+
+  doc.setFont('Amiri', 'normal').setTextColor(0, 0, 0).setFontSize(7);
+
+  const lines: readonly string[] = [
+    `:التاريخ ${new Date().toLocaleDateString('ar-SA')} | :الوقت ${new Date().toLocaleTimeString('ar-SA', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`,
+    `:المرجع TRF-${transfer.id}`,
+    '',
+    'تفاصيل الحسابات:',
+    `من: ${transfer.fromAccount || '—'}`,
+    `إلى: ${transfer.toAccount || '—'}`,
+    '',
+    `:المبلغ ${new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: transfer.currencyId ?? 'USD',
+    }).format(+(transfer.amount || 0))}`,
+    '',
+    `: الوصف ${transfer.description || 'تحويل'}`,
+    `: الحالة ${transfer.status || 'مكتمل'}`,
+    '',
+    'شكراً لتعاملكم معنا!',
+  ];
+
+  let y = 22;
+  lines.forEach((line) => {
+    if (line === '') {
+      y += 2;
+    } else {
+      doc.text(line, 3, y);
+      y += 4;
+    }
+  });
+
+  doc.save(`transfer_receipt_${transfer.id}.pdf`);
+};

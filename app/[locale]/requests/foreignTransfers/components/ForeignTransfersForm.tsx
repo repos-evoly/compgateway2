@@ -226,7 +226,7 @@ export default function ForeignTransfersForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                isEditing={!!initialValues}
+                isEditing={true}
               />
             </Form>
           );

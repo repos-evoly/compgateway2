@@ -350,7 +350,9 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
                 }
               >
                 <div className="flex items-center justify-between">
-                  <span>{col.label}</span>
+                  <span>
+                    {col.renderHeader ? col.renderHeader() : col.label}
+                  </span>
                 </div>
                 {/* Resize handle */}
                 <div

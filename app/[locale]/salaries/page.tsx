@@ -1,32 +1,76 @@
+/* --------------------------------------------------------------------------
+   app/[locale]/salaries/page.tsx
+   – Uses reusable <Button> and fixes accountType union mismatch.
+   – Columns include the new “accountType” field.
+   -------------------------------------------------------------------------- */
 "use client";
 
 import React, { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+// import { useRouter } from "next/navigation";
+
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import SalariesForm from "./components/SalariesForm";
-import { TSalaryRecord, TSalaryFormValues } from "./types";
-import salariesData from "./salariesData.json";
-import { useRouter } from "next/navigation";
+import Button from "@/app/components/reusable/Button";
+
+import type { TSalaryRecord, TSalaryFormValues } from "./types";
+import salariesDataJson from "./salariesData.json";
 
 const PAGE_SIZE = 10;
 
-const SalariesPage = () => {
+/* ------------------------------------------------------------------ */
+/* Cast JSON → TSalaryRecord[] (fixes accountType literal union)      */
+/* ------------------------------------------------------------------ */
+const salariesData: TSalaryRecord[] = (
+  salariesDataJson as unknown as TSalaryRecord[]
+).map((r) => ({
+  ...r,
+  accountType: r.accountType as "account" | "wallet",
+}));
+
+export default function SalariesPage() {
   const locale = useLocale();
   const t = useTranslations("salaries");
-  const router = useRouter();
+  // const router = useRouter();
 
-  // Data state
+  /* ------------------- state ---------------------------------------- */
   const [data, setData] = useState<TSalaryRecord[]>(salariesData);
   const [showForm, setShowForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  /* ------------------- paging helpers ------------------------------- */
   const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
+  const handlePageChange = (p: number) => setCurrentPage(p);
+
+  /* ------------------- add salary record ---------------------------- */
+  const handleAddClick = () => setShowForm(true);
+
+  const handleFormSubmit = (values: TSalaryFormValues) => {
+    setData((prev) => {
+      const nextId = (prev[0]?.id ?? 0) + 1;
+      return [
+        {
+          id: nextId,
+          name: values.name ?? "",
+          email: values.email ?? "",
+          phone: values.phone ?? "",
+          salary: values.salary ?? 0,
+          date: values.date ?? new Date().toISOString().slice(0, 10),
+          accountNumber: values.accountNumber ?? "",
+          accountType: values.accountType ?? "account",
+          sendSalary: false,
+          canPost: false,
+        } as TSalaryRecord,
+        ...prev,
+      ];
+    });
+    setShowForm(false);
+    setCurrentPage(1); // reset pagination
   };
 
-  // Columns definition
+  const handleFormCancel = () => setShowForm(false);
+
+  /* ------------------- columns -------------------------------------- */
   const columns = [
     { key: "name", label: t("name") },
     { key: "email", label: t("email") },
@@ -34,43 +78,26 @@ const SalariesPage = () => {
     { key: "salary", label: t("salary") },
     { key: "date", label: t("date") },
     { key: "accountNumber", label: t("accountNumber") },
+    { key: "accountType", label: t("accountType", { defaultValue: "Type" }) },
   ];
 
-  // Add button handler
-  const handleAddClick = () => setShowForm(true);
-  const handleFormSubmit = (values: TSalaryFormValues) => {
-    setData((prev) => [
-      {
-        ...values,
-        salary: values.salary ?? 0,
-        sendSalary: false,
-        canPost: false,
-      } as TSalaryRecord,
-      ...prev,
-    ]);
-    setShowForm(false);
-    setCurrentPage(1); // Reset to first page after add
-  };
-  const handleFormCancel = () => setShowForm(false);
-
-  // Set Salaries button handler
-  const handleSetSalaries = () => {
-    router.push(`/${locale}/salaries/setSalaries`);
-  };
-
-  // Set Salaries button for header
+  /* ------------------- header button (Button) ----------------------- */
   const setSalariesButton = (
-    <button
-      className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 ml-2"
-      onClick={handleSetSalaries}
+    <Button
+      actions={{ type: "navigate", href: `/${locale}/salaries/setSalaries` }}
+      isTransparent
     >
       {t("setSalaries")}
-    </button>
+    </Button>
   );
 
-  // Slice data for current page
-  const pagedData = data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  /* ------------------- data slice ----------------------------------- */
+  const pagedData = data.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
+  /* ------------------- render --------------------------------------- */
   return (
     <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
       {showForm ? (
@@ -81,7 +108,7 @@ const SalariesPage = () => {
           columns={columns}
           showActions={false}
           showSearchBar={false}
-          showAddButton={true}
+          showAddButton
           onAddClick={handleAddClick}
           currentPage={currentPage}
           totalPages={totalPages}
@@ -91,6 +118,4 @@ const SalariesPage = () => {
       )}
     </div>
   );
-};
-
-export default SalariesPage;
+}

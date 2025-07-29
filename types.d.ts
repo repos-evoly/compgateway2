@@ -160,6 +160,8 @@ export type DataGridColumn = {
   label: string;
   renderCell?: (row: any, rowIndex: number) => React.ReactNode; 
   // ^ or (row: T, rowIndex: number) => React.ReactNode but using "any" is more permissive
+  renderHeader?: () => React.ReactNode;
+
 }
 
 

@@ -61,7 +61,7 @@ const BackButton = ({
   /* Styling                                                             */
   /* ------------------------------------------------------------------ */
   const defaultClasses =
-    "flex items-center gap-2 text-white border border-white h-10 rounded px-3 mx-4 py-1 transition-all duration-300 hover:bg-warning-light hover:text-info-dark hover:border-transparent bg-info-dark";
+    "flex items-center gap-2 text-white border border-white h-10 rounded px-3 mx-2 py-1 transition-all duration-300 hover:bg-warning-light hover:text-info-dark hover:border-transparent bg-info-dark";
 
   const appliedClasses =
     className && className.trim().length > 0 ? className : defaultClasses;

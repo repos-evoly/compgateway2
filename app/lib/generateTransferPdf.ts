@@ -110,7 +110,7 @@ export const generateTransferPdf = (transfer: TransferData): void => {
     doc.text(String(value), valueLeftX, lineY, { align: 'right' });
 
     doc.setFont('Amiri', 'normal').setFontSize(10);
-    doc.text(`${label}:`, labelLeftX, lineY, { align: 'right' });
+    doc.text(`: ${label}`, labelLeftX, lineY, { align: 'right' });
   });
 
   /* outer (formerly "right") column --------------------------- */
@@ -121,7 +121,7 @@ export const generateTransferPdf = (transfer: TransferData): void => {
     doc.text(String(value), valueRightX, lineY, { align: 'right' });
 
     doc.setFont('Amiri', 'normal').setFontSize(12);
-    doc.text(`${label}:`, labelRightX, lineY, { align: 'right' });
+    doc.text(`: ${label}`, labelRightX, lineY, { align: 'right' });
   });
 
   y += 50; // Space between transaction details and table

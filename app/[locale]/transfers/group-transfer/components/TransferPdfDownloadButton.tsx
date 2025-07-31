@@ -44,7 +44,7 @@ const TransferPdfDownloadButton: React.FC<TransferPdfDownloadButtonProps> = ({
         description: transfer.description,
         economicSectorId: transfer.packageName,
       };
-      generateTransferPdf(transferData);
+      await generateTransferPdf(transferData);
     } catch {
       alert('Failed to generate PDF.');
     } finally {

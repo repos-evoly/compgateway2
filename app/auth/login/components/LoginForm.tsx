@@ -1,86 +1,115 @@
 "use client";
 
-import React, { JSX, useState } from "react";
+import React, { JSX, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import Link from "next/link";
-import { FiMail, FiEye, FiEyeOff, FiLock, FiLogIn } from "react-icons/fi";
+import {
+  FiMail,
+  FiEye,
+  FiEyeOff,
+  FiLock,
+  FiLogIn,
+  FiLock as FiLockIcon,
+} from "react-icons/fi";
+import Image from "next/image";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import Image from "next/image";
 import VerificationForm from "@/app/auth/login/components/VerificationForm";
 import ForgotPasswordForm from "@/app/auth/login/components/ForgotPasswordForm";
-
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import {
   loginHandler,
   LoginFormValues,
 } from "@/app/helpers/authentication/authHandler";
 
+/* =========================================================
+   Banner checks the **full URL** (origin + path)
+   env variable: NEXT_PUBLIC_ALLOWED_URL
+   ========================================================= */
+/* =========================================================
+   Two-line banner — text on top, URL underneath
+   ========================================================= */
+function URLBanner() {
+  const EXPECTED_URL = process.env.NEXT_PUBLIC_ALLOWED_URL ?? "<URL_NOT_SET>";
+
+  const [actual, setActual] = useState("…");
+  const [ok, setOk] = useState(true);
+
+  useEffect(() => {
+    const here = window.location.href; // full URL inc. path
+    setActual(here);
+    setOk(here === EXPECTED_URL);
+  }, [EXPECTED_URL]);
+
+  const baseClass = "mb-4 rounded-lg border px-3 py-2 text-xs font-semibold";
+
+  const okClass = "bg-green-50 text-green-700 border-green-300";
+  const badClass = "bg-red-50 text-red-700 border-red-300";
+
+  return (
+    <div dir="rtl" className={`${baseClass} ${ok ? okClass : badClass}`}>
+      {/* 1️⃣ Arabic message line */}
+      <div className="flex items-center gap-1">
+        <FiLockIcon />
+        {ok
+          ? "✅ تأكد أنك على الرابط الصحيح:"
+          : "⚠️ هذا الرابط غير صحيح، يجب أن يكون:"}
+      </div>
+
+      {/* 2️⃣ URL line */}
+      <div dir="ltr" className="mt-1 font-bold break-all">
+        {ok ? actual : EXPECTED_URL}
+      </div>
+    </div>
+  );
+}
+
+/* ==========================
+   Main LoginForm component
+   ========================== */
 export default function LoginForm(): JSX.Element {
   const router = useRouter();
 
-  // Show/Hide password
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-
-  // General login error
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
 
-  // Loading state for submit button
-  const [loading, setLoading] = useState<boolean>(false);
-
-  // 2FA Verification overlay
-  const [show2FAModal, setShow2FAModal] = useState<boolean>(false);
-
-  // Forgot Password overlay
-  const [showForgotModal, setShowForgotModal] = useState<boolean>(false);
-
-  // Company not approved modal
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [modalTitle, setModalTitle] = useState<string>("");
-  const [modalMessage, setModalMessage] = useState<string>("");
-
-  // Initial values and validation schema for login form
-  const initialValues: LoginFormValues = {
-    login: "",
-    password: "",
-  };
+  const initialValues: LoginFormValues = { login: "", password: "" };
 
   const validationSchema = Yup.object({
     login: Yup.string().required("البريد الإلكتروني غير صالح"),
     password: Yup.string().required("هذا الحقل مطلوب"),
   });
 
-  // Handle login form submission
   async function onLoginSubmit(values: LoginFormValues) {
     setLoading(true);
-
     await loginHandler(values, {
       router,
       onTwoFactorRequired: () => setShow2FAModal(true),
-      onError: (msg) => {
-        setError(msg);
-      },
+      onError: (msg) => setError(msg),
       onCompanyNotApproved: (status, msg) => {
         setModalTitle(`حالة الشركة: ${status}`);
         setModalMessage(msg);
         setModalOpen(true);
       },
     });
-
     setLoading(false);
   }
-
-  // Close "company not approved" modal
-  const handleCloseModal = () => {
-    setModalOpen(false);
-  };
 
   return (
     <div className="flex justify-center items-center p-4 mt-6" dir="rtl">
       <div className="bg-white shadow-2xl rounded-3xl p-10 w-full max-w-md text-right">
+        {/* URL-check banner */}
+        <URLBanner />
+
         {/* Header */}
         <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-info-dark">
@@ -104,7 +133,7 @@ export default function LoginForm(): JSX.Element {
           <h2 className="text-xl font-semibold text-gray-700">الدخول</h2>
         </div>
 
-        {/* General login error */}
+        {/* Error */}
         {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
         {/* Login Form */}
@@ -126,12 +155,12 @@ export default function LoginForm(): JSX.Element {
             label="كلمة المرور"
             type={showPassword ? "text" : "password"}
             startIcon={<FiLock />}
-            onClick={() => setShowPassword((prev) => !prev)}
+            onClick={() => setShowPassword((p) => !p)}
           >
             {showPassword ? <FiEyeOff /> : <FiEye />}
           </FormInputIcon>
 
-          {/* Forgot Password Link */}
+          {/* Forgot Password */}
           <div className="text-center mb-2">
             <button
               type="button"
@@ -142,7 +171,7 @@ export default function LoginForm(): JSX.Element {
             </button>
           </div>
 
-          {/* Register Link */}
+          {/* Register */}
           <div className="text-center mb-6">
             <Link
               href="/auth/register"
@@ -152,13 +181,14 @@ export default function LoginForm(): JSX.Element {
             </Link>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <SubmitButton
             title={loading ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
             Icon={FiLogIn}
             color="info-dark"
           />
         </Form>
+
         {/* Emergency contact */}
         <div className="mt-6 text-center text-gray-700 text-sm leading-relaxed">
           في حال الطوارئ، يرجى الاتصال بمركز خدمة الزبائن على:
@@ -172,7 +202,7 @@ export default function LoginForm(): JSX.Element {
         </div>
       </div>
 
-      {/* 2FA Verification Overlay */}
+      {/* 2FA overlay */}
       {show2FAModal && (
         <div
           className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
@@ -190,7 +220,7 @@ export default function LoginForm(): JSX.Element {
         </div>
       )}
 
-      {/* Forgot Password Overlay */}
+      {/* Forgot-password overlay */}
       {showForgotModal && (
         <div
           className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
@@ -205,13 +235,13 @@ export default function LoginForm(): JSX.Element {
         </div>
       )}
 
-      {/* Company not approved modal */}
+      {/* Company-status modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={false}
         title={modalTitle || "حالة الشركة"}
         message={modalMessage || "الحساب غير معتمد بعد."}
-        onClose={handleCloseModal}
+        onClose={() => setModalOpen(false)}
       />
     </div>
   );

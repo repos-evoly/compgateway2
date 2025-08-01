@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { EmployeesFormPayload } from "../types";
-import EmployeeForm from "../components/EmployeesForm";
+import EmployeeForm from "../components/UsersForm";
 import { getEmployeeById, editEmployee } from "../services";
 import type { CompanyEmployee } from "../types";
 import LoadingPage from "@/app/components/reusable/Loading";
@@ -39,7 +39,9 @@ export default function SingleEmployeePage() {
         setModalOpen(true);
         setModalSuccess(false);
         setModalTitle("Error");
-        setModalMessage(err instanceof Error ? err.message : "Failed to fetch employee");
+        setModalMessage(
+          err instanceof Error ? err.message : "Failed to fetch employee"
+        );
       } finally {
         setLoading(false);
       }
@@ -82,7 +84,7 @@ export default function SingleEmployeePage() {
   // Ensure employee has isActive field, default to true if not present
   const employeeWithStatus = {
     ...employee,
-    isActive: employee.isActive !== undefined ? employee.isActive : true
+    isActive: employee.isActive !== undefined ? employee.isActive : true,
   };
 
   // 3) On form submit => call editEmployee, then redirect
@@ -95,7 +97,10 @@ export default function SingleEmployeePage() {
         email: values.email!,
         phone: values.phone!,
         roleId: values.roleId!,
-        isActive: values.isActive !== undefined ? values.isActive : employeeWithStatus.isActive, // Use form value or current status
+        isActive:
+          values.isActive !== undefined
+            ? values.isActive
+            : employeeWithStatus.isActive, // Use form value or current status
       });
       router.push("/employees");
     } catch (error) {
@@ -103,13 +108,15 @@ export default function SingleEmployeePage() {
       setModalOpen(true);
       setModalSuccess(false);
       setModalTitle("Error");
-      setModalMessage(error instanceof Error ? error.message : "Failed to update employee");
+      setModalMessage(
+        error instanceof Error ? error.message : "Failed to update employee"
+      );
     }
   };
 
   // Handle status change
   const handleStatusChange = (newStatus: boolean) => {
-    setEmployee(prev => prev ? { ...prev, isActive: newStatus } : null);
+    setEmployee((prev) => (prev ? { ...prev, isActive: newStatus } : null));
   };
 
   return (

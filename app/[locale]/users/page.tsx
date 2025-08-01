@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import EmployeeForm from "./components/EmployeesForm";
+import EmployeeForm from "./components/UsersForm";
 import { getEmployees, createEmployee } from "./services";
 import type { EmployeesFormPayload, CompanyEmployee } from "./types";
 import { FaLock } from "react-icons/fa";
@@ -61,7 +61,10 @@ export default function EmployeesPage() {
   }, []);
 
   // Compute the data for the current page
-  const pagedEmployees = employees.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pagedEmployees = employees.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
   const rowData = pagedEmployees.map((emp) => ({
     ...emp,
     permissions: emp.permissions.join(", "),
@@ -75,22 +78,24 @@ export default function EmployeesPage() {
     { key: "phone", label: t("phone") },
     { key: "roleId", label: t("role") },
     { key: "permissions", label: t("permissions") },
-    { 
-      key: "isActive", 
+    {
+      key: "isActive",
       label: t("status"),
       renderCell: (row: CompanyEmployee) => {
         // Default to true if isActive is not present
         const isActive = row.isActive !== undefined ? row.isActive : true;
         return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            isActive 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-gray-100 text-gray-800'
-          }`}>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              isActive
+                ? "bg-green-100 text-green-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+          >
             {isActive ? t("active") : t("inactive")}
           </span>
         );
-      }
+      },
     },
   ];
 

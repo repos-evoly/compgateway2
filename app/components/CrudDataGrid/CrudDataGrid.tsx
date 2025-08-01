@@ -38,6 +38,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   totalPages,
   loading = false,
   canEdit,
+  noPagination = false,
 }) => {
   const t = useTranslations("crudDataGrid");
 
@@ -142,10 +143,11 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
         modalComponent={modalComponent}
         onModalOpen={onModalOpen}
         canEdit={canEdit}
+        noPagination={noPagination}
       />
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {!noPagination && totalPages > 1 && (
         <div className="bg-gray-50 border-t p-2 overflow-x-auto">
           <div
             className="flex flex-wrap items-center justify-start gap-2"

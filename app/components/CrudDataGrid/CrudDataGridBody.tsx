@@ -17,6 +17,7 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
   modalComponent,
   onModalOpen,
   canEdit = true,
+  noPagination = false,
 }) => {
   const t = useTranslations("crudDataGrid");
   const router = useRouter();
@@ -321,7 +322,11 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
   return (
     <div
       ref={containerRef}
-      className="w-full overflow-x-auto overflow-y-hidden"
+      className={`w-full overflow-x-auto ${
+        noPagination ? "overflow-y-auto" : "overflow-y-hidden"
+      }`}
+      /* give it a reasonable max-height so the div itself scrolls */
+      style={noPagination ? { maxHeight: "70vh" } : undefined}
     >
       <div
         className="table border border-gray-300"
@@ -337,7 +342,10 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
             {columns.map((col, index) => (
               <div
                 key={index}
-                className="table-cell border-b border-gray-300 px-2 sm:px-4 py-1 sm:py-2 font-semibold text-gray-700 align-middle whitespace-nowrap relative text-xs sm:text-sm cursor-pointer"
+                className="table-cell border-b border-gray-300 px-2 sm:px-4 py-1 sm:py-2
+                            font-semibold text-gray-700 align-middle whitespace-nowrap
+                             text-xs sm:text-sm cursor-pointer
+                            sticky top-0 z-10 bg-info-light"
                 style={{
                   width: columnWidths[index],
                   minWidth: columnMinWidths[index],
@@ -387,7 +395,10 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
 
             {showActions && (
               <div
-                className="table-cell border-b border-gray-300 px-2 sm:px-4 py-1 sm:py-2 font-semibold text-gray-700 align-middle whitespace-nowrap relative text-xs sm:text-sm"
+                className="table-cell border-b border-gray-300 px-2 sm:px-4 py-1 sm:py-2
+                          font-semibold text-gray-700 align-middle whitespace-nowrap
+                           text-xs sm:text-sm
+                          sticky top-0 z-10 bg-info-light"
                 style={{
                   width: columnWidths[columns.length],
                   minWidth: columnMinWidths[columns.length],

@@ -1,53 +1,57 @@
-// middleware.ts
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import createMiddleware from "next-intl/middleware";
+/* ───────────── middleware.ts  COMPLETE ───────────── */
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
 
-/**
- * 1) We create the next-intl middleware for locale detection.
- */
+/* next-intl locale detection */
 const intlMiddleware = createMiddleware({
-  locales: ["en", "ar"],
-  defaultLocale: "ar",
+  locales: ['en', 'ar'],
+  defaultLocale: 'ar',
 });
 
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 2) If user hits "/", redirect to "/ar"
-  if (pathname === "/") {
+  /* 1️⃣  Redirect “/” → “/ar” */
+  if (pathname === '/') {
     const url = request.nextUrl.clone();
-    url.pathname = "/ar";
+    url.pathname = '/ar';
     return NextResponse.redirect(url);
   }
 
-  /**
-   * 3) If the path starts with "/ar" or "/en", check for the "accessToken" cookie.
-   *    If missing or invalid format => redirect to "/auth/login"
-   */
-  if (pathname.startsWith("/ar") || pathname.startsWith("/en")) {
-    const token = request.cookies.get("accessToken")?.value || "";
-
-    // For example, if we want "Bearer X" format:
-    if (!token) {
-      // Note: "new URL('/auth/login', request.url)" => keeps the same origin
-      return NextResponse.redirect(new URL("/auth/login", request.url));
-    }
-    // If you just need it to be non-empty, omit the "startsWith" check.
-    // e.g.: if (!token) => redirect
+  /* 2️⃣  Auth-guard for locale routes */
+  if (pathname.startsWith('/ar') || pathname.startsWith('/en')) {
+    const token = request.cookies.get('accessToken')?.value || '';
+    if (!token)
+      return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // 4) If above checks pass => run the next-intl middleware for locale handling
-  return intlMiddleware(request);
+  /* 3️⃣  Run next-intl middleware */
+  const res = intlMiddleware(request);
+
+  /* 4️⃣  🔐  ONLY for /auth pages: add nonce + strict CSP  */
+  if (pathname.startsWith('/auth')) {
+    const nonce = crypto.randomUUID(); // Edge-runtime safe
+
+    res.headers.set('x-nonce', nonce);
+    res.headers.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "frame-ancestors 'none'",
+        "base-uri 'none'",
+      ].join('; ')
+    );
+  }
+
+  return res;
 }
 
+/* 5️⃣  Apply to everything except api, _next, auth assets, static files */
 export const config = {
-  /**
-   * 5) We match everything EXCEPT:
-   *    - api
-   *    - _next
-   *    - auth
-   *    - any files with extensions (png, jpg, etc.)
-   */
-  matcher: ["/((?!api|_next|auth|.*\\..*).*)"],
+  matcher: ['/((?!api|_next|auth|.*\\..*).*)'],
 };

@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import LetterOfGuaranteeForm from "./components/LetterOfGuaranteeForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 import { getLetterOfGuarantees, addLetterOfGuarantee } from "./services";
 
@@ -126,6 +127,18 @@ export default function LetterOfGuaranteePage() {
     { key: "type", label: tCol("type") },
     { key: "status", label: tCol("status") },
     { key: "createdAt", label: tCol("createdAt") },
+    {
+      key: "actions",
+      label: tUi("actions", { defaultValue: "Actions" }),
+      renderCell: (row: LetterOfGuaranteeApiItem) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="Guarantee Letter Request"
+          title={tUi("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   /* --------------------------------------------------------------

@@ -251,9 +251,10 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
     <>
       <div className="mt-2 w-full rounded bg-gray-100">
         {/* ---------- Header ---------- */}
-        <FormHeader status={status} isEditing={true}>
+        <FormHeader status={status}>
           <BackButton
             fallbackPath="/requests/checkbook"
+            isEditing={true}
           />
         </FormHeader>
 

@@ -153,7 +153,9 @@
       "errorTitle": "خطأ",
       "isRequired": "مطلوب",
       "atLeastOneFile": "يجب تحميل ملف واحد على الأقل",
-      "maxFiles": "الحد الأقصى 9 ملفات مسموح بها"
+      "maxFiles": "الحد الأقصى 9 ملفات مسموح بها",
+      "actions": "عمليات",
+      "downloadPdf": "تحميل PDF"
   
     },
   
@@ -200,7 +202,9 @@
       "createSuccessMsg": "تم إنشاء طلب RTGS بنجاح.",
       "fetchError": "فشل في جلب طلبات RTGS",
       "unknownError": "حدث خطأ غير متوقع",
-      "status":"الحالة"
+      "status":"الحالة",
+      "actions": "عمليات",
+      "downloadPdf": "تحميل PDF"
     },
   
   
@@ -239,7 +243,9 @@
       "declined":"مرفوض",
       "loading":"جار التحميل...",
       "successTitle": "نجاح",
-      "successMessage": "تم تقديم طلب الصك بنجاح."
+      "successMessage": "تم تقديم طلب الصك بنجاح.",
+      "actions":"عمليات",
+      "downloadPdf":"تحميل PDF"
     },
   
     "CheckRequest":{
@@ -283,7 +289,8 @@
       "errorTitle": "خطأ",
       "genericError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
       "noItemFound": "لم يتم العثور على طلب الصك",
-      "updateSuccessMessage": "تم تحديث طلب الصك بنجاح!"
+      "updateSuccessMessage": "تم تحديث طلب الصك بنجاح!",
+      "downloadPdf": "تحميل PDF"
     },
   
 
@@ -355,6 +362,8 @@
         "beneficiary": "المستفيد",
         "selectBeneficiary": "اختر مستفيد",
         "print": "طباعة",
+        "downloadPdf": "تحميل PDF",
+        "uploadLogo": "رفع الشعار",
         "actions": "الإجراءات",
         "unknownError": "حدث خطأ غير معروف",
         "fetchErrorTitle": "خطأ",
@@ -546,7 +555,9 @@
         "mustBeNumber":"يجب أن يكون رقماً",
         "nonResidentPassportNumber":"رقم جواز السفر لغير المقيم",
         "error": "خطأ",
-        "fetchDetailError": "فشل في جلب تفاصيل التحويل الأجنبي"
+        "fetchDetailError": "فشل في جلب تفاصيل التحويل الأجنبي",
+        "actions": "عمليات",
+        "downloadPdf": "تحميل PDF"
       },
       "tabsWizard":{
         "review":"مراجعة و تقديم",
@@ -583,7 +594,9 @@
         "createErrorTitle": "خطأ",
         "fetchError": "فشل في جلب طلبات الفيزا",
         "unknownError": "حدث خطأ غير متوقع",
-        "submit": "إرسال"
+        "submit": "إرسال",
+        "actions": "عمليات",
+        "downloadPdf": "تحميل PDF"
       },
       "bankStatement": {
         "id":"المعرف",
@@ -624,7 +637,9 @@
         "createErrorTitle": "خطأ",
         "fetchError": "فشل في جلب كشوف الحساب",
         "unknownError": "حدث خطأ غير متوقع",
-        "status":"الحالة"
+        "status":"الحالة",
+        "actions": "عمليات",
+        "downloadPdf": "تحميل PDF"
       },
       "dashboard":{
         "accountNb":" رقم الحساب",
@@ -782,7 +797,9 @@
             "createdAt": "تاريخ الإنشاء"
           },
           "ui": {
-            "addButton": "إضافة"
+            "addButton": "إضافة",
+            "actions": "عمليات",
+            "downloadPdf": "تحميل PDF"
           },
           "messages": {
             "fetchErrorTitle": "خطأ في الجلب",
@@ -832,7 +849,9 @@
             "createdAt": "تاريخ الإنشاء"
           },
           "ui": {
-            "addButton": "إضافة"
+            "addButton": "إضافة",
+            "actions": "عمليات",
+            "downloadPdf": "تحميل PDF"
           },
           "messages": {
             "fetchErrorTitle": "خطأ في الجلب",
@@ -1016,6 +1035,20 @@
         }
       },
 
+      "requests": {
+        "downloadPdf": "تحميل PDF",
+        "uploadLogo": "رفع الشعار"
+      },
+
+      "notifications": {
+        "title": "الإشعارات",
+        "all": "الكل",
+        "unread": "غير مقروء",
+        "read": "مقروء",
+        "viewDetails": "عرض التفاصيل",
+        "markAsRead": "تحديد كمقروء"
+      },
+
       "beneficiaries": {
         "id": "الرقم",
         "name": "الاسم",
@@ -1032,6 +1065,8 @@
         "createdAt": "تاريخ الإنشاء",
         "addTitle": "إضافة مستفيد جديد",
         "editTitle": "تعديل المستفيد",
+        "editBeneficiary": "تعديل المستفيد",
+        "doubleClickToEdit": "انقر مرتين للتعديل",
         "createButton": "إنشاء المستفيد",
         "updateButton": "تحديث المستفيد",
         "editButton": "تعديل",
@@ -1073,6 +1108,8 @@
         "requestedAt": "تاريخ الطلب",
         "actions": "الإجراءات",
         "print": "طباعة",
+        "downloadPdf": "تحميل PDF",
+        "uploadLogo": "رفع الشعار",
         "fromRequired": "حساب المرسل مطلوب",
         "toRequired": "حساب المستلم مطلوب",
         "valueRequired": "المبلغ مطلوب",

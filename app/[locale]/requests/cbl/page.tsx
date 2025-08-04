@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CBLForm from "./components/CBLForm";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 import { getCblRequests } from "./service";
 import { TCBLValues } from "./types";
 
@@ -99,6 +100,18 @@ const CBLListPage: React.FC = () => {
     { key: "mobile", label: t("mobile") },
     { key: "address", label: t("address") },
     { key: "status", label: t("status") },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: TCBLValues) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="CBL Inquiry Request"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   const dropdownOptions = [

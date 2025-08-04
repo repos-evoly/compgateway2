@@ -75,7 +75,7 @@ const Page = () => {
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
-      width: 60,
+      width: 120,
     },
   ];
 

@@ -11,6 +11,7 @@ import { getCheckRequests, createCheckRequest } from "./services";
 import { TCheckRequestFormValues } from "./types";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 // Permission helpers (copied from other pages)
 const getCookieValue = (key: string): string | undefined =>
@@ -114,6 +115,18 @@ const CheckRequestPage: React.FC = () => {
       }
     },
     { key: "status", label: t("status") },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: TCheckRequestValues) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="Certified Check Request"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   /* ─── Handlers ────────────────────────────────────────────── */

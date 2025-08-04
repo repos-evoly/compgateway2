@@ -148,7 +148,9 @@
     "errorTitle": "Error",
     "isRequired": "Required",
     "atLeastOneFile": "At least one file is required",
-    "maxFiles": "Maximum 9 files allowed"
+    "maxFiles": "Maximum 9 files allowed",
+    "actions": "Actions",
+    "downloadPdf": "Download PDF"
   },
 
   "signaturePad": {
@@ -195,7 +197,9 @@
     "createSuccessMsg": "RTGS request created successfully.",
     "fetchError": "Failed to fetch RTGS requests",
     "unknownError": "An unexpected error occurred",
-    "status":"Status"
+    "status":"Status",
+    "actions": "Actions",
+    "downloadPdf": "Download PDF"
   },
 
   "checkForm": {
@@ -233,7 +237,9 @@
     "declined": "Declined",
     "loading": "Loading...",
     "successTitle": "Success",
-    "successMessage": "Check request submitted successfully."
+    "successMessage": "Check request submitted successfully.",
+    "actions": "Actions",
+    "downloadPdf": "Download PDF"
   },
 
   "CheckRequest": {
@@ -277,7 +283,8 @@
     "errorTitle": "Error",
     "genericError": "An unexpected error occurred. Please try again.",
     "noItemFound": "Check request not found",
-    "updateSuccessMessage": "Check request updated successfully!"
+    "updateSuccessMessage": "Check request updated successfully!",
+    "downloadPdf": "Download PDF"
   },
 
   "notFound": {
@@ -348,6 +355,8 @@
     "beneficiary": "Beneficiary",
     "selectBeneficiary": "Select a beneficiary",
     "print": "Print",
+    "downloadPdf": "Download PDF",
+    "uploadLogo": "Upload Logo",
     "actions": "Actions",
     "unknownError": "An unknown error occurred",
     "fetchErrorTitle": "Error",
@@ -538,7 +547,9 @@
     "uploadDocuments": "Upload",
     "mustBeNumber": "Must be a number",
     "error": "Error",
-    "fetchDetailError": "Failed to fetch foreign transfer details"
+    "fetchDetailError": "Failed to fetch foreign transfer details",
+    "actions": "Actions",
+    "downloadPdf": "Download PDF"
   },
 
   "tabsWizard": {
@@ -577,7 +588,9 @@
     "createErrorTitle": "Error",
     "fetchError": "Failed to fetch VISA requests",
     "unknownError": "An unexpected error occurred",
-    "submit": "Submit"
+    "submit": "Submit",
+    "actions": "Actions",
+    "downloadPdf": "Download PDF"
   },
 
   "bankStatement": {
@@ -618,7 +631,9 @@
     "fetchError": "Failed to fetch bank statements",
     "unknownError": "An unexpected error occurred",
     "status": "Status",
-    "id": "ID"
+    "id": "ID",
+    "actions": "Actions",
+    "downloadPdf": "Download PDF"
   },
 
   "dashboard": {
@@ -781,7 +796,9 @@
         "createdAt": "Created At"
       },
       "ui": {
-        "addButton": "Add"
+        "addButton": "Add",
+        "actions": "Actions",
+        "downloadPdf": "Download PDF"
       },
       "messages": {
         "fetchErrorTitle": "Fetch Error",
@@ -832,7 +849,9 @@
         "createdAt": "Created At"
       },
       "ui": {
-        "addButton": "Add"
+        "addButton": "Add",
+        "actions": "Actions",
+        "downloadPdf": "Download PDF"
       },
       "messages": {
         "fetchErrorTitle": "Fetch Error",
@@ -1014,6 +1033,20 @@
         }
   },
 
+  "requests": {
+    "downloadPdf": "Download PDF",
+    "uploadLogo": "Upload Logo"
+  },
+
+  "notifications": {
+    "title": "Notifications",
+    "all": "All",
+    "unread": "Unread",
+    "read": "Read",
+    "viewDetails": "View Details",
+    "markAsRead": "Mark as Read"
+  },
+
   "beneficiaries": {
     "id": "ID",
     "name": "Name",
@@ -1030,6 +1063,8 @@
     "createdAt": "Created At",
     "addTitle": "Add New Beneficiary",
     "editTitle": "Edit Beneficiary",
+    "editBeneficiary": "Edit Beneficiary",
+    "doubleClickToEdit": "Double-click to edit",
     "createButton": "Create Beneficiary",
     "updateButton": "Update Beneficiary",
     "editButton": "Edit",
@@ -1071,6 +1106,8 @@
     "requestedAt": "Requested At",
     "actions": "Actions",
     "print": "Print",
+    "downloadPdf": "Download PDF",
+    "uploadLogo": "Upload Logo",
     "fromRequired": "From account is required",
     "toRequired": "To account is required",
     "valueRequired": "Amount is required",

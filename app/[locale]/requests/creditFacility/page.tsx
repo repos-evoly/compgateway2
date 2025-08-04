@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CreditFacilityForm from "./components/CreditFacilityForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 import { getCreditFacilities, addCreditFacility } from "./services";
 
@@ -107,6 +108,18 @@ export default function CreditFacilityPage() {
     { key: "type", label: tCol("type") },
     { key: "status", label: tCol("status") },
     { key: "createdAt", label: tCol("createdAt") },
+    {
+      key: "actions",
+      label: tUi("actions", { defaultValue: "Actions" }),
+      renderCell: (row: CreditFacilityApiItem) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="Credit Facility Request"
+          title={tUi("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   /* ─── Search handlers ────────────────────────────────────────── */

@@ -1,11 +1,11 @@
 import { jsPDF } from "jspdf";
 import { registerAmiriFont } from "@/app/lib/pdfFonts";
-import type { TSalaryTransaction } from "./types";
+import type { TSalaryTransaction } from "../[locale]/salaries/types";
 
 registerAmiriFont();
 
 type Rgb = { r: number; g: number; b: number };
-const textCol: Rgb = { r: 0x1f, g: 0x29, b: 0x37 }; 
+const textCol: Rgb = { r: 0x1f, g: 0x29, b: 0x37 };
 
 export function generateSalaryTransactionPdf(
   transaction: TSalaryTransaction,

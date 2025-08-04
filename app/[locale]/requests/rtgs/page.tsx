@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import RTGSForm from "./components/RTGSForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 import type { TRTGSValues, TRTGSFormValues } from "./types";
 import { getRtgsRequests, createRtgsRequest } from "./services";
@@ -84,6 +85,18 @@ const RTGSListPage: React.FC = () => {
     { key: "beneficiaryName", label: t("benName") },
     { key: "amount", label: t("amount") },
     { key: "status", label: t("status") },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: Record<string, unknown>) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="RTGS Transfer Request"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   /* ─────────────────────────── Grid-friendly data ───────────────────────── */

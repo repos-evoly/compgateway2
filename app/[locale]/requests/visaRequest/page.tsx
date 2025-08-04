@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import { getVisaRequests, createVisaRequest } from "./services";
 import VisaWizardForm from "./components/VisaRequest";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 import type { VisaRequestApiItem, VisaRequestFormValues } from "./types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -126,7 +127,19 @@ export default function VisaRequestListPage() {
     { key: "branch", label: t("branch") },
     { key: "date", label: t("date") },
     { key: "accountHolderName", label: t("accountHolderName") },
-    {key:"status", label: t("status") }
+    {key:"status", label: t("status") },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: Record<string, unknown>) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="VISA Card Request"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   /*─────────────────────────── Modal handlers  ─────────────────────────────*/

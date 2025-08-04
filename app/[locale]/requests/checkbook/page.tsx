@@ -7,6 +7,7 @@ import CheckbookForm from "./components/CheckbookForm";
 import { getCheckbookRequests } from "./services";
 import type { TCheckbookFormValues } from "./types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 // Permission helpers (copied from other pages)
 const getCookieValue = (key: string): string | undefined =>
@@ -95,6 +96,18 @@ const CheckbookPage: React.FC = () => {
     { key: "date", label: t("date") },
     { key: "representativeId", label: t("sendTo") },
     { key: "status", label: t("status") },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: TCheckbookFormValues) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="Checkbook Request"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   /* ─── Handlers ────────────────────────────────────────────── */

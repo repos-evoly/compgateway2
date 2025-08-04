@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CertifiedBankStatementForm from "./components/CertifiedBankStatementForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 import {
   getCertifiedBankStatements,
@@ -87,6 +88,18 @@ export default function CertifiedBankStatementPage() {
     { key: "statementRequest.fromDate", label: t("fromDate") },
     { key: "statementRequest.toDate", label: t("toDate") },
     { key: "status", label: t("status") },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: CertifiedBankStatementRequestWithID) => (
+        <RequestPdfDownloadButton
+          request={row}
+          requestType="Certified Bank-Statement Request"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   /*──────────────────────────── Handlers ───────────────────────────────*/

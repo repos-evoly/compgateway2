@@ -25,6 +25,7 @@ type TransferData = {
   currencyId: string;
   description: string;
   economicSectorId: string;
+  logoData?: string; // Optional logo data
 };
 
 // Customer information type
@@ -77,6 +78,33 @@ export const generateTransferPdf = async (transfer: TransferData): Promise<void>
   doc
     .setFillColor(255, 255, 255) // White background instead of green
     .rect(0, 0, pageWidth, 40, 'F');
+
+  // Add logo if available
+  if (transfer.logoData) {
+    try {
+      // Logo dimensions (similar to logo.jpeg size - typical header logo dimensions)
+      const logoWidth = 40;
+      const logoHeight = 30;
+      const logoX = margin;
+      const logoY = 5;
+
+      // Determine image format from data URL
+      let imageFormat = 'JPEG';
+      if (transfer.logoData.startsWith('data:image/png')) {
+        imageFormat = 'PNG';
+      } else if (transfer.logoData.startsWith('data:image/jpeg') || transfer.logoData.startsWith('data:image/jpg')) {
+        imageFormat = 'JPEG';
+      }
+
+      // Add the logo image
+      doc.addImage(transfer.logoData, imageFormat, logoX, logoY, logoWidth, logoHeight);
+      console.log('Logo added to PDF successfully');
+    } catch (error) {
+      console.error('Failed to add logo to PDF:', error);
+    }
+  } else {
+    console.log('No logo data provided');
+  }
 
   doc
     .setTextColor(0, 0, 0) // Black text instead of white

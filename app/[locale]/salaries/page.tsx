@@ -2,13 +2,11 @@
 
 import React, { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import Button from "@/app/components/reusable/Button";
-import SalaryPdfDownloadButton from "./SalaryPdfDownloadButton";
-
 import type { TSalaryTransaction } from "./types";
 import salaryTransactionsDataJson from "./salaryTransactionsData.json";
+import SalariesDownloadPdf from "@/app/components/reusable/SalariesDownloadPdf";
 
 const PAGE_SIZE = 10;
 
@@ -48,7 +46,7 @@ export default function SalariesPage() {
       key: "actions",
       label: "Actions",
       renderCell: (row: TSalaryTransaction) => (
-        <SalaryPdfDownloadButton transaction={row} />
+       <SalariesDownloadPdf transaction={row}/>
       ),
     },
   ];

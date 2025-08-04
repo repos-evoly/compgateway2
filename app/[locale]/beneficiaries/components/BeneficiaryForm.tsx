@@ -33,6 +33,7 @@ const BeneficiaryForm: React.FC<BeneficiaryFormProps> = ({
 
   viewOnly = false,
   onSuccess,
+  onBack,
 }) => {
   const t = useTranslations("beneficiaries");
 
@@ -102,6 +103,11 @@ const BeneficiaryForm: React.FC<BeneficiaryFormProps> = ({
             initialData && initialData.type === "local"
               ? initialData.amount || 0
               : 0,
+          address:
+            initialData && initialData.type === "local"
+              ? initialData.address || ""
+              : "",
+          country: "Libya",
         };
 
   // Validation schema for each type
@@ -132,6 +138,7 @@ const BeneficiaryForm: React.FC<BeneficiaryFormProps> = ({
           amount: Yup.number()
             .typeError(t("amountFormat"))
             .min(0, t("amountMin")),
+          address: Yup.string().required(t("addressRequired")),
         });
 
   /* -------------------------------------------------------- */
@@ -175,14 +182,23 @@ const BeneficiaryForm: React.FC<BeneficiaryFormProps> = ({
     <div className="p-2">
       <Form
         initialValues={initialValues}
-        validationSchema={validationSchema as FormikConfig<BeneficiaryFormValues>["validationSchema"]}
+        validationSchema={
+          validationSchema as FormikConfig<BeneficiaryFormValues>["validationSchema"]
+        }
         onSubmit={handleSubmit}
         enableReinitialize
       >
         <FormHeader
           showBackButton
-          fallbackPath="/beneficiaries"
-          isEditing={true}
+          isEditing={false}
+          onBack={() => {
+            // Call onBack if provided, otherwise fallback to onSuccess
+            if (onBack) {
+              onBack();
+            } else if (onSuccess) {
+              onSuccess();
+            }
+          }}
         >
           {/* Type Selector */}
           {!isEditMode && (
@@ -292,6 +308,22 @@ const BeneficiaryForm: React.FC<BeneficiaryFormProps> = ({
                 startIcon={<FaMoneyBill />}
                 disabled={viewOnly || isSubmitting}
                 helpertext={t("amountPlaceholder")}
+              />
+              <FormInputIcon
+                name="address"
+                label={t("address")}
+                type="text"
+                startIcon={<FaMapMarkerAlt />}
+                disabled={viewOnly || isSubmitting}
+                helpertext={t("addressPlaceholder")}
+              />
+              <FormInputIcon
+                name="country"
+                label={t("country")}
+                type="text"
+                startIcon={<FaGlobe />}
+                disabled={true}
+                helpertext="Libya"
               />
             </>
           )}

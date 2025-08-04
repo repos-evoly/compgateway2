@@ -8,11 +8,11 @@ import {
   BeneficiariesApiResponse,
 } from "./types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
-const token = getAccessTokenFromCookies();
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
 
 /**
- * POST /api/beneficiaries
+ * POST /beneficiaries
  * Create a new beneficiary
  */
 export async function createBeneficiary(
@@ -22,11 +22,12 @@ export async function createBeneficiary(
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
+  const token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  const url = `${BASE_URL}/api/beneficiaries`;
+  const url = `${BASE_URL}/beneficiaries`;
 
   const res = await fetch(url, {
     method: "POST",
@@ -47,7 +48,7 @@ export async function createBeneficiary(
 }
 
 /**
- * GET /api/beneficiaries
+ * GET /beneficiaries
  * Get all beneficiaries with pagination and search
  */
 export async function getBeneficiaries(
@@ -55,30 +56,53 @@ export async function getBeneficiaries(
   limit = 10,
   searchTerm = ""
 ): Promise<BeneficiariesApiResponse> {
+  console.log("getBeneficiaries called with:", { page, limit, searchTerm });
+  console.log("BASE_URL:", BASE_URL);
+
   if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
+
+  const token = getAccessTokenFromCookies();
+  console.log("Token found:", !!token);
+  console.log("Token length:", token?.length || 0);
 
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  const url = new URL(`${BASE_URL}/api/beneficiaries`);
+  const url = new URL(`${BASE_URL}/beneficiaries`);
+  console.log("Request URL:", url.toString());
 
   // Add query parameters
-  url.searchParams.append("page", page.toString());
-  url.searchParams.append("limit", limit.toString());
+  url.searchParams.set("page", page.toString());
+  url.searchParams.set("limit", limit.toString());
   if (searchTerm) {
-    url.searchParams.append("search", searchTerm);
+    url.searchParams.set("search", searchTerm);
   }
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  console.log("Making request to:", url.toString());
+
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log("Response status:", res.status, res.statusText);
+    console.log("Response headers:", Object.fromEntries(res.headers.entries()));
+  } catch (error) {
+    console.error("Network error:", error);
+    throw new Error(
+      `Network error: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
 
   if (!res.ok) {
     await throwApiError(res, "Failed to fetch beneficiaries.");
@@ -86,11 +110,24 @@ export async function getBeneficiaries(
 
   const data = await res.json();
   console.log("Fetched Beneficiaries:", data);
+  console.log("Data structure:", JSON.stringify(data, null, 2));
+
+  // Handle case where API returns array directly instead of paginated object
+  if (Array.isArray(data)) {
+    return {
+      data: data,
+      page: page,
+      limit: limit,
+      totalPages: 1,
+      totalRecords: data.length,
+    } as BeneficiariesApiResponse;
+  }
+
   return data as BeneficiariesApiResponse;
 }
 
 /**
- * GET /api/beneficiaries/{id}
+ * GET /beneficiaries/{id}
  * Get beneficiary by ID
  */
 export async function getBeneficiaryById(
@@ -100,11 +137,12 @@ export async function getBeneficiaryById(
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
+  const token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  const url = `${BASE_URL}/api/beneficiaries/${id}`;
+  const url = `${BASE_URL}/beneficiaries/${id}`;
 
   const res = await fetch(url, {
     method: "GET",
@@ -124,7 +162,7 @@ export async function getBeneficiaryById(
 }
 
 /**
- * PUT /api/beneficiaries/{id}
+ * PUT /beneficiaries/{id}
  * Update beneficiary by ID
  */
 export async function updateBeneficiary(
@@ -135,11 +173,12 @@ export async function updateBeneficiary(
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
+  const token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  const url = `${BASE_URL}/api/beneficiaries/${id}`;
+  const url = `${BASE_URL}/beneficiaries/${id}`;
 
   const res = await fetch(url, {
     method: "PUT",
@@ -160,7 +199,7 @@ export async function updateBeneficiary(
 }
 
 /**
- * DELETE /api/beneficiaries/{id}
+ * DELETE /beneficiaries/{id}
  * Delete beneficiary by ID
  */
 export async function deleteBeneficiary(id: number): Promise<void> {
@@ -168,11 +207,12 @@ export async function deleteBeneficiary(id: number): Promise<void> {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
+  const token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  const url = `${BASE_URL}/api/beneficiaries/${id}`;
+  const url = `${BASE_URL}/beneficiaries/${id}`;
 
   const res = await fetch(url, {
     method: "DELETE",

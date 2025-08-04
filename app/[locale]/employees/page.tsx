@@ -7,19 +7,19 @@ import { useRouter } from "next/navigation";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import { BeneficiariesApiResponse } from "./types";
-import { getBeneficiaries, deleteBeneficiary } from "./services";
-import { BeneficiaryResponse } from "./types";
+import { EmployeesApiResponse } from "./types";
+import { getEmployees, deleteEmployee } from "./services";
+import { EmployeeResponse } from "./types";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import type { Action } from "@/types";
-import BeneficiaryForm from "./components/BeneficiaryForm";
+import EmployeeForm from "./components/EmployeesForm";
 
 const Page = () => {
-  const t = useTranslations("beneficiaries");
+  const t = useTranslations("employees");
   const router = useRouter();
 
   // Table/pagination states
-  const [data, setData] = useState<BeneficiariesApiResponse["data"]>([]);
+  const [data, setData] = useState<EmployeesApiResponse["data"]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const limit = 10; // or whichever page size
@@ -32,17 +32,22 @@ const Page = () => {
   const [showForm, setShowForm] = useState(false);
 
   // We'll create a function to fetch data
-  const fetchBeneficiaries = useMemo(
+  const fetchEmployees = useMemo(
     () => async () => {
       setLoading(true); // Set loading state
       try {
-        console.log("Fetching beneficiaries...");
-        const result = await getBeneficiaries(currentPage, limit, searchTerm);
-        console.log("Beneficiaries result:", result);
+        console.log("Fetching employees...");
+        console.log("Current page:", currentPage);
+        console.log("Limit:", limit);
+        console.log("Search term:", searchTerm);
+        const result = await getEmployees(currentPage, limit, searchTerm);
+        console.log("Employees result:", result);
+        console.log("Employees data:", result.data);
+        console.log("Total pages:", result.totalPages);
         setData(result.data);
         setTotalPages(result.totalPages);
       } catch (err) {
-        console.error("Error fetching beneficiaries:", err);
+        console.error("Error fetching employees:", err);
         const msg = err instanceof Error ? err.message : t("unknownError");
         setModalTitle(t("fetchErrorTitle")); // use your i18n keys
         setModalMessage(msg);
@@ -57,39 +62,39 @@ const Page = () => {
 
   // On mount / whenever page or searchTerm changes => fetch data
   useEffect(() => {
-    fetchBeneficiaries();
-  }, [fetchBeneficiaries]);
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   // Define actions for the data grid
   const actions: Action[] = [
     {
       name: "edit",
-      tip: t("editBeneficiary", { defaultValue: "Edit Beneficiary" }),
+      tip: t("editEmployee", { defaultValue: "Edit Employee" }),
       icon: <FaEdit />,
       onClick: (row) => {
-        router.push(`/beneficiaries/${row.id}`);
+        router.push(`/employees/${row.id}`);
       },
     },
     {
       name: "delete",
-      tip: t("deleteBeneficiary", { defaultValue: "Delete Beneficiary" }),
+      tip: t("deleteEmployee", { defaultValue: "Delete Employee" }),
       icon: <FaTrash />,
       onClick: async (row) => {
         if (
           confirm(
             t("confirmDelete", {
-              defaultValue: "Are you sure you want to delete this beneficiary?",
+              defaultValue: "Are you sure you want to delete this employee?",
             })
           )
         ) {
           try {
-            await deleteBeneficiary(Number(row.id));
+            await deleteEmployee(Number(row.id));
             // Refresh the data after successful deletion
-            fetchBeneficiaries();
+            fetchEmployees();
             setModalTitle(t("deleteSuccessTitle", { defaultValue: "Success" }));
             setModalMessage(
               t("deleteSuccessMsg", {
-                defaultValue: "Beneficiary deleted successfully",
+                defaultValue: "Employee deleted successfully",
               })
             );
             setModalSuccess(true);
@@ -111,10 +116,10 @@ const Page = () => {
     {
       key: "id",
       label: t("id"),
-      renderCell: (row: BeneficiaryResponse) => (
+      renderCell: (row: EmployeeResponse) => (
         <div
           className="cursor-pointer hover:bg-gray-100 p-1 rounded"
-          onDoubleClick={() => router.push(`/beneficiaries/${row.id}`)}
+          onDoubleClick={() => router.push(`/employees/${row.id}`)}
           title={t("doubleClickToEdit", {
             defaultValue: "Double-click to edit",
           })}
@@ -124,29 +129,54 @@ const Page = () => {
       ),
     },
     { key: "name", label: t("name") },
+    { key: "email", label: t("email") },
+    { key: "phone", label: t("phone") },
     {
-      key: "type",
-      label: t("type"),
-      renderCell: (row: BeneficiaryResponse) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.type === "international" ? " text-black" : " text-black"
-          }`}
-        >
-          {row.type === "international"
-            ? t("international")
-            : row.type === "Individual"
-            ? t("local")
-            : row.type || t("local")}
+      key: "salary",
+      label: t("salary"),
+      renderCell: (row: EmployeeResponse) => (
+        <span>{row.salary?.toLocaleString() || "0"}</span>
+      ),
+    },
+    {
+      key: "date",
+      label: t("date"),
+      renderCell: (row: EmployeeResponse) => (
+        <span>
+          {row.date ? new Date(row.date).toLocaleDateString() : "N/A"}
         </span>
       ),
     },
     { key: "accountNumber", label: t("accountNumber") },
+    { key: "accountType", label: t("accountType") },
     {
-      key: "createdAt",
-      label: t("createdAt"),
-      renderCell: (row: BeneficiaryResponse) => (
-        <span>{row.createdAt || "N/A"}</span>
+      key: "sendSalary",
+      label: t("sendSalary"),
+      renderCell: (row: EmployeeResponse) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            row.sendSalary
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {row.sendSalary ? t("yes") : t("no")}
+        </span>
+      ),
+    },
+    {
+      key: "canPost",
+      label: t("canPost"),
+      renderCell: (row: EmployeeResponse) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            row.canPost
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {row.canPost ? t("yes") : t("no")}
+        </span>
       ),
     },
   ];
@@ -163,9 +193,9 @@ const Page = () => {
   // Show/hide form
   const handleAddClick = () => setShowForm(true);
 
-  const handleBeneficiaryCreated = () => {
+  const handleEmployeeCreated = () => {
     setShowForm(false);
-    fetchBeneficiaries(); // Refresh the data
+    fetchEmployees(); // Refresh the data
     setModalTitle(t("createSuccessTitle"));
     setModalMessage(t("createSuccessMsg"));
     setModalSuccess(true);
@@ -180,9 +210,9 @@ const Page = () => {
   return (
     <div className="p-4">
       {showForm ? (
-        <BeneficiaryForm
+        <EmployeeForm
           initialData={{}}
-          onSuccess={handleBeneficiaryCreated}
+          onSuccess={handleEmployeeCreated}
           onBack={handleFormBack}
         />
       ) : (
@@ -201,10 +231,10 @@ const Page = () => {
           showDropdown
           dropdownOptions={[
             { label: "Name", value: "name" },
+            { label: "Email", value: "email" },
+            { label: "Phone", value: "phone" },
             { label: "Account Number", value: "accountNumber" },
-            { label: "Type", value: "type" },
-            { label: "Bank", value: "bank" },
-            { label: "Country", value: "country" },
+            { label: "Account Type", value: "accountType" },
           ]}
           onDropdownSelect={handleDropdownSelect}
           // Add button

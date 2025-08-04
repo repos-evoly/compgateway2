@@ -1,4 +1,4 @@
-export type BeneficiaryType = "local" | "international";
+export type BeneficiaryType = "local" | "international" | "Individual";
 
 export type LocalBeneficiary = {
   id?: number;
@@ -7,6 +7,8 @@ export type LocalBeneficiary = {
   accountNumber: string;
   bank: string;
   amount: number;
+  address: string;
+  country: string;
 };
 
 export type InternationalBeneficiary = {
@@ -27,14 +29,24 @@ export type BeneficiaryFormProps = {
   onSubmit?: (values: BeneficiaryFormValues) => void;
   viewOnly?: boolean;
   onSuccess?: () => void;
+  onBack?: () => void;
 };
 
 export type BeneficiaryPayload = BeneficiaryFormValues;
 
-export type BeneficiaryResponse = BeneficiaryFormValues & {
+export type BeneficiaryResponse = {
   id: number;
-  createdAt: string;
-  updatedAt: string;
+  type: BeneficiaryType;
+  name: string;
+  accountNumber: string;
+  address?: string;
+  country?: string;
+  bank?: string;
+  amount?: number;
+  intermediaryBankSwift?: string;
+  intermediaryBankName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export interface BeneficiariesApiResponse {
@@ -44,4 +56,3 @@ export interface BeneficiariesApiResponse {
   totalPages: number;
   totalRecords: number;
 }
-

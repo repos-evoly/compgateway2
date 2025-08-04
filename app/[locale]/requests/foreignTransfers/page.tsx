@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
+// import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 import ForeignTransfersForm, {
   ForeignTransfersFormValues,
@@ -82,33 +82,31 @@ export default function ForeignTransfersListPage() {
         searchBy
       );
       // Transform the API data => array of ForeignTransfersFormValues
-      const mapped = response.data.map(
-        (item) => ({
-          id: item.id,
-          toBank: item.toBank,
-          branch: item.branch,
-          residentSupplierName: item.residentSupplierName,
-          residentSupplierNationality: item.residentSupplierNationality,
-          nonResidentPassportNumber: item.nonResidentPassportNumber,
-          placeOfIssue: item.placeOfIssue,
-          dateOfIssue: item.dateOfIssue,
-          nonResidentNationality: item.nonResidentNationality,
-          nonResidentAddress: item.nonResidentAddress,
-          transferAmount: item.transferAmount,
-          toCountry: item.toCountry,
-          beneficiaryName: item.beneficiaryName,
-          beneficiaryAddress: item.beneficiaryAddress,
-          externalBankName: item.externalBankName,
-          externalBankAddress: item.externalBankAddress,
-          transferToAccountNumber: item.transferToAccountNumber,
-          transferToAddress: item.transferToAddress,
-          accountHolderName: item.accountHolderName,
-          permanentAddress: item.permanentAddress,
-          purposeOfTransfer: item.purposeOfTransfer,
-          status: item.status,
-          reason: item.reason,
-        })
-      ) as unknown as ForeignTransfersFormValues[];
+      const mapped = response.data.map((item) => ({
+        id: item.id,
+        toBank: item.toBank,
+        branch: item.branch,
+        residentSupplierName: item.residentSupplierName,
+        residentSupplierNationality: item.residentSupplierNationality,
+        nonResidentPassportNumber: item.nonResidentPassportNumber,
+        placeOfIssue: item.placeOfIssue,
+        dateOfIssue: item.dateOfIssue,
+        nonResidentNationality: item.nonResidentNationality,
+        nonResidentAddress: item.nonResidentAddress,
+        transferAmount: item.transferAmount,
+        toCountry: item.toCountry,
+        beneficiaryName: item.beneficiaryName,
+        beneficiaryAddress: item.beneficiaryAddress,
+        externalBankName: item.externalBankName,
+        externalBankAddress: item.externalBankAddress,
+        transferToAccountNumber: item.transferToAccountNumber,
+        transferToAddress: item.transferToAddress,
+        accountHolderName: item.accountHolderName,
+        permanentAddress: item.permanentAddress,
+        purposeOfTransfer: item.purposeOfTransfer,
+        status: item.status,
+        reason: item.reason,
+      })) as unknown as ForeignTransfersFormValues[];
 
       setData(mapped);
       setTotalPages(response.totalPages || 1);
@@ -139,7 +137,9 @@ export default function ForeignTransfersListPage() {
         branch: values.branch || "",
         residentSupplierName: values.residentSupplierName || "",
         residentSupplierNationality: values.residentSupplierNationality || "",
-        nonResidentPassportNumber: String(values.nonResidentPassportNumber || ""),
+        nonResidentPassportNumber: String(
+          values.nonResidentPassportNumber || ""
+        ),
         placeOfIssue: values.placeOfIssue || "",
         dateOfIssue: values.dateOfIssue || "",
         nonResidentNationality: values.nonResidentNationality || "",
@@ -188,24 +188,27 @@ export default function ForeignTransfersListPage() {
     { key: "toBank", label: t("toBank") },
     { key: "transferAmount", label: t("transferAmount") },
     { key: "status", label: t("status") },
-    {
-      key: "actions",
-      label: t("actions", { defaultValue: "Actions" }),
-      renderCell: (row: Record<string, unknown>) => (
-        <RequestPdfDownloadButton
-          request={row}
-          requestType="Foreign-Transfer Licence Request"
-          title={t("downloadPdf", { defaultValue: "Download PDF" })}
-        />
-      ),
-      width: 120,
-    },
+    // {
+    //   key: "actions",
+    //   label: t("actions", { defaultValue: "Actions" }),
+    //   renderCell: (row: Record<string, unknown>) => (
+    //     <RequestPdfDownloadButton
+    //       request={row}
+    //       requestType="Foreign-Transfer Licence Request"
+    //       title={t("downloadPdf", { defaultValue: "Download PDF" })}
+    //     />
+    //   ),
+    //   width: 120,
+    // },
   ];
 
   return (
     <div className="p-4">
       {showForm && canOpenForm ? (
-        <ForeignTransfersForm onSubmit={handleFormSubmit} readOnly={isReadOnly} />
+        <ForeignTransfersForm
+          onSubmit={handleFormSubmit}
+          readOnly={isReadOnly}
+        />
       ) : (
         <CrudDataGrid
           data={gridData}

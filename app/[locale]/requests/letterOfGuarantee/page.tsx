@@ -132,8 +132,8 @@ export default function LetterOfGuaranteePage() {
       label: tUi("actions", { defaultValue: "Actions" }),
       renderCell: (row: LetterOfGuaranteeApiItem) => (
         <RequestPdfDownloadButton
-          request={row}
-          requestType="Guarantee Letter Request"
+          requestType="letterofguarantee" // all-lowercase, no spaces → matches fetcherMap
+          requestId={row.id} // pass just the primary key
           title={tUi("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),

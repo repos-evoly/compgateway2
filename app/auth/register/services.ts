@@ -7,7 +7,7 @@ import {
     TAttachment, // <-- newly added in types.ts
   } from "./types";
   
-  const BASE_API = process.env.NEXT_PUBLIC_BASE_API || "http://localhost:3001/api";
+  const BASE_API = process.env.NEXT_PUBLIC_BASE_API ;
   
   export async function getKycByCode(code: string): Promise<TKycResponse> {
     const response = await fetch(`${BASE_API}/companies/kyc/${code}`, {
@@ -164,3 +164,26 @@ export async function deleteAttachment(code: string, attachmentId: string): Prom
     }
   }
   
+
+  export async function uploadSingleDocument(
+    code: string,
+    file: File,
+  ): Promise<void> {
+    if (!BASE_API) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  
+    /* multipart payload */
+    const formData = new FormData();
+    formData.append("file", file);          // binary
+    formData.append("Subject", "logo");     // required by backend
+    formData.append("Description", "logo"); // required by backend
+  
+    const url = `${BASE_API}/companies/${code}/attachments`;
+    const res = await fetch(url, { method: "POST", body: formData });
+  
+    if (!res.ok) {
+      const msg = await res.text();
+      throw new Error(
+        `Failed to upload document. Status=${res.status}, Message=${msg}`,
+      );
+    }
+  }

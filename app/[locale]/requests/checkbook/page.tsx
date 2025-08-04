@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
+
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CheckbookForm from "./components/CheckbookForm";
 import { getCheckbookRequests } from "./services";
@@ -9,7 +10,7 @@ import type { TCheckbookFormValues } from "./types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
-// Permission helpers (copied from other pages)
+/* ---------- cookie helpers ---------- */
 const getCookieValue = (key: string): string | undefined =>
   typeof document !== "undefined"
     ? document.cookie
@@ -30,27 +31,27 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
 const CheckbookPage: React.FC = () => {
   const t = useTranslations("checkForm");
 
-  /* ─── Table state ─────────────────────────────────────────── */
+  /* ---------- table / pagination ---------- */
   const [data, setData] = useState<TCheckbookFormValues[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
-  /* ─── Search state ────────────────────────────────────────── */
+  /* ---------- search ---------- */
   const [searchTerm, setSearchTerm] = useState("");
   const [searchBy, setSearchBy] = useState("");
 
-  /* ─── Form toggle ─────────────────────────────────────────── */
+  /* ---------- form toggle ---------- */
   const [showForm, setShowForm] = useState(false);
 
-  /* ─── Modal state ─────────────────────────────────────────── */
+  /* ---------- modal ---------- */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Permissions
+  /* ---------- permissions ---------- */
   const permissionsSet = useMemo(
     () => decodeCookieArray(getCookieValue("permissions")),
     []
@@ -61,19 +62,19 @@ const CheckbookPage: React.FC = () => {
   const canOpenForm = canEdit || canView;
   const isReadOnly = !canEdit && canView;
 
-  /* ─── Fetch data ──────────────────────────────────────────── */
+  /* ---------- fetch ---------- */
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true); // Set loading state
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const result = await getCheckbookRequests(
+        const res = await getCheckbookRequests(
           currentPage,
           limit,
           searchTerm,
           searchBy
         );
-        setData(result.data);
-        setTotalPages(result.totalPages);
+        setData(res.data);
+        setTotalPages(res.totalPages);
       } catch (err) {
         const msg = err instanceof Error ? err.message : t("genericError");
         setModalTitle(t("errorTitle"));
@@ -81,13 +82,13 @@ const CheckbookPage: React.FC = () => {
         setModalSuccess(false);
         setModalOpen(true);
       } finally {
-        setLoading(false); // Reset loading state
+        setLoading(false);
       }
-    }
+    };
     fetchData();
   }, [currentPage, limit, searchTerm, searchBy, t]);
 
-  /* ─── Columns ─────────────────────────────────────────────── */
+  /* ---------- grid columns ---------- */
   const columns = [
     { key: "fullName", label: t("name") },
     { key: "address", label: t("address") },
@@ -99,42 +100,40 @@ const CheckbookPage: React.FC = () => {
     {
       key: "actions",
       label: t("actions", { defaultValue: "Actions" }),
+      width: 120,
       renderCell: (row: TCheckbookFormValues) => (
         <RequestPdfDownloadButton
-          request={row}
-          requestType="Checkbook Request"
+          requestType="checkbook" /* matches fetcherMap key */
+          requestId={row.id!} /* only the primary key */
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
-      width: 120,
     },
   ];
 
-  /* ─── Handlers ────────────────────────────────────────────── */
+  /* ---------- handlers ---------- */
   const handleAddClick = () => setShowForm(true);
 
   const handleFormSubmit = (newItem: TCheckbookFormValues) => {
     setData((prev) => [newItem, ...prev]);
     setShowForm(false);
-
     setModalTitle(t("successTitle"));
     setModalMessage(t("successMessage"));
     setModalSuccess(true);
     setModalOpen(true);
   };
 
-  const handleFormCancel = () => setShowForm(false);
+  /* ---------- modal helpers ---------- */
+  const closeModal = () => setModalOpen(false);
+  const confirmModal = () => setModalOpen(false);
 
-  const handleModalClose = () => setModalOpen(false);
-  const handleModalConfirm = () => setModalOpen(false);
-
-  /* ─── Render ──────────────────────────────────────────────── */
+  /* ---------- render ---------- */
   return (
     <div className="p-4">
       {showForm && canOpenForm ? (
         <CheckbookForm
           onSubmit={handleFormSubmit}
-          onCancel={handleFormCancel}
+          onCancel={() => setShowForm(false)}
           readOnly={isReadOnly}
         />
       ) : (
@@ -151,9 +150,9 @@ const CheckbookPage: React.FC = () => {
             { value: "fullName", label: t("name") },
             { value: "status", label: t("status") },
           ]}
-          onDropdownSelect={(selected) => {
-            if (selected) {
-              setSearchBy(String(selected));
+          onDropdownSelect={(sel) => {
+            if (sel) {
+              setSearchBy(String(sel));
               setCurrentPage(1);
             }
           }}
@@ -168,14 +167,13 @@ const CheckbookPage: React.FC = () => {
         />
       )}
 
-      {/* Error / Success modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}
         title={modalTitle}
         message={modalMessage}
-        onClose={handleModalClose}
-        onConfirm={handleModalConfirm}
+        onClose={closeModal}
+        onConfirm={confirmModal}
       />
     </div>
   );

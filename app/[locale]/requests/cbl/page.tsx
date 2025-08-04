@@ -105,8 +105,8 @@ const CBLListPage: React.FC = () => {
       label: t("actions", { defaultValue: "Actions" }),
       renderCell: (row: TCBLValues) => (
         <RequestPdfDownloadButton
-          request={row}
-          requestType="CBL Inquiry Request"
+          requestId={row.id}
+          requestType="cbl"
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),

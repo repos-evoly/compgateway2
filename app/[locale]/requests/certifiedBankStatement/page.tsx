@@ -93,8 +93,8 @@ export default function CertifiedBankStatementPage() {
       label: t("actions", { defaultValue: "Actions" }),
       renderCell: (row: CertifiedBankStatementRequestWithID) => (
         <RequestPdfDownloadButton
-          request={row}
-          requestType="Certified Bank-Statement Request"
+          requestId={row.id}
+          requestType="certifiedBankStatement"
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
@@ -151,7 +151,10 @@ export default function CertifiedBankStatementPage() {
   return (
     <div className="p-6">
       {showForm && canOpenForm ? (
-        <CertifiedBankStatementForm onSubmit={handleFormSubmit} readOnly={isReadOnly} />
+        <CertifiedBankStatementForm
+          onSubmit={handleFormSubmit}
+          readOnly={isReadOnly}
+        />
       ) : (
         <CrudDataGrid
           data={data}

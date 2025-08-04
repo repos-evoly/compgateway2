@@ -30,6 +30,7 @@ export type TCheckbookFormValues = {
   date: string;
   bookContaining: string;
   status?: string; 
+  id?: number; // Optional for new items
 };
 
 /** Props for our CheckbookForm component */

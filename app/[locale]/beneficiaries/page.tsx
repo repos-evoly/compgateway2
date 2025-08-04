@@ -8,9 +8,9 @@ import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { BeneficiariesApiResponse } from "./types";
-import { getBeneficiaries } from "./services";
+import { getBeneficiaries, deleteBeneficiary } from "./services";
 import { BeneficiaryResponse } from "./types";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import type { Action } from "@/types";
 
 const Page = () => {
@@ -62,22 +62,58 @@ const Page = () => {
         router.push(`/beneficiaries/${row.id}/edit`);
       },
     },
+    {
+      name: "delete",
+      tip: t("deleteBeneficiary", { defaultValue: "Delete Beneficiary" }),
+      icon: <FaTrash />,
+      onClick: async (row) => {
+        if (
+          confirm(
+            t("confirmDelete", {
+              defaultValue: "Are you sure you want to delete this beneficiary?",
+            })
+          )
+        ) {
+          try {
+            await deleteBeneficiary(Number(row.id));
+            // Refresh the data after successful deletion
+            fetchBeneficiaries();
+            setModalTitle(t("deleteSuccessTitle", { defaultValue: "Success" }));
+            setModalMessage(
+              t("deleteSuccessMsg", {
+                defaultValue: "Beneficiary deleted successfully",
+              })
+            );
+            setModalSuccess(true);
+            setModalOpen(true);
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : t("unknownError");
+            setModalTitle(t("deleteErrorTitle", { defaultValue: "Error" }));
+            setModalMessage(msg);
+            setModalSuccess(false);
+            setModalOpen(true);
+          }
+        }
+      },
+    },
   ];
 
   // columns => minimal example
   const columns = [
-    { 
-      key: "id", 
+    {
+      key: "id",
       label: t("id"),
       renderCell: (row: BeneficiaryResponse) => (
-        <div 
+        <div
           className="cursor-pointer hover:bg-gray-100 p-1 rounded"
           onDoubleClick={() => router.push(`/beneficiaries/${row.id}/edit`)}
-          title={t("doubleClickToEdit", { defaultValue: "Double-click to edit" })}
+          title={t("doubleClickToEdit", {
+            defaultValue: "Double-click to edit",
+          })}
         >
           {row.id}
         </div>
-      )
+      ),
     },
     { key: "name", label: t("name") },
     {
@@ -86,9 +122,7 @@ const Page = () => {
       renderCell: (row: BeneficiaryResponse) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
-            row.type === "international"
-              ? " text-black"
-              : " text-black"
+            row.type === "international" ? " text-black" : " text-black"
           }`}
         >
           {row.type === "international" ? t("international") : t("local")}

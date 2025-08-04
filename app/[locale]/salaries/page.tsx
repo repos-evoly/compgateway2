@@ -1,84 +1,56 @@
-/* --------------------------------------------------------------------------
-   app/[locale]/salaries/page.tsx
-   – Uses reusable <Button> and fixes accountType union mismatch.
-   – Columns include the new “accountType” field.
-   -------------------------------------------------------------------------- */
 "use client";
 
 import React, { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-// import { useRouter } from "next/navigation";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import SalariesForm from "./components/SalariesForm";
 import Button from "@/app/components/reusable/Button";
+import SalaryPdfDownloadButton from "./SalaryPdfDownloadButton";
 
-import type { TSalaryRecord, TSalaryFormValues } from "./types";
-import salariesDataJson from "./salariesData.json";
+import type { TSalaryTransaction } from "./types";
+import salaryTransactionsDataJson from "./salaryTransactionsData.json";
 
 const PAGE_SIZE = 10;
 
-/* ------------------------------------------------------------------ */
-/* Cast JSON → TSalaryRecord[] (fixes accountType literal union)      */
-/* ------------------------------------------------------------------ */
-const salariesData: TSalaryRecord[] = (
-  salariesDataJson as unknown as TSalaryRecord[]
-).map((r) => ({
-  ...r,
-  accountType: r.accountType as "account" | "wallet",
-}));
+const salaryTransactionsData: TSalaryTransaction[] =
+  salaryTransactionsDataJson as unknown as TSalaryTransaction[];
 
 export default function SalariesPage() {
   const locale = useLocale();
   const t = useTranslations("salaries");
-  // const router = useRouter();
 
   /* ------------------- state ---------------------------------------- */
-  const [data, setData] = useState<TSalaryRecord[]>(salariesData);
-  const [showForm, setShowForm] = useState(false);
+  const [transactions] = useState<TSalaryTransaction[]>(salaryTransactionsData);
   const [currentPage, setCurrentPage] = useState(1);
 
   /* ------------------- paging helpers ------------------------------- */
-  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
   const handlePageChange = (p: number) => setCurrentPage(p);
 
-  /* ------------------- add salary record ---------------------------- */
-  const handleAddClick = () => setShowForm(true);
-
-  const handleFormSubmit = (values: TSalaryFormValues) => {
-    setData((prev) => {
-      const nextId = (prev[0]?.id ?? 0) + 1;
-      return [
-        {
-          id: nextId,
-          name: values.name ?? "",
-          email: values.email ?? "",
-          phone: values.phone ?? "",
-          salary: values.salary ?? 0,
-          date: values.date ?? new Date().toISOString().slice(0, 10),
-          accountNumber: values.accountNumber ?? "",
-          accountType: values.accountType ?? "account",
-          sendSalary: false,
-          canPost: false,
-        } as TSalaryRecord,
-        ...prev,
-      ];
-    });
-    setShowForm(false);
-    setCurrentPage(1); // reset pagination
-  };
-
-  const handleFormCancel = () => setShowForm(false);
-
-  /* ------------------- columns -------------------------------------- */
-  const columns = [
-    { key: "name", label: t("name") },
-    { key: "email", label: t("email") },
-    { key: "phone", label: t("phone") },
-    { key: "salary", label: t("salary") },
-    { key: "date", label: t("date") },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType", { defaultValue: "Type" }) },
+  /* ------------------- columns for transactions --------------------- */
+  const transactionColumns = [
+    { key: "genCode", label: "GenCode" },
+    { key: "amount", label: "Amount" },
+    { key: "date", label: "Date" },
+    { key: "employeeName", label: "Employee" },
+    { key: "status", label: "Status" },
+    { key: "transactionType", label: "Type" },
+    {
+      key: "accounts",
+      label: "Accounts",
+      renderCell: (row: TSalaryTransaction) => (
+        <span className="text-xs">
+          {row.accounts.length} account{row.accounts.length !== 1 ? "s" : ""}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      renderCell: (row: TSalaryTransaction) => (
+        <SalaryPdfDownloadButton transaction={row} />
+      ),
+    },
   ];
 
   /* ------------------- header button (Button) ----------------------- */
@@ -92,7 +64,7 @@ export default function SalariesPage() {
   );
 
   /* ------------------- data slice ----------------------------------- */
-  const pagedData = data.slice(
+  const pagedData = transactions.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
@@ -100,22 +72,17 @@ export default function SalariesPage() {
   /* ------------------- render --------------------------------------- */
   return (
     <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
-      {showForm ? (
-        <SalariesForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} />
-      ) : (
-        <CrudDataGrid
-          data={pagedData}
-          columns={columns}
-          showActions={false}
-          showSearchBar={false}
-          showAddButton
-          onAddClick={handleAddClick}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          childrens={setSalariesButton}
-        />
-      )}
+      <CrudDataGrid
+        data={pagedData}
+        columns={transactionColumns}
+        showActions={false}
+        showSearchBar={false}
+        showAddButton={true}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        childrens={setSalariesButton}
+      />
     </div>
   );
 }

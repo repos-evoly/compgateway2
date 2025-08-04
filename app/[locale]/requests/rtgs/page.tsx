@@ -88,10 +88,10 @@ const RTGSListPage: React.FC = () => {
     {
       key: "actions",
       label: t("actions", { defaultValue: "Actions" }),
-      renderCell: (row: Record<string, unknown>) => (
+      renderCell: (row: { id: number }) => (
         <RequestPdfDownloadButton
-          request={row}
-          requestType="RTGS Transfer Request"
+          requestType="rtgs" // key used in the fetcherMap
+          requestId={row.id} // pass only the primary-key
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
@@ -150,7 +150,11 @@ const RTGSListPage: React.FC = () => {
   return (
     <div className="p-4">
       {showForm && canOpenForm ? (
-        <RTGSForm onSubmit={handleFormSubmit} onCancel={handleFormCancel} readOnly={isReadOnly} />
+        <RTGSForm
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          readOnly={isReadOnly}
+        />
       ) : (
         <CrudDataGrid
           data={rowData}

@@ -113,8 +113,8 @@ export default function CreditFacilityPage() {
       label: tUi("actions", { defaultValue: "Actions" }),
       renderCell: (row: CreditFacilityApiItem) => (
         <RequestPdfDownloadButton
-          request={row}
-          requestType="Credit Facility Request"
+          requestType="creditfacility" // lower-case, no spaces → matches fetcherMap
+          requestId={row.id} // send only the PK so the button can fetch
           title={tUi("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),

@@ -12,28 +12,22 @@ import { useTranslations } from "next-intl";
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
 /* ------------------------------------------------------------------ */
-
-type DocumentsSectionProps = {
-  documents: Attachment[];
-};
+type DocumentsSectionProps = { documents: Attachment[] };
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
 /* ------------------------------------------------------------------ */
-
 export default function DocumentsSection({ documents }: DocumentsSectionProps) {
   const [selectedDocument, setSelectedDocument] = useState<Attachment | null>(
     null
   );
 
   const t = useTranslations("profile.documentsSection");
-
   const NEXT_UPLOADS_BASE_URL = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL ?? "";
 
   /* ------------------------------------------------------------------ */
   /* Helpers                                                             */
   /* ------------------------------------------------------------------ */
-
   /** Build the full URL for a given attachment. */
   const buildUrl = (doc: Attachment): string =>
     `${NEXT_UPLOADS_BASE_URL}${doc.attUrl}`;
@@ -86,7 +80,6 @@ export default function DocumentsSection({ documents }: DocumentsSectionProps) {
   /* ------------------------------------------------------------------ */
   /* Render                                                              */
   /* ------------------------------------------------------------------ */
-
   return (
     <>
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -108,7 +101,7 @@ export default function DocumentsSection({ documents }: DocumentsSectionProps) {
         </div>
 
         {/* Documents list or placeholder */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-hidden hover:overflow-y-auto max-h-[70vh]">
           {documents.length === 0 ? (
             /* Empty state */
             <div className="text-center py-12">
@@ -189,7 +182,7 @@ export default function DocumentsSection({ documents }: DocumentsSectionProps) {
       {/* Full-screen image preview */}
       {selectedDocument && !isPdf(selectedDocument.attMime) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
-          <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center p-4">
+          <div className="relative max-w-4xl max-h-full w-full h-full flex flex-col items-center justify-center p-4">
             {/* Close */}
             <button
               onClick={closePreview}

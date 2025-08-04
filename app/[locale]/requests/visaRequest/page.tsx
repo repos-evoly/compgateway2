@@ -63,7 +63,6 @@ export default function VisaRequestListPage() {
   const canOpenForm = canEdit || canView;
   const isReadOnly = !canEdit && canView;
 
-
   /*─────────────────────────── Fetch list  ─────────────────────────────────*/
   useEffect(() => {
     fetchData();
@@ -91,7 +90,9 @@ export default function VisaRequestListPage() {
   const handleAddClick = () => setShowForm(true);
 
   /*─────────────────────────── Form submit  ────────────────────────────────*/
-  async function handleFormSubmit(values: VisaRequestFormValues & { files?: File[] }) {
+  async function handleFormSubmit(
+    values: VisaRequestFormValues & { files?: File[] }
+  ) {
     try {
       await createVisaRequest(values);
       await fetchData();
@@ -127,14 +128,14 @@ export default function VisaRequestListPage() {
     { key: "branch", label: t("branch") },
     { key: "date", label: t("date") },
     { key: "accountHolderName", label: t("accountHolderName") },
-    {key:"status", label: t("status") },
+    { key: "status", label: t("status") },
     {
       key: "actions",
       label: t("actions", { defaultValue: "Actions" }),
-      renderCell: (row: Record<string, unknown>) => (
+       renderCell: (row: { id: number }) => (
         <RequestPdfDownloadButton
-          request={row}
-          requestType="VISA Card Request"
+          requestType="visa" // key used in fetcherMap
+          requestId={row.id} // only the ID is sent
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
@@ -153,7 +154,11 @@ export default function VisaRequestListPage() {
   return (
     <div className="p-4">
       {showForm && canOpenForm ? (
-        <VisaWizardForm onSubmit={handleFormSubmit} onBack={handleBackFromForm} readOnly={isReadOnly} />
+        <VisaWizardForm
+          onSubmit={handleFormSubmit}
+          onBack={handleBackFromForm}
+          readOnly={isReadOnly}
+        />
       ) : (
         <CrudDataGrid
           data={gridData}

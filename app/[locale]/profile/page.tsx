@@ -1,28 +1,25 @@
 /* --------------------------------------------------------------------------
-   app/profile/page.tsx              – logged-in company profile page
+   app/[locale]/profile/page.tsx – logged-in company profile page (front-end)
    -------------------------------------------------------------------------- */
 "use client";
 
 import React, { JSX, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 
 import CompanyNotFound from "@/app/[locale]/profile/components/CompanyNotFound";
 import HeaderSection from "@/app/[locale]/profile/components/HeaderSection";
 import ContactLocationSection from "@/app/[locale]/profile/components/ContactLocationSection";
-// import KycTimelineSection from "@/app/[locale]/profile/components/KycTimelineSection";
 import DocumentsSection from "@/app/[locale]/profile/components/DocumentSection";
-
-import { Company } from "@/app/[locale]/profile/types";
-import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
+import ContactSupportSection from "./components/ContactSupportSection";
 import LoadingPage from "@/app/components/reusable/Loading";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import ContactSupportSection from "./components/ContactSupportSection";
 
-/* -------------------------------------------------------------------------- */
+import type { Company } from "@/app/[locale]/profile/types";
+import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
 
+/* ---------------------------------------------------------------------- */
 export default function ProfilePage(): JSX.Element {
   const router = useRouter();
 
@@ -34,12 +31,15 @@ export default function ProfilePage(): JSX.Element {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoId, setLogoId] = useState<string>();
 
-  /* ─ Fetch company once cookie is available ─ */
+  const NEXT_PUBLIC_IMAGE_URL = process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
+
+  /* ----- fetch company ------------------------------------------------- */
   useEffect(() => {
     const raw = Cookies.get("companyCode") ?? "";
-    const code = raw.replace(/^"|"$/g, ""); // strip any surrounding quotes
-
+    const code = raw.replace(/^"|"$/g, "");
     if (!code) {
       setError("No company code found in cookies.");
       return;
@@ -49,6 +49,14 @@ export default function ProfilePage(): JSX.Element {
       try {
         setLoading(true);
         const fetched = await getCompannyInfoByCode(code);
+        const logoAttachment = fetched.attachments?.find(
+          (a) => a.attSubject?.toLowerCase() === "logo"
+        );
+        const fullLogoUrl = logoAttachment
+          ? `${NEXT_PUBLIC_IMAGE_URL}${logoAttachment.attUrl}`
+          : null;
+        setLogoUrl(fullLogoUrl);
+        setLogoId(logoAttachment?.id);
         setCompany(fetched);
         setError(null);
       } catch (err) {
@@ -62,10 +70,10 @@ export default function ProfilePage(): JSX.Element {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [NEXT_PUBLIC_IMAGE_URL]);
 
-  /* ─ UI helpers ─ */
-  const statusBadge = (status: string) => {
+  /* ----- UI helpers ---------------------------------------------------- */
+  const statusBadge = (status: string): JSX.Element => {
     const s = status.toLowerCase();
     const missing =
       s === "missingsdocuments" ||
@@ -110,47 +118,30 @@ export default function ProfilePage(): JSX.Element {
     );
   };
 
-  const activeBadge = (isActive: boolean) =>
-    isActive ? (
-      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-green-50 text-info-dark border border-green-200">
-        <span className="w-1.5 h-1.5 bg-green-400 rounded-full" /> Active
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full" /> Inactive
-      </span>
-    );
-
-  /* ────────────────────────────────────────────────────────────────────── */
-  if (loading) {
-    return <LoadingPage />;
-  }
-
-  if (error || !company) {
+  /* ----- render -------------------------------------------------------- */
+  if (loading) return <LoadingPage />;
+  if (error || !company)
     return <CompanyNotFound onBack={() => router.push("/dashboard")} />;
-  }
 
   return (
     <div className="bg-gray-50">
-      {/* Header */}
+      {/* header with inline logo uploader */}
       <HeaderSection
         company={company}
         getStatusBadge={statusBadge}
-        getActiveBadge={activeBadge}
+        initialLogoUrl={logoUrl}
+        logoId={logoId}
       />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* LEFT */}
+        {/* LEFT ---------------------------------------------------------- */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Contact section on its own line */}
           <ContactLocationSection company={company} />
-
-          {/* KYC timeline on its own line */}
           {/* <KycTimelineSection company={company} /> */}
           <ContactSupportSection />
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT --------------------------------------------------------- */}
         <div className="lg:col-span-1">
           <DocumentsSection documents={company.attachments ?? []} />
         </div>

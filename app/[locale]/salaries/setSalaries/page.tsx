@@ -17,14 +17,16 @@ import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import BackButton from "@/app/components/reusable/BackButton";
 
 import type { DataGridColumn } from "@/types";
-import type { EmployeeSalaryCycle, SalaryCyclePayload } from "../services";
-import { getEmployeeSalaryCycles, submitSalaryCycle } from "../services";
+import type { SalaryCyclePayload } from "../services";
+import { submitSalaryCycle } from "../services";
+import { getEmployees } from "../../employees/services";
+import type { EmployeeResponse } from "../../employees/types";
 
 export default function SetSalariesPage() {
   const locale = useLocale();
   const t = useTranslations("salaries");
 
-  const [data, setData] = useState<EmployeeSalaryCycle[]>([]);
+  const [data, setData] = useState<EmployeeResponse[]>([]);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,8 @@ export default function SetSalariesPage() {
         setLoading(true);
         setError(null);
         console.log("Starting to fetch employees...");
-        const employees = await getEmployeeSalaryCycles();
+        const response = await getEmployees(1, 100); // Get up to 100 employees
+        const employees = response.data;
         console.log("Successfully fetched employees:", employees);
         setData(employees);
       } catch (err) {
@@ -66,15 +69,15 @@ export default function SetSalariesPage() {
   };
 
   const handleSelectAll = () => {
-    const allSelected = data.every((r) => selectedRows.includes(r.employeeId));
-    setSelectedRows(allSelected ? [] : data.map((r) => r.employeeId));
+    const allSelected = data.every((r) => selectedRows.includes(r.id));
+    setSelectedRows(allSelected ? [] : data.map((r) => r.id));
   };
 
   /* ────────────────────── accumulated salary ─────────────────────── */
   const totalSelectedSalary = useMemo(
     () =>
       data
-        .filter((r) => selectedRows.includes(r.employeeId))
+        .filter((r) => selectedRows.includes(r.id))
         .reduce((sum, r) => sum + r.salary, 0),
     [data, selectedRows]
   );
@@ -83,26 +86,26 @@ export default function SetSalariesPage() {
   const handleSubmitSelected = async () => {
     try {
       const selectedRecords = data.filter((r) =>
-        selectedRows.includes(r.employeeId)
+        selectedRows.includes(r.id)
       );
 
       // Prepare salary cycle payload
       const payload: SalaryCyclePayload = {
-        employeeIds: selectedRecords.map((r) => r.employeeId),
+        employeeIds: selectedRecords.map((r) => r.id),
         salaryAmounts: selectedRecords.reduce((acc, r) => {
-          acc[r.employeeId] = r.salary;
+          acc[r.id] = r.salary;
           return acc;
         }, {} as { [employeeId: number]: number }),
         cycleDate: new Date().toISOString().split("T")[0], // Current date in YYYY-MM-DD format
         accountNumbers: selectedRecords.reduce((acc, r) => {
           if (r.accountNumber) {
-            acc[r.employeeId] = r.accountNumber;
+            acc[r.id] = r.accountNumber;
           }
           return acc;
         }, {} as { [employeeId: number]: string }),
         accountTypes: selectedRecords.reduce((acc, r) => {
           if (r.accountType) {
-            acc[r.employeeId] = r.accountType;
+            acc[r.id] = r.accountType as "account" | "wallet";
           }
           return acc;
         }, {} as { [employeeId: number]: "account" | "wallet" }),
@@ -137,18 +140,18 @@ export default function SetSalariesPage() {
           type="checkbox"
           checked={
             data.length > 0 &&
-            data.every((r) => selectedRows.includes(r.employeeId))
+            data.every((r) => selectedRows.includes(r.id))
           }
           onChange={handleSelectAll}
           className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500"
         />
       ),
-      renderCell: (row: EmployeeSalaryCycle, rowIndex: number) => (
+      renderCell: (row: EmployeeResponse, rowIndex: number) => (
         <input
           id={`row-${rowIndex}`}
           type="checkbox"
-          checked={selectedRows.includes(row.employeeId)}
-          onChange={() => handleRowSelect(row.employeeId)}
+          checked={selectedRows.includes(row.id)}
+          onChange={() => handleRowSelect(row.id)}
           className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500"
         />
       ),
@@ -156,8 +159,7 @@ export default function SetSalariesPage() {
     {
       key: "name",
       label: t("name"),
-      renderCell: (row: EmployeeSalaryCycle) =>
-        `${row.firstName} ${row.lastName}`,
+      renderCell: (row: EmployeeResponse) => row.name,
     },
     { key: "email", label: t("email") },
     { key: "phone", label: t("phone") },

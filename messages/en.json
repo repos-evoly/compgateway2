@@ -46,7 +46,9 @@
   "beneficiaries": "Beneficiaries",
   "profile": "Profile",
   "representativesDescription": "Manage company representatives and their permissions",
-  "beneficiariesDescription": "Manage beneficiaries and their account information"
+  "beneficiariesDescription": "Manage beneficiaries and their account information",
+  "users": "Users",
+  "salaries": "Salaries"
   },
 
   "mainHeader": {
@@ -502,7 +504,9 @@
     "changeLanguageDescription": "Switch application language",
     "logoutDescription": "Sign out of the application",
 
-    "defaultDescription": ""
+    "defaultDescription": "",
+    "usersDescription": "Manage user accounts and permissions",
+    "profileDescription": "View and edit your profile information"
   },
 
   "login": {

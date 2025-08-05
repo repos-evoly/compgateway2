@@ -23,10 +23,14 @@ import {
   FaTasks,
   FaFileSignature,
   FaLanguage,
-  FaTachometerAlt,
   FaUsers,
   FaCoins,
+  FaUserCircle,
+  FaUserCog,
+  FaRegAddressCard,
+  FaUserTie,
 } from "react-icons/fa";
+import { RxDashboard } from "react-icons/rx";
 import { IoWalletSharp, IoEarth } from "react-icons/io5";
 import { MdRequestQuote } from "react-icons/md";
 import { HiOutlineCurrencyDollar } from "react-icons/hi";
@@ -53,23 +57,35 @@ const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 /* ------------------------------------------------------------------ */
 const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
   dashboard: {
-    icon: <FaTachometerAlt />,
+    icon: <RxDashboard />,
     description: "dashboardDescription",
+  },
+  profile: {
+    icon: <FaUserCircle />,
+    description: "profileDescription",
   },
   statementOfAccount: {
     icon: <FaFileInvoice />,
     description: "statementOfAccountDescription",
+  },
+  salaries: {
+    icon: <FaMoneyCheckAlt />,
+    description: "salariesDescription",
+  },
+  users: {
+    icon: <FaUserCog />,
+    description: "usersDescription",
   },
   employees: {
     icon: <FaUsers />,
     description: "employeesDescription",
   },
   representatives: {
-    icon: <FaUsers />,
+    icon: <FaUserTie />,
     description: "representativesDescription",
   },
   beneficiaries: {
-    icon: <FaUsers />,
+    icon: <FaRegAddressCard />,
     description: "beneficiariesDescription",
   },
   "transfer.label": {
@@ -204,7 +220,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Update header info and persist it
-  const setHeaderInfo = (info: { label: string }) => {
+  const setHeaderInfo = (info: HeaderInfo) => {
     setHeaderInfoState({
       label: info.label,
       icon: ICONS[info.label]?.icon || undefined,

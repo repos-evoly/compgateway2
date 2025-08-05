@@ -47,8 +47,9 @@
       "beneficiaries":"المستفيدين",
       "profile":"الملف الشخصي",
       "representativesDescription": "إدارة ممثلي الشركة وصلاحياتهم",
-      "beneficiariesDescription": "إدارة المستفيدين ومعلومات حساباتهم"
-
+      "beneficiariesDescription": "إدارة المستفيدين ومعلومات حساباتهم",
+      "users":"المستخدمين",
+      "salaries":"المرتبات"
     },
     "mainHeader":{
       "title":"منظومة بوابة الشركات"
@@ -508,7 +509,9 @@
           "changeLanguageDescription": "تغيير لغة التطبيق",
           "logoutDescription": "تسجيل الخروج من التطبيق",
       
-          "defaultDescription": ""
+          "defaultDescription": "",
+          "profileDescription": "إدارة ملفك الشخصي ",
+          "usersDescription": "إدارة المستخدمين"
         },
 
 

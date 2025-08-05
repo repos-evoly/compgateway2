@@ -1,57 +1,46 @@
-/* ───────────── middleware.ts  COMPLETE ───────────── */
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import createMiddleware from 'next-intl/middleware';
+/* ───────────── middleware.ts  FINAL & STABLE ───────────── */
+import { NextResponse, type NextRequest } from "next/server";
+import createMiddleware from "next-intl/middleware";
 
-/* next-intl locale detection */
+/* ---------- i18n ---------- */
 const intlMiddleware = createMiddleware({
-  locales: ['en', 'ar'],
-  defaultLocale: 'ar',
+  locales: ["en", "ar"],
+  defaultLocale: "ar",
 });
 
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  /* 1️⃣  Redirect “/” → “/ar” */
-  if (pathname === '/') {
+  /* 1️⃣  “/” → “/ar” */
+  if (pathname === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = '/ar';
+    url.pathname = "/ar";
     return NextResponse.redirect(url);
   }
 
   /* 2️⃣  Auth-guard for locale routes */
-  if (pathname.startsWith('/ar') || pathname.startsWith('/en')) {
-    const token = request.cookies.get('accessToken')?.value || '';
+  if (pathname.startsWith("/ar") || pathname.startsWith("/en")) {
+    const token = request.cookies.get("accessToken")?.value || "";
     if (!token)
-      return NextResponse.redirect(new URL('/auth/login', request.url));
+      return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  /* 3️⃣  Run next-intl middleware */
-  const res = intlMiddleware(request);
+  /* 3️⃣  Build response
+         – Skip next-intl on /auth so we avoid locale-redirect loops. */
+  const res = pathname.startsWith("/auth")
+    ? NextResponse.next()
+    : intlMiddleware(request);
 
-  /* 4️⃣  🔐  ONLY for /auth pages: add nonce + strict CSP  */
-  if (pathname.startsWith('/auth')) {
-    const nonce = crypto.randomUUID(); // Edge-runtime safe
-
-    res.headers.set('x-nonce', nonce);
-    res.headers.set(
-      'Content-Security-Policy',
-      [
-        "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-        "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data:",
-        "connect-src 'self'",
-        "frame-ancestors 'none'",
-        "base-uri 'none'",
-      ].join('; ')
-    );
+  /* 4️⃣  Security headers for /auth pages only: deny framing */
+  if (pathname.startsWith("/auth")) {
+    res.headers.set("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'none'");
+    res.headers.set("X-Frame-Options", "DENY");
   }
 
   return res;
 }
 
-/* 5️⃣  Apply to everything except api, _next, auth assets, static files */
+/* 5️⃣  Run on everything except API routes, Next.js internals & static assets */
 export const config = {
-  matcher: ['/((?!api|_next|auth|.*\\..*).*)'],
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
 };

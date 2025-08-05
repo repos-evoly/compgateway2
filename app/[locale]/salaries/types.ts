@@ -9,12 +9,14 @@ export type TSalaryTransaction = {
   id: number;
   genCode: string;
   amount: number;
+  total: number; // Added total field for the total amount
   date: string;
   accounts: string[];
   employeeName: string;
   employeeId: string;
   status: "completed" | "pending" | "failed";
   transactionType: "salary" | "bonus" | "allowance";
+  accountType: "running account" | "wallet";
 };
 
 /**
@@ -28,7 +30,7 @@ export type TSalaryRecord = {
   salary: number;
   date: string;
   accountNumber: string;
-  accountType: "account" | "wallet";
+  accountType: "running account" | "wallet";
   sendSalary: boolean;
   canPost: boolean;
 };
@@ -44,7 +46,7 @@ export type TSalaryFormValues = {
   salary?: number;
   date?: string;
   accountNumber?: string;
-  accountType?: "account" | "wallet";
+  accountType?: "running account" | "wallet";
   sendSalary: boolean;
   canPost: boolean;
 };

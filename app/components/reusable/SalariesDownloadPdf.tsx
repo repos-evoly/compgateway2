@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { FaFilePdf } from 'react-icons/fa';
 import { generateSalaryTransactionPdf } from '@/app/lib/generateSalaryPdf';
 import { TSalaryTransaction } from '@/app/[locale]/salaries/types';
-import { loadImageAsBase64 } from '@/app/[locale]/statement-of-account/loadImageAsBase64';
 import { useTranslations } from 'next-intl';
 
 // Define the props for the SalariesDownloadPdf component   
@@ -29,8 +28,7 @@ const SalaryPdfDownloadButton: React.FC<SalaryPdfDownloadButtonProps> = ({
     setIsLoading(true);
     try {
       // Load the image from public/images/pdfbg.jpg
-      const bgImageBase64 = await loadImageAsBase64("/images/pdfbg.jpg");
-      generateSalaryTransactionPdf(transaction, bgImageBase64);
+      generateSalaryTransactionPdf(transaction);
     } catch (error) {
       console.error("Failed to generate PDF:", error);
       alert("Failed to generate PDF.");

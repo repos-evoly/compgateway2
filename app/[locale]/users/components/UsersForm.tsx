@@ -37,14 +37,18 @@ export default function EmployeeForm({
     firstName: Yup.string().required("Required"),
     lastName: Yup.string().required("Required"),
     username: isEditMode ? Yup.string() : Yup.string().required("Required"),
-    email: isEditMode ? Yup.string().email("Invalid email") : Yup.string().email("Invalid email").required("Required"),
-    password: isEditMode ? Yup.string() : Yup.string()
-      .required("كلمة المرور مطلوبة")
-      .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل")
-      .matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{6,}$/,
-        "يجب أن تحتوي كلمة المرور على حرف صغير، حرف كبير، رقم، ورمز خاص"
-      ),
+    email: isEditMode
+      ? Yup.string().email("Invalid email")
+      : Yup.string().email("Invalid email").required("Required"),
+    password: isEditMode
+      ? Yup.string()
+      : Yup.string()
+          .required("كلمة المرور مطلوبة")
+          .min(6, "يجب أن تكون كلمة المرور 6 أحرف على الأقل")
+          .matches(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{6,}$/,
+            "يجب أن تحتوي كلمة المرور على حرف صغير، حرف كبير، رقم، ورمز خاص"
+          ),
     phone: Yup.string().required("Required").min(8, "رقم الهاتف قصير جداً"),
     roleId: Yup.number().required("Please select a role"),
   });
@@ -88,9 +92,9 @@ export default function EmployeeForm({
   return (
     <div className="rounded-xl overflow-visible transition-all duration-300 hover:shadow-xl">
       {/* Header with back button */}
-      <div className="bg-info-dark py-8 h-10 flex items-center gap-4">
+      <div className="bg-info-dark py-8 h-10 flex items-center gap-4 rounded-t-xl">
         <BackButton
-          fallbackPath={isEditMode ? "/employees" : undefined}
+          fallbackPath={isEditMode ? "/users" : undefined}
           isEditing={true}
         />
       </div>
@@ -99,7 +103,7 @@ export default function EmployeeForm({
         <Formik
           initialValues={{
             ...formInitialValues,
-            isActive: employeeStatus
+            isActive: employeeStatus,
           }}
           validationSchema={EmployeeFormSchema}
           // Call parent onSubmit => manage loading state with setSubmitting
@@ -206,7 +210,7 @@ export default function EmployeeForm({
                         label={t("status")}
                         options={[
                           { value: true, label: "active" },
-                          { value: false, label: "inactive" }
+                          { value: false, label: "inactive" },
                         ]}
                         flexDir={["row", "row"]}
                         t={(key) => t(key)}

@@ -1,5 +1,4 @@
 import {
-  FaTachometerAlt, // dashboard
   FaUsers, // employees
   FaUniversity,
   FaCheck,
@@ -17,13 +16,26 @@ import {
   FaFileSignature,
   FaLanguage,
   FaUserCircle, // profile
+  FaUserCog,
+  FaRegAddressCard,
+  FaUserTie,
 } from "react-icons/fa";
 import { IoEarth } from "react-icons/io5";
 import { MdRequestQuote } from "react-icons/md";
+import { RxDashboard } from "react-icons/rx";
+
 // import { HiOutlineCurrencyDollar } from "react-icons/hi";
 // import { BiDollarCircle, BiUpload, BiTransferAlt } from "react-icons/bi"; // New icons for Salary Localization children
 
 export const sidebarItems = [
+  {
+    id: 31,
+    label: "dashboard",
+    path: "/dashboard",
+    icon: RxDashboard, // was FaCog
+    children: [],
+    permissions: ["CompanyCanDashboard"],
+  },
   {
     id: 0,
     label: "profile",
@@ -33,20 +45,36 @@ export const sidebarItems = [
     permissions: [],
   },
   {
-    id: 31,
-    label: "dashboard",
-    path: "/dashboard",
-    icon: FaTachometerAlt, // was FaCog
-    children: [],
-    permissions: ["CompanyCanDashboard"],
-  },
-  {
     id: 1,
     label: "statementOfAccount",
     path: "/statement-of-account",
     icon: FaFileInvoice,
     children: [],
     permissions: ["CompanyCanStatementOfAccount"],
+  },
+  {
+    id: 36, // Divider
+    label: "divider",
+    path: "",
+    icon: () => null,
+    children: [],
+    // No permissions → always visible
+  },
+  {
+    id: 37,
+    label: "salaries",
+    path: "/salaries",
+    icon: FaMoneyCheckAlt, // was FaCog
+    children: [],
+    permissions: ["CompanyCanEmployees"],
+  },
+  {
+    id: 35,
+    label: "users",
+    path: "/users",
+    icon: FaUserCog, // was FaCog
+    children: [],
+    permissions: ["CompanyCanEmployees"],
   },
   {
     id: 33,
@@ -60,7 +88,7 @@ export const sidebarItems = [
     id: 32,
     label: "representatives",
     path: "/representatives",
-    icon: FaUsers,
+    icon: FaUserTie,
     children: [],
     // No permissions → always visible (for testing)
     // permissions: ["CompanyCanRepresentatives"],
@@ -69,7 +97,7 @@ export const sidebarItems = [
     id: 34,
     label: "beneficiaries",
     path: "/beneficiaries",
-    icon: FaUsers,
+    icon: FaRegAddressCard,
     children: [],
     // No permissions → always visible (for testing)
     // permissions: ["CompanyCanBeneficiaries"],
@@ -211,36 +239,6 @@ export const sidebarItems = [
     permissions: ["CompanyCanRequests"],
     enabledTransactionCategories: ["Requests"],
   },
-  // {
-  //   id: 18,
-  //   label: "salaryLocalization.title",
-  //   path: "/localization",
-  //   icon: HiOutlineCurrencyDollar,
-
-  //   children: [
-  //     {
-  //       id: 25,
-  //       label: "salaryLocalization.salaries",
-  //       path: "/salaries",
-  //       icon: BiDollarCircle, // Icon representing salaries/money
-
-  //     },
-  //     {
-  //       id: 26,
-  //       label: "salaryLocalization.uploadFiles",
-  //       path: "/salaries/upload-files",
-  //       icon: BiUpload, // Icon for file uploads
-  //       permissions: ["CompanyCanSalaryLocalizationUploadFiles"],
-  //     },
-  //     {
-  //       id: 27,
-  //       label: "salaryLocalization.salariesTransfer",
-  //       path: "/localization/salaries-transfer",
-  //       icon: BiTransferAlt, // Icon representing salary transfers
-  //       permissions: ["CompanyCanSalaryLocalizationTransfer"],
-  //     },
-  //   ],
-  // },
   // {
   //   id: 19,
   //   label: "documentary",

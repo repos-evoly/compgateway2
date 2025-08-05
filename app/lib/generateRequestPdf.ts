@@ -1,7 +1,12 @@
 /* ------------------------------------------------------------------
-   Generates a PDF for any request type.
+   generateRequestPdf.ts
+   – Generates a multi-page PDF for any request type.
+   – If the table does not fit on one page it continues on
+     subsequent pages, repeating the table header each time.
+   – **Updated**: removed the vertical divider that cut through
+     the “تفاصيل الطلب / Request Details” header row.
    Relies on mapRequestToRows() for the row list.
-   Strict TypeScript – no “any”, no interface.
+   Strict TypeScript – no “any”, no interface, exact types only.
 ------------------------------------------------------------------- */
 
 import { jsPDF } from "jspdf";
@@ -15,29 +20,25 @@ import {
 registerAmiriFont();
 
 /* ---------- layout constants ---------- */
-const margin        = 20;
-const headerHeight  = 25;
-const lineHeight    = 6;  // per wrapped line
-const cellPadding   = 2;  // top+bottom padding inside each cell
-const tableWidth    = 200;
+const margin        = 20;   // left/right page margin
+const headerHeight  = 25;   // table header (“تفاصيل الطلب / Request Details”)
+const lineHeight    = 6;    // height per wrapped line of text
+const cellPadding   = 2;    // top+bottom padding in each cell
+const tableWidth    = 200;  // total table width
 
 /* ------------------------------------------------------------------
-   Main generator
+   Helpers
 ------------------------------------------------------------------- */
-export const generateRequestPdf = async (
-  request: RequestData,
-  requestType: string
-): Promise<void> => {
-  const doc = new jsPDF({ putOnlyUsedFonts: true, hotfixes: ["px_scaling"] });
-  doc.setLanguage("ar");
-
+const drawPageHeader = (
+  doc: jsPDF,
+  requestType: string,
+  reqId: string,
+  logoData: string | null
+): void => {
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  /* ---------- header area (logo + title) ---------- */
+  /* white strip – keeps top area clean on every page */
   doc.setFillColor(255, 255, 255).rect(0, 0, pageWidth, 40, "F");
-
-  const logoData =
-    typeof window !== "undefined" ? localStorage.getItem("pdfLogo") : null;
 
   if (logoData) {
     try {
@@ -55,18 +56,58 @@ export const generateRequestPdf = async (
 
   doc
     .setFontSize(10)
-    .text(`${request.id ?? "N/A"} : رقم المستند`, pageWidth - margin, 15, {
-      align: "right",
+    .text(`${reqId} : رقم المستند`, pageWidth - margin, 15, { align: "right" });
+};
+
+const drawTableHeader = (
+  doc: jsPDF,
+  tableLeft: number,
+  tableTop: number,
+  tableWidthPx: number
+): void => {
+  /* border rectangle for header row */
+  doc.setDrawColor(0, 0, 0).setLineWidth(0.5);
+  doc.rect(tableLeft, tableTop, tableWidthPx, headerHeight, "S");
+
+  /* white fill inside header */
+  doc
+    .setFillColor(255, 255, 255)
+    .rect(tableLeft, tableTop, tableWidthPx, headerHeight, "F");
+
+  /* header text (Arabic + English) */
+  doc
+    .setFontSize(10)
+    .text("تفاصيل الطلب", tableLeft + tableWidthPx / 2, tableTop + 10, {
+      align: "center",
+    })
+    .text("Request Details", tableLeft + tableWidthPx / 2, tableTop + 18, {
+      align: "center",
     });
+};
 
-  /* ---------- table setup ---------- */
-  const tableLeft = (pageWidth - tableWidth) / 2;
-  const tableTop  = 60;
-  const colWidth  = tableWidth / 2;
+/* ------------------------------------------------------------------
+   Main generator
+------------------------------------------------------------------- */
+export const generateRequestPdf = async (
+  request: RequestData,
+  requestType: string
+): Promise<void> => {
+  const doc          = new jsPDF({ putOnlyUsedFonts: true, hotfixes: ["px_scaling"] });
+  const pageWidth    = doc.internal.pageSize.getWidth();
+  const pageHeight   = doc.internal.pageSize.getHeight();
+  const colWidth     = tableWidth / 2;
+  const tableLeft    = (pageWidth - tableWidth) / 2;
+  const tableTop     = 60;            // Y-start of the table (first page)
+  const bottomMargin = margin;        // distance from bottom edge before break
 
+  doc.setLanguage("ar");
+
+  const logoData =
+    typeof window !== "undefined" ? localStorage.getItem("pdfLogo") : null;
+
+  /* ---------- prepare data ---------- */
   const rows: PdfRow[] = mapRequestToRows(request, 6);
 
-  /* --- compute row heights (wrap where needed) --- */
   const rowHeights = rows.map((r) => {
     const dataLines  = doc.splitTextToSize(String(r.data),  colWidth - 4);
     const labelLines = doc.splitTextToSize(r.label,        colWidth - 4);
@@ -74,59 +115,56 @@ export const generateRequestPdf = async (
     return lines * lineHeight + cellPadding * 2;
   });
 
-  const tableHeight =
-    headerHeight + rowHeights.reduce((sum, h) => sum + h, 0);
+  /* ---------- draw first page header & table header ---------- */
+  drawPageHeader(doc, requestType, String(request.id ?? "N/A"), logoData);
+  drawTableHeader(doc, tableLeft, tableTop, tableWidth);
 
-  /* ---------- outer border + header fill ---------- */
-  doc.setDrawColor(0, 0, 0).setLineWidth(0.5);
-  doc.rect(tableLeft, tableTop, tableWidth, tableHeight, "S");
-
-  doc
-    .setFillColor(255, 255, 255)
-    .rect(tableLeft, tableTop, tableWidth, headerHeight, "F");
-
-  doc
-    .setFontSize(10)
-    .text("تفاصيل الطلب", tableLeft + tableWidth / 2, tableTop + 10, {
-      align: "center",
-    })
-    .text("Request Details", tableLeft + tableWidth / 2, tableTop + 18, {
-      align: "center",
-    });
-
-  /* ---------- vertical divider (starts BELOW header) ---------- */
-  doc.line(
-    tableLeft + colWidth,
-    tableTop + headerHeight,      // ← start below header
-    tableLeft + colWidth,
-    tableTop + tableHeight
-  );
-
-  /* ---------- horizontal lines + content ---------- */
+  /* ---------- iterate rows across pages ---------- */
   let cursorY = tableTop + headerHeight;
 
   rows.forEach((row, idx) => {
     const h = rowHeights[idx];
 
-    // bottom line of the row
-    doc.line(tableLeft, cursorY + h, tableLeft + tableWidth, cursorY + h);
+    /* --- page-break check --- */
+    if (cursorY + h > pageHeight - bottomMargin) {
+      /* close bottom border of previous page table */
+      doc.line(tableLeft, cursorY, tableLeft + tableWidth, cursorY);
 
+      /* new page */
+      doc.addPage();
+      drawTableHeader(doc, tableLeft, tableTop, tableWidth);
+      cursorY = tableTop + headerHeight;
+    }
+
+    /* --- cell borders for this row --- */
+    const rowTop    = cursorY;
+    const rowBottom = cursorY + h;
+
+    // left, middle, right verticals
+    doc.line(tableLeft,            rowTop, rowLeftEnd(tableLeft), rowBottom);
+    doc.line(tableLeft + colWidth, rowTop, tableLeft + colWidth,  rowBottom);
+    doc.line(tableLeft + tableWidth, rowTop, tableLeft + tableWidth, rowBottom);
+    // bottom horizontal
+    doc.line(tableLeft, rowBottom, tableLeft + tableWidth, rowBottom);
+
+    /* --- text --- */
     const dataLines  = doc.splitTextToSize(String(row.data),  colWidth - 4);
     const labelLines = doc.splitTextToSize(row.label,        colWidth - 4);
 
-    // data (left column)
-    doc.setFontSize(9).text(
-      dataLines,
-      tableLeft + colWidth / 2,
-      cursorY + cellPadding + lineHeight,
-      { align: "center" }
-    );
+    doc
+      .setFont("Amiri", "normal")
+      .setFontSize(9)
+      .text(
+        dataLines,
+        tableLeft + colWidth / 2,
+        rowTop + cellPadding + lineHeight,
+        { align: "center" }
+      );
 
-    // label (right column)
     doc.text(
       labelLines,
       tableLeft + colWidth + colWidth / 2,
-      cursorY + cellPadding + lineHeight,
+      rowTop + cellPadding + lineHeight,
       { align: "center" }
     );
 
@@ -137,3 +175,6 @@ export const generateRequestPdf = async (
   const safe = requestType.replace(/\s+/g, "_");
   doc.save(`${safe}_${request.id ?? "request"}.pdf`);
 };
+
+/* utility – end of left border */
+const rowLeftEnd = (tableLeft: number): number => tableLeft; // helper for clarity

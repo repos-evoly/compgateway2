@@ -1,15 +1,23 @@
 /* ------------------------------------------------------------------
-   Maps request objects to the rows that appear in the generated PDF.
-   Supported kinds
-     • letterOfGuarantee
-     • creditFacility
-     • visa
-     • certifiedBankStatement
-     • rtgs
-     • check-book
-     • certified-check / card (default)
+   requestRowMapper.ts
+   – Maps request objects to the rows that appear in the generated PDF.
+   Added full support for CBL requests *and* Foreign Transfer requests.
    Strict TypeScript – no “any”, no interface, exact types only.
 ------------------------------------------------------------------- */
+
+/* ---------- helpers ---------- */
+const padRows = (r: PdfRow[], min = 6): PdfRow[] => {
+  while (r.length < min) r.push({ data: "N/A", label: "N/A" });
+  return r;
+};
+
+const dateOnly = (iso?: string): string => (iso ? iso.split("T")[0] : "N/A");
+
+const trueFlagsToStr = (obj: Record<string, boolean>): string =>
+  Object.entries(obj)
+    .filter(([, v]) => v)
+    .map(([k]) => k)
+    .join(", ");
 
 /* ---------- domain types ---------- */
 export type Representative = {
@@ -19,10 +27,13 @@ export type Representative = {
   [k: string]: unknown;
 };
 
+export type PdfRow = { data: string; label: string };
+
 export type RequestData = {
   type?: string;
 
   /* universal */
+  id?: number; // skipped for CBL / Foreign Transfer
   accountNumber?: string | number;
   accountNum?: string | number;
   date?: string;
@@ -78,34 +89,70 @@ export type RequestData = {
   beneficiaryBank?: string;
   beneficiaryName?: string;
   branchName?: string;
-  //   amount?: string | number;
   remittanceInfo?: string;
   claim?: boolean;
   contract?: boolean;
   invoice?: boolean;
   otherDoc?: boolean;
 
+  /* ────── CBL-specific fields ────── */
+  partyName?: string;
+  capital?: number;
+  foundingDate?: string;
+  legalForm?: string;
+  legalRepresentative?: string;
+  accountOpening?: string;
+  branchOrAgency?: string;
+  chamberNumber?: string;
+  commercialLicense?: string;
+  commercialRegistration?: string;
+  currentAccount?: string;
+  mobile?: string;
+  office?: string;
+  packingDate?: string;
+  passportExpiry?: string;
+  passportIssuance?: string;
+  passportNumber?: string;
+  representativeNumber?: string;
+  specialistName?: string;
+  statisticalCode?: string;
+  status?: string;
+  taxNumber?: string;
+  validatyChamber?: string;
+  validatyCode?: string;
+  validatyLicense?: string;
+  validatyRegister?: string;
+  table1Data?: unknown[]; // skipped
+  table2Data?: unknown[]; // skipped
+  attachmentUrls?: unknown[];
+  attachments?: unknown[];
+
+  /* ────── Foreign Transfer fields ────── */
+  toBank?: string;
+  residentSupplierName?: string;
+  residentSupplierNationality?: string;
+  nonResidentPassportNumber?: string;
+  placeOfIssue?: string;
+  dateOfIssue?: string;
+  nonResidentNationality?: string;
+  nonResidentAddress?: string;
+  transferAmount?: number;
+  toCountry?: string;
+  externalBankName?: string;
+  externalBankAddress?: string;
+  transferToAccountNumber?: string;
+  transferToAddress?: string;
+  permanentAddress?: string;
+  purposeOfTransfer?: string;
+  beneficiaryAddress?: string;
+
+  /* already-declared reused keys:
+       branch, beneficiaryName, accountHolderName */
   [k: string]: unknown;
 };
 
-export type PdfRow = { data: string; label: string };
-
-/* ---------- helpers ---------- */
-const padRows = (r: PdfRow[], min = 6): PdfRow[] => {
-  while (r.length < min) r.push({ data: "N/A", label: "N/A" });
-  return r;
-};
-
-const dateOnly = (iso?: string): string => (iso ? iso.split("T")[0] : "N/A");
-
-const trueFlagsToStr = (obj: Record<string, boolean>): string =>
-  Object.entries(obj)
-    .filter(([, v]) => v)
-    .map(([k]) => k)
-    .join(", ");
-
 /* ------------------------------------------------------------------
-     Main mapping function
+         Main mapping function
   ------------------------------------------------------------------- */
 export const mapRequestToRows = (req: RequestData, minRows = 6): PdfRow[] => {
   const rows: PdfRow[] = [];
@@ -204,7 +251,7 @@ export const mapRequestToRows = (req: RequestData, minRows = 6): PdfRow[] => {
     );
     if (statements) rows.push({ data: statements, label: "طلبات كشف الحساب" });
 
-    return rows; // no date, no padding
+    return rows; // no padding
   }
 
   /* ===== RTGS ===== */
@@ -232,7 +279,7 @@ export const mapRequestToRows = (req: RequestData, minRows = 6): PdfRow[] => {
     });
     if (docs) rows.push({ data: docs, label: "المستندات" });
 
-    return rows; // exact rows, no padding
+    return rows;
   }
 
   /* ===== Check-Book ===== */
@@ -254,6 +301,181 @@ export const mapRequestToRows = (req: RequestData, minRows = 6): PdfRow[] => {
     rows.push({ data: req.address ?? "N/A", label: "العنوان" });
     rows.push({ data: req.bookContaining ?? "N/A", label: "عدد الصفحات" });
     rows.push({ data: dateOnly(req.date), label: "التاريخ" });
+    return padRows(rows, minRows);
+  }
+
+  /* ===== CBL ===== */
+  if (
+    req.type === "cbl" ||
+    ("partyName" in req && "capital" in req && "validatyLicense" in req)
+  ) {
+    const skip: ReadonlySet<string> = new Set([
+      "id",
+      "table1Data",
+      "table2Data",
+    ]);
+
+    const orderedKeys: readonly (keyof RequestData)[] = [
+      "partyName",
+      "capital",
+      "foundingDate",
+      "legalForm",
+      "legalRepresentative",
+      "accountOpening",
+      "address",
+      "branchOrAgency",
+      "chamberNumber",
+      "commercialLicense",
+      "commercialRegistration",
+      "currentAccount",
+      "mobile",
+      "office",
+      "packingDate",
+      "passportExpiry",
+      "passportIssuance",
+      "passportNumber",
+      "representativeNumber",
+      "specialistName",
+      "statisticalCode",
+      "status",
+      "taxNumber",
+      "validatyChamber",
+      "validatyCode",
+      "validatyLicense",
+      "validatyRegister",
+    ];
+
+    const labelMap: Record<string, string> = {
+      partyName: "اسم الطرف",
+      capital: "رأس المال",
+      foundingDate: "تاريخ التأسيس",
+      legalForm: "الشكل القانوني",
+      legalRepresentative: "الممثل القانوني",
+      accountOpening: "تاريخ فتح الحساب",
+      address: "العنوان",
+      branchOrAgency: "الفرع / الوكالة",
+      chamberNumber: "رقم الغرفة",
+      commercialLicense: "الرخصة التجارية",
+      commercialRegistration: "السجل التجاري",
+      currentAccount: "الحساب الجاري",
+      mobile: "موبايل",
+      office: "هاتف المكتب",
+      packingDate: "تاريخ التعبئة",
+      passportExpiry: "انتهاء جواز السفر",
+      passportIssuance: "إصدار جواز السفر",
+      passportNumber: "رقم جواز السفر",
+      representativeNumber: "رقم المندوب",
+      specialistName: "اسم الأخصائي",
+      statisticalCode: "الرمز الإحصائي",
+      status: "الحالة",
+      taxNumber: "الرقم الضريبي",
+      validatyChamber: "صلاحية الغرفة",
+      validatyCode: "صلاحية الرمز",
+      validatyLicense: "صلاحية الرخصة",
+      validatyRegister: "صلاحية السجل",
+    };
+
+    orderedKeys.forEach((k) => {
+      if (skip.has(k as string)) return;
+      const val = req[k];
+      if (val === undefined || val === null) return;
+
+      let dataStr: string;
+      if (Array.isArray(val)) dataStr = val.length ? `[${val.length}]` : "N/A";
+      else {
+        const s = String(val);
+        dataStr = /\d{4}-\d{2}-\d{2}T/.test(s) ? dateOnly(s) : s;
+      }
+
+      rows.push({
+        data: dataStr || "N/A",
+        label: labelMap[k as string] ?? String(k),
+      });
+    });
+
+    return padRows(rows, minRows);
+  }
+
+  /* ===== Foreign Transfer ===== */
+  if (
+    req.type === "foreigntransfer" ||
+    ("transferAmount" in req && "toCountry" in req && "beneficiaryName" in req)
+  ) {
+    const skip: ReadonlySet<string> = new Set([
+      "id",
+      "createdAt",
+      "updatedAt",
+      "userId",
+      "status",
+      "type",
+    ]);
+
+    const orderedKeys: readonly (keyof RequestData)[] = [
+      "toBank",
+      "branch",
+      "residentSupplierName",
+      "residentSupplierNationality",
+      "nonResidentPassportNumber",
+      "placeOfIssue",
+      "dateOfIssue",
+      "nonResidentNationality",
+      "nonResidentAddress",
+      "transferAmount",
+      "toCountry",
+      "beneficiaryName",
+      "beneficiaryAddress",
+      "externalBankName",
+      "externalBankAddress",
+      "transferToAccountNumber",
+      "transferToAddress",
+      "accountHolderName",
+      "permanentAddress",
+      "purposeOfTransfer",
+      "reason",
+    ];
+
+    const labelMap: Record<string, string> = {
+      toBank: "إلى البنك",
+      branch: "الفرع",
+      residentSupplierName: "اسم المورد المقيم",
+      residentSupplierNationality: "جنسية المورد المقيم",
+      nonResidentPassportNumber: "رقم جواز سفر غير مقيم",
+      placeOfIssue: "مكان الإصدار",
+      dateOfIssue: "تاريخ الإصدار",
+      nonResidentNationality: "جنسية غير المقيم",
+      nonResidentAddress: "عنوان غير المقيم",
+      transferAmount: "مبلغ التحويل",
+      toCountry: "إلى الدولة",
+      beneficiaryName: "اسم المستفيد",
+      beneficiaryAddress: "عنوان المستفيد",
+      externalBankName: "اسم البنك الخارجي",
+      externalBankAddress: "عنوان البنك الخارجي",
+      transferToAccountNumber: "رقم حساب التحويل",
+      transferToAddress: "عنوان التحويل",
+      accountHolderName: "اسم صاحب الحساب",
+      permanentAddress: "العنوان الدائم",
+      purposeOfTransfer: "غرض التحويل",
+      reason: "السبب",
+    };
+
+    orderedKeys.forEach((k) => {
+      if (skip.has(k as string)) return;
+      const val = req[k];
+      if (val === undefined || val === null) return;
+
+      let dataStr: string;
+      if (Array.isArray(val)) dataStr = val.length ? `[${val.length}]` : "N/A";
+      else {
+        const s = String(val);
+        dataStr = /\d{4}-\d{2}-\d{2}T/.test(s) ? dateOnly(s) : s;
+      }
+
+      rows.push({
+        data: dataStr || "N/A",
+        label: labelMap[k as string] ?? String(k),
+      });
+    });
+
     return padRows(rows, minRows);
   }
 

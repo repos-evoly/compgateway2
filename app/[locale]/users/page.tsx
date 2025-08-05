@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import EmployeeForm from "./components/UsersForm";
+import UsersForm from "./components/UsersForm";
 import { getEmployees, createEmployee } from "./services";
 import type { EmployeesFormPayload, CompanyEmployee } from "./types";
 import { FaLock } from "react-icons/fa";
@@ -105,7 +105,7 @@ export default function EmployeesPage() {
       tip: t("editPermissions"),
       icon: <FaLock />,
       onClick: (row) => {
-        router.push(`/employees/permissions/${row.id}/${row.roleId}`);
+        router.push(`/users/permissions/${row.id}/${row.roleId}`);
       },
     },
   ];
@@ -181,8 +181,8 @@ export default function EmployeesPage() {
       )}
 
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl">
-          <EmployeeForm
+        <div className="bg-white border border-gray-200 rounded-xl w-1/2 mx-auto">
+          <UsersForm
             onSubmit={handleFormSubmit}
             onCancel={() => setShowForm(false)}
           />

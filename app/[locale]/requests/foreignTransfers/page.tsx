@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-// import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
+import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
 import ForeignTransfersForm, {
   ForeignTransfersFormValues,
@@ -188,18 +188,18 @@ export default function ForeignTransfersListPage() {
     { key: "toBank", label: t("toBank") },
     { key: "transferAmount", label: t("transferAmount") },
     { key: "status", label: t("status") },
-    // {
-    //   key: "actions",
-    //   label: t("actions", { defaultValue: "Actions" }),
-    //   renderCell: (row: Record<string, unknown>) => (
-    //     <RequestPdfDownloadButton
-    //       request={row}
-    //       requestType="Foreign-Transfer Licence Request"
-    //       title={t("downloadPdf", { defaultValue: "Download PDF" })}
-    //     />
-    //   ),
-    //   width: 120,
-    // },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: Record<string, unknown>) => (
+        <RequestPdfDownloadButton
+          requestId={row.id as number}
+          requestType="foreignTransfer"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
   ];
 
   return (

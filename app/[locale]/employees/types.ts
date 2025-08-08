@@ -1,14 +1,14 @@
 export type EmployeeFormValues = {
   id?: number;
-  name: string;
-  email: string;
-  phone: string;
-  salary: number;
-  date: string;
-  accountNumber: string;
-  accountType: string;
-  sendSalary: boolean;
-  canPost: boolean;
+  name?: string;
+  email?: string;
+  phone?: string;
+  salary?: number;
+  date?: string;
+  accountNumber?: string;
+  accountType?: string;
+  sendSalary?: boolean;
+  canPost?: boolean;
 };
 
 export type EmployeeFormProps = {
@@ -36,10 +36,11 @@ export type EmployeeResponse = {
   updatedAt?: string;
 };
 
-export interface EmployeesApiResponse {
+export type EmployeesApiResponse = {
   data: EmployeeResponse[];
   page: number;
   limit: number;
   totalPages: number;
   totalRecords: number;
 }
+

@@ -1,57 +1,106 @@
+/* --------------------------------------------------------------------------
+   app/[locale]/salaries/page.tsx
+   – Lists salary cycles with paging and PDF download.
+   -------------------------------------------------------------------------- */
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import Button from "@/app/components/reusable/Button";
-import type { TSalaryTransaction } from "./types";
-import salaryTransactionsDataJson from "./salaryTransactionsData.json";
 import SalariesDownloadPdf from "@/app/components/reusable/SalariesDownloadPdf";
 
+import type { SalaryCyclesResponse, TSalaryTransaction } from "./types";
+import { getEmployeeSalaryCycles } from "./services";
+import LoadingPage from "@/app/components/reusable/Loading";
+
+/* ------------------------------------------------------------------ */
+/* Constants                                                          */
+/* ------------------------------------------------------------------ */
 const PAGE_SIZE = 10;
 
-const salaryTransactionsData: TSalaryTransaction[] =
-  salaryTransactionsDataJson as unknown as TSalaryTransaction[];
-
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 export default function SalariesPage() {
   const locale = useLocale();
   const t = useTranslations("salaries");
 
-  /* ------------------- state ---------------------------------------- */
-  const [transactions] = useState<TSalaryTransaction[]>(salaryTransactionsData);
+  /* ------------------- state -------------------------------------- */
+  const [transactions, setTransactions] = useState<TSalaryTransaction[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  /* ------------------- paging helpers ------------------------------- */
+  /* ------------------- fetch cycles ------------------------------- */
+  useEffect(() => {
+    const fetchCycles = async () => {
+      try {
+        const res: SalaryCyclesResponse = await getEmployeeSalaryCycles();
+        setTransactions(res.data);
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load salary cycles.";
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCycles();
+  }, []);
+
+  /* ------------------- paging helpers ----------------------------- */
   const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
   const handlePageChange = (p: number) => setCurrentPage(p);
 
-  /* ------------------- columns for transactions --------------------- */
-  const transactionColumns = [
-    { key: "genCode", label: "GenCode" },
-    { key: "amount", label: "Amount" },
-    { key: "date", label: "Date" },
-    { key: "employeeName", label: "Employee" },
-    { key: "status", label: "Status" },
-    { key: "transactionType", label: "Type" },
+  /* ------------------- grid columns ------------------------------- */
+  const columns = [
+    { key: "id", label: "ID" },
     {
-      key: "accounts",
-      label: "Accounts",
+      key: "salaryMonth",
+      label: "Salary Month",
+      renderCell: (row: TSalaryTransaction) =>
+        new Date(row.salaryMonth).toLocaleDateString(locale),
+    },
+    { key: "totalAmount", label: "Total Amount" },
+    { key: "currency", label: "Currency" },
+    {
+      key: "entries",
+      label: "Employees",
       renderCell: (row: TSalaryTransaction) => (
-        <span className="text-xs">
-          {row.accounts.length} account{row.accounts.length !== 1 ? "s" : ""}
-        </span>
+        <span>{row.entries.length}</span>
       ),
+    },
+    {
+      key: "createdAt",
+      label: "Created At",
+      renderCell: (row: TSalaryTransaction) =>
+        new Date(row.createdAt).toLocaleDateString(locale),
+    },
+    { key: "createdByUserId", label: "Created By" },
+    {
+      key: "postedAt",
+      label: "Posted At",
+      renderCell: (row: TSalaryTransaction) =>
+        row.postedAt ? new Date(row.postedAt).toLocaleDateString(locale) : "-",
+    },
+    {
+      key: "postedByUserId",
+      label: "Posted By",
+      renderCell: (row: TSalaryTransaction) => row.postedByUserId ?? "-",
     },
     {
       key: "actions",
       label: "Actions",
       renderCell: (row: TSalaryTransaction) => (
-       <SalariesDownloadPdf transaction={row}/>
+        <SalariesDownloadPdf transaction={row} />
       ),
     },
   ];
 
-  /* ------------------- header button (Button) ----------------------- */
+  /* ------------------- header button ------------------------------ */
   const setSalariesButton = (
     <Button
       actions={{ type: "navigate", href: `/${locale}/salaries/setSalaries` }}
@@ -61,18 +110,21 @@ export default function SalariesPage() {
     </Button>
   );
 
-  /* ------------------- data slice ----------------------------------- */
+  /* ------------------- data slice --------------------------------- */
   const pagedData = transactions.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
 
-  /* ------------------- render --------------------------------------- */
+  /* ------------------- render ------------------------------------- */
+  if (loading) return <LoadingPage />;
+  if (error) return <p className="p-4 text-red-600">{error}</p>;
+
   return (
     <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
       <CrudDataGrid
         data={pagedData}
-        columns={transactionColumns}
+        columns={columns}
         showActions={false}
         showSearchBar={false}
         showAddButton={true}

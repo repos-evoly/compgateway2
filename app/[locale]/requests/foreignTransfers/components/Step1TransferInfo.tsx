@@ -10,9 +10,12 @@ import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import { step1Inputs } from "./formInputsArrays";
 import { useFormikContext } from "formik";
 import Cookies from "js-cookie";
-import InputSelectCombo, { InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 import { getKycByCode } from "../services";
 import { useField } from "formik";
+import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 
 type Step1TransferInfoProps = { readOnly?: boolean };
 
@@ -25,7 +28,10 @@ interface AccountNumberDropdownProps {
   width: string;
   maskingFormat: string;
   disabled: boolean;
-  onAccountChange: (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => void;
+  onAccountChange: (
+    accountNumber: string,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => void;
   isLoadingKyc: boolean;
 }
 
@@ -48,10 +54,7 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
 
   return (
     <div className="relative">
-      <InputSelectCombo
-        name={name}
-        {...props}
-      />
+      <InputSelectCombo name={name} {...props} />
       {isLoadingKyc && (
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -70,7 +73,9 @@ export function Step1TransferInfo({
   const t = useTranslations("foreignTransfers");
 
   // Account dropdown state
-  const [accountOptions, setAccountOptions] = React.useState<InputSelectComboOption[]>([]);
+  const [accountOptions, setAccountOptions] = React.useState<
+    InputSelectComboOption[]
+  >([]);
   const [isLoadingKyc, setIsLoadingKyc] = React.useState(false);
   // const { setFieldValue } = useFormikContext();
 
@@ -91,14 +96,17 @@ export function Step1TransferInfo({
 
   // KYC autofill logic
   const extractCompanyCode = (accountNumber: string): string => {
-    const cleanAccount = accountNumber.replace(/\D/g, '');
+    const cleanAccount = accountNumber.replace(/\D/g, "");
     if (cleanAccount.length >= 10) {
       return cleanAccount.substring(4, 10);
     }
-    return '';
+    return "";
   };
 
-  const handleAccountNumberChange = async (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => {
+  const handleAccountNumberChange = async (
+    accountNumber: string,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => {
     if (!accountNumber) return;
     const companyCode = extractCompanyCode(accountNumber);
     if (!companyCode) return;
@@ -106,27 +114,30 @@ export function Step1TransferInfo({
     try {
       const kycData = await getKycByCode(companyCode);
       if (kycData.hasKyc && kycData.data) {
-        setFieldValue('residentSupplierName', kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName);
-        setFieldValue('branch', kycData.data.branchName);
+        setFieldValue(
+          "residentSupplierName",
+          kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName
+        );
+        setFieldValue("branch", kycData.data.branchName);
         // Build address from KYC data
         const addressParts = [];
         if (kycData.data.street) addressParts.push(kycData.data.street);
         if (kycData.data.district) addressParts.push(kycData.data.district);
         if (kycData.data.city) addressParts.push(kycData.data.city);
-        const fullAddress = addressParts.join(', ');
-        setFieldValue('nonResidentAddress', fullAddress);
+        const fullAddress = addressParts.join(", ");
+        setFieldValue("nonResidentAddress", fullAddress);
       }
     } catch (error) {
-      console.error('Failed to fetch KYC data:', error);
+      console.error("Failed to fetch KYC data:", error);
     } finally {
       setIsLoadingKyc(false);
     }
   };
 
   /* pick inputs by position */
-  const row1 = [step1Inputs[0], step1Inputs[1], step1Inputs[2]];
-  const row2 = [step1Inputs[3], step1Inputs[4], step1Inputs[5], step1Inputs[6]];
-  const row3 = [step1Inputs[7], step1Inputs[8]];
+  const row1 = [step1Inputs[0], step1Inputs[1]]; // was 0,1,2
+  const row2 = [step1Inputs[2], step1Inputs[3], step1Inputs[4], step1Inputs[5]];
+  const row3 = [step1Inputs[6], step1Inputs[7]];
 
   const renderField = (field: (typeof step1Inputs)[number]) =>
     field.type === "datePicker" ? (
@@ -162,6 +173,13 @@ export function Step1TransferInfo({
           onAccountChange={handleAccountNumberChange}
           isLoadingKyc={isLoadingKyc}
         />
+        <BranchesSelect
+          name="branch"
+          label={t("branch")}
+          width="w-full"
+          disabled={readOnly}
+        />
+
         {row1.map(renderField)}
       </div>
 

@@ -13,7 +13,7 @@ export type TLetterOfGuarantee = {
   // We always set type="letterOfGuarantee"
   type: string; 
     status: string;
-
+ reason?: string; // Optional field for additional information
 };
 
 /** The shape of an API item returned by GET /creditfacilities/{id} when type=letterOfGuarantee. */

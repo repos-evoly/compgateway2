@@ -28,6 +28,7 @@ import { CheckAccount } from "@/app/helpers/checkAccount";
 import type { TLetterOfGuarantee } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
+import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
@@ -115,11 +116,11 @@ function InnerForm({
 
   return (
     <Form>
-      <FormHeader
-        showBackButton
-        status={status}
-        isEditing={true}
+      <ReasonBanner
+        reason={initialData?.reason} // or values.reason if you prefer
+        label={tu("rejectReason")} // optional heading (use your i18n key)
       />
+      <FormHeader showBackButton status={status} isEditing={true} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         {/* Account Number -> InputSelectCombo */}
@@ -142,7 +143,11 @@ function InnerForm({
         </div>
 
         {/* Date */}
-        <DatePickerValue name="date" label={t("date")} disabled={readOnly || isSubmitting} />
+        <DatePickerValue
+          name="date"
+          label={t("date")}
+          disabled={readOnly || isSubmitting}
+        />
 
         {/* Amount */}
         <FormInputIcon
@@ -209,7 +214,7 @@ function InnerForm({
 export default function LetterOfGuaranteeForm({
   initialData,
   onSubmit,
-  
+
   readOnly = false,
   isSubmitting = false,
 }: Props) {
@@ -274,7 +279,7 @@ export default function LetterOfGuaranteeForm({
     curr: "",
     refferenceNumber: "",
     type: "letterOfGuarantee",
-    status: ""
+    status: "",
   };
   const initialValues: TLetterOfGuarantee = initialData
     ? { ...defaults, ...initialData, type: "letterOfGuarantee" }

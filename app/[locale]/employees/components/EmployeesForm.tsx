@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import * as Yup from "yup";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import SelectWrapper from "@/app/components/FormUI/Select";
+import InputSelectCombo, {
+  InputSelectComboOption,
+} from "@/app/components/FormUI/InputSelectCombo";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -24,7 +26,33 @@ import {
   FaCheckCircle,
   FaEdit,
 } from "react-icons/fa";
-import { FormikConfig, Field } from "formik";
+import { Field, FormikConfig, useFormikContext } from "formik";
+
+/* Guard that prevents choosing the unavailable "wallet" option */
+type AccountTypeGuardProps = {
+  onChooseWallet: () => void;
+  initialAccountType: string;
+};
+function AccountTypeGuard({
+  onChooseWallet,
+  initialAccountType,
+}: AccountTypeGuardProps) {
+  const { values, setFieldValue } = useFormikContext<EmployeeFormValues>();
+  const prevRef = useRef<string>(initialAccountType);
+
+  useEffect(() => {
+    if (values.accountType === "wallet") {
+      onChooseWallet();
+      const fallback = prevRef.current || "";
+      setFieldValue("accountType", fallback, false);
+    } else {
+      prevRef.current = values.accountType ?? "";
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.accountType]);
+
+  return null;
+}
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
   initialData,
@@ -34,28 +62,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 }) => {
   const t = useTranslations("employees");
 
-  // Available account types for dropdown
-  const availableAccountTypes = [
-    "Savings Account",
-    "Current Account",
-    "Salary Account",
-    "Business Account",
-    "Personal Account",
-  ];
-
-  /* -------------------------------------------------------- */
-  /*                        State                             */
-  /* -------------------------------------------------------- */
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
 
-  /* -------------------------------------------------------- */
-  /*                    Form Configuration                     */
-  /* -------------------------------------------------------- */
   const isEditMode = Boolean(initialData?.id);
+
+  /* Ensure wallet is never preselected: sanitize initial value */
+  const sanitizedAccountType: string =
+    initialData?.accountType === "wallet" ? "" : initialData?.accountType ?? "";
 
   const initialValues: EmployeeFormValues = {
     id: initialData?.id,
@@ -65,18 +83,17 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     salary: initialData?.salary || 0,
     date: initialData?.date || new Date().toISOString(),
     accountNumber: initialData?.accountNumber || "",
-    accountType: initialData?.accountType || "",
+    accountType: sanitizedAccountType, // empty if it was "wallet"
     sendSalary: initialData?.sendSalary ?? true,
-    canPost: initialData?.canPost ?? true,
+    canPost: true,
   };
 
-  // Validation schema
   const validationSchema = Yup.object().shape({
     name: Yup.string()
       .required(t("nameRequired"))
       .min(2, t("nameMinLength"))
       .max(100, t("nameMaxLength")),
-    email: Yup.string().required(t("emailRequired")).email(t("emailFormat")),
+    email: Yup.string(),
     phone: Yup.string()
       .required(t("phoneRequired"))
       .matches(/^[0-9+\-\s()]+$/, t("phoneFormat")),
@@ -90,21 +107,19 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       .matches(/^[0-9A-Za-z\-]+$/, t("accountNumberFormat")),
     accountType: Yup.string().required(t("accountTypeRequired")),
     sendSalary: Yup.boolean().required(),
-    canPost: Yup.boolean().required(),
   });
 
-  /* -------------------------------------------------------- */
-  /*                    Form Handlers                         */
-  /* -------------------------------------------------------- */
   const handleSubmit = async (values: EmployeeFormValues) => {
     setIsSubmitting(true);
+    const payload: EmployeeFormValues = { ...values, canPost: true };
+
     try {
       if (isEditMode && initialData?.id) {
-        await updateEmployee(initialData.id, values);
+        await updateEmployee(initialData.id, payload);
         setModalTitle(t("updateSuccessTitle"));
         setModalMessage(t("updateSuccessMsg"));
       } else {
-        await createEmployee(values);
+        await createEmployee(payload);
         setModalTitle(t("createSuccessTitle"));
         setModalMessage(t("createSuccessMsg"));
       }
@@ -123,13 +138,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }
   };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
-  };
+  const handleModalClose = () => setModalOpen(false);
 
-  /* -------------------------------------------------------- */
-  /*                       Render                             */
-  /* -------------------------------------------------------- */
+  const accountTypeOptions: readonly InputSelectComboOption[] = [
+    { value: "account", label: "account" },
+    { value: "wallet", label: "wallet", disabled: true }, // ⬅️ disabled
+  ];
+
   return (
     <div className="p-2">
       <Form
@@ -140,24 +155,21 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         onSubmit={handleSubmit}
         enableReinitialize
       >
+        <AccountTypeGuard
+          initialAccountType={sanitizedAccountType}
+          onChooseWallet={() => setWalletModalOpen(true)}
+        />
+
         <FormHeader
           showBackButton
           isEditing={false}
-          onBack={() => {
-            // Call onBack if provided, otherwise fallback to onSuccess
-            if (onBack) {
-              onBack();
-            } else if (onSuccess) {
-              onSuccess();
-            }
-          }}
+          onBack={() => (onBack ? onBack() : onSuccess?.())}
         >
           <h2 className="text-lg font-semibold text-white">
             {isEditMode ? t("editEmployee") : t("addEmployee")}
           </h2>
         </FormHeader>
 
-        {/* Form Fields */}
         <div className="grid gap-4 md:grid-cols-2 mt-4">
           <FormInputIcon
             name="name"
@@ -210,46 +222,32 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             helpertext={t("accountNumberPlaceholder")}
           />
 
-          <SelectWrapper
+          <InputSelectCombo
             name="accountType"
             label={t("accountType")}
-            options={availableAccountTypes.map((type) => ({
-              value: type,
-              label: type,
-            }))}
+            options={accountTypeOptions as InputSelectComboOption[]}
+            placeholder=""
             disabled={viewOnly || isSubmitting}
+            onDisabledOptionAttempt={(opt) => {
+              if (opt.value === "wallet") setWalletModalOpen(true);
+            }}
+            clearIfDisabledSelected
           />
 
-          <div className="flex gap-4">
-            <div className="flex items-center">
-              <Field
-                type="checkbox"
-                id="sendSalary"
-                name="sendSalary"
-                className="mr-2"
-                disabled={viewOnly || isSubmitting}
-              />
-              <label htmlFor="sendSalary" className="text-sm font-medium">
-                {t("sendSalary")}
-              </label>
-            </div>
-
-            <div className="flex items-center">
-              <Field
-                type="checkbox"
-                id="canPost"
-                name="canPost"
-                className="mr-2"
-                disabled={viewOnly || isSubmitting}
-              />
-              <label htmlFor="canPost" className="text-sm font-medium">
-                {t("canPost")}
-              </label>
-            </div>
+          <div className="flex items-center">
+            <Field
+              type="checkbox"
+              id="sendSalary"
+              name="sendSalary"
+              className="mr-2"
+              disabled={viewOnly || isSubmitting}
+            />
+            <label htmlFor="sendSalary" className="text-sm font-medium">
+              {t("sendSalary")}
+            </label>
           </div>
         </div>
 
-        {/* Action Buttons */}
         {!viewOnly && (
           <div className="flex gap-4 mt-6">
             <SubmitButton
@@ -261,7 +259,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         )}
       </Form>
 
-      {/* Error/Success Modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}
@@ -269,6 +266,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         message={modalMessage}
         onClose={handleModalClose}
         onConfirm={handleModalClose}
+      />
+
+      <ErrorOrSuccessModal
+        isOpen={walletModalOpen}
+        isSuccess={false}
+        title="Wallet not available"
+        message="The wallet account type is currently not available. You can't choose it right now. It will be available soon."
+        onClose={() => setWalletModalOpen(false)}
+        onConfirm={() => setWalletModalOpen(false)}
       />
     </div>
   );

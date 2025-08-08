@@ -35,6 +35,8 @@ import type { TRTGSFormValues } from "../types";
 import { getKycByCode } from "../services";
 import { useFormikContext, useField } from "formik";
 import StatusBanner from "@/app/components/reusable/StatusBanner";
+import BranchesSelect from "@/app/components/reusable/BranchesSelect";
+import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
@@ -321,12 +323,11 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
           },
         },
         {
-          component: FormInputIcon,
+          component: BranchesSelect,
           props: {
             name: "branchName",
             label: t("branch"),
-            type: "text",
-            startIcon: <FaMapMarkerAlt />,
+            width: "w-full",
             disabled: readOnly,
           },
         },
@@ -395,6 +396,10 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         onSubmit={handleSubmit}
         validationSchema={validationSchema}
       >
+        <ReasonBanner
+          reason={mergedValues.reason} // or initialValues?.reason
+          label={t("rejectReason")} // i18n label, or simply "Reason"
+        />
         {/* Header */}
         <div
           className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6
@@ -479,10 +484,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               fullWidth={false}
             />
           )}
-          <BackButton
-            fallbackPath="/requests/rtgs"
-            isEditing={true}
-          />
+          <BackButton fallbackPath="/requests/rtgs" isEditing={true} />
         </div>
       </Form>
     </div>

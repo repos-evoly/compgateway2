@@ -40,7 +40,6 @@ const RtgsDetailPage: React.FC = () => {
 
   if (loading) {
     return <LoadingPage />;
-
   }
 
   if (!item) {
@@ -66,13 +65,14 @@ const RtgsDetailPage: React.FC = () => {
     contract: item.contract,
     claim: item.claim,
     otherDoc: item.otherDoc,
-    status: item.status
+    status: item.status,
+    reason: item.reason || "", // Ensure reason is always a string
   };
 
   // Handle form submission for updates
   const handleFormSubmit = async (values: TRTGSFormValues) => {
     if (!id) return;
-    
+
     try {
       // Convert form values back to API shape
       const updateValues: TRTGSValues = {
@@ -80,7 +80,7 @@ const RtgsDetailPage: React.FC = () => {
         refNum: values.refNum.toISOString(),
         date: values.date.toISOString(),
       };
-      
+
       await updateRtgsRequest(id.toString(), updateValues);
       alert("RTGS request updated successfully!");
       router.push("/requests/rtgs");
@@ -100,7 +100,11 @@ const RtgsDetailPage: React.FC = () => {
         initialValues={initialValues}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
-        readOnly={initialValues.status === undefined ? false : initialValues.status === "pending"}
+        readOnly={
+          initialValues.status === undefined
+            ? false
+            : initialValues.status === "pending"
+        }
       />
     </div>
   );

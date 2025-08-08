@@ -18,6 +18,7 @@ import {
   step2StatementInputs,
 } from "./statementInputs";
 import FormHeader from "@/app/components/reusable/FormHeader";
+import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Types
@@ -95,8 +96,8 @@ export default function CertifiedBankStatementForm({
       return t(input.label);
     }
     // Handle special cases for fields not in allInputs
-    if (name === 'id') {
-      return t('id');
+    if (name === "id") {
+      return t("id");
     }
     // Fallback to the name itself if no translation found
     return name;
@@ -170,6 +171,11 @@ export default function CertifiedBankStatementForm({
 
           return (
             <Form>
+              <ReasonBanner
+                reason={merged.reason} // or initialValues?.reason
+                label={t("rejectReason")} // use your i18n key or plain "Reason"
+              />
+
               <FormHeader
                 showBackButton
                 fallbackPath="/requests/certifiedBankStatement"

@@ -34,6 +34,7 @@ import { addCblRequest, getKycByCode, updateCblRequest } from "../service";
 import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import { validationSchema as makeSchema } from "../data";
+import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 
 /* ---------- helper types ---------- */
 type FieldMeta = {
@@ -437,6 +438,17 @@ const FieldGrid: React.FC<FieldGridProps> = ({
             placeholder={t("currentAccount")}
             onAccountChange={onAccChange}
             loading={kycBusy}
+          />
+        );
+
+      if (f.name === "branchOrAgency")
+        return (
+          <BranchesSelect
+            key={f.name}
+            name="branchOrAgency"
+            label={t("branchOrAgency")} // use your i18n key
+            width="w-full"
+            disabled={readOnly}
           />
         );
 

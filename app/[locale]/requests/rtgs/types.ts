@@ -23,6 +23,7 @@ export type TRTGSValues = {
     status?: string;
     createdAt?: string;
     updatedAt?: string;
+    reason?: string; // Optional field for additional information
   };
   
   /**
@@ -59,7 +60,7 @@ export type TRTGSValues = {
     claim: boolean;
     otherDoc: boolean;
     status?: string;
-
+    reason?: string; // Optional field for additional information
   };
   
 

@@ -25,6 +25,7 @@ export type TCheckRequestValues = {
   lineItems: TCheckRequestLineItem[];
   createdAt?: string;
   updatedAt?: string;
+  reason?: string; // Optional field for additional information
 };
 
 /**
@@ -55,6 +56,7 @@ export type TCheckRequestFormValues = {
     lyd: string;
   }[];
   status?: string; 
+  reason?: string; // Optional field for additional information
 };
 
 /**

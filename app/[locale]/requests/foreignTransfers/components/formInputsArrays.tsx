@@ -34,12 +34,12 @@ export const step1Inputs = [
     icon: <FiMapPin />,
     type: "text",
   },
-  {
-    name: "branch",
-    label: "branch",
-    icon: <FiMapPin />,
-    type: "text",
-  },
+  // {
+  //   name: "branch",
+  //   label: "branch",
+  //   icon: <FiMapPin />,
+  //   type: "text",
+  // },
   {
     name: "residentSupplierName",
     label: "residentSuppName",

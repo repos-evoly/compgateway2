@@ -5,7 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 
 import LetterOfGuaranteeForm from "../components/LetterOfGuaranteeForm";
 import type { TLetterOfGuarantee } from "../types";
-import { getLetterOfGuaranteeById, updateLetterOfGuaranteeById } from "../services";
+import {
+  getLetterOfGuaranteeById,
+  updateLetterOfGuaranteeById,
+} from "../services";
 
 // ⬇️ NEW: modal import
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -61,6 +64,7 @@ export default function LetterOfGuaranteeDetailPage() {
           refferenceNumber: apiItem.referenceNumber,
           type: apiItem.type,
           status: apiItem.status,
+          reason: apiItem.reason, // Assuming this field exists in the API response
         };
 
         setGuaranteeData(converted);
@@ -87,7 +91,10 @@ export default function LetterOfGuaranteeDetailPage() {
     if (!guaranteeData?.id || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const result = await updateLetterOfGuaranteeById(guaranteeData.id, updated);
+      const result = await updateLetterOfGuaranteeById(
+        guaranteeData.id,
+        updated
+      );
       setGuaranteeData({
         id: result.id,
         accountNumber: result.accountNumber,
@@ -141,7 +148,7 @@ export default function LetterOfGuaranteeDetailPage() {
         initialData={guaranteeData}
         onSubmit={handleUpdate}
         onCancel={handleCancel}
-        readOnly={guaranteeData.status  !== "Pending"}
+        readOnly={guaranteeData.status !== "Pending"}
         isSubmitting={isSubmitting}
       />
 

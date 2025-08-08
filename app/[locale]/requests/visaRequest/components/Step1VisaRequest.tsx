@@ -16,6 +16,7 @@ import InputSelectCombo, {
   InputSelectComboOption,
 } from "@/app/components/FormUI/InputSelectCombo";
 import { getKycByCode } from "../services";
+import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 
 type Step1VisaRequestProps = {
   readOnly?: boolean;
@@ -81,7 +82,8 @@ export function Step1VisaRequest({
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {step1VisaInputs.map(({ name, label, icon, type }) => {
         // Make branch and accountHolderName always read-only
-        const isReadOnlyField = name === "branch" || name === "accountHolderName";
+        const isReadOnlyField =
+          name === "branch" || name === "accountHolderName";
         const isDisabled = readOnly || isReadOnlyField;
 
         if (name === "accountNumber") {
@@ -111,6 +113,18 @@ export function Step1VisaRequest({
               name={name}
               label={t(label)}
               disabled={isDisabled}
+            />
+          );
+        }
+
+        if (name === "branch") {
+          return (
+            <BranchesSelect
+              key={name}
+              name="branch"
+              label={t(label)}
+              width="w-full"
+              disabled={readOnly}
             />
           );
         }

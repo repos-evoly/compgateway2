@@ -43,6 +43,7 @@ export type CertifiedBankStatementRequest = {
   oldAccountNumber?: number;
   newAccountNumber?: number;
   statementRequest?: StatementRequest;
+  reason?: string;
 };
 
 /**

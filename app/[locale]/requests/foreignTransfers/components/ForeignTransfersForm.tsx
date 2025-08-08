@@ -13,6 +13,7 @@ import { TabsWizard } from "@/app/components/reusable/TabsWizard";
 import { Step1TransferInfo } from "./Step1TransferInfo";
 import { Step2BankingDetails } from "./Step2BankingDetails";
 import { step1Inputs, step2Inputs } from "./formInputsArrays";
+import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Types
@@ -125,8 +126,9 @@ export default function ForeignTransfersForm({
       residentSupplierNationality: Yup.string().required(
         `${t("residentSuppNationality")} ${t("isRequired")}`
       ),
-      nonResidentPassportNumber: Yup.string()
-        .required(`${t("nonResidentPassport")} ${t("isRequired")}`),
+      nonResidentPassportNumber: Yup.string().required(
+        `${t("nonResidentPassport")} ${t("isRequired")}`
+      ),
       placeOfIssue: Yup.string().required(
         `${t("placeOfIssue")} ${t("isRequired")}`
       ),
@@ -159,8 +161,9 @@ export default function ForeignTransfersForm({
       externalBankAddress: Yup.string().required(
         `${t("externalBankAddress")} ${t("isRequired")}`
       ),
-      transferToAccountNumber: Yup.string()
-        .required(`${t("transferToAccount")} ${t("isRequired")}`),
+      transferToAccountNumber: Yup.string().required(
+        `${t("transferToAccount")} ${t("isRequired")}`
+      ),
       transferToAddress: Yup.string().required(
         `${t("transferToAddress")} ${t("isRequired")}`
       ),
@@ -219,6 +222,10 @@ export default function ForeignTransfersForm({
 
           return (
             <Form>
+              <ReasonBanner
+                reason={merged.reason} // merged = your combined initial values
+                label={t("rejectReason")} // or simply "Reason"
+              />
               <TabsWizard
                 steps={steps}
                 formik={formik}

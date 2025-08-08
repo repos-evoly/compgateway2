@@ -1,7 +1,6 @@
 /* --------------------------------------------------------------------------
    app/[locale]/layout.tsx
    – Global layout with fixed sidebar + header, RTL/LTR aware.
-   Strict TypeScript, no interface, no any.
 -------------------------------------------------------------------------- */
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -34,10 +33,10 @@ export default async function LocaleLayout({
 
   try {
     const messages = await getMessages({ locale });
-    console.log("LocaleLayout: Messages fetched:", messages);
+    console.log("LocaleLayout: Messages fetched");
 
-    const isRtl: boolean = locale === "ar";
-    console.log("LocaleLayout: Direction resolved as:", isRtl ? "rtl" : "ltr");
+    const isRtl = locale === "ar";
+    console.log("LocaleLayout: Direction:", isRtl ? "rtl" : "ltr");
 
     return (
       <html
@@ -46,13 +45,14 @@ export default async function LocaleLayout({
         className={`${cairo.className} min-h-screen w-full`}
         suppressHydrationWarning
       >
+        {/* Root flex row: sidebar + main column */}
         <body
           className="min-h-screen w-full flex flex-row overflow-hidden"
           suppressHydrationWarning
         >
           <GlobalProvider>
             <NextIntlClientProvider messages={messages}>
-              {/* ---------- Sidebar ---------- */}
+              {/* ---------- Fixed sidebar ---------- */}
               <SideBar2 />
 
               {/* ---------- Main column ---------- */}
@@ -61,6 +61,7 @@ export default async function LocaleLayout({
                   flex-1
                   flex
                   flex-col
+                  h-screen           /* ⬅ ensure full viewport height */
                   transition-all
                   duration-300
                   ease-in-out
@@ -69,13 +70,12 @@ export default async function LocaleLayout({
                   maxWidth: "calc(100vw - var(--sidebar-width))",
                 }}
               >
+                {/* Header */}
                 <MainHeader logoUrl={logoUrl} isRtl={isRtl} title="" />
 
-                {/* ---------- Page content ---------- */}
-                <main className="flex-1 overflow-y-auto min-w-0 bg-gray-100">
-                  <div className="w-full h-full overflow-x-auto">
-                    {children}
-                  </div>
+                {/* Page content – single scroll container */}
+                <main className="flex-1 overflow-y-auto overflow-x-auto min-w-0 bg-gray-100">
+                  {children}
                 </main>
               </div>
             </NextIntlClientProvider>
@@ -94,6 +94,6 @@ export default async function LocaleLayout({
       </html>
     );
   } finally {
-    console.log("LocaleLayout: Render process completed");
+    console.log("LocaleLayout: Render completed");
   }
 }

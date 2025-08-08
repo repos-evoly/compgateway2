@@ -25,6 +25,8 @@ import { TCheckRequestFormProps } from "../types";
 
 /* Representatives query --------------------------------------------------- */
 import { getRepresentatives } from "@/app/[locale]/representatives/services";
+import BranchesSelect from "@/app/components/reusable/BranchesSelect";
+import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
@@ -38,7 +40,10 @@ interface AccountNumberDropdownProps {
   width: string;
   maskingFormat: string;
   disabled: boolean;
-  onAccountChange: (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => void;
+  onAccountChange: (
+    accountNumber: string,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => void;
   isLoadingKyc: boolean;
 }
 
@@ -60,10 +65,7 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
 
   return (
     <div className="relative">
-      <InputSelectCombo
-        name={name}
-        {...props}
-      />
+      <InputSelectCombo name={name} {...props} />
       {isLoadingKyc && (
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -92,12 +94,17 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   const [modalMessage, setModalMessage] = useState("");
 
   /* account options state */
-  const [accountOptions, setAccountOptions] = useState<InputSelectComboOption[]>([]);
+  const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
   const [isLoadingKyc, setIsLoadingKyc] = useState(false);
 
   /* representative options state */
-  const [representativeOptions, setRepresentativeOptions] = useState<InputSelectComboOption[]>([]);
-  const [isLoadingRepresentatives, setIsLoadingRepresentatives] = useState(false);
+  const [representativeOptions, setRepresentativeOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  const [isLoadingRepresentatives, setIsLoadingRepresentatives] =
+    useState(false);
 
   /* default values */
   const defaultValues: TCheckRequestFormValues = {
@@ -161,7 +168,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
         }));
         setRepresentativeOptions(options);
       } catch (error) {
-        console.error('Failed to fetch representatives:', error);
+        console.error("Failed to fetch representatives:", error);
         setRepresentativeOptions([]);
       } finally {
         setIsLoadingRepresentatives(false);
@@ -174,45 +181,51 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   /* Function to extract company code from account number */
   const extractCompanyCode = (accountNumber: string): string => {
     // Remove any non-digit characters
-    const cleanAccount = accountNumber.replace(/\D/g, '');
-    
+    const cleanAccount = accountNumber.replace(/\D/g, "");
+
     // Check if we have at least 10 digits (4 + 6)
     if (cleanAccount.length >= 10) {
       // Extract 6 digits after the first 4 digits
       return cleanAccount.substring(4, 10);
     }
-    
-    return '';
+
+    return "";
   };
 
   /* Function to fetch and populate KYC data */
-  const handleAccountNumberChange = async (accountNumber: string, setFieldValue: (field: string, value: unknown) => void) => {
+  const handleAccountNumberChange = async (
+    accountNumber: string,
+    setFieldValue: (field: string, value: unknown) => void
+  ) => {
     if (!accountNumber) return;
 
     const companyCode = extractCompanyCode(accountNumber);
     if (!companyCode) return;
 
     setIsLoadingKyc(true);
-    
+
     try {
       const kycData = await getKycByCode(companyCode);
-      
+
       if (kycData.hasKyc && kycData.data) {
         // Update form fields with KYC data
-        setFieldValue('customerName', kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName);
-        setFieldValue('branch', kycData.data.branchName);
-        
+        setFieldValue(
+          "customerName",
+          kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName
+        );
+        setFieldValue("branch", kycData.data.branchName);
+
         // Build address from KYC data
         const addressParts = [];
         if (kycData.data.street) addressParts.push(kycData.data.street);
         if (kycData.data.district) addressParts.push(kycData.data.district);
         if (kycData.data.city) addressParts.push(kycData.data.city);
-        
-        const fullAddress = addressParts.join(', ');
-        setFieldValue('address', fullAddress);
+
+        const fullAddress = addressParts.join(", ");
+        setFieldValue("address", fullAddress);
       }
     } catch (error) {
-      console.error('Failed to fetch KYC data:', error);
+      console.error("Failed to fetch KYC data:", error);
     } finally {
       setIsLoadingKyc(false);
     }
@@ -220,16 +233,16 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
 
   /* form fields array */
   const formFields = [
+    // {
+    //   name: "branch",
+    //   label: t("branch"),
+    //   type: "text",
+    //   component: FormInputIcon,
+    //   readOnly: true, // Make branch read-only
+    // },
     {
-      name: "branch",
-      label: t("branch"),
-      type: "text",
-      component: FormInputIcon,
-      readOnly: true, // Make branch read-only
-    },
-    { 
-      name: "date", 
-      label: t("date"), 
+      name: "date",
+      label: t("date"),
       component: DatePickerValue,
       readOnly: false,
     },
@@ -257,20 +270,22 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   ];
 
   /* wrapped submit */
-  const handleSubmit = async (
-    values: TCheckRequestFormValues
-  ) => {
+  const handleSubmit = async (values: TCheckRequestFormValues) => {
     // Validate that at least one amount is provided and is numeric
-    const hasValidAmount = values.lineItems.some(item => {
-      const dirhamValid = item.dirham && item.dirham.trim() !== '' && !isNaN(Number(item.dirham));
-      const lydValid = item.lyd && item.lyd.trim() !== '' && !isNaN(Number(item.lyd));
+    const hasValidAmount = values.lineItems.some((item) => {
+      const dirhamValid =
+        item.dirham && item.dirham.trim() !== "" && !isNaN(Number(item.dirham));
+      const lydValid =
+        item.lyd && item.lyd.trim() !== "" && !isNaN(Number(item.lyd));
       return dirhamValid || lydValid;
     });
 
     // Check if there are any non-numeric values
-    const hasNonNumericValues = values.lineItems.some(item => {
-      const dirhamNonNumeric = item.dirham && item.dirham.trim() !== '' && isNaN(Number(item.dirham));
-      const lydNonNumeric = item.lyd && item.lyd.trim() !== '' && isNaN(Number(item.lyd));
+    const hasNonNumericValues = values.lineItems.some((item) => {
+      const dirhamNonNumeric =
+        item.dirham && item.dirham.trim() !== "" && isNaN(Number(item.dirham));
+      const lydNonNumeric =
+        item.lyd && item.lyd.trim() !== "" && isNaN(Number(item.lyd));
       return dirhamNonNumeric || lydNonNumeric;
     });
 
@@ -309,11 +324,14 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   return (
     <>
       <div className="mt-4 rounded w-full bg-gray-100">
-        <FormHeader
-          status={status}
-          showBackButton
-          isEditing={true}
-        />
+        {initialValues?.reason && (
+          <ReasonBanner
+            reason={initialValues.reason}
+            label={t("rejectReason")}
+          />
+        )}
+
+        <FormHeader status={status} showBackButton isEditing={true} />
 
         <div className="px-6 pb-6">
           <Form<TCheckRequestFormValues>
@@ -334,6 +352,13 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
                 isLoadingKyc={isLoadingKyc}
               />
 
+              <BranchesSelect
+                name="branch"
+                label={t("branch")}
+                width="w-full"
+                disabled={readOnly || isSubmitting}
+              />
+
               {/* Representative dropdown */}
               <InputSelectCombo
                 name="representativeId"
@@ -345,14 +370,16 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
               />
 
               {/* Other form fields */}
-              {formFields.map(({ component: Field, readOnly: fieldReadOnly, ...props }) => (
-                <Field
-                  key={props.name}
-                  {...props}
-                  width="w-full"
-                  disabled={readOnly || isSubmitting || fieldReadOnly}
-                />
-              ))}
+              {formFields.map(
+                ({ component: Field, readOnly: fieldReadOnly, ...props }) => (
+                  <Field
+                    key={props.name}
+                    {...props}
+                    width="w-full"
+                    disabled={readOnly || isSubmitting || fieldReadOnly}
+                  />
+                )
+              )}
             </div>
 
             <div className="mt-6">

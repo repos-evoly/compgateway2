@@ -108,6 +108,7 @@ export type CreditFacilityRequest = {
     refferenceNumber: string;
     type: string;
     status: string;
+    reason?: string; // Optional field for additional information
   };
 
 

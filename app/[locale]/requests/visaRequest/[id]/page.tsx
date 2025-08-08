@@ -85,6 +85,7 @@ export default function SingleVisaRequestPage() {
     status: requestData.status,
     // Add attachment URLs for display
     attachmentUrls: requestData.attachments?.map((att) => att.attUrl) || [],
+    reason: requestData.reason || "", // Ensure reason is always a string
   };
 
   /*──────────────────────────── Submit (edit) handler ───────────────────────*/

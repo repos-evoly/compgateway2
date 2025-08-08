@@ -59,6 +59,7 @@ export default function CreditFacilityDetailPage() {
           refferenceNumber: apiItem.referenceNumber,
           type: apiItem.type,
           status: apiItem.status,
+          reason: apiItem.reason, // Assuming this field exists in the API response
         };
 
         setFacilityData(converted);

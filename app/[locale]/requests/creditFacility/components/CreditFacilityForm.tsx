@@ -25,6 +25,7 @@ import { FaPaperPlane } from "react-icons/fa";
 
 import type { TCreditFacility } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
+import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                              */
@@ -43,9 +44,8 @@ type Props = {
 export default function CreditFacilityForm({
   initialData,
   onSubmit,
-  
+
   readOnly = false,
-  
 }: Props) {
   /* ─── i18n ──────────────────────────────────────────────── */
   const tFields = useTranslations("creditFacility.form.fields");
@@ -111,7 +111,7 @@ export default function CreditFacilityForm({
     curr: "",
     refferenceNumber: "",
     type: "creditFacility",
-    status: ""
+    status: "",
   };
   const initialValues: TCreditFacility = initialData
     ? { ...defaults, ...initialData, type: "creditFacility" }
@@ -164,11 +164,11 @@ export default function CreditFacilityForm({
         >
           {({ isSubmitting, isValid, dirty }) => (
             <Form>
-              <FormHeader
-                showBackButton
-                status={status}
-                isEditing={true}
+              <ReasonBanner
+                reason={initialData?.reason} // assumes the API includes `reason`
+                label={tUi("rejectReason")} // or just "Reason"
               />
+              <FormHeader showBackButton status={status} isEditing={true} />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 {/* Account Number (dropdown) */}

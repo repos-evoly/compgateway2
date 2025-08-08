@@ -71,22 +71,25 @@ const CheckRequestDetailPage = () => {
       lyd: li.lyd,
     })),
     status: checkData.status,
+    reason: checkData.reason || "",
   };
 
   // Handle form submission for updates
   const handleFormSubmit = async (updatedItem: TCheckRequestFormValues) => {
     if (isSubmitting || !id) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const result = await updateCheckRequestById(id.toString(), updatedItem);
-      
+
       // Update local state with the returned data
       setCheckData(result);
-      
+
       setModalTitle(t("successTitle"));
-      setModalMessage(t("updateSuccessMessage") || "Check request updated successfully!");
+      setModalMessage(
+        t("updateSuccessMessage") || "Check request updated successfully!"
+      );
       setModalSuccess(true);
       setModalOpen(true);
     } catch (error) {
@@ -107,7 +110,7 @@ const CheckRequestDetailPage = () => {
 
   const handleModalClose = () => {
     setModalOpen(false);
-    
+
     // If it was a successful update, optionally redirect back to the list
     if (modalSuccess) {
       // You can uncomment this if you want to redirect after successful update

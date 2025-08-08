@@ -11,6 +11,7 @@ export type TCheckbookValues = {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
+  reason?: string; // Optional field for additional information
 };
 
 export type TCheckbookResponse = {
@@ -31,6 +32,7 @@ export type TCheckbookFormValues = {
   bookContaining: string;
   status?: string; 
   id?: number; // Optional for new items
+  reason?: string; // Optional field for additional information
 };
 
 /** Props for our CheckbookForm component */

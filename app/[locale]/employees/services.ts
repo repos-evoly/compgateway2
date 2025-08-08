@@ -4,12 +4,11 @@ import type {
   EmployeeResponse,
   EmployeePayload,
   EmployeesApiResponse,
+  EmployeeFormValues,
 } from "./types";
 
-// Using the hardcoded API URL as specified by the user
-const API_BASE_URL = "http://10.3.3.11/compgateapi/api";
-
-console.log("Using API_BASE_URL:", API_BASE_URL);
+const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+const token =  getAccessTokenFromCookies();
 
 /**
  * Get all employees with pagination and search
@@ -20,13 +19,12 @@ export const getEmployees = async (
   searchTerm: string = ""
 ): Promise<EmployeesApiResponse> => {
   try {
-    const token = await getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
 
     // Use the full URL structure as specified by the user
-    const url = new URL("http://10.3.3.11/compgateapi/api/employees");
+    const url = new URL(`${baseUrl}/employees`);
     url.searchParams.set("page", page.toString());
     url.searchParams.set("limit", limit.toString());
     if (searchTerm) {
@@ -78,18 +76,17 @@ export const getEmployeeById = async (
   id: number
 ): Promise<EmployeeResponse> => {
   try {
-    const token = await getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
 
     // Try POST method first (in case the API expects POST with ID in body)
-    const url = `http://10.3.3.11/compgateapi/api/employees/${id}`;
+    const url = `${baseUrl}/employees/${id}`;
     console.log("Fetching employee by ID:", url);
     console.log("Token available:", !!token);
 
     let response = await fetch(url, {
-      method: "POST",
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -137,12 +134,11 @@ export const createEmployee = async (
   employeeData: EmployeePayload
 ): Promise<EmployeeResponse> => {
   try {
-    const token = await getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
 
-    const url = "http://10.3.3.11/compgateapi/api/employees";
+    const url = `${baseUrl}/employees`;
     console.log("Creating employee:", url, employeeData);
 
     const response = await fetch(url, {
@@ -175,12 +171,11 @@ export const updateEmployee = async (
   employeeData: EmployeePayload
 ): Promise<EmployeeResponse> => {
   try {
-    const token = await getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
 
-    const url = `http://10.3.3.11/compgateapi/api/employees/${id}`;
+    const url = `${baseUrl}/employees/${id}`;
     console.log("Updating employee:", url, employeeData);
 
     const response = await fetch(url, {
@@ -210,12 +205,10 @@ export const updateEmployee = async (
  */
 export const deleteEmployee = async (id: number): Promise<void> => {
   try {
-    const token = await getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
-
-    const url = `http://10.3.3.11/compgateapi/api/employees/${id}`;
+    const url = `${baseUrl}/employees/${id}`;
     console.log("Deleting employee:", url);
 
     const response = await fetch(url, {
@@ -235,4 +228,37 @@ export const deleteEmployee = async (id: number): Promise<void> => {
     console.error("Error deleting employee:", error);
     throw error;
   }
+};
+
+
+export const updateBatchEmployees = async (
+  employees: EmployeeFormValues[],
+): Promise<void> => {
+  /* ---------- sanity checks ---------- */
+  if (!baseUrl) {
+    throw new Error("Base URL is not defined");
+  }
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  /* ---------- request ---------- */
+  const url = `${baseUrl}/employees/batch`;
+
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(employees),
+  });
+
+  /* ---------- error handling ---------- */
+  if (!response.ok) {
+    throw await throwApiError(response, "Failed to update batch employees");
+  }
+
+  /* ---------- success: nothing to return ---------- */
+  return; // Promise resolves to void
 };

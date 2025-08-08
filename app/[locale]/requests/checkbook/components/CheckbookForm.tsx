@@ -36,6 +36,8 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { getRepresentatives } from "@/app/[locale]/representatives/services";
 import { TKycResponse } from "@/app/auth/register/types";
 import { getKycByCode } from "@/app/auth/register/services";
+import BranchesSelect from "@/app/components/reusable/BranchesSelect";
+import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* -------------------------------- Types --------------------------------- */
 interface UpdatedCheckbookFormProps extends TCheckbookFormProps {
@@ -251,11 +253,17 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
     <>
       <div className="mt-2 w-full rounded bg-gray-100">
         {/* ---------- Header ---------- */}
-        <FormHeader status={status}>
-          <BackButton
-            fallbackPath="/requests/checkbook"
-            isEditing={true}
+
+        {/* ---------- Reason banner (only if it exists) ---------- */}
+        {initialData?.reason && (
+          <ReasonBanner
+            reason={initialValues.reason}
+            label={t("rejectReason")}
           />
+        )}
+
+        <FormHeader status={status}>
+          <BackButton fallbackPath="/requests/checkbook" isEditing={true} />
         </FormHeader>
 
         {/* ---------- Form body ---------- */}
@@ -295,7 +303,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
               {[
                 { name: "fullName", label: t("name") },
                 { name: "address", label: t("address") },
-                { name: "branch", label: t("branch") },
+                // { name: "branch", label: t("branch") },
               ].map(({ name, label }) => (
                 <FormInputIcon
                   key={name}
@@ -306,6 +314,12 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
                   disabled={readOnly}
                 />
               ))}
+              <BranchesSelect
+                name="branch"
+                label={t("branch")}
+                width="w-full"
+                disabled={readOnly}
+              />
 
               {/* Date */}
               <DatePickerValue

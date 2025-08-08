@@ -425,7 +425,21 @@
     "add": "Add",
     "setSalaries": "Set Salaries",
     "selectAll": "Select All",
-    "deselectAll": "Deselect All"
+    "deselectAll": "Deselect All",
+    "id": "ID",
+    "salaryMonth": "Salary Month",
+    "createdAt": "Created At",
+    "debitAccount": "Debit Account",
+    "createdBy": "Created By",
+    "postedBy": "Posted By",
+    "postedAt": "Posted At",
+    "cycleDetails": "Cycle Details",
+    "edit":"Edit",
+    "save": "Save",
+    "post":"Send salaries",
+    "isTransferred": "Transferred",
+    "yes": "Yes",
+    "no": "No"
   },
 
   "customizations": {

@@ -1,21 +1,34 @@
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import type {
   LetterOfGuaranteeApiItem,
   LetterOfGuaranteeApiResponse,
   TLetterOfGuarantee,
 } from "./types";
-
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
 
 const BASE_API = process.env.NEXT_PUBLIC_BASE_API;
-const token = getAccessTokenFromCookies();
 
-/** 
- * Fetch (GET) letter of guarantees with pagination & search. 
- * Always uses `?searchTerm=letterOfGuarantee&searchBy=type` to filter 
- * on the server side so it only returns items of type="letterOfGuarantee".
+const init = (
+  method: "GET" | "POST" | "PUT",
+  bearer?: string,
+  body?: unknown
+): RequestInit => ({
+  method,
+  headers: {
+    ...(body ? { "Content-Type": "application/json" } : {}),
+    ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+  },
+  ...(body ? { body: JSON.stringify(body) } : {}),
+  cache: "no-store",
+});
+
+/**
+ * Fetch (GET) letter of guarantees with pagination & search.
+ * Always includes `searchTerm=letterOfGuarantee&searchBy=type` so the API returns only type="letterOfGuarantee".
+ * If user supplies searchTerm/searchBy, they are appended as additional filters.
  */
 export async function getLetterOfGuarantees(
   page = 1,
@@ -26,79 +39,86 @@ export async function getLetterOfGuarantees(
   if (!BASE_API) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
+
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  // Always ensure we pass `searchTerm=letterOfGuarantee&searchBy=type`
-  const url = new URL(`${BASE_API}/creditfacilities?searchTerm=letterOfGuarantee&searchBy=type`);
-  url.searchParams.append("page", String(page));
-  url.searchParams.append("limit", String(limit));
+  const url = new URL(`${BASE_API}/creditfacilities`);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", String(limit));
+  // Always enforce type filter
+  url.searchParams.set("searchTerm", "letterOfGuarantee");
+  url.searchParams.set("searchBy", "type");
+  // If user also searches, add extra params
+  if (searchTerm) url.searchParams.append("searchTerm", searchTerm);
+  if (searchBy) url.searchParams.append("searchBy", searchBy);
 
-  // If user typed in the search bar => pass searchTerm + searchBy
-  if (searchTerm) {
-    url.searchParams.append("searchTerm", searchTerm);
-  }
-  if (searchBy) {
-    url.searchParams.append("searchBy", searchBy);
-  }
+  let res = await fetch(url.toString(), init("GET", token));
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url.toString(), init("GET", token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) {
     await throwApiError(res, "Failed to fetch letter of guarantee.");
   }
 
-  const data: LetterOfGuaranteeApiResponse = await res.json();
-  return data;
+  return (await res.json()) as LetterOfGuaranteeApiResponse;
 }
 
 /**
- * Create (POST) a new letter of guarantee at /creditfacilities
- * Because the endpoint is the same, but the `type` we submit is "letterOfGuarantee".
+ * Create (POST) a new letter of guarantee at /creditfacilities.
+ * `type` should be "letterOfGuarantee".
  */
 export async function addLetterOfGuarantee(
-  payload: Omit<TLetterOfGuarantee, "id"> // exclude "id" for new records
+  payload: Omit<TLetterOfGuarantee, "id">
 ): Promise<LetterOfGuaranteeApiItem> {
   if (!BASE_API) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
+
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
   const url = `${BASE_API}/creditfacilities`;
+  const body = {
+    accountNumber: payload.accountNumber,
+    date: payload.date,
+    amount: payload.amount,
+    purpose: payload.purpose,
+    additionalInfo: payload.additionalInfo,
+    curr: payload.curr,
+    referenceNumber: payload.refferenceNumber, // API field name
+    type: payload.type, // "letterOfGuarantee"
+  };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      accountNumber: payload.accountNumber,
-      date: payload.date,
-      amount: payload.amount,
-      purpose: payload.purpose,
-      additionalInfo: payload.additionalInfo,
-      curr: payload.curr,
-      referenceNumber: payload.refferenceNumber, // note the field name difference
-      type: payload.type, // always "letterOfGuarantee"
-    }),
-  });
+  let res = await fetch(url, init("POST", token, body));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init("POST", token, body));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) {
     await throwApiError(res, "Failed to create letter of guarantee.");
   }
 
-  const data = await res.json();
-  return data as LetterOfGuaranteeApiItem;
+  return (await res.json()) as LetterOfGuaranteeApiItem;
 }
 
 /**
@@ -110,28 +130,36 @@ export async function getLetterOfGuaranteeById(
   if (!BASE_API) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
+
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
   const url = `${BASE_API}/creditfacilities/${id}`;
 
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  let res = await fetch(url, init("GET", token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init("GET", token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) {
     await throwApiError(res, `Failed to fetch letter of guarantee #${id}.`);
   }
 
-  const data = await res.json();
-  return data as LetterOfGuaranteeApiItem;
+  return (await res.json()) as LetterOfGuaranteeApiItem;
 }
 
+/**
+ * Update an existing letter of guarantee by ID: PUT /creditfacilities/{id}
+ */
 export async function updateLetterOfGuaranteeById(
   id: number,
   payload: TLetterOfGuarantee
@@ -139,35 +167,40 @@ export async function updateLetterOfGuaranteeById(
   if (!BASE_API) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
+
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
   const url = `${BASE_API}/creditfacilities/${id}`;
+  const body = {
+    accountNumber: payload.accountNumber,
+    date: payload.date,
+    amount: payload.amount,
+    purpose: payload.purpose,
+    additionalInfo: payload.additionalInfo,
+    curr: payload.curr,
+    referenceNumber: payload.refferenceNumber, // API field name
+    type: payload.type,
+    status: payload.status,
+  };
 
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      accountNumber: payload.accountNumber,
-      date: payload.date,
-      amount: payload.amount,
-      purpose: payload.purpose,
-      additionalInfo: payload.additionalInfo,
-      curr: payload.curr,
-      referenceNumber: payload.refferenceNumber, // note the field name difference
-      type: payload.type, // always "letterOfGuarantee"
-      status: payload.status,
-    }),
-  });
+  let res = await fetch(url, init("PUT", token, body));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init("PUT", token, body));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) {
     await throwApiError(res, `Failed to update letter of guarantee ID=${id}.`);
   }
 
-  const data = await res.json();
-  return data as LetterOfGuaranteeApiItem;
+  return (await res.json()) as LetterOfGuaranteeApiItem;
 }

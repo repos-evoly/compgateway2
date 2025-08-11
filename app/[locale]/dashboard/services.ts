@@ -1,35 +1,55 @@
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { Dashboard } from "./types";
 
-
-const token = getAccessTokenFromCookies();
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
 
+export async function getDashboardData(code: string): Promise<Dashboard> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
 
-export async function getDashboardData(code:string): Promise<Dashboard>{
+  const url = `${BASE_URL}/companies/${code}/dashboard`;
 
-    if (!BASE_URL) {
-        throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-    }
+  // Read the current access token from cookies at call time (not at module load)
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
 
-    if (!token) {
-        throw new Error("No access token found in cookies");
-    }
+  // First attempt with the current token
+  let res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
 
-    const url = `${BASE_URL}/companies/${code}/dashboard`;
+  // If unauthorized AND we had a token, try to refresh and retry once
+  if (res.status === 401) {
+    try {
+      const refreshed = await refreshAuthTokens(); // helper also saves new cookies
+      token = refreshed.accessToken;
 
-    const res = await fetch(url, {
+      res = await fetch(url, {
         method: "GET",
         headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-    });
-
-    if (!res.ok) {
-        throw new Error(`Failed to fetch dashboard data. Status: ${res.status}`);
+        cache: "no-store",
+      });
+    } catch (e) {
+      console.error("Failed to refresh auth tokens:", e);
     }
+  }
 
-    const data = await res.json();
-    return data as Dashboard;
+  if (!res.ok) {
+    throw new Error(`Failed to fetch dashboard data. Status: ${res.status}`);
+  }
+
+  const data = (await res.json()) as Dashboard;
+  return data;
 }

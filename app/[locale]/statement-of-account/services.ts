@@ -1,8 +1,9 @@
 // helpers/statementOfAccount/getStatement.ts
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // adjust the import path
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 
-interface StatementApiResponseItem {
+type StatementApiResponseItem = {
   postingDate: string;
   narratives: string[];
   amount: number;
@@ -11,9 +12,9 @@ interface StatementApiResponseItem {
   isDeleted: boolean;
   debit: number | string;
   credit: number | string;
-}
+};
 
-export interface StatementLine {
+export type StatementLine = {
   postingDate: string;
   amount: number;
   debit?: string | number;
@@ -27,12 +28,13 @@ export interface StatementLine {
   isActive?: string | number;
   isDeleted?: string | number;
   [key: string]: string | number | undefined;
-}
+};
 
 /**
  * Retrieves the statement of account from the external API via GET,
  * passing `account`, `fromDate`, and `toDate` as query parameters.
  * Uses the token from cookies to authorize the request.
+ * If the request is unauthorized (401), it refreshes tokens once and retries.
  */
 export async function getStatement({
   account,
@@ -43,48 +45,57 @@ export async function getStatement({
   fromDate: string;
   toDate: string;
 }): Promise<StatementLine[]> {
-  // 1. Retrieve the token from cookies
-  const token = getAccessTokenFromCookies();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  if (!baseUrl) {
+    throw new Error(
+      "Missing environment variable NEXT_PUBLIC_BASE_API. Please set it in your .env file."
+    );
+  }
 
+  const qs = new URLSearchParams({ account, fromDate, toDate }).toString();
+  const url = `${baseUrl}/transfers/statement?${qs}`;
+
+  // Read token at call time
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies.");
   }
 
-  // (Optional) parse the token if you need to inspect claims/expiration
-  // const parsedToken = parseJwt(token);
-  // console.log("Parsed Token:", parsedToken);
-
-  // 2. Build the base URL and query
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error(
-      "Missing environment variable NEXT_PUBLIC_BASE_API. " +
-        "Please set it in your .env file."
-    );
-  }
-
-  const queryString = new URLSearchParams({ account, fromDate, toDate }).toString();
-  const url = `${baseUrl}/transfers/statement?${queryString}`;
-
-  // 3. Make the GET request with an Authorization header
-  const response = await fetch(url, {
+  // First attempt
+  let response = await fetch(url, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cache: "no-store",
   });
 
-  if (!response.ok) {
-    throw new Error(`Error fetching statement: ${response.statusText}`);
+  // If unauthorized, refresh and retry once
+  if (response.status === 401) {
+    try {
+      const refreshed = await refreshAuthTokens(); // also updates cookies
+      token = refreshed.accessToken;
+
+      response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      });
+    } catch {
+      // fall through to error handling
+    }
   }
 
-  // 4. Process the response
-  const data: StatementApiResponseItem[] = await response.json();
+  if (!response.ok) {
+    throw new Error(`Error fetching statement: ${response.status} ${response.statusText}`);
+  }
 
-  // 5. Transform the API data to match the shape needed in your UI
+  const data: StatementApiResponseItem[] = (await response.json()) as StatementApiResponseItem[];
+
   const lines: StatementLine[] = data.map((item) => {
     const [nr1 = "", nr2 = "", nr3 = ""] = item.narratives || [];
-
     return {
       postingDate: item.postingDate,
       amount: item.amount,

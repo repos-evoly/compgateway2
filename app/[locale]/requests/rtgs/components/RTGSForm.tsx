@@ -398,7 +398,6 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       >
         <ReasonBanner
           reason={mergedValues.reason} // or initialValues?.reason
-          label={t("rejectReason")} // i18n label, or simply "Reason"
         />
         {/* Header */}
         <div
@@ -484,7 +483,10 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
               fullWidth={false}
             />
           )}
-          <BackButton fallbackPath="/requests/rtgs" isEditing={true} />
+          <BackButton
+            fallbackPath="/requests/rtgs"
+            isEditing={initialValues ? true : false}
+          />
         </div>
       </Form>
     </div>

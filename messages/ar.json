@@ -1221,5 +1221,8 @@
           "cancel": "إلغاء",
           "confirm": "تأكيد"
         }
+      },
+      "common":{
+        "rejectReason":"سبب الرفض"
       }
   }

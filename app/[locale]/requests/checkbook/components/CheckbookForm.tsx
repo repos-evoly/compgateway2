@@ -258,7 +258,6 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
         {initialData?.reason && (
           <ReasonBanner
             reason={initialValues.reason}
-            label={t("rejectReason")}
           />
         )}
 

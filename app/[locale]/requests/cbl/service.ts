@@ -1,24 +1,29 @@
 "use client";
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // adjust path as needed
-import { TCblRequestsResponse, TCBLValues, Attachment } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";      // ← NEW
-import { TKycResponse } from "@/app/auth/register/types";
-import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
 
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
+import { throwApiError } from "@/app/helpers/handleApiError";
+import type { TKycResponse } from "@/app/auth/register/types";
+import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
+import type {
+  TCblRequestsResponse,
+  TCBLValues,
+  Attachment,
+} from "./types";
 
 /** Minimal shape of an "official" from the API */
 type TApiOfficial = {
-  id: number;          // if your API includes an "id," otherwise remove
+  id: number;
   name: string;
   position: string;
 };
 
 /** Minimal shape of a "signature" from the API */
 type TApiSignature = {
-  id: number;          // if your API includes an "id," otherwise remove
+  id: number;
   name: string;
   signature: string;
-  status?: string;     // or remove if your API doesn't return "status"
+  status?: string;
 };
 
 /** Full shape of the API response for a single CBL request */
@@ -59,9 +64,64 @@ type TApiCblRequest = {
   signatures?: TApiSignature[];
 };
 
-// Grab the token at module-level once. (If your logic must handle token refresh, adapt accordingly.)
-const token = getAccessTokenFromCookies();
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
 const baseImgUrl = process.env.NEXT_PUBLIC_IMAGE_URL;
+const shouldRefresh = (s: number) => s === 401 || s === 403;
+
+/* ---------- helpers ---------- */
+const parseDate = (iso?: string | null) => (iso ? new Date(iso) : null);
+
+function toTCBLValues(api: TApiCblRequest): TCBLValues {
+  return {
+    id: api.id,
+    partyName: api.partyName,
+    capital: api.capital,
+    foundingDate: parseDate(api.foundingDate) ?? new Date(),
+    legalForm: api.legalForm,
+    branchOrAgency: api.branchOrAgency,
+    currentAccount: api.currentAccount,
+    accountOpening: parseDate(api.accountOpening) ?? new Date(),
+    commercialLicense: api.commercialLicense,
+    validatyLicense: parseDate(api.validatyLicense) ?? new Date(),
+    commercialRegistration: api.commercialRegistration,
+    validatyRegister: parseDate(api.validatyRegister) ?? new Date(),
+    statisticalCode: api.statisticalCode,
+    validatyCode: parseDate(api.validatyCode) ?? new Date(),
+    chamberNumber: api.chamberNumber,
+    validatyChamber: parseDate(api.validatyChamber) ?? new Date(),
+    taxNumber: api.taxNumber,
+    office: api.office,
+    legalRepresentative: api.legalRepresentative,
+    representativeNumber: api.representativeNumber,
+    birthDate: parseDate(api.birthDate) ?? new Date(),
+    passportNumber: api.passportNumber,
+    passportIssuance: parseDate(api.passportIssuance) ?? new Date(),
+    passportExpiry: parseDate(api.passportExpiry) ?? new Date(),
+    mobile: api.mobile,
+    address: api.address,
+    packingDate: parseDate(api.packingDate) ?? new Date(),
+    specialistName: api.specialistName,
+    status: api.status,
+    table1Data:
+      api.officials?.map((o) => ({
+        name: o.name,
+        position: o.position,
+      })) ?? [],
+    table2Data:
+      api.signatures?.map((s) => ({
+        name: s.name,
+        signature: s.signature,
+      })) ?? [],
+    attachments: api.attachments || [],
+    attachmentUrls:
+      api.attachments?.map((att) => {
+        const base = (baseImgUrl || "").replace(/\/$/, "");
+        const path = String(att.attUrl || "").replace(/^\//, "");
+        return `${base}/${path}`;
+      }) ?? [],
+  };
+}
 
 /**
  * Fetch a list of CBL requests from the API, with optional pagination and search.
@@ -72,48 +132,48 @@ export async function getCblRequests(
   searchTerm: string,
   searchBy: string
 ): Promise<TCblRequestsResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  const url = new URL(`${baseUrl}/cblrequests`);
+  const url = new URL(`${BASE_URL}/cblrequests`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("limit", String(limit));
+  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
+  if (searchBy) url.searchParams.set("searchBy", searchBy);
 
-  if (searchTerm) {
-    url.searchParams.set("searchTerm", searchTerm);
-  }
-  if (searchBy) {
-    url.searchParams.set("searchBy", searchBy);
-  }
-
-  const response = await fetch(url.toString(), {
+  const init = (bearer: string): RequestInit => ({
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
   });
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch CBL requests.");
+
+  let res = await fetch(url.toString(), init(token));
+
+  if (shouldRefresh(res.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url.toString(), init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  // The response shape matches TCblRequestsResponse exactly
-  return (await response.json()) as TCblRequestsResponse;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to fetch CBL requests.");
+  }
+
+  return (await res.json()) as TCblRequestsResponse;
 }
 
 export async function addCblRequest(
   values: TCBLValues & { files?: File[] }
 ): Promise<TCBLValues> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  const token = getAccessTokenFromCookies();
+  let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
 
   /* ---------- 1 · build JSON payload ---------- */
@@ -160,170 +220,135 @@ export async function addCblRequest(
 
   /* ---------- 2 · FormData ---------- */
   const formData = new FormData();
-  formData.append("Dto", JSON.stringify(dto)); // key MUST be "Dto"
+  formData.append("Dto", JSON.stringify(dto));
 
   const files = values.files ?? [];
   if (files.length > 1) {
-    const { blob } = await mergeFilesToPdf(files, 5); // 5 MB cap
+    const { blob } = await mergeFilesToPdf(files, 5);
     formData.append("files", blob, "documents.pdf");
   } else if (files.length === 1) {
     formData.append("files", files[0], files[0].name);
   }
 
-  /* ---------- 3 · POST ---------- */
-  const response = await fetch(`${baseUrl}/cblrequests`, {
+  /* ---------- 3 · POST (no manual Content-Type) ---------- */
+  const url = `${BASE_URL}/cblrequests`;
+
+  const init = (bearer: string): RequestInit => ({
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${bearer}`,
       Accept: "application/json",
     },
     body: formData,
+    cache: "no-store",
   });
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create CBL.");
+  let res = await fetch(url, init(token));
+
+  if (shouldRefresh(res.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  return (await response.json()) as TCBLValues;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to create CBL.");
+  }
+
+  const created = (await res.json()) as TApiCblRequest;
+  return toTCBLValues(created);
 }
 
 /**
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  const response = await fetch(`${baseUrl}/companies/kyc/${code}`, {
+  const url = `${BASE_URL}/companies/kyc/${code}`;
+
+  const init = (bearer: string): RequestInit => ({
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
   });
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch KYC data");
+  let res = await fetch(url, init(token));
+
+  if (shouldRefresh(res.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  return response.json();
+  if (!res.ok) {
+    await throwApiError(res, "Failed to fetch KYC data");
+  }
+
+  return (await res.json()) as TKycResponse;
 }
-
-
 
 /**
  * Fetch a single CBL request by ID (GET /cblrequests/{id}).
- * Converts the API's ISO date strings into JavaScript Date objects,
- * and maps `officials` -> table1Data, `signatures` -> table2Data.
+ * Converts the API's ISO dates into JS Dates and maps nested arrays.
  */
 export async function getCblRequestById(id: string | number): Promise<TCBLValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API ;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  const response = await fetch(`${baseUrl}/cblrequests/${id}`, {
+  const url = `${BASE_URL}/cblrequests/${id}`;
+
+  const init = (bearer: string): RequestInit => ({
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
   });
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to fetch CBL request by ID ${id}.`
-    );
+  let res = await fetch(url, init(token));
+
+  if (shouldRefresh(res.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  // Raw data from the API
-  const data = (await response.json()) as TApiCblRequest;
+  if (!res.ok) {
+    await throwApiError(res, `Failed to fetch CBL request by ID ${id}.`);
+  }
 
-  // Helper to parse a possibly-null ISO string into a JS Date or null
-  const parseDate = (isoString?: string | null) =>
-    isoString ? new Date(isoString) : null;
-
-  // Convert the API shape to our TCBLValues shape
-  const cblValues: TCBLValues = {
-    id: data.id,
-    partyName: data.partyName,
-    capital: data.capital,
-    foundingDate: parseDate(data.foundingDate) ?? new Date(),
-    legalForm: data.legalForm,
-    branchOrAgency: data.branchOrAgency,
-    currentAccount: data.currentAccount,
-    accountOpening: parseDate(data.accountOpening) ?? new Date(),
-    commercialLicense: data.commercialLicense,
-    validatyLicense: parseDate(data.validatyLicense) ?? new Date(),
-    commercialRegistration: data.commercialRegistration,
-    validatyRegister: parseDate(data.validatyRegister) ?? new Date(),
-    statisticalCode: data.statisticalCode,
-    validatyCode: parseDate(data.validatyCode) ?? new Date(),
-    chamberNumber: data.chamberNumber,
-    validatyChamber: parseDate(data.validatyChamber) ?? new Date(),
-    taxNumber: data.taxNumber,
-    office: data.office,
-    legalRepresentative: data.legalRepresentative,
-    representativeNumber: data.representativeNumber,
-    birthDate: parseDate(data.birthDate) ?? new Date(),
-    passportNumber: data.passportNumber,
-    passportIssuance: parseDate(data.passportIssuance) ?? new Date(),
-    passportExpiry: parseDate(data.passportExpiry) ?? new Date(),
-    mobile: data.mobile,
-    address: data.address,
-    packingDate: parseDate(data.packingDate) ?? new Date(),
-    specialistName: data.specialistName,
-    status: data.status,
-
-    // Convert "officials" -> "table1Data"
-    table1Data:
-      data.officials?.map((off) => ({
-        name: off.name,
-        position: off.position,
-      })) ?? [],
-
-    // Convert "signatures" -> "table2Data"
-    table2Data:
-      data.signatures?.map((sig) => ({
-        name: sig.name,
-        signature: sig.signature,
-      })) ?? [],
-
-    // Process attachments
-    attachments: data.attachments || [],
-    attachmentUrls:
-      data.attachments?.map(
-        (att) =>
-          `${baseImgUrl!.replace(/\/$/, "")}/${String(att.attUrl).replace(/^\//, "")}`
-      ) ?? [],  };
-
-  return cblValues;
+  const api = (await res.json()) as TApiCblRequest;
+  return toTCBLValues(api);
 }
 
 /**
  * Update (PUT) an existing CBL request by ID.
  */
-export async function updateCblRequest(id: string | number, values: TCBLValues & { files?: File[]; newFiles?: File[] }) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
-  }
+export async function updateCblRequest(
+  id: string | number,
+  values: TCBLValues & { files?: File[]; newFiles?: File[] }
+): Promise<TCBLValues> {
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
 
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  // Convert your form values to API payload shape
   const dto = {
     partyName: values.partyName,
     capital: values.capital,
@@ -352,53 +377,58 @@ export async function updateCblRequest(id: string | number, values: TCBLValues &
     address: values.address,
     packingDate: values.packingDate?.toISOString() ?? null,
     specialistName: values.specialistName,
-
-    // Convert table1Data -> officials
     officials: values.table1Data.map((off) => ({
-      id: 0, // or omit if unnecessary
+      id: 0,
       name: off.name,
       position: off.position,
     })),
-
-    // Convert table2Data -> signatures
     signatures: values.table2Data.map((sig) => ({
-      id: 0, // or omit if unnecessary
+      id: 0,
       name: sig.name,
       signature: sig.signature,
-      status: "string", // or omit / adapt if your API doesn't need this
+      status: "string",
     })),
   };
 
-  /* ---------- FormData ---------- */
   const formData = new FormData();
-  formData.append("Dto", JSON.stringify(dto)); // key MUST be "Dto"
+  formData.append("Dto", JSON.stringify(dto));
 
-  // Merge existing files with new files
-  const allFiles = [
-    ...(values.files || []),
-    ...(values.newFiles || [])
-  ];
-
+  const allFiles = [...(values.files || []), ...(values.newFiles || [])];
   if (allFiles.length > 1) {
-    const { blob } = await mergeFilesToPdf(allFiles, 5); // 5 MB cap
+    const { blob } = await mergeFilesToPdf(allFiles, 5);
     formData.append("files", blob, "documents.pdf");
   } else if (allFiles.length === 1) {
     formData.append("files", allFiles[0], allFiles[0].name);
   }
 
-  const response = await fetch(`${baseUrl}/cblrequests/${id}`, {
+  const url = `${BASE_URL}/cblrequests/${id}`;
+
+  const init = (bearer: string): RequestInit => ({
     method: "PUT",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${bearer}`,
       Accept: "application/json",
     },
     body: formData,
+    cache: "no-store",
   });
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update CBL request.");
+  let res = await fetch(url, init(token));
+
+  if (shouldRefresh(res.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  // Return whatever your API returns (assuming it returns the updated resource).
-  return (await response.json()) as TCBLValues;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to update CBL request.");
+  }
+
+  const updated = (await res.json()) as TApiCblRequest;
+  return toTCBLValues(updated);
 }

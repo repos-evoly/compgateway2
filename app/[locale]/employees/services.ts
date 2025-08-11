@@ -1,4 +1,7 @@
+"use client";
+
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import type {
   EmployeeResponse,
@@ -8,7 +11,6 @@ import type {
 } from "./types";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-const token =  getAccessTokenFromCookies();
 
 /**
  * Get all employees with pagination and search
@@ -19,11 +21,15 @@ export const getEmployees = async (
   searchTerm: string = ""
 ): Promise<EmployeesApiResponse> => {
   try {
+    if (!baseUrl) {
+      throw new Error("Base URL is not defined");
+    }
+
+    let token = getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
 
-    // Use the full URL structure as specified by the user
     const url = new URL(`${baseUrl}/employees`);
     url.searchParams.set("page", page.toString());
     url.searchParams.set("limit", limit.toString());
@@ -34,22 +40,33 @@ export const getEmployees = async (
     console.log("Fetching employees from:", url.toString());
     console.log("Full URL:", url.toString());
 
-    const response = await fetch(url.toString(), {
+    const init = (bearer?: string): RequestInit => ({
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
       },
+      cache: "no-store",
     });
+
+    let response = await fetch(url.toString(), init(token));
+
+    if (response.status === 401 && token) {
+      try {
+        const refreshed = await refreshAuthTokens();
+        token = refreshed.accessToken;
+        response = await fetch(url.toString(), init(token));
+      } catch {
+        // fall through to error handling
+      }
+    }
 
     if (!response.ok) {
       throw await throwApiError(response, "Failed to fetch employees");
     }
 
     const data = await response.json();
-    console.log("Employees API response:", data);
 
-    // Handle both array and paginated response formats
     if (Array.isArray(data)) {
       console.log("API returned array format");
       return {
@@ -62,7 +79,7 @@ export const getEmployees = async (
     }
 
     console.log("API returned paginated format");
-    return data;
+    return data as EmployeesApiResponse;
   } catch (error) {
     console.error("Error fetching employees:", error);
     throw error;
@@ -76,39 +93,41 @@ export const getEmployeeById = async (
   id: number
 ): Promise<EmployeeResponse> => {
   try {
+    if (!baseUrl) {
+      throw new Error("Base URL is not defined");
+    }
+
+    let token = getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
 
-    // Try POST method first (in case the API expects POST with ID in body)
     const url = `${baseUrl}/employees/${id}`;
     console.log("Fetching employee by ID:", url);
     console.log("Token available:", !!token);
 
-    let response = await fetch(url, {
+    const init = (bearer?: string): RequestInit => ({
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
       },
+      cache: "no-store",
     });
+
+    let response = await fetch(url, init(token));
 
     console.log("POST Response status:", response.status);
     console.log("POST Response ok:", response.ok);
 
-    // If POST fails, try GET method
-    if (!response.ok) {
-      console.log("POST failed, trying GET method...");
-      response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      console.log("GET Response status:", response.status);
-      console.log("GET Response ok:", response.ok);
+    if (response.status === 401 && token) {
+      try {
+        const refreshed = await refreshAuthTokens();
+        token = refreshed.accessToken;
+        response = await fetch(url, init(token));
+      } catch {
+        // fall through
+      }
     }
 
     if (!response.ok) {
@@ -117,7 +136,7 @@ export const getEmployeeById = async (
       throw await throwApiError(response, "Failed to fetch employee by ID");
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as EmployeeResponse;
     console.log("Employee by ID response:", data);
     return data;
   } catch (error) {
@@ -133,6 +152,11 @@ export const createEmployee = async (
   employeeData: EmployeePayload
 ): Promise<EmployeeResponse> => {
   try {
+    if (!baseUrl) {
+      throw new Error("Base URL is not defined");
+    }
+
+    let token = getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
@@ -140,20 +164,33 @@ export const createEmployee = async (
     const url = `${baseUrl}/employees`;
     console.log("Creating employee:", url, employeeData);
 
-    const response = await fetch(url, {
+    const init = (bearer?: string): RequestInit => ({
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
       },
       body: JSON.stringify(employeeData),
+      cache: "no-store",
     });
+
+    let response = await fetch(url, init(token));
+
+    if (response.status === 401 && token) {
+      try {
+        const refreshed = await refreshAuthTokens();
+        token = refreshed.accessToken;
+        response = await fetch(url, init(token));
+      } catch {
+        // fall through
+      }
+    }
 
     if (!response.ok) {
       throw await throwApiError(response, "Failed to create employee");
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as EmployeeResponse;
     console.log("Create employee response:", data);
     return data;
   } catch (error) {
@@ -170,6 +207,11 @@ export const updateEmployee = async (
   employeeData: EmployeePayload
 ): Promise<EmployeeResponse> => {
   try {
+    if (!baseUrl) {
+      throw new Error("Base URL is not defined");
+    }
+
+    let token = getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
@@ -177,20 +219,33 @@ export const updateEmployee = async (
     const url = `${baseUrl}/employees/${id}`;
     console.log("Updating employee:", url, employeeData);
 
-    const response = await fetch(url, {
+    const init = (bearer?: string): RequestInit => ({
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
       },
       body: JSON.stringify(employeeData),
+      cache: "no-store",
     });
+
+    let response = await fetch(url, init(token));
+
+    if (response.status === 401 && token) {
+      try {
+        const refreshed = await refreshAuthTokens();
+        token = refreshed.accessToken;
+        response = await fetch(url, init(token));
+      } catch {
+        // fall through
+      }
+    }
 
     if (!response.ok) {
       throw await throwApiError(response, "Failed to update employee");
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as EmployeeResponse;
     console.log("Update employee response:", data);
     return data;
   } catch (error) {
@@ -204,19 +259,38 @@ export const updateEmployee = async (
  */
 export const deleteEmployee = async (id: number): Promise<void> => {
   try {
+    if (!baseUrl) {
+      throw new Error("Base URL is not defined");
+    }
+
+    let token = getAccessTokenFromCookies();
     if (!token) {
       throw new Error("No access token found");
     }
+
     const url = `${baseUrl}/employees/${id}`;
     console.log("Deleting employee:", url);
 
-    const response = await fetch(url, {
+    const init = (bearer?: string): RequestInit => ({
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
       },
+      cache: "no-store",
     });
+
+    let response = await fetch(url, init(token));
+
+    if (response.status === 401 && token) {
+      try {
+        const refreshed = await refreshAuthTokens();
+        token = refreshed.accessToken;
+        response = await fetch(url, init(token));
+      } catch {
+        // fall through
+      }
+    }
 
     if (!response.ok) {
       throw await throwApiError(response, "Failed to delete employee");
@@ -229,35 +303,45 @@ export const deleteEmployee = async (id: number): Promise<void> => {
   }
 };
 
-
 export const updateBatchEmployees = async (
-  employees: EmployeeFormValues[],
+  employees: EmployeeFormValues[]
 ): Promise<void> => {
-  /* ---------- sanity checks ---------- */
   if (!baseUrl) {
     throw new Error("Base URL is not defined");
   }
+
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found");
   }
 
-  /* ---------- request ---------- */
   const url = `${baseUrl}/employees/batch`;
 
-  const response = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "PUT",
     headers: {
-      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
     body: JSON.stringify(employees),
+    cache: "no-store",
   });
 
-  /* ---------- error handling ---------- */
+  let response = await fetch(url, init(token));
+
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
     throw await throwApiError(response, "Failed to update batch employees");
   }
 
-  /* ---------- success: nothing to return ---------- */
-  return; // Promise resolves to void
+  return;
 };

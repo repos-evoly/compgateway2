@@ -1,67 +1,131 @@
 "use client";
 
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import groupTransfersData from "./groupTransfersData.json";
-import type { TransfersApiResponse, TransferResponse, TransferPayload } from "./types";
+import type {
+  TransfersApiResponse,
+  TransferResponse,
+  TransferPayload,
+} from "./types";
 
-// In-memory storage for demo purposes
-const groupTransfers: Record<string, unknown>[] = [...groupTransfersData.data];
-let nextId = Math.max(...groupTransfers.map((t) => t.id as number)) + 1;
+/* --------------------------- Local Types --------------------------- */
+type StoredTransfer = {
+  id: number;
+  userId?: number;
+  categoryName?: string;
+  fromAccount: string;
+  toAccount: string;
+  amount: number;
+  currencyCode?: string;
+  packageName?: string;
+  status?: string;
+  requestedAt?: string;
+  description?: string;
+  transactionCategoryId?: number;
+  currencyId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  commissionOnRecipient?: boolean;
+  economicSectorId?: number;
+  isGroupTransfer?: boolean;
+};
 
-// Helper function to simulate API delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/* ------------------------ In-memory storage ------------------------ */
+const groupTransfers: StoredTransfer[] = [
+  ...(groupTransfersData.data as StoredTransfer[]),
+];
 
-function ensureTransferResponse(obj: Record<string, unknown>): TransferResponse {
+let nextId =
+  groupTransfers.length > 0
+    ? Math.max(...groupTransfers.map((t) => t.id)) + 1
+    : 1;
+
+/* ------------------------------ Utils ------------------------------ */
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const ensureTransferResponse = (obj: StoredTransfer): TransferResponse => {
   return {
-    id: obj.id as number,
-    transactionCategoryId: obj.transactionCategoryId as number ?? 1,
-    fromAccount: obj.fromAccount as string,
-    toAccount: obj.toAccount as string,
-    amount: obj.amount as number,
-    currencyId: obj.currencyId as number ?? 1,
-    description: obj.description as string,
-    createdAt: obj.createdAt as string ?? new Date().toISOString(),
-    updatedAt: obj.updatedAt as string ?? new Date().toISOString(),
-    // Optionals
-    commissionOnRecipient: obj.commissionOnRecipient as boolean | undefined,
-    economicSectorId: obj.economicSectorId as number | undefined,
+    id: obj.id,
+    transactionCategoryId: obj.transactionCategoryId ?? 1,
+    fromAccount: obj.fromAccount,
+    toAccount: obj.toAccount,
+    amount: obj.amount,
+    currencyId: obj.currencyId ?? 1,
+    description: obj.description ?? "",
+    createdAt: obj.createdAt ?? new Date().toISOString(),
+    updatedAt: obj.updatedAt ?? new Date().toISOString(),
+    commissionOnRecipient: obj.commissionOnRecipient,
+    economicSectorId: obj.economicSectorId,
   };
-}
+};
 
-export async function getTransfers(page = 1, limit = 10, searchTerm = ""): Promise<TransfersApiResponse> {
+/**
+ * Ensure an access token exists. If missing, try refreshing once.
+ * Throws if still not available.
+ */
+const ensureToken = async (): Promise<string> => {
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+    } catch {
+      // ignore and check again below
+    }
+  }
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+  return token;
+};
+
+/* ----------------------------- Services ---------------------------- */
+export async function getTransfers(
+  page = 1,
+  limit = 10,
+  searchTerm = ""
+): Promise<TransfersApiResponse> {
+  await ensureToken(); // uniform auth check as in real services
   await delay(300);
-  let filteredData = [...groupTransfers];
+
+  let filteredData: StoredTransfer[] = [...groupTransfers];
+
   if (searchTerm) {
-    const searchLower = searchTerm.toLowerCase();
-    filteredData = filteredData.filter((transfer) => {
-      const searchableFields = [
-        transfer.categoryName,
-        transfer.fromAccount,
-        transfer.toAccount,
-        transfer.status,
-        transfer.description,
+    const q = searchTerm.toLowerCase();
+    filteredData = filteredData.filter((t) => {
+      const fields: Array<string | undefined> = [
+        t.categoryName,
+        t.fromAccount,
+        t.toAccount,
+        t.status,
+        t.description,
       ];
-      return searchableFields.some(field =>
-        typeof field === 'string' ? field.toLowerCase().includes(searchLower) : false
-      );
+      return fields.some((f) => (typeof f === "string" ? f.toLowerCase().includes(q) : false));
     });
   }
+
   const startIndex = (page - 1) * limit;
   const endIndex = startIndex + limit;
-  const paginatedData = filteredData.slice(startIndex, endIndex).map((t: Record<string, unknown>) => ({
-    id: t.id as number,
-    userId: t.userId as number ?? 1,
-    categoryName: t.categoryName as string ?? "Manual Entry",
-    fromAccount: t.fromAccount as string,
-    toAccount: t.toAccount as string,
-    amount: t.amount as number,
-    currencyCode: t.currencyCode as string ?? "USD",
-    packageName: t.packageName as string ?? "Standard",
-    status: t.status as string ?? "Pending",
-    requestedAt: t.requestedAt as string ?? new Date().toISOString(),
-    description: t.description as string ?? "",
+
+  const paginatedData = filteredData.slice(startIndex, endIndex).map((t) => ({
+    id: t.id,
+    userId: t.userId ?? 1,
+    categoryName: t.categoryName ?? "Manual Entry",
+    fromAccount: t.fromAccount,
+    toAccount: t.toAccount,
+    amount: t.amount,
+    currencyCode: t.currencyCode ?? "USD",
+    packageName: t.packageName ?? "Standard",
+    status: t.status ?? "Pending",
+    requestedAt: t.requestedAt ?? new Date().toISOString(),
+    description: t.description ?? "",
   }));
+
   const totalRecords = filteredData.length;
   const totalPages = Math.ceil(totalRecords / limit);
+
   return {
     data: paginatedData,
     page,
@@ -72,16 +136,23 @@ export async function getTransfers(page = 1, limit = 10, searchTerm = ""): Promi
 }
 
 export async function getTransferById(id: number): Promise<TransferResponse> {
+  await ensureToken();
   await delay(200);
-  const transfer = groupTransfers.find((t: Record<string, unknown>) => t.id === id);
+
+  const transfer = groupTransfers.find((t) => t.id === id);
   if (!transfer) throw new Error("Transfer not found");
   return ensureTransferResponse(transfer);
 }
 
-export async function createTransfer(payload: TransferPayload): Promise<TransferResponse> {
+export async function createTransfer(
+  payload: TransferPayload
+): Promise<TransferResponse> {
+  await ensureToken();
   await delay(500);
+
   const now = new Date().toISOString();
-  const newTransfer: Record<string, unknown> = {
+
+  const newTransfer: StoredTransfer = {
     id: nextId++,
     transactionCategoryId: payload.transactionCategoryId ?? 1,
     fromAccount: payload.fromAccount,
@@ -100,11 +171,11 @@ export async function createTransfer(payload: TransferPayload): Promise<Transfer
     commissionOnRecipient: payload.commissionOnRecipient,
     economicSectorId: payload.economicSectorId,
   };
+
   groupTransfers.push(newTransfer);
   return ensureTransferResponse(newTransfer);
 }
 
-// New function for creating group transfers with multiple accounts
 export async function createGroupTransfer(payload: {
   fromAccount: string;
   toAccounts: string[];
@@ -115,52 +186,73 @@ export async function createGroupTransfer(payload: {
   commissionOnRecipient?: boolean;
   economicSectorId?: number;
 }): Promise<TransferResponse> {
+  await ensureToken();
   await delay(500);
+
   const now = new Date().toISOString();
-  
-  // Join multiple account numbers with commas for storage
-  const toAccountString = payload.toAccounts.join(', ');
-  
-  const newTransfer: Record<string, unknown> = {
+  const toAccountString = payload.toAccounts.join(", ");
+
+  const newTransfer: StoredTransfer = {
     id: nextId++,
     transactionCategoryId: payload.transactionCategoryId ?? 1,
     fromAccount: payload.fromAccount,
-    toAccount: toAccountString, // Store as comma-separated string
+    toAccount: toAccountString,
     amount: payload.amount,
     currencyId: payload.currencyId ?? 1,
     description: payload.description,
     createdAt: now,
     updatedAt: now,
     userId: 1,
-    categoryName: "Group Transfer", // Different category for group transfers
+    categoryName: "Group Transfer",
     currencyCode: "USD",
     packageName: "Standard",
     status: "Pending",
     requestedAt: now,
     commissionOnRecipient: payload.commissionOnRecipient,
     economicSectorId: payload.economicSectorId,
-    isGroupTransfer: true, // Flag to identify group transfers
+    isGroupTransfer: true,
   };
+
   groupTransfers.push(newTransfer);
   return ensureTransferResponse(newTransfer);
 }
 
-export async function updateTransfer(id: number, payload: TransferPayload): Promise<TransferResponse> {
+export async function updateTransfer(
+  id: number,
+  payload: TransferPayload
+): Promise<TransferResponse> {
+  await ensureToken();
   await delay(500);
+
   const index = groupTransfers.findIndex((t) => t.id === id);
   if (index === -1) throw new Error("Transfer not found");
+
   const now = new Date().toISOString();
-  const updatedTransfer: Record<string, unknown> = {
+
+  const updatedTransfer: StoredTransfer = {
     ...groupTransfers[index],
-    ...payload,
+    transactionCategoryId:
+      payload.transactionCategoryId ?? groupTransfers[index].transactionCategoryId ?? 1,
+    fromAccount: payload.fromAccount ?? groupTransfers[index].fromAccount,
+    toAccount: payload.toAccount ?? groupTransfers[index].toAccount,
+    amount: payload.amount ?? groupTransfers[index].amount,
+    currencyId: payload.currencyId ?? groupTransfers[index].currencyId ?? 1,
+    description: payload.description ?? groupTransfers[index].description ?? "",
     updatedAt: now,
+    commissionOnRecipient:
+      payload.commissionOnRecipient ?? groupTransfers[index].commissionOnRecipient,
+    economicSectorId:
+      payload.economicSectorId ?? groupTransfers[index].economicSectorId,
   };
+
   groupTransfers[index] = updatedTransfer;
   return ensureTransferResponse(updatedTransfer);
 }
 
 export async function deleteTransfer(id: number): Promise<void> {
+  await ensureToken();
   await delay(300);
+
   const index = groupTransfers.findIndex((t) => t.id === id);
   if (index === -1) throw new Error("Transfer not found");
   groupTransfers.splice(index, 1);

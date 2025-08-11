@@ -224,7 +224,6 @@ export default function ForeignTransfersForm({
             <Form>
               <ReasonBanner
                 reason={merged.reason} // merged = your combined initial values
-                label={t("rejectReason")} // or simply "Reason"
               />
               <TabsWizard
                 steps={steps}
@@ -233,7 +232,8 @@ export default function ForeignTransfersForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                isEditing={true}
+                isEditing={initialValues ? true : false} // true if initialValues are provided
+                backFallbackPath="/requests/foreignTransfers" // Adjust as needed
               />
             </Form>
           );

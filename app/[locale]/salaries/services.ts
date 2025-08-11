@@ -1,13 +1,11 @@
 "use client";
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import { PostSalaryCycleResponse, SalaryCyclesResponse, TSalaryTransaction } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
-const token = getAccessTokenFromCookies();
-
-
 
 /**
  * GET /api/employees/salarycycles
@@ -19,18 +17,37 @@ export async function getEmployeeSalaryCycles(
 ): Promise<SalaryCyclesResponse> {
   if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  const token = getAccessTokenFromCookies();
-  const url   = `${BASE_URL}/employees/salarycycles?page=${page}&limit=${limit}`;
+  const url = `${BASE_URL}/employees/salarycycles?page=${page}&limit=${limit}`;
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  // Read token at call time
+  let token = getAccessTokenFromCookies();
 
-  const res = await fetch(url, { method: "GET", headers });
+  const init = (bearer?: string): RequestInit => ({
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  // First attempt
+  let res = await fetch(url, init(token || undefined));
+
+  // If unauthorized and we had a token, refresh and retry once
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens(); // saves new cookies too
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through to shared error handling
+    }
+  }
+
   if (!res.ok) await throwApiError(res, "Failed to fetch salary cycles.");
-
   return (await res.json()) as SalaryCyclesResponse;
 }
-
 
 /* ---------- payload types ---------- */
 export type NewCycleEntry = { employeeId: number; salary: number };
@@ -45,6 +62,9 @@ export async function submitSalaryCycle(
   entries: NewCycleEntry[]
 ): Promise<SubmitCycleResponse> {
   if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  // Read token at call time
+  let token = getAccessTokenFromCookies();
   if (!token)
     console.warn(
       "No access token found in cookies – request will be sent unauthenticated."
@@ -58,21 +78,33 @@ export async function submitSalaryCycle(
     entries,
   };
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
-  const res = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "POST",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
     body: JSON.stringify(payload),
+    cache: "no-store",
   });
+
+  // First attempt
+  let res = await fetch(url, init(token || undefined));
+
+  // If unauthorized and we had a token, refresh and retry once
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) await throwApiError(res, "Failed to submit salary cycle.");
   return (await res.json()) as SubmitCycleResponse;
 }
-
 
 /**
  * POST /api/employees/salarycycles/{id}/post
@@ -91,6 +123,8 @@ export async function submitSalaryCycleForEmployee(
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
+  // Read token at call time
+  let token = getAccessTokenFromCookies();
   if (!token) {
     console.warn(
       "No access token found in cookies. This might cause authentication issues."
@@ -99,28 +133,37 @@ export async function submitSalaryCycleForEmployee(
 
   const url = `${BASE_URL}/api/employees/salarycycles/${employeeId}/post`;
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  // Only add Authorization header if token exists
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const res = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "POST",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
     body: JSON.stringify(payload),
+    cache: "no-store",
   });
+
+  // First attempt
+  let res = await fetch(url, init(token || undefined));
+
+  // If unauthorized and we had a token, refresh and retry once
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) {
     await throwApiError(res, "Failed to submit salary cycle for employee.");
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as { success: boolean; message: string };
   console.log("Employee Salary Cycle Submission Response:", data);
-  return data as { success: boolean; message: string };
+  return data;
 }
 
 /**
@@ -132,18 +175,37 @@ export async function getSalaryCycleById(
 ): Promise<TSalaryTransaction> {
   if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  const token   = getAccessTokenFromCookies();
-  const url     = `${BASE_URL}/employees/salarycycles/${cycleId}`;
+  const url = `${BASE_URL}/employees/salarycycles/${cycleId}`;
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  // Read token at call time
+  let token = getAccessTokenFromCookies();
 
-  const res = await fetch(url, { method: "GET", headers });
+  const init = (bearer?: string): RequestInit => ({
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  // First attempt
+  let res = await fetch(url, init(token || undefined));
+
+  // If unauthorized and we had a token, refresh and retry once
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!res.ok) await throwApiError(res, "Failed to fetch salary cycle by ID.");
-
   return (await res.json()) as TSalaryTransaction;
 }
-
 
 /**
  * PUT /employees/salarycycles/{id}
@@ -156,6 +218,9 @@ export async function editSalaryCycle(
   entries: NewCycleEntry[]
 ): Promise<SubmitCycleResponse> {
   if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  // Read token at call time
+  let token = getAccessTokenFromCookies();
   if (!token)
     console.warn(
       "No access token found in cookies – request will be sent unauthenticated."
@@ -165,30 +230,45 @@ export async function editSalaryCycle(
   const payload = {
     salaryMonth: salaryMonthISO,
     debitAccount,
-    currency: "LYD", // always LYD
+    currency: "LYD",
     entries,
   };
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
-  const res = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "PUT",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
     body: JSON.stringify(payload),
+    cache: "no-store",
   });
+
+  // First attempt
+  let res = await fetch(url, init(token || undefined));
+
+  // If unauthorized and we had a token, refresh and retry once
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) await throwApiError(res, "Failed to edit salary cycle.");
   return (await res.json()) as SubmitCycleResponse;
 }
 
-
 export async function postSalaryCycleById(
   cycleId: number
 ): Promise<PostSalaryCycleResponse> {
   if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  // Read token at call time
+  let token = getAccessTokenFromCookies();
   if (!token) {
     console.warn(
       "No access token found in cookies – request will be sent unauthenticated."
@@ -197,16 +277,29 @@ export async function postSalaryCycleById(
 
   const url = `${BASE_URL}/employees/salarycycles/${cycleId}/post`;
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-
-  const res = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "POST",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
     body: JSON.stringify({}),
+    cache: "no-store",
   });
+
+  // First attempt
+  let res = await fetch(url, init(token || undefined));
+
+  // If unauthorized and we had a token, refresh and retry once
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) {
     await throwApiError(res, "Failed to post salary cycle.");

@@ -1,60 +1,74 @@
+"use client";
+
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import type {
   RepresentativesResponse,
-  // CreateRepresentativeRequest,
-  // UpdateRepresentativeRequest,
   Representative,
   RepresentativeFormValues,
 } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
-const token = getAccessTokenFromCookies();
 
-
-
+/**
+ * GET /representatives
+ */
 export const getRepresentatives = async (
   page: number = 1,
   limit: number = 10,
   search?: string
 ): Promise<RepresentativesResponse> => {
-  if (!token) {
-    throw new Error("No access token found in cookies");
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
+
+  const url = new URL(`${BASE_URL}/representatives`);
+  url.searchParams.set("page", page.toString());
+  url.searchParams.set("limit", limit.toString());
+  if (search) url.searchParams.set("search", search);
+
+  const init = (bearer?: string): RequestInit => ({
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  let res = await fetch(url.toString(), init(token));
+
+  // Refresh only on 401
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url.toString(), init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  try {
-    const url = new URL(`${BASE_URL}/representatives`);
-    url.searchParams.set("page", page.toString());
-    url.searchParams.set("limit", limit.toString());
-    
-    if (search) {
-      url.searchParams.set("search", search);
-    }
-
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      await throwApiError(response, "Failed to fetch representatives");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching representatives:', error);
-    throw error;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to fetch representatives");
   }
+
+  const data = (await res.json()) as RepresentativesResponse;
+  return data;
 };
 
-// services.ts
+/**
+ * POST /representatives
+ * FormData upload (photo optional)
+ */
 export const createRepresentative = async (
   values: RepresentativeFormValues
 ): Promise<Representative> => {
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
 
   const formData = new FormData();
@@ -62,22 +76,48 @@ export const createRepresentative = async (
   formData.append("Number", values.number);
   formData.append("PassportNumber", values.passportNumber);
   formData.append("IsActive", String(values.isActive));
-  if (values.photo[0]) formData.append("Photo", values.photo[0]); // single file
+  if (values.photo && values.photo[0]) {
+    formData.append("Photo", values.photo[0]);
+  }
 
-  const res = await fetch(`${BASE_URL}/representatives`, {
+  const url = `${BASE_URL}/representatives`;
+
+  const init = (bearer?: string): RequestInit => ({
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` }, // 👈 let the browser add the boundary
+    headers: {
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
     body: formData,
+    cache: "no-store",
   });
 
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!res.ok) await throwApiError(res, "Failed to create representative");
-  return res.json();
+  return (await res.json()) as Representative;
 };
 
+/**
+ * PUT /representatives/{id}
+ * FormData upload (photo optional)
+ */
 export const updateRepresentative = async (
   id: number,
   values: RepresentativeFormValues
 ): Promise<Representative> => {
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
 
   const formData = new FormData();
@@ -85,131 +125,177 @@ export const updateRepresentative = async (
   formData.append("Number", values.number);
   formData.append("PassportNumber", values.passportNumber);
   formData.append("IsActive", String(values.isActive));
-  if (values.photo[0]) formData.append("Photo", values.photo[0]);
-
-  const res = await fetch(`${BASE_URL}/representatives/${id}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
-  });
-
-  if (!res.ok) await throwApiError(res, "Failed to update representative");
-  return res.json();
-};
-
-
-export const getRepresentativeById = async (
-  id: number,
-): Promise<Representative> => {
-  if (!token) {
-    throw new Error("No access token found in cookies");
+  if (values.photo && values.photo[0]) {
+    formData.append("Photo", values.photo[0]);
   }
 
-  const res = await fetch(`${BASE_URL}/representatives/${id}`, {
+  const url = `${BASE_URL}/representatives/${id}`;
+
+  const init = (bearer?: string): RequestInit => ({
+    method: "PUT",
+    headers: {
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    body: formData,
+    cache: "no-store",
+  });
+
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
+  if (!res.ok) await throwApiError(res, "Failed to update representative");
+  return (await res.json()) as Representative;
+};
+
+/**
+ * GET /representatives/{id}
+ */
+export const getRepresentativeById = async (
+  id: number
+): Promise<Representative> => {
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
+
+  const url = `${BASE_URL}/representatives/${id}`;
+
+  const init = (bearer?: string): RequestInit => ({
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
+    cache: "no-store",
   });
+
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!res.ok) {
     await throwApiError(res, "Failed to fetch representative by ID");
   }
 
-  return (await res.json()) as Representative;   // ✅ typed result
+  return (await res.json()) as Representative;
 };
 
+/**
+ * DELETE /representatives/{id}
+ */
 export const deleteRepresentative = async (id: number): Promise<void> => {
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  try {
-    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
-      method: 'DELETE',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-    if (!response.ok) {
-      await throwApiError(response, "Failed to delete representative");
+  const url = `${BASE_URL}/representatives/${id}`;
+
+  const init = (bearer?: string): RequestInit => ({
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
     }
-  } catch (error) {
-    console.error('Error deleting representative:', error);
-    throw error;
   }
+
+  if (!res.ok) {
+    await throwApiError(res, "Failed to delete representative");
+  }
+
+  return;
 };
 
-export const toggleRepresentativeStatus = async (id: number): Promise<Representative> => {
-  if (!token) {
-    throw new Error("No access token found in cookies");
+/**
+ * Toggle representative active/inactive status
+ * (fetch current, compute new status, PUT JSON)
+ */
+export const toggleRepresentativeStatus = async (
+  id: number
+): Promise<Representative> => {
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+
+  // Get current (handles its own refresh)
+  const currentRepresentative = await getRepresentativeById(id);
+  const newStatus = !currentRepresentative.isActive;
+
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
+
+  const updatedData = {
+    name: currentRepresentative.name,
+    number: currentRepresentative.number,
+    passportNumber: currentRepresentative.passportNumber,
+    isActive: newStatus,
+  };
+
+  const url = `${BASE_URL}/representatives/${id}`;
+
+  const init = (bearer?: string): RequestInit => ({
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    body: JSON.stringify(updatedData),
+    cache: "no-store",
+  });
+
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  try {
-    console.log('Starting toggle for representative ID:', id);
-    
-    // First get the current representative to know the current status
-    const currentRepresentative = await getRepresentativeById(id);
-    console.log('Current representative:', currentRepresentative);
-    console.log('Current representative status:', currentRepresentative.isActive);
-    
-    // Calculate the new status (opposite of current)
-    const newStatus = !currentRepresentative.isActive;
-    console.log('Calculated new status:', newStatus);
-    
-    // Update with the opposite status
-    const updatedData = {
-      name: currentRepresentative.name,
-      number: currentRepresentative.number,
-      passportNumber: currentRepresentative.passportNumber,
-      isActive: newStatus
-    };
-    
-    console.log('Sending update with new status:', updatedData.isActive);
-    console.log('Full update data:', updatedData);
-
-    const response = await fetch(`${BASE_URL}/representatives/${id}`, {
-      method: 'PUT',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(updatedData),
-    });
-
-    if (!response.ok) {
-      await throwApiError(response, "Failed to toggle representative status");
-    }
-
-    const result = await response.json();
-    console.log('Toggle API response:', result);
-    
-    // Handle different possible response structures
-    let finalResult: Representative;
-    
-    if (result.isActive !== undefined) {
-      // API returned the isActive field
-      finalResult = result;
-      console.log('Using API response isActive:', result.isActive);
-    } else {
-      // API didn't return isActive, use our calculated value
-      finalResult = {
-        name: result.name || currentRepresentative.name,
-        number: result.number || currentRepresentative.number,
-        passportNumber: result.passportNumber || currentRepresentative.passportNumber,
-        isActive: newStatus
-      };
-      console.log('Using calculated isActive:', newStatus);
-    }
-    
-    console.log('Final result:', finalResult);
-    console.log('Final isActive:', finalResult.isActive);
-    
-    return finalResult;
-  } catch (error) {
-    console.error('Error toggling representative status:', error);
-    throw error;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to toggle representative status");
   }
-}; 
+
+  const result = (await res.json()) as Partial<Representative>;
+
+  // Normalize the response to include isActive
+  const finalResult: Representative = {
+    name: result.name ?? currentRepresentative.name,
+    number: result.number ?? currentRepresentative.number,
+    passportNumber: result.passportNumber ?? currentRepresentative.passportNumber,
+    isActive: result.isActive ?? newStatus,
+  };
+
+  return finalResult;
+};

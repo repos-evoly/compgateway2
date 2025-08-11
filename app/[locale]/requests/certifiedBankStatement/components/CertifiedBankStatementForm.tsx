@@ -17,7 +17,6 @@ import {
   step1StatementInputs,
   step2StatementInputs,
 } from "./statementInputs";
-import FormHeader from "@/app/components/reusable/FormHeader";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -132,8 +131,6 @@ export default function CertifiedBankStatementForm({
     onSubmit(vals);
     helpers.setSubmitting(false);
   };
-  const status =
-    (initialValues as { status?: string } | undefined)?.status ?? undefined;
 
   return (
     <div className="w-full rounded-md bg-gray-50 p-4">
@@ -173,15 +170,14 @@ export default function CertifiedBankStatementForm({
             <Form>
               <ReasonBanner
                 reason={merged.reason} // or initialValues?.reason
-                label={t("rejectReason")} // use your i18n key or plain "Reason"
               />
 
-              <FormHeader
+              {/* <FormHeader
                 showBackButton
                 fallbackPath="/requests/certifiedBankStatement"
                 status={status}
                 isEditing={true}
-              />
+              /> */}
               <TabsWizard
                 steps={steps}
                 formik={formik}

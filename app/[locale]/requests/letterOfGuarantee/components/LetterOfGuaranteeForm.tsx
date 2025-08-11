@@ -29,6 +29,7 @@ import type { TLetterOfGuarantee } from "../types";
 import type { CurrenciesResponse } from "@/app/[locale]/currencies/types";
 import type { AccountInfo } from "@/app/helpers/checkAccount";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
+import BackButton from "@/app/components/reusable/BackButton";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
@@ -107,8 +108,6 @@ function InnerForm({
     setAvailableBalance,
     tu,
   ]);
-  const status =
-    (initialData as { status?: string } | undefined)?.status ?? undefined;
 
   const accountHasError = Boolean(
     errors.accountNumber && touched.accountNumber
@@ -118,9 +117,13 @@ function InnerForm({
     <Form>
       <ReasonBanner
         reason={initialData?.reason} // or values.reason if you prefer
-        label={tu("rejectReason")} // optional heading (use your i18n key)
       />
-      <FormHeader showBackButton status={status} isEditing={true} />
+      <FormHeader>
+        <BackButton
+          isEditing={initialData ? true : false}
+          fallbackPath="/requests/letterOfGuarantee"
+        />
+      </FormHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         {/* Account Number -> InputSelectCombo */}

@@ -1220,5 +1220,8 @@
       "cancel": "Cancel",
       "confirm": "Confirm"
     }
+  },
+  "common":{
+    "rejectReason":"Reason for Rejection"
   }
 }

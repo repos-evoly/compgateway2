@@ -204,6 +204,7 @@ export async function loginRoutingHandler(
   router: SimpleRouter,
   onCompanyNotApproved?: OnCompanyNotApproved
 ): Promise<void> {
+  
   // Store tokens in Cookies
   Cookies.set("accessToken", accessToken, {
     expires: 7,

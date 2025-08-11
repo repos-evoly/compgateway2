@@ -1,12 +1,39 @@
 "use client";
 
-import { TCheckRequestFormValues, TCheckRequestsResponse, TCheckRequestValues } from "./types";
+import type {
+  TCheckRequestFormValues,
+  TCheckRequestsResponse,
+  TCheckRequestValues,
+} from "./types";
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
-import { TKycResponse } from "@/app/auth/register/types";
+import type { TKycResponse } from "@/app/auth/register/types";
+
+/* Use the same base used across the app; falls back to the fixed IP if env missing */
+const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+
+/* Helper to build RequestInit with optional bearer */
+const init = (method: "GET" | "POST" | "PUT" | "DELETE", bearer?: string, body?: unknown): RequestInit => ({
+  method,
+  headers: {
+    ...(body ? { "Content-Type": "application/json" } : {}),
+    ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+  },
+  ...(body ? { body: JSON.stringify(body) } : {}),
+  cache: "no-store",
+});
+
+/* Minimal type for representatives list used to map names */
+type RepresentativesList = {
+  data: Array<{ id: number; name: string }>;
+};
 
 /**
  * Fetch all check requests (GET), with optional pagination & search.
+ * - Reads token at call time
+ * - On 401, refreshes once and retries
+ * - Also fetches representatives to annotate representativeName
  */
 export async function getCheckRequests(
   page: number,
@@ -14,15 +41,12 @@ export async function getCheckRequests(
   searchTerm: string = "",
   searchBy: string = ""
 ): Promise<TCheckRequestsResponse> {
-  const baseUrl = "http://10.3.3.11/compgateapi/api"; 
   if (!baseUrl) {
     throw new Error("Base API URL is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
   const url = new URL(`${baseUrl}/checkrequests`);
   url.searchParams.set("page", String(page));
@@ -30,74 +54,56 @@ export async function getCheckRequests(
   if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
   if (searchBy) url.searchParams.set("searchBy", searchBy);
 
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // First attempt
+  let response = await fetch(url.toString(), init("GET", token));
+
+  // Refresh + retry once on 401
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url.toString(), init("GET", token));
+    } catch {
+      // fall through to error handling
+    }
+  }
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch check requests.");
   }
 
-  const data = await response.json() as TCheckRequestsResponse;
-  
-  console.log('API response for check requests:', data.data);
-  
-  // Fetch representative names for each check request
+  const data = (await response.json()) as TCheckRequestsResponse;
+
+  // Optionally enrich with representative names
   if (data.data && data.data.length > 0) {
     try {
-      // Use the same base URL as check requests for consistency
-      const baseUrl = "http://10.3.3.11/compgateapi/api";
-      const token = getAccessTokenFromCookies(); // Re-get token for representatives
-      if (!token) {
-        console.error('No access token found for representatives.');
-        throw new Error('No access token found for representatives.');
+      // Use latest token from cookies (might have been refreshed)
+      let repToken = getAccessTokenFromCookies();
+      if (!repToken) throw new Error("No access token found for representatives.");
+
+      const repsUrl = `${baseUrl}/representatives?page=1&limit=1000`;
+
+      let repsRes = await fetch(repsUrl, init("GET", repToken));
+      if (repsRes.status === 401 && repToken) {
+        const refreshed = await refreshAuthTokens();
+        repToken = refreshed.accessToken;
+        repsRes = await fetch(repsUrl, init("GET", repToken));
       }
 
-      const representativesResponse = await fetch(`${baseUrl}/representatives?page=1&limit=1000`, {
-        method: 'GET',
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
 
-      if (!representativesResponse.ok) {
-        console.error('Failed to fetch representatives:', representativesResponse.status);
-        throw new Error('Failed to fetch representatives');
-      }
+      const repsData = (await repsRes.json()) as RepresentativesList;
+      const map = new Map<number, string>(repsData.data.map((r) => [r.id, r.name]));
 
-      const representativesData = await representativesResponse.json();
-      console.log('Fetched representatives:', representativesData.data);
-      console.log('Representatives response structure:', representativesData);
-      
-      const representativesMap = new Map(
-        representativesData.data.map((rep: { id: number; name: string }) => [rep.id, rep.name])
-      );
-      console.log('Representatives map:', Array.from(representativesMap.entries()));
-      
-      // Add representative names to each check request
-      data.data = data.data.map(checkRequest => {
-        const representativeName = checkRequest.representativeId 
-          ? (representativesMap.get(checkRequest.representativeId) as string) || `ID: ${checkRequest.representativeId}`
-          : undefined;
-        
-        console.log('Check request:', {
-          id: checkRequest.id,
-          representativeId: checkRequest.representativeId,
-          representativeName: representativeName
-        });
-        
-        return {
-          ...checkRequest,
-          representativeName
-        };
-      });
-    } catch (error) {
-      console.error('Failed to fetch representative names:', error);
-      // Continue without representative names if there's an error
+      data.data = data.data.map((cr) => ({
+        ...cr,
+        representativeName:
+          typeof cr.representativeId === "number"
+            ? map.get(cr.representativeId) ?? `ID: ${cr.representativeId}`
+            : undefined,
+      }));
+    } catch {
+      // silently continue without representative names
     }
   }
 
@@ -106,257 +112,248 @@ export async function getCheckRequests(
 
 /**
  * Creates a new check request (POST)
+ * - On 401, refresh once and retry
+ * - Enrich response with representativeName if available
  */
 export async function createCheckRequest(values: TCheckRequestFormValues): Promise<TCheckRequestValues> {
-  const baseUrl = "http://10.3.3.11/compgateapi/api"; 
   if (!baseUrl) {
     throw new Error("Base API URL is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  // Convert form values to API format
   const payload = {
     branch: values.branch,
-    date: values.date.toISOString(), // Convert Date to ISO string
+    date: values.date.toISOString(),
     customerName: values.customerName,
     cardNum: values.cardNum,
     accountNum: values.accountNum,
     beneficiary: values.beneficiary,
     representativeId: values.representativeId,
-    lineItems: values.lineItems.map(item => ({
+    lineItems: values.lineItems.map((item) => ({
       dirham: item.dirham,
       lyd: item.lyd,
     })),
   };
 
-  const response = await fetch(`${baseUrl}/checkrequests`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  const url = `${baseUrl}/checkrequests`;
+
+  let response = await fetch(url, init("POST", token, payload));
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init("POST", token, payload));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!response.ok) {
     await throwApiError(response, "Failed to create check request.");
   }
 
-  const responseData = await response.json() as TCheckRequestValues;
-  
-  // Fetch representative name if representativeId exists
+  const responseData = (await response.json()) as TCheckRequestValues;
+
+  // Enrich with representative name if possible
   if (responseData.representativeId) {
     try {
-      const baseUrl = "http://10.3.3.11/compgateapi/api";
-      const token = getAccessTokenFromCookies();
-      if (!token) {
-        console.error('No access token found for representatives.');
-        throw new Error('No access token found for representatives.');
+      let repToken = getAccessTokenFromCookies();
+      if (!repToken) throw new Error("No access token found for representatives.");
+
+      const repsUrl = `${baseUrl}/representatives?page=1&limit=1000`;
+
+      let repsRes = await fetch(repsUrl, init("GET", repToken));
+      if (repsRes.status === 401 && repToken) {
+        const refreshed = await refreshAuthTokens();
+        repToken = refreshed.accessToken;
+        repsRes = await fetch(repsUrl, init("GET", repToken));
       }
 
-      const representativesResponse = await fetch(`${baseUrl}/representatives?page=1&limit=1000`, {
-        method: 'GET',
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
 
-      if (!representativesResponse.ok) {
-        console.error('Failed to fetch representatives:', representativesResponse.status);
-        throw new Error('Failed to fetch representatives');
+      const repsData = (await repsRes.json()) as RepresentativesList;
+      const rep = repsData.data.find((r) => r.id === responseData.representativeId);
+      if (rep) {
+        responseData.representativeName = rep.name;
       }
-
-      const representativesData = await representativesResponse.json();
-      const representative = representativesData.data.find((rep: { id: number; name: string }) => rep.id === responseData.representativeId);
-      if (representative) {
-        responseData.representativeName = representative.name;
-      }
-    } catch (error) {
-      console.error('Failed to fetch representative name:', error);
-      // Continue without representative name if there's an error
+    } catch {
+      // ignore representative name enrichment failure
     }
   }
-  
+
   return responseData;
 }
 
 /**
  * Fetch a single check request by ID (GET)
+ * - On 401, refresh once and retry
+ * - Enrich with representativeName if available
  */
 export async function getCheckRequestById(id: string | number): Promise<TCheckRequestValues> {
-  const baseUrl = "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) {
     throw new Error("Base API URL is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  const response = await fetch(`${baseUrl}/checkrequests/${id}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const url = `${baseUrl}/checkrequests/${id}`;
+
+  let response = await fetch(url, init("GET", token));
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init("GET", token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!response.ok) {
     await throwApiError(response, `Failed to fetch check request by ID ${id}.`);
   }
 
-  const data = await response.json() as TCheckRequestValues;
-  
-  // Fetch representative name if representativeId exists
+  const data = (await response.json()) as TCheckRequestValues;
+
+  // Enrich with representative name
   if (data.representativeId) {
     try {
-      const baseUrl = "http://10.3.3.11/compgateapi/api";
-      const token = getAccessTokenFromCookies();
-      if (!token) {
-        console.error('No access token found for representatives.');
-        throw new Error('No access token found for representatives.');
+      let repToken = getAccessTokenFromCookies();
+      if (!repToken) throw new Error("No access token found for representatives.");
+
+      const repsUrl = `${baseUrl}/representatives?page=1&limit=1000`;
+
+      let repsRes = await fetch(repsUrl, init("GET", repToken));
+      if (repsRes.status === 401 && repToken) {
+        const refreshed = await refreshAuthTokens();
+        repToken = refreshed.accessToken;
+        repsRes = await fetch(repsUrl, init("GET", repToken));
       }
 
-      const representativesResponse = await fetch(`${baseUrl}/representatives?page=1&limit=1000`, {
-        method: 'GET',
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
 
-      if (!representativesResponse.ok) {
-        console.error('Failed to fetch representatives:', representativesResponse.status);
-        throw new Error('Failed to fetch representatives');
+      const repsData = (await repsRes.json()) as RepresentativesList;
+      const rep = repsData.data.find((r) => r.id === data.representativeId);
+      if (rep) {
+        data.representativeName = rep.name;
       }
-
-      const representativesData = await representativesResponse.json();
-      const representative = representativesData.data.find((rep: { id: number; name: string }) => rep.id === data.representativeId);
-      if (representative) {
-        data.representativeName = representative.name;
-      }
-    } catch (error) {
-      console.error('Failed to fetch representative name:', error);
-      // Continue without representative name if there's an error
+    } catch {
+      // ignore enrichment failure
     }
   }
-  
+
   return data;
 }
 
 /**
  * Updates a check request (PUT) with all the data fields.
+ * - On 401, refresh once and retry
+ * - Enrich with representativeName if available
  */
 export async function updateCheckRequestById(
   id: string | number,
   values: TCheckRequestFormValues
 ): Promise<TCheckRequestValues> {
-  const baseUrl = "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) {
     throw new Error("Base API URL is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  // Convert form values to API format
   const payload = {
     branch: values.branch,
-    date: values.date.toISOString(), // Convert Date to ISO string
+    date: values.date.toISOString(),
     customerName: values.customerName,
     cardNum: values.cardNum,
     accountNum: values.accountNum,
     beneficiary: values.beneficiary,
     representativeId: values.representativeId,
-    lineItems: values.lineItems.map(item => ({
+    lineItems: values.lineItems.map((item) => ({
       dirham: item.dirham,
       lyd: item.lyd,
     })),
   };
 
-  const response = await fetch(`${baseUrl}/checkrequests/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  const url = `${baseUrl}/checkrequests/${id}`;
+
+  let response = await fetch(url, init("PUT", token, payload));
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init("PUT", token, payload));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!response.ok) {
     await throwApiError(response, `Failed to update check request with ID ${id}.`);
   }
 
-  const responseData = await response.json() as TCheckRequestValues;
-  
-  // Fetch representative name if representativeId exists
+  const responseData = (await response.json()) as TCheckRequestValues;
+
   if (responseData.representativeId) {
     try {
-      const baseUrl = "http://10.3.3.11/compgateapi/api";
-      const token = getAccessTokenFromCookies();
-      if (!token) {
-        console.error('No access token found for representatives.');
-        throw new Error('No access token found for representatives.');
+      let repToken = getAccessTokenFromCookies();
+      if (!repToken) throw new Error("No access token found for representatives.");
+
+      const repsUrl = `${baseUrl}/representatives?page=1&limit=1000`;
+
+      let repsRes = await fetch(repsUrl, init("GET", repToken));
+      if (repsRes.status === 401 && repToken) {
+        const refreshed = await refreshAuthTokens();
+        repToken = refreshed.accessToken;
+        repsRes = await fetch(repsUrl, init("GET", repToken));
       }
 
-      const representativesResponse = await fetch(`${baseUrl}/representatives?page=1&limit=1000`, {
-        method: 'GET',
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
 
-      if (!representativesResponse.ok) {
-        console.error('Failed to fetch representatives:', representativesResponse.status);
-        throw new Error('Failed to fetch representatives');
+      const repsData = (await repsRes.json()) as RepresentativesList;
+      const rep = repsData.data.find((r) => r.id === responseData.representativeId);
+      if (rep) {
+        responseData.representativeName = rep.name;
       }
-
-      const representativesData = await representativesResponse.json();
-      const representative = representativesData.data.find((rep: { id: number; name: string }) => rep.id === responseData.representativeId);
-      if (representative) {
-        responseData.representativeName = representative.name;
-      }
-    } catch (error) {
-      console.error('Failed to fetch representative name:', error);
-      // Continue without representative name if there's an error
+    } catch {
+      // ignore enrichment failure
     }
   }
-  
+
   return responseData;
 }
 
 /**
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
+ * - On 401, refresh once and retry
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  const baseUrl = "http://10.3.3.11/compgateapi/api";
   if (!baseUrl) {
     throw new Error("Base API URL is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  const response = await fetch(`${baseUrl}/companies/kyc/${code}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const url = `${baseUrl}/companies/kyc/${code}`;
+
+  let response = await fetch(url, init("GET", token));
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init("GET", token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch KYC data");
   }
 
-  return response.json();
+  return (await response.json()) as TKycResponse;
 }

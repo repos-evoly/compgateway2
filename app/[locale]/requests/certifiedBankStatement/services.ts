@@ -1,18 +1,17 @@
+// app/(wherever)/certifiedbankstatements/services.ts
 "use client";
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import {
   CertifiedBankStatementRequest,
   CertifiedBankStatementRequestWithID,
   ServicesRequest,
-} from "./types"; // <-- Import from the single source
+} from "./types";
 import { throwApiError } from "@/app/helpers/handleApiError";
-
 
 /**
  * The raw shape the API returns for each statement
- * (If you don't want to define it, you can inline or skip, 
- *  but let's keep it here for clarity.)
  */
 type ApiCertifiedBankStatement = {
   id: number;
@@ -41,7 +40,7 @@ type ApiCertifiedBankStatement = {
 };
 
 /**
- * The shape of the paginated response 
+ * The shape of the paginated response
  */
 type GetCertifiedBankStatementsResponse = {
   data: ApiCertifiedBankStatement[];
@@ -51,19 +50,14 @@ type GetCertifiedBankStatementsResponse = {
   totalRecords: number;
 };
 
-// Token & base URL
-const token = getAccessTokenFromCookies();
-const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-if (!baseUrl) {
-  throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-}
-if (!token) {
-  throw new Error("No access token found in cookies");
-}
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+
+const shouldRefresh = (s: number) => s === 401 || s === 403;
 
 /**
  * Fetch a list of Certified Bank Statements from the API,
- * with optional pagination/search, returning them in the 
+ * with optional pagination/search, returning them in the
  * shape your grid expects (CertifiedBankStatementRequestWithID[]).
  */
 export async function getCertifiedBankStatements(params?: {
@@ -78,31 +72,47 @@ export async function getCertifiedBankStatements(params?: {
   totalPages: number;
   totalRecords: number;
 }> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
   const { searchTerm, searchBy, page, limit } = params || {};
-  const url = new URL(`${baseUrl}/certifiedbankstatementrequests`);
+  const url = new URL(`${BASE_URL}/certifiedbankstatementrequests`);
 
   if (page) url.searchParams.set("page", String(page));
   if (limit) url.searchParams.set("limit", String(limit));
   if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
   if (searchBy) url.searchParams.set("searchBy", searchBy);
 
-  const response = await fetch(url.toString(), {
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const init = (bearer: string): RequestInit => ({
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
   });
 
+  let response = await fetch(url.toString(), init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url.toString(), init(token));
+    } catch {
+      // fall through to shared error handling
+    }
+  }
+
   if (!response.ok) {
-    await throwApiError(
-      response,
-      "Failed to fetch Certified Bank Statements."
-    );
+    await throwApiError(response, "Failed to fetch Certified Bank Statements.");
   }
 
   const result = (await response.json()) as GetCertifiedBankStatementsResponse;
 
-  // Transform each API record into the shape the form/grid expects
   const transformedData: CertifiedBankStatementRequestWithID[] = result.data.map(
     (apiItem) => transformApiToFormShape(apiItem)
   );
@@ -118,21 +128,40 @@ export async function getCertifiedBankStatements(params?: {
 }
 
 /**
- * Fetch a single Certified Bank Statement by ID 
- * and return it in the shape the **form** expects.
+ * Fetch a single Certified Bank Statement by ID
+ * and return it in the shape the form expects.
  */
 export async function getCertifiedBankStatementById(
   id: number
 ): Promise<CertifiedBankStatementRequestWithID> {
-  const response = await fetch(
-    `${baseUrl}/certifiedbankstatementrequests/${id}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${BASE_URL}/certifiedbankstatementrequests/${id}`;
+
+  const init = (bearer: string): RequestInit => ({
+    method: "GET",
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
+  });
+
+  let response = await fetch(url, init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
     }
-  );
+  }
 
   if (!response.ok) {
     await throwApiError(
@@ -149,9 +178,8 @@ export async function getCertifiedBankStatementById(
  * Transform the API shape to the shape the form needs.
  */
 function transformApiToFormShape(
-  apiItem: ApiCertifiedBankStatement,
+  apiItem: ApiCertifiedBankStatement
 ): CertifiedBankStatementRequestWithID {
-  /* ensure we always have a non-null object */
   const srv = apiItem.serviceRequests ?? {
     reactivateIdfaali: false,
     deactivateIdfaali: false,
@@ -179,7 +207,6 @@ function transformApiToFormShape(
     oldAccountNumber: apiItem.oldAccountNumber ?? undefined,
     newAccountNumber: apiItem.newAccountNumber ?? undefined,
 
-    /* safe serviceRequests */
     serviceRequests: {
       reactivateIdfaali: srv.reactivateIdfaali,
       deactivateIdfaali: srv.deactivateIdfaali,
@@ -188,34 +215,36 @@ function transformApiToFormShape(
       changePhoneNumber: srv.changePhoneNumber,
     },
 
-    /* safe statementRequest */
     statementRequest: {
       currentAccountStatement: {
-        arabic:   stmt.currentAccountStatementArabic   ?? false,
-        english:  stmt.currentAccountStatementEnglish ?? false,
+        arabic: stmt.currentAccountStatementArabic ?? false,
+        english: stmt.currentAccountStatementEnglish ?? false,
       },
-      visaAccountStatement:  stmt.visaAccountStatement  ?? false,
-      fromDate:              stmt.fromDate              ?? "",
-      toDate:                stmt.toDate                ?? "",
-      accountStatement:      stmt.accountStatement      ?? false,
-      journalMovement:       stmt.journalMovement       ?? false,
-      nonFinancialCommitment:stmt.nonFinancialCommitment?? false,
+      visaAccountStatement: stmt.visaAccountStatement ?? false,
+      fromDate: stmt.fromDate ?? "",
+      toDate: stmt.toDate ?? "",
+      accountStatement: stmt.accountStatement ?? false,
+      journalMovement: stmt.journalMovement ?? false,
+      nonFinancialCommitment: stmt.nonFinancialCommitment ?? false,
     },
   };
 }
 
-
-
-
 /**
  * Create a new Certified Bank Statement.
- * Converts the form-shape payload to the API shape, then maps the response
- * back to the form/grid shape you work with elsewhere.
  */
 export async function createCertifiedBankStatement(
   payload: CertifiedBankStatementRequest
 ): Promise<CertifiedBankStatementRequestWithID> {
-  // 1) Map form fields ➜ API fields
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
   const apiBody = {
     accountHolderName: payload.accountHolderName ?? null,
     authorizedOnTheAccountName: payload.authorizedOnTheAccountName ?? null,
@@ -247,20 +276,30 @@ export async function createCertifiedBankStatement(
     },
   };
 
-  // 2) POST to the API
-  const response = await fetch(
-    `${baseUrl}/certifiedbankstatementrequests`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(apiBody),
-    }
-  );
+  const url = `${BASE_URL}/certifiedbankstatementrequests`;
 
-  // 3) Handle errors (throws on non-2xx)
+  const init = (bearer: string): RequestInit => ({
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${bearer}`,
+    },
+    body: JSON.stringify(apiBody),
+    cache: "no-store",
+  });
+
+  let response = await fetch(url, init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
     await throwApiError(
       response,
@@ -268,21 +307,26 @@ export async function createCertifiedBankStatement(
     );
   }
 
-  // 4) Map API ➜ form shape and return
   const apiResult = (await response.json()) as ApiCertifiedBankStatement;
   return transformApiToFormShape(apiResult);
 }
 
 /**
  * Update an existing Certified Bank Statement.
- * Converts the form-shape payload to the API shape, then maps the response
- * back to the form/grid shape you work with elsewhere.
  */
 export async function updateCertifiedBankStatement(
   id: number,
   payload: CertifiedBankStatementRequest
 ): Promise<CertifiedBankStatementRequestWithID> {
-  // 1) Map form fields ➜ API fields
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  }
+
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
   const apiBody = {
     accountHolderName: payload.accountHolderName ?? null,
     authorizedOnTheAccountName: payload.authorizedOnTheAccountName ?? null,
@@ -314,20 +358,30 @@ export async function updateCertifiedBankStatement(
     },
   };
 
-  // 2) PUT to the API
-  const response = await fetch(
-    `${baseUrl}/certifiedbankstatementrequests/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(apiBody),
-    }
-  );
+  const url = `${BASE_URL}/certifiedbankstatementrequests/${id}`;
 
-  // 3) Handle errors (throws on non-2xx)
+  const init = (bearer: string): RequestInit => ({
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${bearer}`,
+    },
+    body: JSON.stringify(apiBody),
+    cache: "no-store",
+  });
+
+  let response = await fetch(url, init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
     await throwApiError(
       response,
@@ -335,7 +389,6 @@ export async function updateCertifiedBankStatement(
     );
   }
 
-  // 4) Map API ➜ form shape and return
   const apiResult = (await response.json()) as ApiCertifiedBankStatement;
   return transformApiToFormShape(apiResult);
 }

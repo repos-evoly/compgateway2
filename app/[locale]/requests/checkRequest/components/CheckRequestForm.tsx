@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import Cookies from "js-cookie";
 
@@ -19,7 +19,7 @@ import { useFormikContext, useField } from "formik";
 import { TCheckRequestFormValues } from "../types";
 import { getKycByCode } from "../services";
 import FormHeader from "@/app/components/reusable/FormHeader";
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import { TCheckRequestFormProps } from "../types";
 
@@ -33,7 +33,7 @@ import BackButton from "@/app/components/reusable/BackButton";
 /* AccountNumberDropdown Component                                             */
 /* -------------------------------------------------------------------------- */
 
-interface AccountNumberDropdownProps {
+type AccountNumberDropdownProps = {
   name: string;
   label: string;
   options: InputSelectComboOption[];
@@ -43,10 +43,14 @@ interface AccountNumberDropdownProps {
   disabled: boolean;
   onAccountChange: (
     accountNumber: string,
-    setFieldValue: (field: string, value: unknown) => void
+    setFieldValue: (
+      field: string,
+      value: unknown,
+      shouldValidate?: boolean
+    ) => void
   ) => void;
   isLoadingKyc: boolean;
-}
+};
 
 const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
   onAccountChange,
@@ -55,12 +59,16 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
   ...props
 }) => {
   const { setFieldValue } = useFormikContext();
-  const [field] = useField(name);
+  const [field] = useField<string>(name);
 
-  // Watch for changes in the field value
+  /* Guard to only call onAccountChange when the value actually changes */
+  const prevValueRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
-    if (field.value) {
-      onAccountChange(field.value, setFieldValue);
+    const current = field.value;
+    if (current && current !== prevValueRef.current) {
+      prevValueRef.current = current;
+      onAccountChange(current, setFieldValue);
     }
   }, [field.value, onAccountChange, setFieldValue]);
 
@@ -68,8 +76,8 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
     <div className="relative">
       <InputSelectCombo name={name} {...props} />
       {isLoadingKyc && (
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 transform">
+          <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600" />
         </div>
       )}
     </div>
@@ -88,7 +96,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
 }) => {
   const t = useTranslations("CheckRequest");
 
-  /* modal state (NEW) */
+  /* modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
@@ -162,7 +170,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
     const fetchRepresentatives = async () => {
       setIsLoadingRepresentatives(true);
       try {
-        const response = await getRepresentatives(1, 100); // Fetch up to 100 representatives
+        const response = await getRepresentatives(1, 100);
         const options = response.data.map((rep) => ({
           label: rep.name,
           value: rep.id,
@@ -179,68 +187,63 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
     fetchRepresentatives();
   }, []);
 
-  /* Function to extract company code from account number */
-  const extractCompanyCode = (accountNumber: string): string => {
-    // Remove any non-digit characters
+  /* Extract company code (stable) */
+  const extractCompanyCode = useCallback((accountNumber: string): string => {
     const cleanAccount = accountNumber.replace(/\D/g, "");
-
-    // Check if we have at least 10 digits (4 + 6)
-    if (cleanAccount.length >= 10) {
-      // Extract 6 digits after the first 4 digits
-      return cleanAccount.substring(4, 10);
-    }
-
+    if (cleanAccount.length >= 10) return cleanAccount.substring(4, 10);
     return "";
-  };
+  }, []);
 
-  /* Function to fetch and populate KYC data */
-  const handleAccountNumberChange = async (
-    accountNumber: string,
-    setFieldValue: (field: string, value: unknown) => void
-  ) => {
-    if (!accountNumber) return;
+  /* Deduplicate KYC fetches for the same company code */
+  const lastFetchedCodeRef = useRef<string | null>(null);
 
-    const companyCode = extractCompanyCode(accountNumber);
-    if (!companyCode) return;
+  /* Fetch and populate KYC data (stable) */
+  const handleAccountNumberChange = useCallback(
+    async (
+      accountNumber: string,
+      setFieldValue: (
+        field: string,
+        value: unknown,
+        shouldValidate?: boolean
+      ) => void
+    ) => {
+      if (!accountNumber) return;
 
-    setIsLoadingKyc(true);
+      const companyCode = extractCompanyCode(accountNumber);
+      if (!companyCode) return;
 
-    try {
-      const kycData = await getKycByCode(companyCode);
+      /* Prevent repeat calls for the same code */
+      if (lastFetchedCodeRef.current === companyCode) return;
+      lastFetchedCodeRef.current = companyCode;
 
-      if (kycData.hasKyc && kycData.data) {
-        // Update form fields with KYC data
-        setFieldValue(
-          "customerName",
-          kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName
-        );
-        setFieldValue("branch", kycData.data.branchName);
+      setIsLoadingKyc(true);
+      try {
+        const kycData = await getKycByCode(companyCode);
 
-        // Build address from KYC data
-        const addressParts = [];
-        if (kycData.data.street) addressParts.push(kycData.data.street);
-        if (kycData.data.district) addressParts.push(kycData.data.district);
-        if (kycData.data.city) addressParts.push(kycData.data.city);
+        if (kycData.hasKyc && kycData.data) {
+          setFieldValue(
+            "customerName",
+            kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName
+          );
+          setFieldValue("branch", kycData.data.branchName);
 
-        const fullAddress = addressParts.join(", ");
-        setFieldValue("address", fullAddress);
+          const parts: string[] = [];
+          if (kycData.data.street) parts.push(kycData.data.street);
+          if (kycData.data.district) parts.push(kycData.data.district);
+          if (kycData.data.city) parts.push(kycData.data.city);
+          setFieldValue("address", parts.join(", "));
+        }
+      } catch (error) {
+        console.error("Failed to fetch KYC data:", error);
+      } finally {
+        setIsLoadingKyc(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch KYC data:", error);
-    } finally {
-      setIsLoadingKyc(false);
-    }
-  };
+    },
+    [extractCompanyCode]
+  );
 
   /* form fields array */
   const formFields = [
-    // {
-    //   name: "branch",
-    //   label: t("branch"),
-    //   type: "text",
-    //   component: FormInputIcon,
-    //   readOnly: true, // Make branch read-only
-    // },
     {
       name: "date",
       label: t("date"),
@@ -252,7 +255,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       label: t("customerName"),
       type: "text",
       component: FormInputIcon,
-      readOnly: true, // Make customer name read-only
+      readOnly: true,
     },
     {
       name: "cardNum",
@@ -272,7 +275,6 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
 
   /* wrapped submit */
   const handleSubmit = async (values: TCheckRequestFormValues) => {
-    // Validate that at least one amount is provided and is numeric
     const hasValidAmount = values.lineItems.some((item) => {
       const dirhamValid =
         item.dirham && item.dirham.trim() !== "" && !isNaN(Number(item.dirham));
@@ -281,7 +283,6 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       return dirhamValid || lydValid;
     });
 
-    // Check if there are any non-numeric values
     const hasNonNumericValues = values.lineItems.some((item) => {
       const dirhamNonNumeric =
         item.dirham && item.dirham.trim() !== "" && isNaN(Number(item.dirham));
@@ -324,11 +325,10 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   /* JSX */
   return (
     <>
-      <div className="mt-4 rounded w-full bg-gray-100">
+      <div className="rounded w-full bg-gray-100">
         {initialValues?.reason && (
           <ReasonBanner
             reason={initialValues.reason}
-            label={t("rejectReason")}
           />
         )}
 
@@ -344,8 +344,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
             initialValues={mergedValues}
             onSubmit={handleSubmit}
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Account Number dropdown - First field */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <AccountNumberDropdown
                 name="accountNum"
                 label={t("accountNum")}
@@ -365,7 +364,6 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
                 disabled={readOnly || isSubmitting}
               />
 
-              {/* Representative dropdown */}
               <InputSelectCombo
                 name="representativeId"
                 label={t("delegate")}
@@ -375,7 +373,6 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
                 disabled={readOnly || isSubmitting || isLoadingRepresentatives}
               />
 
-              {/* Other form fields */}
               {formFields.map(
                 ({ component: Field, readOnly: fieldReadOnly, ...props }) => (
                   <Field
@@ -394,7 +391,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
 
             <Description
               variant="h3"
-              className="text-black font-bold text-center"
+              className="text-center font-bold text-black"
             >
               {t("note")}
             </Description>
@@ -414,7 +411,6 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
         </div>
       </div>
 
-      {/* Error / Success modal (NEW) */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

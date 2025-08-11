@@ -1,9 +1,9 @@
 "use client";
 
-import { TCheckbookFormValues, TCheckbookResponse, TCheckbookValues } from "./types";
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // Adjust path if needed
+import type { TCheckbookFormValues, TCheckbookResponse, TCheckbookValues } from "./types";
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
-
 
 /**
  * Fetch all checkbook requests (GET), with optional pagination & search.
@@ -14,12 +14,12 @@ export async function getCheckbookRequests(
   searchTerm: string = "",
   searchBy: string = ""
 ): Promise<TCheckbookResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API; 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
@@ -30,17 +30,30 @@ export async function getCheckbookRequests(
   if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
   if (searchBy) url.searchParams.set("searchBy", searchBy);
 
-  const response = await fetch(url.toString(), {
+  const init = (bearer?: string): RequestInit => ({
     method: "GET",
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
+    cache: "no-store",
   });
+
+  let response = await fetch(url.toString(), init(token));
+
+  // If unauthorized, refresh once and retry
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url.toString(), init(token));
+    } catch {
+      // fall through to shared error handling
+    }
+  }
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch checkbook requests.");
   }
-  
 
   return response.json() as Promise<TCheckbookResponse>;
 }
@@ -48,74 +61,102 @@ export async function getCheckbookRequests(
 /**
  * Creates a new checkbook request (POST) with the required body fields.
  */
-export async function createCheckbookRequest(values: TCheckbookFormValues) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API; 
+export async function createCheckbookRequest(
+  values: TCheckbookFormValues
+): Promise<TCheckbookValues> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
   if (!baseUrl) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  // Build the payload according to the API shape
   const payload = {
     fullName: values.fullName,
     address: values.address,
     accountNumber: values.accountNumber,
     representativeId: values.representativeId,
     branch: values.branch,
-    date: values.date, 
+    date: values.date,
     bookContaining: values.bookContaining,
   };
 
-  const response = await fetch(`${baseUrl}/checkbookrequests`, {
+  const url = `${baseUrl}/checkbookrequests`;
+
+  const init = (bearer?: string): RequestInit => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
     body: JSON.stringify(payload),
+    cache: "no-store",
   });
+
+  let response = await fetch(url, init(token));
+
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
     await throwApiError(response, "Failed to create checkbook.");
   }
-  
 
-  // Return the newly created record (if the API returns it)
-  return response.json();
+  return (await response.json()) as TCheckbookValues;
 }
 
-
 export async function getCheckbookRequestById(
-    id: string | number
-  ): Promise<TCheckbookValues> {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-    if (!baseUrl) {
-      throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-    }
-  
-    const token = getAccessTokenFromCookies();
-    if (!token) {
-      throw new Error("No access token found in cookies");
-    }
-  
-    const response = await fetch(`${baseUrl}/checkbookrequests/${id}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  
-    if (!response.ok) {
-      await throwApiError(response, `Failed to fetch checkbook request by ID ${id}.`);
-    }
-    
-  
-    const data = await response.json();
-    return data as TCheckbookValues;
+  id: string | number
+): Promise<TCheckbookValues> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
+
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
+  const url = `${baseUrl}/checkbookrequests/${id}`;
+
+  const init = (bearer?: string): RequestInit => ({
+    method: "GET",
+    headers: {
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  let response = await fetch(url, init(token));
+
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
+  if (!response.ok) {
+    await throwApiError(response, `Failed to fetch checkbook request by ID ${id}.`);
+  }
+
+  const data = (await response.json()) as TCheckbookValues;
+  return data;
+}
 
 /**
  * Updates a checkbook request (PUT) with all the data fields.
@@ -129,35 +170,49 @@ export async function updateCheckBookById(
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
-  // Build the payload according to the API shape
   const payload = {
     fullName: values.fullName,
     address: values.address,
     accountNumber: values.accountNumber,
     representativeId: values.representativeId,
     branch: values.branch,
-    date: values.date, 
+    date: values.date,
     bookContaining: values.bookContaining,
   };
 
-  const response = await fetch(`${baseUrl}/checkbookrequests/${id}`, {
+  const url = `${baseUrl}/checkbookrequests/${id}`;
+
+  const init = (bearer?: string): RequestInit => ({
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
     body: JSON.stringify(payload),
+    cache: "no-store",
   });
+
+  let response = await fetch(url, init(token));
+
+  if (response.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
 
   if (!response.ok) {
     await throwApiError(response, `Failed to update checkbook request with ID ${id}.`);
   }
 
-  const responseData = await response.json();
-  return responseData as TCheckbookValues;
+  const responseData = (await response.json()) as TCheckbookValues;
+  return responseData;
 }

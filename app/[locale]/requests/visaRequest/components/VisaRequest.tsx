@@ -125,8 +125,10 @@ export default function VisaWizardForm({
         ),
       phoneNumberLinkedToNationalId: Yup.number()
         .required(t("phoneNumberLinkedToNationalId") + " " + t("isRequired"))
-        .test("len", t("phoneNumberLinkedToNationalId") + " must be exactly 10 digits",
-          (val) => val ? val.toString().length === 10 : false
+        .test(
+          "len",
+          t("phoneNumberLinkedToNationalId") + " must be exactly 10 digits",
+          (val) => (val ? val.toString().length === 10 : false)
         ),
     }),
     Yup.object({
@@ -211,7 +213,7 @@ export default function VisaWizardForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                isEditing={true}
+                isEditing={initialValues ? true : false}
                 backFallbackPath="/requests/visaRequest"
               />
             </Form>

@@ -1,42 +1,69 @@
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // Adjust path
-import { CheckAccountResponse, EconomicSectorGetResponse, TransferPayload, TransferResponse, TransfersApiResponse, TransfersCommision } from "./types"; // Adjust path
-import { throwApiError } from "@/app/helpers/handleApiError";  
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
+import { throwApiError } from "@/app/helpers/handleApiError";
+import type {
+  CheckAccountResponse,
+  EconomicSectorGetResponse,
+  TransferPayload,
+  TransferResponse,
+  TransfersApiResponse,
+  TransfersCommision,
+} from "./types";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_API ;
-  const token = getAccessTokenFromCookies();
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
 
-
-
+/**
+ * POST /transfers
+ */
 export async function createTransfer(
   payload: TransferPayload
 ): Promise<TransferResponse> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not set.");
+  }
+
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
   const url = `${BASE_URL}/transfers`;
 
-  const res = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
     body: JSON.stringify(payload),
+    cache: "no-store",
   });
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to create transfer.");           
+  let res = await fetch(url, init(token));
+
+  // If unauthorized, refresh once and retry
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through to error handling
+    }
   }
 
-  const data = await res.json();
-  return data as TransferResponse;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to create transfer.");
+  }
+
+  return (await res.json()) as TransferResponse;
 }
 
-
+/**
+ * GET /transfers
+ */
 export async function getTransfers(
   page = 1,
   limit = 10,
@@ -46,6 +73,11 @@ export async function getTransfers(
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
 
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
+
   const url = new URL(`${BASE_URL}/transfers`);
   url.searchParams.append("page", String(page));
   url.searchParams.append("limit", String(limit));
@@ -53,81 +85,138 @@ export async function getTransfers(
     url.searchParams.append("searchTerm", searchTerm);
   }
 
-  const res = await fetch(url.toString(), {
+  const init = (bearer?: string): RequestInit => ({
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
+    cache: "no-store",
   });
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to get transfers.");           
+  let res = await fetch(url.toString(), init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url.toString(), init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  const data = (await res.json()) as TransfersApiResponse;
-  return data;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to get transfers.");
+  }
+
+  return (await res.json()) as TransfersApiResponse;
 }
 
-
-
+/**
+ * GET /transfers/{id}
+ */
 export async function getTransferById(id: number): Promise<TransferResponse> {
   if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
+
+  let token = getAccessTokenFromCookies();
   if (!token) {
     throw new Error("No access token found in cookies");
   }
 
   const url = `${BASE_URL}/transfers/${id}`;
 
-  const res = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
+    cache: "no-store",
   });
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to get transfer.");             
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  const data = await res.json();
-  return data as TransferResponse;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to get transfer.");
+  }
+
+  return (await res.json()) as TransferResponse;
 }
 
-
-
-export async function getTransfersCommision(servicePackageId:number, transactionCategoryId:number): Promise<TransfersCommision>{
-
+/**
+ * GET /servicepackages/{servicePackageId}/categories/{transactionCategoryId}
+ */
+export async function getTransfersCommision(
+  servicePackageId: number,
+  transactionCategoryId: number
+): Promise<TransfersCommision> {
   if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
+  }
+
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
   }
 
   const url = `${BASE_URL}/servicepackages/${servicePackageId}/categories/${transactionCategoryId}`;
 
-  const res = await fetch(url, {
+  const init = (bearer?: string): RequestInit => ({
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
+    cache: "no-store",
   });
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to create fetch commission.");            
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  const data = (await res.json()) as TransfersCommision;
-  return data;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to create fetch commission.");
+  }
+
+  return (await res.json()) as TransfersCommision;
 }
 
-
-export async function getEconomicSectors(page: number, limit:number, searchTerm?:string):Promise<EconomicSectorGetResponse>{
-
+/**
+ * GET /economic-sectors
+ */
+export async function getEconomicSectors(
+  page: number,
+  limit: number,
+  searchTerm?: string
+): Promise<EconomicSectorGetResponse> {
   if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
+  }
+
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
   }
 
   const url = new URL(`${BASE_URL}/economic-sectors`);
@@ -137,42 +226,77 @@ export async function getEconomicSectors(page: number, limit:number, searchTerm?
     url.searchParams.append("searchTerm", searchTerm);
   }
 
-  const res = await fetch(url.toString(), {
+  const init = (bearer?: string): RequestInit => ({
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
+    cache: "no-store",
   });
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to fetch economic sector.");           
+  let res = await fetch(url.toString(), init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url.toString(), init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  const data = (await res.json()) as EconomicSectorGetResponse;
-  return data;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to fetch economic sector.");
+  }
+
+  return (await res.json()) as EconomicSectorGetResponse;
 }
 
-export async function checkAccount(account:string): Promise<CheckAccountResponse[]>{
-
+/**
+ * GET /transfers/accounts?account={account}
+ */
+export async function checkAccount(
+  account: string
+): Promise<CheckAccountResponse[]> {
   if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not set.");
   }
 
-  const url = `${BASE_URL}/transfers/accounts?account=${account}`;
+  let token = getAccessTokenFromCookies();
+  if (!token) {
+    throw new Error("No access token found in cookies");
+  }
 
-  const res = await fetch(url, {
+  const url = `${BASE_URL}/transfers/accounts?account=${encodeURIComponent(
+    account
+  )}`;
+
+  const init = (bearer?: string): RequestInit => ({
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
+    cache: "no-store",
   });
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to check account.");            
+  let res = await fetch(url, init(token));
+
+  if (res.status === 401 && token) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      res = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
   }
 
-  const data = (await res.json()) as CheckAccountResponse[];
-  return data;
+  if (!res.ok) {
+    await throwApiError(res, "Failed to check account.");
+  }
+
+  return (await res.json()) as CheckAccountResponse[];
 }

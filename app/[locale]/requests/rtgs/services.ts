@@ -1,8 +1,15 @@
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler"; // adjust path
+import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
+import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { TRTGSResponse, TRTGSValues } from "./types";
 import { TKycResponse } from "@/app/auth/register/types";
+import { throwApiError } from "@/app/helpers/handleApiError";
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+
+const shouldRefresh = (s: number) => s === 401 || s === 403;
 
 /**
  * GET /rtgsrequests?page={}&limit={}
@@ -12,80 +19,101 @@ export async function getRtgsRequests(
   page: number,
   limit: number
 ): Promise<TRTGSResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
+  if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  const url = new URL(`${baseUrl}/rtgsrequests`);
+  const url = new URL(`${BASE_URL}/rtgsrequests`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("limit", String(limit));
 
-  const response = await fetch(url.toString(), {
+  const init = (bearer: string): RequestInit => ({
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
   });
 
+  let response = await fetch(url.toString(), init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url.toString(), init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
-    throw new Error(`Failed to fetch RTGS requests. Status: ${response.status}`);
+    await throwApiError(response, "Failed to fetch RTGS requests.");
   }
 
   const data = (await response.json()) as TRTGSResponse;
   return data;
 }
 
-export async function getRtgsRequestById(id: string | number): Promise<TRTGSValues> {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-    if (!baseUrl) {
-      throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-    }
-    const token = getAccessTokenFromCookies();
-    if (!token) {
-      throw new Error("No access token found in cookies");
-    }
-  
-    const response = await fetch(`${baseUrl}/rtgsrequests/${id}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  
-    if (!response.ok) {
-      throw new Error(`Failed to fetch RTGS request by ID ${id}. Status: ${response.status}`);
-    }
-  
-    const data = (await response.json()) as TRTGSValues;
-    return data;
+/**
+ * GET /rtgsrequests/{id}
+ */
+export async function getRtgsRequestById(
+  id: string | number
+): Promise<TRTGSValues> {
+  if (!BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
+  const url = `${BASE_URL}/rtgsrequests/${id}`;
 
-  /**
+  const init = (bearer: string): RequestInit => ({
+    method: "GET",
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
+  });
+
+  let response = await fetch(url, init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
+  if (!response.ok) {
+    await throwApiError(
+      response,
+      `Failed to fetch RTGS request by ID ${id}.`
+    );
+  }
+
+  const data = (await response.json()) as TRTGSValues;
+  return data;
+}
+
+/**
  * POST /rtgsrequests
  * Creates a new RTGS request and returns the created record.
  */
 export async function createRtgsRequest(
-  values: TRTGSValues,
+  values: TRTGSValues
 ): Promise<TRTGSValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
+  if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  /** Build the exact body the API expects */
   const body: {
     refNum: string;
     date: string;
@@ -122,19 +150,32 @@ export async function createRtgsRequest(
     otherDoc: values.otherDoc ?? false,
   };
 
-  const response = await fetch(`${baseUrl}/rtgsrequests`, {
+  const url = `${BASE_URL}/rtgsrequests`;
+
+  const init = (bearer: string): RequestInit => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${bearer}`,
     },
     body: JSON.stringify(body),
+    cache: "no-store",
   });
 
+  let response = await fetch(url, init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
-    throw new Error(
-      `Failed to create RTGS request. Status: ${response.status}`,
-    );
+    await throwApiError(response, "Failed to create RTGS request.");
   }
 
   const created = (await response.json()) as TRTGSValues;
@@ -147,19 +188,15 @@ export async function createRtgsRequest(
  */
 export async function updateRtgsRequest(
   id: string | number,
-  values: TRTGSValues,
+  values: TRTGSValues
 ): Promise<TRTGSValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
+  if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  /** Build the exact body the API expects */
   const body: {
     refNum: string;
     date: string;
@@ -196,19 +233,32 @@ export async function updateRtgsRequest(
     otherDoc: values.otherDoc ?? false,
   };
 
-  const response = await fetch(`${baseUrl}/rtgsrequests/${id}`, {
+  const url = `${BASE_URL}/rtgsrequests/${id}`;
+
+  const init = (bearer: string): RequestInit => ({
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${bearer}`,
     },
     body: JSON.stringify(body),
+    cache: "no-store",
   });
 
+  let response = await fetch(url, init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
-    throw new Error(
-      `Failed to update RTGS request. Status: ${response.status}`,
-    );
+    await throwApiError(response, "Failed to update RTGS request.");
   }
 
   const updated = (await response.json()) as TRTGSValues;
@@ -216,28 +266,39 @@ export async function updateRtgsRequest(
 }
 
 /**
+ * GET /companies/kyc/{code}
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
+  if (!BASE_URL) {
     throw new Error("NEXT_PUBLIC_BASE_API is not defined");
   }
 
-  const token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  let token = getAccessTokenFromCookies();
+  if (!token) throw new Error("No access token found in cookies");
 
-  const response = await fetch(`${baseUrl}/companies/kyc/${code}`, {
+  const url = `${BASE_URL}/companies/kyc/${code}`;
+
+  const init = (bearer: string): RequestInit => ({
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${bearer}` },
+    cache: "no-store",
   });
 
+  let response = await fetch(url, init(token));
+
+  if (shouldRefresh(response.status)) {
+    try {
+      const refreshed = await refreshAuthTokens();
+      token = refreshed.accessToken;
+      response = await fetch(url, init(token));
+    } catch {
+      // fall through
+    }
+  }
+
   if (!response.ok) {
-    throw new Error("Failed to fetch KYC data");
+    await throwApiError(response, "Failed to fetch KYC data");
   }
 
   return response.json();

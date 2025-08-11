@@ -670,6 +670,8 @@
   },
 
   "employees": {
+    "firstName":"First Name",
+    "lastName":"Last Name",
     "id": "ID",
     "name": "Name",
     "email": "Email",

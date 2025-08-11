@@ -27,6 +27,7 @@ import { TCheckRequestFormProps } from "../types";
 import { getRepresentatives } from "@/app/[locale]/representatives/services";
 import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
+import BackButton from "@/app/components/reusable/BackButton";
 
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
@@ -331,7 +332,12 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
           />
         )}
 
-        <FormHeader status={status} showBackButton isEditing={true} />
+        <FormHeader status={status}>
+          <BackButton
+            isEditing={initialValues ? true : false}
+            fallbackPath="/requests/checkRequest"
+          />
+        </FormHeader>
 
         <div className="px-6 pb-6">
           <Form<TCheckRequestFormValues>

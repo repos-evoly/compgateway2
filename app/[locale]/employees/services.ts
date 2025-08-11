@@ -91,7 +91,6 @@ export const getEmployeeById = async (
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id }),
     });
 
     console.log("POST Response status:", response.status);

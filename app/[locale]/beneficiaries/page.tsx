@@ -213,8 +213,6 @@ const Page = () => {
           // Actions
           showActions
           actions={actions}
-          // Enable double-click on ID
-          canEdit={false}
           loading={loading}
         />
       )}

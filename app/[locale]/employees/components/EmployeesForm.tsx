@@ -27,6 +27,7 @@ import {
   FaEdit,
 } from "react-icons/fa";
 import { Field, FormikConfig, useFormikContext } from "formik";
+import BackButton from "@/app/components/reusable/BackButton";
 
 /* Guard that prevents choosing the unavailable "wallet" option */
 type AccountTypeGuardProps = {
@@ -56,9 +57,7 @@ function AccountTypeGuard({
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
   initialData,
-  viewOnly = false,
   onSuccess,
-  onBack,
 }) => {
   const t = useTranslations("employees");
 
@@ -160,14 +159,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           onChooseWallet={() => setWalletModalOpen(true)}
         />
 
-        <FormHeader
-          showBackButton
-          isEditing={false}
-          onBack={() => (onBack ? onBack() : onSuccess?.())}
-        >
-          <h2 className="text-lg font-semibold text-white">
-            {isEditMode ? t("editEmployee") : t("addEmployee")}
-          </h2>
+        <FormHeader>
+          <BackButton isEditing={isEditMode} fallbackPath="/employees" />
         </FormHeader>
 
         <div className="grid gap-4 md:grid-cols-2 mt-4">
@@ -176,7 +169,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             label={t("name")}
             type="text"
             startIcon={<FaUser />}
-            disabled={viewOnly || isSubmitting}
+            disabled={isSubmitting}
             helpertext={t("namePlaceholder")}
           />
 
@@ -185,7 +178,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             label={t("email")}
             type="email"
             startIcon={<FaEnvelope />}
-            disabled={viewOnly || isSubmitting}
+            disabled={isSubmitting}
             helpertext={t("emailPlaceholder")}
           />
 
@@ -194,7 +187,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             label={t("phone")}
             type="tel"
             startIcon={<FaPhone />}
-            disabled={viewOnly || isSubmitting}
+            disabled={isSubmitting}
             helpertext={t("phonePlaceholder")}
           />
 
@@ -203,14 +196,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             label={t("salary")}
             type="number"
             startIcon={<FaMoneyBill />}
-            disabled={viewOnly || isSubmitting}
+            disabled={isSubmitting}
             helpertext={t("salaryPlaceholder")}
           />
 
           <DatePickerValue
             name="date"
             label={t("date")}
-            disabled={viewOnly || isSubmitting}
+            disabled={isSubmitting}
           />
 
           <FormInputIcon
@@ -218,7 +211,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             label={t("accountNumber")}
             type="text"
             startIcon={<FaCreditCard />}
-            disabled={viewOnly || isSubmitting}
+            disabled={isSubmitting}
             helpertext={t("accountNumberPlaceholder")}
           />
 
@@ -227,7 +220,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             label={t("accountType")}
             options={accountTypeOptions as InputSelectComboOption[]}
             placeholder=""
-            disabled={viewOnly || isSubmitting}
+            disabled={isSubmitting}
             onDisabledOptionAttempt={(opt) => {
               if (opt.value === "wallet") setWalletModalOpen(true);
             }}
@@ -240,7 +233,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               id="sendSalary"
               name="sendSalary"
               className="mr-2"
-              disabled={viewOnly || isSubmitting}
+              disabled={isSubmitting}
             />
             <label htmlFor="sendSalary" className="text-sm font-medium">
               {t("sendSalary")}
@@ -248,15 +241,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
           </div>
         </div>
 
-        {!viewOnly && (
-          <div className="flex gap-4 mt-6">
-            <SubmitButton
-              disabled={isSubmitting}
-              title={isEditMode ? t("update") : t("submit")}
-              Icon={isEditMode ? FaEdit : FaCheckCircle}
-            />
-          </div>
-        )}
+        <div className="flex gap-4 mt-6">
+          <SubmitButton
+            disabled={isSubmitting}
+            title={isEditMode ? t("update") : t("submit")}
+            Icon={isEditMode ? FaEdit : FaCheckCircle}
+          />
+        </div>
       </Form>
 
       <ErrorOrSuccessModal

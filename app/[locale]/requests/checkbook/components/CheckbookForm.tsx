@@ -263,7 +263,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
         )}
 
         <FormHeader status={status}>
-          <BackButton fallbackPath="/requests/checkbook" isEditing={true} />
+          <BackButton fallbackPath="/requests/checkbook" isEditing={initialData ? true : false} />
         </FormHeader>
 
         {/* ---------- Form body ---------- */}

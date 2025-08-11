@@ -93,10 +93,7 @@ export default function EmployeeForm({
     <div className="rounded-xl overflow-visible transition-all duration-300 hover:shadow-xl">
       {/* Header with back button */}
       <div className="bg-info-dark py-8 h-10 flex items-center gap-4 rounded-t-xl">
-        <BackButton
-          fallbackPath={isEditMode ? "/users" : undefined}
-          isEditing={true}
-        />
+        <BackButton fallbackPath={"/users"} isEditing={isEditMode} />
       </div>
 
       <div className="p-6">

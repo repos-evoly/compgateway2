@@ -1,0 +1,11 @@
+[
+    { "id": 1, "name": "Visa electron", "price": 70 },
+    { "id": 2, "name": "Visa gold", "price": 150 },
+    { "id": 3, "name": "Visa platinum", "price": 300 },
+    { "id": 4, "name": "Visa signature", "price": 750 },
+    { "id": 5, "name": "MasterCard electron", "price": 70 },
+    { "id": 6, "name": "MasterCard gold", "price": 150 },
+    { "id": 7, "name": "MasterCard platinum", "price": 300 },
+    { "id": 8, "name": "MasterCard world elite", "price": 900 }
+  ]
+  

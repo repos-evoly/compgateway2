@@ -1,7 +1,8 @@
 // app/employees/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import Cookies from "js-cookie";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import UsersForm from "./components/UsersForm";
 import { getEmployees, createEmployee } from "./services";
@@ -11,6 +12,58 @@ import type { Action } from "@/types";
 import { useRouter } from "next/navigation";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { useTranslations } from "next-intl";
+
+/* --------------------------------------------------
+ * Helpers: read & normalize permissions from cookies
+ * -------------------------------------------------- */
+const COOKIE_CANDIDATES: ReadonlyArray<string> = [
+  "permissions",
+  "userPermissions",
+  "claims",
+  "scopes",
+  "perms",
+];
+
+function safeDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function tryParseStringArray(value: string): string[] | null {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (Array.isArray(parsed) && parsed.every((v) => typeof v === "string")) {
+      return parsed as string[];
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return null;
+}
+
+function readPermissionsFromCookies(): Set<string> {
+  for (const key of COOKIE_CANDIDATES) {
+    const raw = Cookies.get(key);
+    if (!raw) continue;
+
+    const decoded = safeDecodeURIComponent(raw);
+
+    const parsed = tryParseStringArray(decoded);
+    if (parsed) return new Set(parsed.map((p) => p.toLowerCase()));
+
+    // Fallback: handle CSV-ish or bracketed ["A","B"] forms
+    const cleaned = decoded.replace(/^\s*\[|\]\s*$/g, "");
+    const csv = cleaned
+      .split(",")
+      .map((s) => s.trim().replace(/^"+|"+$/g, ""))
+      .filter((s) => s.length > 0);
+    if (csv.length > 0) return new Set(csv.map((p) => p.toLowerCase()));
+  }
+  return new Set<string>();
+}
 
 export default function EmployeesPage() {
   /* --------------------------------------------------
@@ -25,6 +78,10 @@ export default function EmployeesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
+  // Permission flags
+  const [canAddUser, setCanAddUser] = useState(false);
+  const [canEditUser, setCanEditUser] = useState(false);
+
   /* Modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
@@ -35,9 +92,17 @@ export default function EmployeesPage() {
   const router = useRouter();
 
   /* --------------------------------------------------
+   * Permissions bootstrap
+   * -------------------------------------------------- */
+  useEffect(() => {
+    const perms = readPermissionsFromCookies();
+    setCanAddUser(perms.has("companycanadduser"));
+    setCanEditUser(perms.has("companycanedituser"));
+  }, []);
+
+  /* --------------------------------------------------
    * Data helpers
    * -------------------------------------------------- */
-  // Modified fetchEmployees to support pagination
   const fetchEmployees = async () => {
     setLoading(true);
     try {
@@ -65,6 +130,7 @@ export default function EmployeesPage() {
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+
   const rowData = pagedEmployees.map((emp) => ({
     ...emp,
     permissions: emp.permissions.join(", "),
@@ -81,9 +147,9 @@ export default function EmployeesPage() {
     {
       key: "isActive",
       label: t("status"),
-      renderCell: (row: CompanyEmployee) => {
-        // Default to true if isActive is not present
-        const isActive = row.isActive !== undefined ? row.isActive : true;
+      renderCell: (row: unknown) => {
+        const r = row as CompanyEmployee;
+        const isActive = r.isActive !== undefined ? r.isActive : true;
         return (
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -99,16 +165,20 @@ export default function EmployeesPage() {
     },
   ];
 
-  const actions: Action[] = [
-    {
-      name: "permissions",
-      tip: t("editPermissions"),
-      icon: <FaLock />,
-      onClick: (row) => {
-        router.push(`/users/permissions/${row.id}/${row.roleId}`);
+  const actions: Action[] = useMemo(
+    () => [
+      {
+        name: "permissions",
+        tip: t("editPermissions"),
+        icon: <FaLock />,
+        onClick: (row) => {
+          const r = row as CompanyEmployee;
+          router.push(`/users/permissions/${r.id}/${r.roleId}`);
+        },
       },
-    },
-  ];
+    ],
+    [router, t]
+  );
 
   /* --------------------------------------------------
    * Handlers
@@ -133,16 +203,13 @@ export default function EmployeesPage() {
         roleId: values.roleId || 0,
       });
 
-      /* Update grid instantly */
       setEmployees((prev) => [...prev, newEmployee]);
 
-      /* Success modal */
       setModalTitle("Employee Created");
       setModalMessage("The employee was created successfully.");
       setModalSuccess(true);
       setModalOpen(true);
 
-      /* Return to grid */
       setShowForm(false);
     } catch (err) {
       const errorMsg =
@@ -158,25 +225,39 @@ export default function EmployeesPage() {
   const handleModalConfirm = () => setModalOpen(false);
 
   /* --------------------------------------------------
+   * Derived props for CrudDataGrid (respect discriminated unions)
+   * -------------------------------------------------- */
+  const gridBaseProps = {
+    data: rowData,
+    columns,
+    currentPage,
+    totalPages,
+    onPageChange: handlePageChange,
+    showSearchBar: false,
+    showSearchInput: false,
+    showDropdown: false,
+    loading,
+    canEdit: canEditUser,
+  } as const;
+
+  const gridAddProps = canAddUser
+    ? ({ showAddButton: true as const, onAddClick: handleAddClick } as const)
+    : ({ showAddButton: false as const } as const);
+
+  const gridActionProps = canEditUser
+    ? ({ showActions: true as const, actions } as const)
+    : ({ showActions: false as const } as const);
+
+  /* --------------------------------------------------
    * JSX
    * -------------------------------------------------- */
   return (
     <div className="p-4 space-y-8">
       {!showForm && (
         <CrudDataGrid
-          data={rowData}
-          columns={columns}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          showSearchBar={false}
-          showSearchInput={false}
-          showDropdown={false}
-          showAddButton
-          onAddClick={handleAddClick}
-          showActions
-          actions={actions}
-          loading={loading}
+          {...gridBaseProps}
+          {...gridAddProps}
+          {...gridActionProps}
         />
       )}
 

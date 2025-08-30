@@ -4,6 +4,7 @@
  * • representativeId uses <InputSelectCombo> fed by Representatives API.
  * • On account selection, extracts the middle 6-digit code, calls KYC API,
  *   and auto-fills fullName / address / branch.
+ * • Adds phoneNumber field and submits it with the form.
  * ----------------------------------------------------------------------- */
 
 "use client";
@@ -26,7 +27,11 @@ import { FaPaperPlane, FaEdit } from "react-icons/fa";
 import Description from "@/app/components/FormUI/Description";
 
 import { createCheckbookRequest } from "../services";
-import { TCheckbookFormProps, TCheckbookFormValues } from "../types";
+import {
+  TCheckbookFormProps,
+  TCheckbookFormValues,
+  TCheckbookValues,
+} from "../types";
 
 import BackButton from "@/app/components/reusable/BackButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
@@ -40,9 +45,9 @@ import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
 /* -------------------------------- Types --------------------------------- */
-interface UpdatedCheckbookFormProps extends TCheckbookFormProps {
+type UpdatedCheckbookFormProps = TCheckbookFormProps & {
   isSubmitting?: boolean;
-}
+};
 
 /* ======================================================================== */
 const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
@@ -126,26 +131,36 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
   const defaultValues: TCheckbookFormValues = {
     fullName: "",
     address: "",
+    phoneNumber: "", // added
     accountNumber: "",
     representativeId: "",
     branch: "",
     date: "",
     bookContaining: "",
+    // Optional fields in the type must exist in the schema shape too
+    status: undefined,
+    id: undefined,
+    reason: undefined,
   };
 
   const initialValues: TCheckbookFormValues = initialData
     ? { ...defaultValues, ...initialData }
     : defaultValues;
 
-  const schema = Yup.object({
+  const schema: Yup.ObjectSchema<TCheckbookFormValues> = Yup.object({
     fullName: Yup.string().required(`${t("name")} ${t("required")}`),
     address: Yup.string().required(`${t("address")} ${t("required")}`),
+    phoneNumber: Yup.string().required(`${t("phoneNumber")} ${t("required")}`),
     accountNumber: Yup.string().required(`${t("accNum")} ${t("required")}`),
     representativeId: Yup.string().required(`${t("sendTo")} ${t("required")}`),
     branch: Yup.string().required(`${t("branch")} ${t("required")}`),
     date: Yup.string().required(`${t("date")} ${t("required")}`),
     bookContaining: Yup.string().required(t("selectOneOption")),
-  });
+    // include optional fields so the schema matches TCheckbookFormValues exactly
+    status: Yup.string().notRequired(),
+    id: Yup.number().notRequired(),
+    reason: Yup.string().notRequired(),
+  }) as Yup.ObjectSchema<TCheckbookFormValues>;
 
   /* ------------------------------------------------------------------ */
   /* Submit / cancel                                                     */
@@ -160,8 +175,24 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const newItem = await createCheckbookRequest(values);
-      onSubmit(newItem);
+      const created: TCheckbookValues = await createCheckbookRequest(values);
+
+      // Normalize API response to TCheckbookFormValues before passing up
+      const normalized: TCheckbookFormValues = {
+        fullName: created.fullName ?? values.fullName,
+        address: created.address ?? values.address,
+        phoneNumber: created.phoneNumber ?? values.phoneNumber,
+        accountNumber: created.accountNumber ?? values.accountNumber,
+        representativeId: created.representativeId ?? values.representativeId,
+        branch: created.branch ?? values.branch,
+        date: created.date ?? values.date,
+        bookContaining: created.bookContaining ?? values.bookContaining,
+        status: created.status ?? values.status,
+        id: created.id ?? values.id,
+        reason: created.reason ?? values.reason,
+      };
+
+      onSubmit(normalized);
 
       setModalTitle(t("successTitle"));
       setModalMessage(t("successMessage"));
@@ -254,20 +285,25 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
       <div className="mt-2 w-full rounded bg-gray-100">
         {/* ---------- Header ---------- */}
 
-        {/* ---------- Reason banner (only if it exists) ---------- */}
-        {initialData?.reason && (
-          <ReasonBanner
-            reason={initialValues.reason}
-          />
-        )}
+        <ReasonBanner
+          reason={initialData?.reason ?? null}
+          status={
+            (initialData?.status ?? "").toLowerCase() === "approved"
+              ? "approved"
+              : "rejected"
+          }
+        />
 
         <FormHeader status={status}>
-          <BackButton fallbackPath="/requests/checkbook" isEditing={initialData ? true : false} />
+          <BackButton
+            fallbackPath="/requests/checkbook"
+            isEditing={initialData ? true : false}
+          />
         </FormHeader>
 
         {/* ---------- Form body ---------- */}
         <div className="px-6 pb-6">
-          <Form
+          <Form<TCheckbookFormValues>
             initialValues={initialValues}
             validationSchema={schema}
             onSubmit={handleSubmit}
@@ -302,7 +338,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
               {[
                 { name: "fullName", label: t("name") },
                 { name: "address", label: t("address") },
-                // { name: "branch", label: t("branch") },
+                { name: "phoneNumber", label: t("phoneNumber") }, // added
               ].map(({ name, label }) => (
                 <FormInputIcon
                   key={name}
@@ -313,6 +349,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
                   disabled={readOnly}
                 />
               ))}
+
               <BranchesSelect
                 name="branch"
                 label={t("branch")}

@@ -240,62 +240,30 @@ export const deleteRepresentative = async (id: number): Promise<void> => {
  * Toggle representative active/inactive status
  * (fetch current, compute new status, PUT JSON)
  */
+/**
+ * Toggle representative active/inactive status
+ * Reuses updateRepresentative (multipart/form-data).
+ */
 export const toggleRepresentativeStatus = async (
   id: number
 ): Promise<Representative> => {
   if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
-  // Get current (handles its own refresh)
-  const currentRepresentative = await getRepresentativeById(id);
-  const newStatus = !currentRepresentative.isActive;
+  // Fetch current state first
+  const current = await getRepresentativeById(id);
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const updatedData = {
-    name: currentRepresentative.name,
-    number: currentRepresentative.number,
-    passportNumber: currentRepresentative.passportNumber,
-    isActive: newStatus,
+  // Prepare values for update (no photo change)
+  const nextValues: RepresentativeFormValues = {
+    name: current.name,
+    number: current.number,
+    passportNumber: current.passportNumber ?? "",
+    isActive: !current.isActive,
+    // photo is optional and omitted here
   };
 
-  const url = `${BASE_URL}/representatives/${id}`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    body: JSON.stringify(updatedData),
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (res.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to toggle representative status");
-  }
-
-  const result = (await res.json()) as Partial<Representative>;
-
-  // Normalize the response to include isActive
-  const finalResult: Representative = {
-    name: result.name ?? currentRepresentative.name,
-    number: result.number ?? currentRepresentative.number,
-    passportNumber: result.passportNumber ?? currentRepresentative.passportNumber,
-    isActive: result.isActive ?? newStatus,
-  };
-
-  return finalResult;
+  // This sends multipart/form-data with correct field names:
+  // Name, Number, PassportNumber, IsActive
+  const updated = await updateRepresentative(id, nextValues);
+  return updated;
 };
+

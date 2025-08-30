@@ -18,7 +18,7 @@
         "visa":"طلب بطاقة VISA",
         "certifiedBankStatement":"طلب كشف حساب مصدق",
         "rtgs":"طلب حوالة RTGS",
-        "foreign":"طلب اصدار رخصة للحوالات الخارجية",
+        "foreign":"طلب اصدار cbl",
         "cbl":"طلب استفسار عن CBL"
       },
       "salaryLocalization":{
@@ -205,7 +205,9 @@
       "unknownError": "حدث خطأ غير متوقع",
       "status":"الحالة",
       "actions": "عمليات",
-      "downloadPdf": "تحميل PDF"
+      "downloadPdf": "تحميل PDF",
+      "commissionLabel": "العمولة",
+      "totalToPayLabel":"المبلغ الإجمالي للدفع"
     },
   
   
@@ -246,7 +248,8 @@
       "successTitle": "نجاح",
       "successMessage": "تم تقديم طلب الصك بنجاح.",
       "actions":"عمليات",
-      "downloadPdf":"تحميل PDF"
+      "downloadPdf":"تحميل PDF",
+      "phoneNumber":"رقم الهاتف"
     },
   
     "CheckRequest":{
@@ -358,8 +361,8 @@
         "requiredDescription":"البيان مطلوب",
         "commissionPaidBy":"العمولة مدفوعة من قبل",
         "recipient": "المستلم",
-        "economicSector": "القطاع الاقتصادي",
-        "requiredEconomicSector": "القطاع الاقتصادي مطلوب",
+        "economicSector": "وجهة الدفع",
+        "requiredEconomicSector": " وجهة الدفع مطلوب",
         "beneficiary": "المستفيد",
         "selectBeneficiary": "اختر مستفيد",
         "print": "طباعة",
@@ -613,7 +616,8 @@
         "unknownError": "حدث خطأ غير متوقع",
         "submit": "إرسال",
         "actions": "عمليات",
-        "downloadPdf": "تحميل PDF"
+        "downloadPdf": "تحميل PDF",
+        "visaType": "نوع الفيزا"
       },
       "bankStatement": {
         "id":"المعرف",
@@ -850,7 +854,9 @@
             "savedMessage": "تم إنشاء خطاب الضمان بنجاح.",
             "errorTitle": "خطأ",
             "unexpectedError": "حدث خطأ غير متوقع أثناء الإرسال.",
-            "accountFetchError": "فشل في جلب بيانات الحساب"
+            "accountFetchError": "فشل في جلب بيانات الحساب",
+            "commissionLabel": "العمولة",
+            "totalToPayLabel": "المبلغ الإجمالي للدفع"
           }
         },
         "page": {
@@ -902,7 +908,9 @@
             "savedMessage": "تم حفظ البيانات بنجاح.",
             "errorTitle": "خطأ",
             "currencyFetchError": "فشل في جلب العملات.",
-            "submitErrorGeneric": "حدث خطأ أثناء الإرسال."
+            "submitErrorGeneric": "حدث خطأ أثناء الإرسال.",
+            "commissionLabel": "العمولة",
+            "totalToPayLabel": "المبلغ الإجمالي للدفع"
           }
         },
         "page": {
@@ -1191,7 +1199,7 @@
         "valueRequired": "المبلغ مطلوب",
         "valuePositive": "يجب أن يكون المبلغ موجباً",
         "descriptionRequired": "الوصف مطلوب",
-        "economicSector": "القطاع الاقتصادي",
+        "economicSector": "وجهة الدفع",
         "beneficiary": "المستفيد",
         "selectBeneficiary": "اختر المستفيد",
         "description": "الوصف",
@@ -1223,6 +1231,7 @@
         }
       },
       "common":{
-        "rejectReason":"سبب الرفض"
+        "rejectReason":"سبب الرفض",
+        "approveReason": "تمت الموافقة على النموذج"
       }
   }

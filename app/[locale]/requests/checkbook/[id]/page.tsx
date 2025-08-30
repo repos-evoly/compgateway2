@@ -77,6 +77,7 @@ const CheckbookDetailPage: React.FC = () => {
     bookContaining: checkbookData.bookContaining ?? "",
     status: checkbookData.status ?? "",
     reason: checkbookData.reason ?? "",
+    phoneNumber: checkbookData.phoneNumber ?? "",
   };
 
   // Handle form submission for updates

@@ -48,5 +48,5 @@ export type RepresentativeFormValues = {
   number: string;
   passportNumber: string;
   isActive: boolean;
-  photo: File[];
+  photo?: File[];
 } 

@@ -22,6 +22,14 @@ import {
  */
 export const step1VisaInputs = [
   {
+    name: "visaType",
+    label: "visaType",
+    icon: <FiCreditCard />,
+    type: "text",
+    component: "InputSelectCombo",
+  },
+
+  {
     name: "accountNumber",
     label: "accountNumber",
     icon: <FiCreditCard />,

@@ -1,11 +1,18 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/letterOfGuarantee/components/LetterOfGuaranteeForm.tsx
- * Account Number now uses <InputSelectCombo> fed from cookie list
+ * – Fetch B2C commission config using servicePackageId (cookie) + categoryId=6
+ * – When user enters Amount:
+ *     • Commission = max(amount * pct/100, fixedFee)
+ *     • Total to pay = amount + commission
+ *     • Balance check validates (amount + commission) <= availableBalance
+ *     • Amount field shows helper text: "Commission: X — Total: Y"
+ * – On submit: replaces `amount` with (amount + commission)
+ * – Copy-paste ready. Strict TypeScript (no `any`).
  * ----------------------------------------------------------------------- */
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Formik, Form, FormikHelpers, FormikProps } from "formik";
 import * as Yup from "yup";
 import Cookies from "js-cookie";
@@ -31,6 +38,10 @@ import type { AccountInfo } from "@/app/helpers/checkAccount";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 import BackButton from "@/app/components/reusable/BackButton";
 
+/* ⬇️ Commission service */
+import { getTransfersCommision } from "@/app/[locale]/transfers/internal/services";
+import type { TransfersCommision } from "@/app/[locale]/transfers/internal/types";
+
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
 /* ------------------------------------------------------------------ */
@@ -43,6 +54,27 @@ type Props = {
 };
 
 /* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+const COOKIE_SERVICE_PKG_KEY: string = "servicePackageId";
+const CATEGORY_ID_LOG: number = 6;
+
+const toNumber = (v: unknown): number => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/,/g, "").trim());
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+};
+
+const computeCommission = (
+  amount: number,
+  pct: number,
+  fixed: number
+): number => Math.max((amount * pct) / 100, fixed);
+
+/* ------------------------------------------------------------------ */
 /* Inner form props                                                    */
 /* ------------------------------------------------------------------ */
 type InnerFormProps = FormikProps<TLetterOfGuarantee> & {
@@ -53,6 +85,8 @@ type InnerFormProps = FormikProps<TLetterOfGuarantee> & {
   accountOptions: InputSelectComboOption[];
   readOnly?: boolean;
   isSubmitting?: boolean;
+  b2cPct: number;
+  b2cFixed: number;
 };
 
 /* ------------------------------------------------------------------ */
@@ -73,6 +107,8 @@ function InnerForm({
   accountOptions,
   initialData,
   readOnly = false,
+  b2cPct,
+  b2cFixed,
 }: InnerFormProps) {
   const t = useTranslations("letterOfGuarantee.form.fields");
   const tu = useTranslations("letterOfGuarantee.form.ui");
@@ -113,11 +149,34 @@ function InnerForm({
     errors.accountNumber && touched.accountNumber
   );
 
+  /* --- helper text for Amount: Commission + Total --- */
+  const amountNum: number = toNumber(values.amount);
+  const commission: number =
+    amountNum > 0 ? computeCommission(amountNum, b2cPct, b2cFixed) : 0;
+  const totalToPay: number = amountNum + commission;
+  const helperText: string =
+    amountNum > 0
+      ? `${tu("commissionLabel", {
+          default: "Commission",
+        })}: ${commission.toLocaleString()} — ${tu("totalToPayLabel", {
+          default: "Total to pay",
+        })}: ${totalToPay.toLocaleString()}`
+      : "";
+
+  const bannerStatus: "approved" | "rejected" =
+    (initialData?.status ?? "").toLowerCase() === "approved"
+      ? "approved"
+      : "rejected";
+
+  const bannerReason: string | null =
+    typeof initialData?.reason === "string" &&
+    initialData.reason.trim().length > 0
+      ? initialData.reason
+      : null;
+
   return (
     <Form>
-      <ReasonBanner
-        reason={initialData?.reason} // or values.reason if you prefer
-      />
+      <ReasonBanner reason={bannerReason} status={bannerStatus} />
       <FormHeader>
         <BackButton
           isEditing={initialData ? true : false}
@@ -152,12 +211,13 @@ function InnerForm({
           disabled={readOnly || isSubmitting}
         />
 
-        {/* Amount */}
+        {/* Amount (shows helper text with Commission + Total) */}
         <FormInputIcon
           name="amount"
           label={t("amount")}
           type="number"
           disabled={readOnly || isSubmitting}
+          helpertext={helperText}
         />
 
         {/* Purpose */}
@@ -217,7 +277,6 @@ function InnerForm({
 export default function LetterOfGuaranteeForm({
   initialData,
   onSubmit,
-
   readOnly = false,
   isSubmitting = false,
 }: Props) {
@@ -240,6 +299,20 @@ export default function LetterOfGuaranteeForm({
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+
+  /* commission config */
+  const [commissionCfg, setCommissionCfg] = useState<TransfersCommision | null>(
+    null
+  );
+
+  const b2cPct: number = useMemo(
+    () => commissionCfg?.b2CCommissionPct ?? 0,
+    [commissionCfg]
+  );
+  const b2cFixed: number = useMemo(
+    () => commissionCfg?.b2CFixedFee ?? 0,
+    [commissionCfg]
+  );
 
   /* load currencies */
   useEffect(() => {
@@ -271,6 +344,30 @@ export default function LetterOfGuaranteeForm({
     setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
   }, []);
 
+  /* fetch commission config using servicePackageId cookie */
+  useEffect(() => {
+    const run = async (): Promise<void> => {
+      const rawId = Cookies.get(COOKIE_SERVICE_PKG_KEY);
+      const parsed = rawId ? Number(rawId) : NaN;
+      if (!Number.isFinite(parsed)) {
+        console.error(
+          `Cookie "${COOKIE_SERVICE_PKG_KEY}" is missing or invalid. Got:`,
+          rawId
+        );
+        return;
+      }
+      try {
+        const cfg = await getTransfersCommision(parsed, CATEGORY_ID_LOG);
+
+        console.log("[LOG Commission] Result:", cfg);
+        setCommissionCfg(cfg);
+      } catch (err) {
+        console.error("[LOG Commission] Fetch failed:", err);
+      }
+    };
+    void run();
+  }, []);
+
   /* ---- form values & schema -------------------------------------------- */
   const defaults: TLetterOfGuarantee = {
     id: undefined,
@@ -288,6 +385,7 @@ export default function LetterOfGuaranteeForm({
     ? { ...defaults, ...initialData, type: "letterOfGuarantee" }
     : defaults;
 
+  /* Validation: amount + commission <= availableBalance (if known) */
   const schema = Yup.object({
     accountNumber: Yup.string().required(tv("required")),
     date: Yup.string().required(tv("required")),
@@ -295,11 +393,13 @@ export default function LetterOfGuaranteeForm({
       .typeError(tv("amountMustBeNumber"))
       .required(tv("required"))
       .positive(tv("amountPositive"))
-      .test(
-        "balance-check",
-        tv("amountExceedsBalance"),
-        (val) => !val || availableBalance == null || val <= availableBalance
-      ),
+      .test("balance-with-commission", tv("amountExceedsBalance"), (val) => {
+        if (!val) return true; // other validators handle required/positive
+        if (availableBalance == null) return true; // if unknown balance, don't block
+        const amt = toNumber(val);
+        const comm = computeCommission(amt, b2cPct, b2cFixed);
+        return amt + comm <= availableBalance;
+      }),
     purpose: Yup.string().required(tv("required")),
     additionalInfo: Yup.string().nullable(),
     curr: Yup.string().required(tv("required")),
@@ -312,7 +412,18 @@ export default function LetterOfGuaranteeForm({
     { setSubmitting, resetForm }: FormikHelpers<TLetterOfGuarantee>
   ) {
     try {
-      onSubmit({ ...vals, type: "letterOfGuarantee" });
+      // Replace amount with (amount + commission) before submit
+      const amt = toNumber(vals.amount);
+      const comm = computeCommission(amt, b2cPct, b2cFixed);
+      const totalToPay = amt + comm;
+
+      const payload: TLetterOfGuarantee = {
+        ...vals,
+        amount: totalToPay,
+        type: "letterOfGuarantee",
+      };
+
+      onSubmit(payload);
       resetForm();
 
       setModalTitle(tu("savedTitle"));
@@ -349,6 +460,8 @@ export default function LetterOfGuaranteeForm({
             accountOptions={accountOptions}
             readOnly={readOnly || isSubmitting}
             isSubmitting={isSubmitting || formik.isSubmitting}
+            b2cPct={b2cPct}
+            b2cFixed={b2cFixed}
           />
         )}
       </Formik>

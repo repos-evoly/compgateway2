@@ -1,10 +1,15 @@
 /* --------------------------------------------------------------------------
    app/requests/rtgs/components/RTGSForm.tsx
-   – Fixes TS prop‑type conflict by casting FieldComponent to ElementType
+   – Adds commission helper on Amount (categoryId=13) and submits amount+commission:
+       • Fetches B2C commission using servicePackageId (cookie) + categoryId=13
+       • Commission = max(amount * pct/100, fixedFee)
+       • Helper text shows: "Commission: X — Total: Y"
+       • On submit, replaces `amount` with (amount + commission)
+   – Copy-paste ready. Strict TypeScript (no `any`), uses `type`.
    -------------------------------------------------------------------------- */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Cookies from "js-cookie";
 import { FormikHelpers } from "formik";
 import { useTranslations } from "next-intl";
@@ -38,11 +43,36 @@ import StatusBanner from "@/app/components/reusable/StatusBanner";
 import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
+/* Commission service (same one used in other forms) */
+import { getTransfersCommision } from "@/app/[locale]/transfers/internal/services";
+import { TransfersCommision } from "@/app/[locale]/transfers/internal/types";
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                     */
+/* -------------------------------------------------------------------------- */
+const COOKIE_SERVICE_PKG_KEY: string = "servicePackageId";
+const CATEGORY_ID_RTGS: number = 13;
+
+const toNumber = (v: unknown): number => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/,/g, "").trim());
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+};
+
+const computeCommission = (
+  amount: number,
+  pct: number,
+  fixed: number
+): number => Math.max((amount * pct) / 100, fixed);
+
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
 /* -------------------------------------------------------------------------- */
 
-interface AccountNumberDropdownProps {
+type AccountNumberDropdownProps = {
   name: string;
   label: string;
   options: InputSelectComboOption[];
@@ -55,7 +85,7 @@ interface AccountNumberDropdownProps {
     setFieldValue: (field: string, value: unknown) => void
   ) => void;
   isLoadingKyc: boolean;
-}
+};
 
 const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
   onAccountChange,
@@ -64,9 +94,8 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
   ...props
 }) => {
   const { setFieldValue } = useFormikContext();
-  const [field] = useField(name);
+  const [field] = useField<string>(name);
 
-  // Watch for changes in the field value
   useEffect(() => {
     if (field.value) {
       onAccountChange(field.value, setFieldValue);
@@ -82,6 +111,58 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
         </div>
       )}
     </div>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* Commissioned Amount input (wraps FormInputIcon to add helper text)          */
+/* -------------------------------------------------------------------------- */
+
+type CommissionedAmountInputProps = {
+  name: string;
+  label: string;
+  type?: "text" | "number";
+  startIcon?: React.ReactNode;
+  disabled?: boolean;
+  b2cPct: number;
+  b2cFixed: number;
+};
+
+const CommissionedAmountInput: React.FC<CommissionedAmountInputProps> = ({
+  name,
+  label,
+  type = "text",
+  startIcon,
+  disabled,
+  b2cPct,
+  b2cFixed,
+}) => {
+  const { values } = useFormikContext<TRTGSFormValues>();
+  const tUi = useTranslations("RTGSForm");
+
+  const amountNum: number = toNumber(values.amount);
+  const commission: number =
+    amountNum > 0 ? computeCommission(amountNum, b2cPct, b2cFixed) : 0;
+  const totalToPay: number = amountNum + commission;
+
+  const helperText: string =
+    amountNum > 0
+      ? `${tUi("commissionLabel", {
+          default: "Commission",
+        })}: ${commission.toLocaleString()} — ${tUi("totalToPayLabel", {
+          default: "Total to pay",
+        })}: ${totalToPay.toLocaleString()}`
+      : "";
+
+  return (
+    <FormInputIcon
+      name={name}
+      label={label}
+      type={type}
+      startIcon={startIcon}
+      disabled={disabled}
+      helpertext={helperText}
+    />
   );
 };
 
@@ -133,6 +214,42 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
   const t = useTranslations("RTGSForm");
   const [isLoadingKyc, setIsLoadingKyc] = useState(false);
   const [hasAutoFilled, setHasAutoFilled] = useState(false);
+
+  /* ---- commission config --------------------------------------------- */
+  const [commissionCfg, setCommissionCfg] = useState<TransfersCommision | null>(
+    null
+  );
+  const b2cPct: number = useMemo(
+    () => commissionCfg?.b2CCommissionPct ?? 0,
+    [commissionCfg]
+  );
+  const b2cFixed: number = useMemo(
+    () => commissionCfg?.b2CFixedFee ?? 0,
+    [commissionCfg]
+  );
+
+  useEffect(() => {
+    const run = async (): Promise<void> => {
+      const rawId = Cookies.get(COOKIE_SERVICE_PKG_KEY);
+      const parsed = rawId ? Number(rawId) : NaN;
+      if (!Number.isFinite(parsed)) {
+        console.error(
+          `Cookie "${COOKIE_SERVICE_PKG_KEY}" is missing or invalid. Got:`,
+          rawId
+        );
+        return;
+      }
+      try {
+        const cfg = await getTransfersCommision(parsed, CATEGORY_ID_RTGS);
+
+        console.log("[RTGS Commission] Result:", cfg);
+        setCommissionCfg(cfg);
+      } catch (err) {
+        console.error("[RTGS Commission] Fetch failed:", err);
+      }
+    };
+    void run();
+  }, []);
 
   /* ---- account dropdown from cookie ----------------------------------- */
   const [accountOptions, setAccountOptions] = useState<
@@ -191,15 +308,8 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
 
   /* Function to extract company code from account number */
   const extractCompanyCode = (accountNumber: string): string => {
-    // Remove any non-digit characters
     const cleanAccount = accountNumber.replace(/\D/g, "");
-
-    // Check if we have at least 10 digits (4 + 6)
-    if (cleanAccount.length >= 10) {
-      // Extract 6 digits after the first 4 digits
-      return cleanAccount.substring(4, 10);
-    }
-
+    if (cleanAccount.length >= 10) return cleanAccount.substring(4, 10);
     return "";
   };
 
@@ -222,22 +332,16 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       const kycData = await getKycByCode(companyCode);
 
       if (kycData.hasKyc && kycData.data) {
-        // Update form fields with KYC data
         setFieldValue(
           "applicantName",
           kycData.data.legalCompanyNameLT || kycData.data.legalCompanyName
         );
         setFieldValue("branchName", kycData.data.branchName);
-        // Build address from KYC data
-        const addressParts = [];
+        const addressParts: string[] = [];
         if (kycData.data.street) addressParts.push(kycData.data.street);
         if (kycData.data.district) addressParts.push(kycData.data.district);
         if (kycData.data.city) addressParts.push(kycData.data.city);
-
-        const fullAddress = addressParts.join(", ");
-        setFieldValue("address", fullAddress);
-
-        // Mark as auto-filled to prevent overwriting user input
+        setFieldValue("address", addressParts.join(", "));
         setHasAutoFilled(true);
       }
     } catch (error) {
@@ -247,8 +351,37 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     }
   };
 
+  /* ------------------- Types for sections ------------------ */
+  type FieldConfig =
+    | {
+        component: typeof AccountNumberDropdown;
+        props: AccountNumberDropdownProps;
+      }
+    | {
+        component: typeof FormInputIcon;
+        props: React.ComponentProps<typeof FormInputIcon>;
+      }
+    | {
+        component: typeof BranchesSelect;
+        props: React.ComponentProps<typeof BranchesSelect>;
+      }
+    | {
+        component: typeof Checkbox;
+        props: React.ComponentProps<typeof Checkbox>;
+      }
+    | {
+        component: typeof CommissionedAmountInput;
+        props: React.ComponentProps<typeof CommissionedAmountInput>;
+      };
+
+  type Section = {
+    title: string;
+    fields: FieldConfig[];
+    note?: string; // optional; only present for attachments
+  };
+
   /* ------------------- Sections config ------------------ */
-  const sections = [
+  const sections: Section[] = [
     {
       title: t("accInfo"),
       fields: [
@@ -337,13 +470,15 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       title: t("payDetails"),
       fields: [
         {
-          component: FormInputIcon,
+          component: CommissionedAmountInput,
           props: {
             name: "amount",
             label: t("amount"),
             type: "text",
             startIcon: <FaDollarSign />,
             disabled: readOnly,
+            b2cPct,
+            b2cFixed,
           },
         },
         {
@@ -386,7 +521,29 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
   const handleSubmit = (
     values: TRTGSFormValues,
     helpers: FormikHelpers<TRTGSFormValues>
-  ) => onSubmit(values, helpers);
+  ) => {
+    // Replace amount with (amount + commission) before submitting
+    const amountNum = toNumber(values.amount);
+    const commission =
+      amountNum > 0 ? computeCommission(amountNum, b2cPct, b2cFixed) : 0;
+    const totalToPay = amountNum > 0 ? amountNum + commission : amountNum;
+
+    const nextValues: TRTGSFormValues = {
+      ...values,
+      amount: String(totalToPay),
+    };
+
+    return onSubmit(nextValues, helpers);
+  };
+
+  const bannerStatus: "approved" | "rejected" =
+    (status ?? "").toLowerCase() === "approved" ? "approved" : "rejected";
+
+  const bannerReason: string | null =
+    typeof mergedValues.reason === "string" &&
+    mergedValues.reason.trim().length > 0
+      ? mergedValues.reason
+      : null;
 
   /* ====================================================== */
   return (
@@ -396,13 +553,11 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
         onSubmit={handleSubmit}
         validationSchema={validationSchema}
       >
-        <ReasonBanner
-          reason={mergedValues.reason} // or initialValues?.reason
-        />
+        <ReasonBanner reason={bannerReason} status={bannerStatus} />
         {/* Header */}
         <div
           className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6
-            bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0"
+               bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0"
         >
           {/* ------- Existing fields ------- */}
           <div className="flex-1">
@@ -439,7 +594,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
             />
           </div>
 
-          {/* ------- NEW: status badge (always at row-end) ------- */}
+          {/* ------- status badge (always at row-end) ------- */}
           {status && (
             <StatusBanner status={status} className="ltr:ml-auto rtl:mr-auto" />
           )}
@@ -461,7 +616,13 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
             >
               {section.fields.map((field, fIdx) => {
                 const FieldComponent = field.component as React.ElementType;
-                return <FieldComponent key={fIdx} {...field.props} />;
+                return (
+                  <FieldComponent
+                    key={fIdx}
+                    {...(field as unknown as { props: Record<string, unknown> })
+                      .props}
+                  />
+                );
               })}
             </div>
 

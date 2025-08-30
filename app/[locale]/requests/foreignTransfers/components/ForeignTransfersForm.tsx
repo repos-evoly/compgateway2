@@ -220,11 +220,20 @@ export default function ForeignTransfersForm({
             }
           };
 
+          const bannerStatus: "approved" | "rejected" =
+            (merged.status ?? "").toLowerCase() === "approved"
+              ? "approved"
+              : "rejected";
+
+          const bannerReason: string | null =
+            typeof merged.reason === "string" && merged.reason.trim().length > 0
+              ? merged.reason
+              : null;
+
           return (
             <Form>
-              <ReasonBanner
-                reason={merged.reason} // merged = your combined initial values
-              />
+              <ReasonBanner reason={bannerReason} status={bannerStatus} />
+
               <TabsWizard
                 steps={steps}
                 formik={formik}

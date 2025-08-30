@@ -201,7 +201,9 @@
     "unknownError": "An unexpected error occurred",
     "status":"Status",
     "actions": "Actions",
-    "downloadPdf": "Download PDF"
+    "downloadPdf": "Download PDF",
+    "commissionLabel": "Commission",
+    "totalToPayLabel": "Total to Pay"
   },
 
   "checkForm": {
@@ -241,7 +243,8 @@
     "successTitle": "Success",
     "successMessage": "Check request submitted successfully.",
     "actions": "Actions",
-    "downloadPdf": "Download PDF"
+    "downloadPdf": "Download PDF",
+    "phoneNumber": "Phone Number"
   },
 
   "CheckRequest": {
@@ -608,7 +611,8 @@
     "unknownError": "An unexpected error occurred",
     "submit": "Submit",
     "actions": "Actions",
-    "downloadPdf": "Download PDF"
+    "downloadPdf": "Download PDF",
+    "visaType": "Visa Type"
   },
 
   "bankStatement": {
@@ -850,7 +854,9 @@
         "savedMessage": "Letter of guarantee saved successfully.",
         "errorTitle": "Error",
         "unexpectedError": "An unexpected error occurred.",
-        "accountFetchError": "Failed to fetch account data"
+        "accountFetchError": "Failed to fetch account data",
+        "commissionLabel": "Commission",
+        "totalToPayLabel": "Total to Pay"
       }
     },
     "page": {
@@ -903,7 +909,9 @@
         "savedMessage": "Data saved successfully.",
         "errorTitle": "Error",
         "currencyFetchError": "Failed to fetch currencies.",
-        "submitErrorGeneric": "An error occurred during submission."
+        "submitErrorGeneric": "An error occurred during submission.",
+        "commissionLabel":"Commission",
+        "totalToPayLabel": "Total to Pay"
       }
     },
     "page": {

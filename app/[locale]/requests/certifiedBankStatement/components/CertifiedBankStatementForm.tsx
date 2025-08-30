@@ -166,11 +166,19 @@ export default function CertifiedBankStatementForm({
             }
           };
 
+          const statusVal = merged["status"] as unknown;
+          const bannerStatus: "approved" | "rejected" =
+            typeof statusVal === "string" &&
+            statusVal.toLowerCase() === "approved"
+              ? "approved"
+              : "rejected";
+
+          const reasonVal = merged["reason"] as unknown;
+          const bannerReason = typeof reasonVal === "string" ? reasonVal : null;
+
           return (
             <Form>
-              <ReasonBanner
-                reason={merged.reason} // or initialValues?.reason
-              />
+              <ReasonBanner reason={bannerReason} status={bannerStatus} />
 
               {/* <FormHeader
                 showBackButton

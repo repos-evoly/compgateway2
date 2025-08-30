@@ -3,6 +3,7 @@ export type TCheckbookValues = {
   userId?: number;
   fullName: string;
   address: string;
+  phoneNumber?: string; // ← added
   accountNumber: string;
   representativeId: string;
   branch: string;
@@ -11,7 +12,7 @@ export type TCheckbookValues = {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
-  reason?: string; // Optional field for additional information
+  reason?: string;
 };
 
 export type TCheckbookResponse = {
@@ -25,14 +26,15 @@ export type TCheckbookResponse = {
 export type TCheckbookFormValues = {
   fullName: string;
   address: string;
+  phoneNumber: string; // ← added
   accountNumber: string;
   representativeId: string;
   branch: string;
   date: string;
   bookContaining: string;
-  status?: string; 
-  id?: number; // Optional for new items
-  reason?: string; // Optional field for additional information
+  status?: string;
+  id?: number;
+  reason?: string;
 };
 
 /** Props for our CheckbookForm component */

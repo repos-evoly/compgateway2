@@ -1,11 +1,12 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/visaRequest/components/Step1VisaRequest.tsx
- * Renders accountNumber with <InputSelectCombo> + KYC auto-population
+ * Renders visaType (from JSON) and accountNumber with <InputSelectCombo>
+ * + KYC auto-population for accountNumber
  * ----------------------------------------------------------------------- */
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useFormikContext, useField } from "formik";
 
@@ -17,6 +18,11 @@ import InputSelectCombo, {
 } from "@/app/components/FormUI/InputSelectCombo";
 import { getKycByCode } from "../services";
 import BranchesSelect from "@/app/components/reusable/BranchesSelect";
+
+/** Static data for visa types */
+import visaTypes from "../visaTypes.json";
+
+type VisaType = { id: number; name: string; price: number };
 
 type Step1VisaRequestProps = {
   readOnly?: boolean;
@@ -32,6 +38,15 @@ export function Step1VisaRequest({
   const { setFieldValue } = useFormikContext();
   const [field] = useField<string>("accountNumber");
   const [isLoadingKyc, setIsLoadingKyc] = useState(false);
+
+  /** Build options for visaType: "Name — Price دينار" */
+  const visaTypeOptions: InputSelectComboOption[] = useMemo(() => {
+    const list = (visaTypes as VisaType[]) || [];
+    return list.map((v) => ({
+      label: `${v.name} — ${v.price} دينار`,
+      value: String(v.id),
+    }));
+  }, []);
 
   /* -- helpers ------------------------------------------------------ */
   const extractCompanyCode = (acc: string): string => {
@@ -85,6 +100,19 @@ export function Step1VisaRequest({
         const isReadOnlyField =
           name === "branch" || name === "accountHolderName";
         const isDisabled = readOnly || isReadOnlyField;
+
+        if (name === "visaType") {
+          return (
+            <InputSelectCombo
+              key={name}
+              name="visaType"
+              label={t(label)}
+              options={visaTypeOptions}
+              width="w-full"
+              disabled={readOnly}
+            />
+          );
+        }
 
         if (name === "accountNumber") {
           return (

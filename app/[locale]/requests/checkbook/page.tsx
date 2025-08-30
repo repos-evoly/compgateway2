@@ -7,6 +7,7 @@ import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CheckbookForm from "./components/CheckbookForm";
 import { getCheckbookRequests } from "./services";
 import type { TCheckbookFormValues } from "./types";
+import type { TCheckbookValues } from "./types"; // ← import API row type
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
@@ -28,11 +29,29 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
   }
 };
 
+/* Map a newly-added form row into the API row shape held in state */
+const mapFormToApiRow = (v: TCheckbookFormValues): TCheckbookValues => ({
+  id: v.id, // may be undefined; we’ll set a temp id in the caller
+  userId: undefined,
+  fullName: v.fullName,
+  address: v.address,
+  phoneNumber: v.phoneNumber || undefined, // form requires string; state can keep it optional
+  accountNumber: v.accountNumber,
+  representativeId: v.representativeId,
+  branch: v.branch,
+  date: v.date,
+  bookContaining: v.bookContaining,
+  status: v.status,
+  createdAt: undefined,
+  updatedAt: undefined,
+  reason: v.reason,
+});
+
 const CheckbookPage: React.FC = () => {
   const t = useTranslations("checkForm");
 
   /* ---------- table / pagination ---------- */
-  const [data, setData] = useState<TCheckbookFormValues[]>([]);
+  const [data, setData] = useState<TCheckbookValues[]>([]); // ← hold API rows here
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
@@ -73,7 +92,7 @@ const CheckbookPage: React.FC = () => {
           searchTerm,
           searchBy
         );
-        setData(res.data);
+        setData(res.data); // OK: data is TCheckbookValues[]
         setTotalPages(res.totalPages);
       } catch (err) {
         const msg = err instanceof Error ? err.message : t("genericError");
@@ -101,10 +120,10 @@ const CheckbookPage: React.FC = () => {
       key: "actions",
       label: t("actions", { defaultValue: "Actions" }),
       width: 120,
-      renderCell: (row: TCheckbookFormValues) => (
+      renderCell: (row: TCheckbookValues) => (
         <RequestPdfDownloadButton
           requestType="checkbook" /* matches fetcherMap key */
-          requestId={row.id!} /* only the primary key */
+          requestId={row.id ?? 0} /* API rows should have id; safe fallback */
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
@@ -115,7 +134,14 @@ const CheckbookPage: React.FC = () => {
   const handleAddClick = () => setShowForm(true);
 
   const handleFormSubmit = (newItem: TCheckbookFormValues) => {
-    setData((prev) => [newItem, ...prev]);
+    // Convert form values → API row shape and add a temporary id + default status
+    const apiRow: TCheckbookValues = {
+      ...mapFormToApiRow(newItem),
+      id: Date.now(), // temp client id
+      status: newItem.status ?? "pending",
+    };
+
+    setData((prev) => [apiRow, ...prev]);
     setShowForm(false);
     setModalTitle(t("successTitle"));
     setModalMessage(t("successMessage"));

@@ -326,11 +326,14 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   return (
     <>
       <div className="rounded w-full bg-gray-100">
-        {initialValues?.reason && (
-          <ReasonBanner
-            reason={initialValues.reason}
-          />
-        )}
+        <ReasonBanner
+          reason={initialValues?.reason ?? null}
+          status={
+            (status ?? "").toLowerCase() === "approved"
+              ? "approved"
+              : "rejected"
+          }
+        />
 
         <FormHeader status={status}>
           <BackButton

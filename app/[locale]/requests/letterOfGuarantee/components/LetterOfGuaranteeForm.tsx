@@ -6,7 +6,7 @@
  *     • Total to pay = amount + commission
  *     • Balance check validates (amount + commission) <= availableBalance
  *     • Amount field shows helper text: "Commission: X — Total: Y"
- * – On submit: replaces `amount` with (amount + commission)
+ * – Submit: directly replaces `amount` with (amount + commission) and submits.
  * – Copy-paste ready. Strict TypeScript (no `any`).
  * ----------------------------------------------------------------------- */
 
@@ -26,7 +26,6 @@ import InputSelectCombo, {
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-
 import { FaPaperPlane } from "react-icons/fa";
 
 import { getCurrencies } from "@/app/[locale]/currencies/services";
@@ -38,7 +37,7 @@ import type { AccountInfo } from "@/app/helpers/checkAccount";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 import BackButton from "@/app/components/reusable/BackButton";
 
-/* ⬇️ Commission service */
+/* Commission service */
 import { getTransfersCommision } from "@/app/[locale]/transfers/internal/services";
 import type { TransfersCommision } from "@/app/[locale]/transfers/internal/types";
 
@@ -358,8 +357,6 @@ export default function LetterOfGuaranteeForm({
       }
       try {
         const cfg = await getTransfersCommision(parsed, CATEGORY_ID_LOG);
-
-        console.log("[LOG Commission] Result:", cfg);
         setCommissionCfg(cfg);
       } catch (err) {
         console.error("[LOG Commission] Fetch failed:", err);
@@ -406,13 +403,12 @@ export default function LetterOfGuaranteeForm({
     refferenceNumber: Yup.string().required(tv("required")),
   });
 
-  /* ---- submit ----------------------------------------------------------- */
+  /* ---- submit (direct) -------------------------------------------------- */
   async function handleSubmit(
     vals: TLetterOfGuarantee,
-    { setSubmitting, resetForm }: FormikHelpers<TLetterOfGuarantee>
+    helpers: FormikHelpers<TLetterOfGuarantee>
   ) {
     try {
-      // Replace amount with (amount + commission) before submit
       const amt = toNumber(vals.amount);
       const comm = computeCommission(amt, b2cPct, b2cFixed);
       const totalToPay = amt + comm;
@@ -424,7 +420,7 @@ export default function LetterOfGuaranteeForm({
       };
 
       onSubmit(payload);
-      resetForm();
+      helpers.resetForm();
 
       setModalTitle(tu("savedTitle"));
       setModalMessage(tu("savedMessage"));
@@ -437,7 +433,7 @@ export default function LetterOfGuaranteeForm({
       setModalSuccess(false);
       setModalOpen(true);
     } finally {
-      setSubmitting(false);
+      helpers.setSubmitting(false);
     }
   }
 

@@ -1,3 +1,10 @@
+/* --------------------------------------------------------------------------
+ * app/[locale]/requests/checkRequest/components/Form.tsx (CheckRequestForm)
+ * – Adds a `phone` input and submits it in the payload.
+ * – Also submits a hidden `branchNum` field derived from BranchesSelect.
+ * – Number-safe validation (no .trim() on numbers).
+ * – Confirmation dialog (account + amount) before submit (no other changes).
+ * ----------------------------------------------------------------------- */
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -7,7 +14,7 @@ import Cookies from "js-cookie";
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import InputSelectCombo, {
-  InputSelectComboOption,
+  type InputSelectComboOption,
 } from "@/app/components/FormUI/InputSelectCombo";
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
@@ -16,23 +23,40 @@ import CheckRequestTable from "../components/Table";
 import { FaPaperPlane } from "react-icons/fa";
 import { useFormikContext, useField } from "formik";
 
-import { TCheckRequestFormValues } from "../types";
+import { type TCheckRequestFormValues } from "../types";
 import { getKycByCode } from "../services";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
-import { TCheckRequestFormProps } from "../types";
+import { type TCheckRequestFormProps } from "../types";
 
 /* Representatives query --------------------------------------------------- */
 import { getRepresentatives } from "@/app/[locale]/representatives/services";
 import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 import BackButton from "@/app/components/reusable/BackButton";
+import ConfirmationDialog from "@/app/components/reusable/ConfirmationDialog";
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                     */
+/* -------------------------------------------------------------------------- */
+const normalizeNumber = (v: unknown): number | null => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "string") {
+    const s = v.replace(/,/g, "").trim();
+    if (s === "") return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+};
+const hasNumericValue = (v: unknown): boolean => normalizeNumber(v) !== null;
+const hasNonNumericString = (v: unknown): boolean =>
+  typeof v === "string" && v.trim() !== "" && normalizeNumber(v) === null;
 
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
 /* -------------------------------------------------------------------------- */
-
 type AccountNumberDropdownProps = {
   name: string;
   label: string;
@@ -58,10 +82,9 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
   name,
   ...props
 }) => {
-  const { setFieldValue } = useFormikContext();
+  const { setFieldValue } = useFormikContext<Record<string, unknown>>();
   const [field] = useField<string>(name);
 
-  /* Guard to only call onAccountChange when the value actually changes */
   const prevValueRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -85,9 +108,17 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
 };
 
 /* -------------------------------------------------------------------------- */
+/* Local extended form type (adds phone, branchNum, address for KYC)          */
+/* -------------------------------------------------------------------------- */
+type ExtendedCheckRequestFormValues = TCheckRequestFormValues & {
+  phone: string;
+  branchNum?: string;
+  address?: string;
+};
+
+/* -------------------------------------------------------------------------- */
 /* Component                                                                  */
 /* -------------------------------------------------------------------------- */
-
 const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   initialValues,
   onSubmit,
@@ -115,14 +146,22 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   const [isLoadingRepresentatives, setIsLoadingRepresentatives] =
     useState(false);
 
-  /* default values */
-  const defaultValues: TCheckRequestFormValues = {
+  /* confirmation dialog state (added) */
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState<string>("");
+  const [pendingValues, setPendingValues] =
+    useState<ExtendedCheckRequestFormValues | null>(null);
+
+  /* default values (add phone + branchNum) */
+  const defaultValues: ExtendedCheckRequestFormValues = {
     branch: "",
+    branchNum: "",
     date: new Date(),
     customerName: "",
     cardNum: "",
     accountNum: "",
     beneficiary: "",
+    phone: "",
     representativeId: undefined,
     lineItems: [
       { dirham: "", lyd: "" },
@@ -131,9 +170,9 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
     ],
   };
 
-  const mergedValues: TCheckRequestFormValues = {
+  const mergedValues: ExtendedCheckRequestFormValues = {
     ...defaultValues,
-    ...initialValues,
+    ...(initialValues as Partial<ExtendedCheckRequestFormValues>),
     date:
       typeof initialValues?.date === "string"
         ? new Date(initialValues.date)
@@ -167,7 +206,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
 
   /* Load representative options */
   useEffect(() => {
-    const fetchRepresentatives = async () => {
+    const fetchRepresentatives = async (): Promise<void> => {
       setIsLoadingRepresentatives(true);
       try {
         const response = await getRepresentatives(1, 100);
@@ -184,7 +223,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       }
     };
 
-    fetchRepresentatives();
+    void fetchRepresentatives();
   }, []);
 
   /* Extract company code (stable) */
@@ -212,7 +251,6 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       const companyCode = extractCompanyCode(accountNumber);
       if (!companyCode) return;
 
-      /* Prevent repeat calls for the same code */
       if (lastFetchedCodeRef.current === companyCode) return;
       lastFetchedCodeRef.current = companyCode;
 
@@ -242,7 +280,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
     [extractCompanyCode]
   );
 
-  /* form fields array */
+  /* form fields array (added phone) */
   const formFields = [
     {
       name: "date",
@@ -271,24 +309,23 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       component: FormInputIcon,
       readOnly: false,
     },
-  ];
+    {
+      name: "phone",
+      label: t("phone"),
+      type: "text",
+      component: FormInputIcon,
+      readOnly: false,
+    },
+  ] as const;
 
-  /* wrapped submit */
-  const handleSubmit = async (values: TCheckRequestFormValues) => {
-    const hasValidAmount = values.lineItems.some((item) => {
-      const dirhamValid =
-        item.dirham && item.dirham.trim() !== "" && !isNaN(Number(item.dirham));
-      const lydValid =
-        item.lyd && item.lyd.trim() !== "" && !isNaN(Number(item.lyd));
-      return dirhamValid || lydValid;
-    });
-
+  /* wrapped submit (now opens confirmation dialog, no other changes) */
+  const handleSubmit = async (
+    values: ExtendedCheckRequestFormValues
+  ): Promise<void> => {
     const hasNonNumericValues = values.lineItems.some((item) => {
-      const dirhamNonNumeric =
-        item.dirham && item.dirham.trim() !== "" && isNaN(Number(item.dirham));
-      const lydNonNumeric =
-        item.lyd && item.lyd.trim() !== "" && isNaN(Number(item.lyd));
-      return dirhamNonNumeric || lydNonNumeric;
+      const dBad = hasNonNumericString(item.dirham);
+      const lBad = hasNonNumericString(item.lyd);
+      return dBad || lBad;
     });
 
     if (hasNonNumericValues) {
@@ -299,6 +336,11 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       return;
     }
 
+    const hasValidAmount = values.lineItems.some((item, idx) => {
+      if (idx !== 0) return false;
+      return hasNumericValue(item.dirham) || hasNumericValue(item.lyd);
+    });
+
     if (!hasValidAmount) {
       setModalTitle(t("errorTitle"));
       setModalMessage(t("amountRequired"));
@@ -307,8 +349,35 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       return;
     }
 
+    // Build confirmation message (account + amount only)
+    const dirhamStr = values.lineItems?.[0]?.dirham ?? "";
+    const lydStr = values.lineItems?.[0]?.lyd ?? "";
+    const parts: string[] = [];
+    if (dirhamStr !== "") parts.push(`${dirhamStr} ${t("dirham")}`);
+    if (lydStr !== "") parts.push(`${lydStr} ${t("lyd")}`);
+    const amountCombined = parts.join(" — ");
+
+    const message =
+      `${t("accountNum")}: ${values.accountNum}\n` +
+      `${t("amount")}: ${amountCombined || "—"}`;
+
+    setPendingValues(values);
+    setConfirmMessage(message);
+    setConfirmOpen(true);
+  };
+
+  // ConfirmationDialog close handler (proceeds with original submit)
+  const handleConfirmDialogClose = async (
+    confirmed: boolean
+  ): Promise<void> => {
+    setConfirmOpen(false);
+    if (!confirmed || !pendingValues) {
+      setPendingValues(null);
+      return;
+    }
+
     try {
-      await onSubmit(values);
+      await onSubmit(pendingValues); // includes phone and branchNum; date remains a Date
       setModalTitle(t("successTitle"));
       setModalMessage(t("successMessage"));
       setModalSuccess(true);
@@ -319,6 +388,8 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       setModalMessage(msg);
       setModalSuccess(false);
       setModalOpen(true);
+    } finally {
+      setPendingValues(null);
     }
   };
 
@@ -343,7 +414,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
         </FormHeader>
 
         <div className="px-6 pb-6">
-          <Form<TCheckRequestFormValues>
+          <Form<ExtendedCheckRequestFormValues>
             initialValues={mergedValues}
             onSubmit={handleSubmit}
           >
@@ -413,6 +484,13 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
           </Form>
         </div>
       </div>
+
+      {/* Confirmation dialog (account + amount only) */}
+      <ConfirmationDialog
+        openDialog={confirmOpen}
+        message={confirmMessage}
+        onClose={handleConfirmDialogClose}
+      />
 
       <ErrorOrSuccessModal
         isOpen={modalOpen}

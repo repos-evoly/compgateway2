@@ -1,12 +1,13 @@
 /* --------------------------------------------------------------------------
-   app/requests/rtgs/components/RTGSForm.tsx
-   – Adds commission helper on Amount (categoryId=13) and submits amount+commission:
-       • Fetches B2C commission using servicePackageId (cookie) + categoryId=13
-       • Commission = max(amount * pct/100, fixedFee)
-       • Helper text shows: "Commission: X — Total: Y"
-       • On submit, replaces `amount` with (amount + commission)
-   – Copy-paste ready. Strict TypeScript (no `any`), uses `type`.
-   -------------------------------------------------------------------------- */
+ * app/[locale]/requests/rtgs/components/RTGSForm.tsx
+ * – Adds commission helper on Amount (categoryId=13) and submits amount+commission:
+ *     • Fetches B2C commission using servicePackageId (cookie) + categoryId=13
+ *     • Commission = max(amount * pct/100, fixedFee)
+ *     • Helper text shows: "Commission: X — Total: Y"
+ *     • On submit, replaces `amount` with (amount + commission) then calls onSubmit
+ * – Confirmation dialog removed (direct submit).
+ * – Copy-paste ready. Strict TypeScript (no `any`), uses `type`.
+ * -------------------------------------------------------------------------- */
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -106,8 +107,8 @@ const AccountNumberDropdown: React.FC<AccountNumberDropdownProps> = ({
     <div className="relative">
       <InputSelectCombo name={name} {...props} />
       {isLoadingKyc && (
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
         </div>
       )}
     </div>
@@ -241,8 +242,6 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       }
       try {
         const cfg = await getTransfersCommision(parsed, CATEGORY_ID_RTGS);
-
-        console.log("[RTGS Commission] Result:", cfg);
         setCommissionCfg(cfg);
       } catch (err) {
         console.error("[RTGS Commission] Fetch failed:", err);
@@ -323,9 +322,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     const companyCode = extractCompanyCode(accountNumber);
     if (!companyCode) return;
 
-    // Only autofill once per session
-    if (hasAutoFilled) return;
-
+    if (hasAutoFilled) return; // Only autofill once per session
     setIsLoadingKyc(true);
 
     try {
@@ -377,7 +374,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
   type Section = {
     title: string;
     fields: FieldConfig[];
-    note?: string; // optional; only present for attachments
+    note?: string;
   };
 
   /* ------------------- Sections config ------------------ */
@@ -522,18 +519,18 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
     values: TRTGSFormValues,
     helpers: FormikHelpers<TRTGSFormValues>
   ) => {
-    // Replace amount with (amount + commission) before submitting
+    // Direct submit: replace amount with (amount + commission), then call onSubmit
     const amountNum = toNumber(values.amount);
     const commission =
       amountNum > 0 ? computeCommission(amountNum, b2cPct, b2cFixed) : 0;
-    const totalToPay = amountNum > 0 ? amountNum + commission : amountNum;
+    const totalToPay = amountNum + commission;
 
     const nextValues: TRTGSFormValues = {
       ...values,
       amount: String(totalToPay),
     };
 
-    return onSubmit(nextValues, helpers);
+    onSubmit(nextValues, helpers);
   };
 
   const bannerStatus: "approved" | "rejected" =
@@ -555,11 +552,7 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
       >
         <ReasonBanner reason={bannerReason} status={bannerStatus} />
         {/* Header */}
-        <div
-          className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6
-               bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0"
-        >
-          {/* ------- Existing fields ------- */}
+        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 bg-info-dark h-auto md:h-16 rounded-t-md px-4 py-4 md:py-0">
           <div className="flex-1">
             <DatePickerValue
               name="refNum"
@@ -594,7 +587,6 @@ const RTGSForm: React.FC<RTGSFormProps> = ({
             />
           </div>
 
-          {/* ------- status badge (always at row-end) ------- */}
           {status && (
             <StatusBanner status={status} className="ltr:ml-auto rtl:mr-auto" />
           )}

@@ -1,10 +1,7 @@
 /* --------------------------------------------------------------------------
  * app/[locale]/requests/checkbook/components/CheckbookForm.tsx
- * • Account Number uses <InputSelectCombo> (cookie-based options).
- * • representativeId uses <InputSelectCombo> fed by Representatives API.
- * • On account selection, extracts the middle 6-digit code, calls KYC API,
- *   and auto-fills fullName / address / branch.
- * • Adds phoneNumber field and submits it with the form.
+ * • Create / Edit checkbook request form.
+ * • Removed confirmation dialog (direct submit on create).
  * ----------------------------------------------------------------------- */
 
 "use client";
@@ -44,13 +41,10 @@ import { getKycByCode } from "@/app/auth/register/services";
 import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 
-/* -------------------------------- Types --------------------------------- */
-type UpdatedCheckbookFormProps = TCheckbookFormProps & {
-  isSubmitting?: boolean;
-};
-
 /* ======================================================================== */
-const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
+const CheckbookForm: React.FC<
+  TCheckbookFormProps & { isSubmitting?: boolean }
+> = ({
   onSubmit,
   onCancel,
   initialData,
@@ -131,13 +125,12 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
   const defaultValues: TCheckbookFormValues = {
     fullName: "",
     address: "",
-    phoneNumber: "", // added
+    phoneNumber: "",
     accountNumber: "",
     representativeId: "",
     branch: "",
     date: "",
     bookContaining: "",
-    // Optional fields in the type must exist in the schema shape too
     status: undefined,
     id: undefined,
     reason: undefined,
@@ -156,7 +149,6 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
     branch: Yup.string().required(`${t("branch")} ${t("required")}`),
     date: Yup.string().required(`${t("date")} ${t("required")}`),
     bookContaining: Yup.string().required(t("selectOneOption")),
-    // include optional fields so the schema matches TCheckbookFormValues exactly
     status: Yup.string().notRequired(),
     id: Yup.number().notRequired(),
     reason: Yup.string().notRequired(),
@@ -168,11 +160,13 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
   const handleSubmit = async (values: TCheckbookFormValues): Promise<void> => {
     if (readOnly || isSubmitting || externalIsSubmitting) return;
 
+    // Edit mode => pass values up directly (no confirmation)
     if (isEditMode) {
       onSubmit(values);
       return;
     }
 
+    // Create mode => directly call the API (confirmation removed)
     setIsSubmitting(true);
     try {
       const created: TCheckbookValues = await createCheckbookRequest(values);
@@ -209,7 +203,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = (): void => {
     onCancel?.();
   };
 
@@ -284,7 +278,6 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
     <>
       <div className="mt-2 w-full rounded bg-gray-100">
         {/* ---------- Header ---------- */}
-
         <ReasonBanner
           reason={initialData?.reason ?? null}
           status={
@@ -338,7 +331,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
               {[
                 { name: "fullName", label: t("name") },
                 { name: "address", label: t("address") },
-                { name: "phoneNumber", label: t("phoneNumber") }, // added
+                { name: "phoneNumber", label: t("phoneNumber") },
               ].map(({ name, label }) => (
                 <FormInputIcon
                   key={name}
@@ -388,7 +381,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
             {!readOnly && (
               <div className="mt-4 flex justify-center gap-3">
                 <SubmitButton
-                  title={t("submit")}
+                  title={isEditMode ? t("submit") : t("submit")}
                   Icon={isEditMode ? FaEdit : FaPaperPlane}
                   color="info-dark"
                   disabled={submitButtonDisabled}
@@ -409,7 +402,7 @@ const CheckbookForm: React.FC<UpdatedCheckbookFormProps> = ({
         </div>
       </div>
 
-      {/* ---------- Modal (create mode only) ---------- */}
+      {/* ---------- Result Modal (create mode only) ---------- */}
       {!isEditMode && (
         <ErrorOrSuccessModal
           isOpen={modalOpen}

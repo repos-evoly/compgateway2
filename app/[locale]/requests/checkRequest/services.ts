@@ -110,12 +110,11 @@ export async function getCheckRequests(
   return data;
 }
 
-/**
- * Creates a new check request (POST)
- * - On 401, refresh once and retry
- * - Enrich response with representativeName if available
- */
-export async function createCheckRequest(values: TCheckRequestFormValues): Promise<TCheckRequestValues> {
+// services.ts (or wherever createCheckRequest lives)
+
+export async function createCheckRequest(
+  values: TCheckRequestFormValues
+): Promise<TCheckRequestValues> {
   if (!baseUrl) {
     throw new Error("Base API URL is not defined");
   }
@@ -123,19 +122,24 @@ export async function createCheckRequest(values: TCheckRequestFormValues): Promi
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
 
-  const payload = {
-    branch: values.branch,
-    date: values.date.toISOString(),
-    customerName: values.customerName,
-    cardNum: values.cardNum,
-    accountNum: values.accountNum,
-    beneficiary: values.beneficiary,
-    representativeId: values.representativeId,
-    lineItems: values.lineItems.map((item) => ({
-      dirham: item.dirham,
-      lyd: item.lyd,
-    })),
-  };
+// inside createCheckRequest(...)
+const payload = {
+  branch: values.branch,
+  branchNum: values.branchNum,
+  date: values.date.toISOString(),
+  customerName: values.customerName,
+  cardNum: values.cardNum,
+  accountNum: values.accountNum,
+  beneficiary: values.beneficiary,
+  phone: values.phone,
+  representativeId:
+    values.representativeId != null ? Number(values.representativeId) : undefined,
+  lineItems: values.lineItems.map((item) => ({
+    dirham: String(item.dirham ?? ""),
+    lyd: String(item.lyd ?? ""),
+  })),
+};
+
 
   const url = `${baseUrl}/checkrequests`;
 
@@ -179,12 +183,13 @@ export async function createCheckRequest(values: TCheckRequestFormValues): Promi
         responseData.representativeName = rep.name;
       }
     } catch {
-      // ignore representative name enrichment failure
+      // ignore enrichment failure
     }
   }
 
   return responseData;
 }
+
 
 /**
  * Fetch a single check request by ID (GET)

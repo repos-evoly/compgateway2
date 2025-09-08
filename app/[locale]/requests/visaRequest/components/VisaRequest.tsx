@@ -1,11 +1,6 @@
-/* --------------------------------------------------------------------------
- * app/[locale]/requests/visaRequest/components/VisaWizardForm.tsx
- * Uses <InputSelectCombo> for accountNumber (options read from cookie)
- * ----------------------------------------------------------------------- */
-
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Cookies from "js-cookie";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -15,8 +10,11 @@ import { TabsWizard } from "@/app/components/reusable/TabsWizard";
 import { Step1VisaRequest } from "./Step1VisaRequest";
 import { Step2VisaRequest } from "./Step2VisaRequest";
 import { step1VisaInputs, step2VisaInputs } from "./visaInputs";
-import { VisaRequestFormValues } from "../types";
+import type { VisaRequestFormValues } from "../types";
 import type { InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
+
+import { getVisas } from "@/app/helpers/getVisas";
+import type { VisaItem } from "@/types";
 
 type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
@@ -32,8 +30,6 @@ export default function VisaWizardForm({
 }: VisaWizardFormProps) {
   const t = useTranslations("visaRequest");
   const baseImgUrl = process.env.NEXT_PUBLIC_IMAGE_URL;
-
-  console.log("initial values in VisaWizardForm:", initialValues);
 
   /* ---- Account dropdown (cookie) ------------------------------------- */
   const [accountOptions, setAccountOptions] = useState<
@@ -54,8 +50,37 @@ export default function VisaWizardForm({
     setAccountOptions(list.map((acc) => ({ label: acc, value: acc })));
   }, []);
 
+  /* ---- Visas (fetch once at the form level) -------------------------- */
+  const [visaTypeOptions, setVisaTypeOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+  const [isLoadingVisas, setIsLoadingVisas] = useState(false);
+
+  useEffect(() => {
+    const run = async (): Promise<void> => {
+      setIsLoadingVisas(true);
+      try {
+        const visas = await getVisas(); // VisaItem[]
+        const opts: InputSelectComboOption[] = visas.map((v: VisaItem) => {
+          const name = v.nameAr ?? v.nameEn ?? String(v.id);
+          return { label: `${name} — ${v.price} دينار`, value: String(v.id) };
+        });
+        setVisaTypeOptions(opts);
+      } catch (err) {
+        console.error("Failed to fetch visa types:", err);
+        setVisaTypeOptions([]);
+      } finally {
+        setIsLoadingVisas(false);
+      }
+    };
+    void run();
+  }, []);
+
   /* ---- Initial values ------------------------------------------------ */
   const mergedInitial: VisaRequestFormValues = {
+    visaId: initialValues?.visaId,
+    quantity: (initialValues as { quantity?: number })?.quantity ?? 1,
+
     branch: "",
     date: "",
     accountHolderName: "",
@@ -70,35 +95,47 @@ export default function VisaWizardForm({
     pldedge: "",
     files: (initialValues as { files?: File[] })?.files ?? [],
     newFiles: (initialValues as { newFiles?: File[] })?.newFiles ?? [],
+    attachmentUrls: initialValues?.attachmentUrls,
     ...initialValues,
   };
 
   /* ---- Wizard steps -------------------------------------------------- */
-  const steps = [
-    {
-      title: t("step1Title"),
-      component: (
-        <Step1VisaRequest readOnly={readOnly} accountOptions={accountOptions} />
-      ),
-    },
-    {
-      title: t("step2Title"),
-      component: (
-        <Step2VisaRequest
-          readOnly={readOnly}
-          /* --------------------------------------------------------------
-             Prefix each stored file path with the public image-base URL.
-             If baseImgUrl is undefined (env not set), fall back to the
-             original path so nothing breaks.
-           -------------------------------------------------------------- */
-          attachmentUrls={initialValues?.attachmentUrls?.map((url) =>
-            baseImgUrl ? `${baseImgUrl}/${url}` : url
-          )}
-          isEditMode={Boolean(initialValues)}
-        />
-      ),
-    },
-  ];
+  const steps = useMemo(
+    () => [
+      {
+        title: t("step1Title"),
+        component: (
+          <Step1VisaRequest
+            readOnly={readOnly}
+            accountOptions={accountOptions}
+            visaTypeOptions={visaTypeOptions}
+            isLoadingVisas={isLoadingVisas}
+          />
+        ),
+      },
+      {
+        title: t("step2Title"),
+        component: (
+          <Step2VisaRequest
+            readOnly={readOnly}
+            attachmentUrls={initialValues?.attachmentUrls?.map((url) =>
+              baseImgUrl ? `${baseImgUrl}/${url}` : url
+            )}
+            isEditMode={Boolean(initialValues)}
+          />
+        ),
+      },
+    ],
+    [
+      t,
+      readOnly,
+      accountOptions,
+      visaTypeOptions,
+      isLoadingVisas,
+      initialValues,
+      baseImgUrl,
+    ]
+  );
 
   /* ---- Field-name translator (for review) ---------------------------- */
   function translateFieldName(fieldName: string): string {
@@ -110,6 +147,10 @@ export default function VisaWizardForm({
   /* ---- Per-step validation ------------------------------------------ */
   const stepValidations = [
     Yup.object({
+      visaId: Yup.mixed().required(t("visaType") + " " + t("isRequired")),
+      quantity: Yup.number()
+        .required(t("quantity") + " " + t("isRequired"))
+        .min(1, t("quantity") + " >= 1"),
       branch: Yup.string().required(t("branch") + " " + t("isRequired")),
       date: Yup.string().required(t("date") + " " + t("isRequired")),
       accountHolderName: Yup.string().required(
@@ -149,18 +190,15 @@ export default function VisaWizardForm({
     }),
   ];
 
-  /* ---- Submit -------------------------------------------------------- */
+  /* ---- Direct submit (confirmation removed) -------------------------- */
   async function handleSubmit(
     values: VisaRequestFormValues & { files?: File[]; newFiles?: File[] }
   ) {
-    // Merge existing files with new files
     const allFiles = [...(values.files || []), ...(values.newFiles || [])];
-
-    const submitValues = {
+    const submitValues: VisaRequestFormValues & { files?: File[] } = {
       ...values,
       files: allFiles,
     };
-
     onSubmit(submitValues);
   }
 
@@ -200,12 +238,6 @@ export default function VisaWizardForm({
 
           return (
             <Form>
-              {/* <FormHeader
-                showBackButton
-                fallbackPath="/requests/visaRequest"
-                status={status}
-                onBack={onBack}
-              /> */}
               <TabsWizard
                 steps={steps}
                 formik={formik}
@@ -213,7 +245,7 @@ export default function VisaWizardForm({
                 validateCurrentStep={validateCurrentStep}
                 translateFieldName={translateFieldName}
                 readOnly={readOnly}
-                isEditing={initialValues ? true : false}
+                isEditing={Boolean(initialValues)}
                 backFallbackPath="/requests/visaRequest"
               />
             </Form>

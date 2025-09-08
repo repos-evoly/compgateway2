@@ -14,18 +14,20 @@ export type TCheckRequestValues = {
   id?: number;
   userId?: number;
   branch: string;
-  date: string;        // API returns ISO string, e.g. 2025-05-13T12:59:08.36
+  branchNum?: string;          // e.g. "0010"
+  date: string;                // ISO string from API
   customerName: string;
   cardNum: string;
   accountNum: string;
   beneficiary: string;
-  representativeId?: number; // Added representative field
-  representativeName?: string; // Added representative name for display
+  phone?: string;
+  representativeId?: number;
+  representativeName?: string;
   status?: string;
   lineItems: TCheckRequestLineItem[];
   createdAt?: string;
   updatedAt?: string;
-  reason?: string; // Optional field for additional information
+  reason?: string;
 };
 
 /**
@@ -42,21 +44,23 @@ export type TCheckRequestsResponse = {
 /**
  * Form values for creating/updating check requests
  */
+// types.ts (or wherever it's defined)
 export type TCheckRequestFormValues = {
   branch: string;
-  date: Date; // as a real Date for the DatePicker
+  branchNum?: string;          // optional; set by BranchesSelect
+  date: Date;                  // real Date for the DatePicker
   customerName: string;
   cardNum: string;
   accountNum: string;
   beneficiary: string;
-  representativeId?: number; // Added representative field
-  /** We do not store `id` or `status` in the form. */
+  phone: string;               // ← added
+  representativeId?: number;
   lineItems: {
     dirham: string;
     lyd: string;
   }[];
-  status?: string; 
-  reason?: string; // Optional field for additional information
+  status?: string;
+  reason?: string;
 };
 
 /**

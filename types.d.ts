@@ -370,3 +370,49 @@ export type DetailedUser = {
 };
 
 
+// getPricing/types.ts
+
+/** One pricing row from the API */
+export type PricingItem = {
+  id: number;
+  trxCatId: number;
+  pctAmt: number | null;
+  price: number | null;
+  amountRule: 'amount' | null; // as seen in the payload
+  unit: number;
+  description: string;
+  gL1: string;
+  gL2: string | null;
+  gL3: string | null;
+  gL4: string | null;
+  dtc: string;
+  ctc: string;
+  dtC2: string | null;
+  ctC2: string | null;
+  nR2: string | null;
+  applytR2: boolean;
+};
+
+/** Full paginated response */
+export type GetPricingResponse = {
+  data: PricingItem[];
+  page: number;
+  limit: number;
+  totalPages: number;
+  totalRecords: number;
+};
+
+
+// types/visa.ts
+
+export type VisaItem = {
+  id: number;
+  nameAr: string;
+  nameEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+  price: number;
+  attachments: unknown[]; // adjust later if attachment shape is known
+};
+
+export type VisaItemList = VisaItem[];

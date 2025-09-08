@@ -6,27 +6,27 @@ import { useTranslations } from "next-intl";
 
 import CheckRequestForm from "../components/CheckRequestForm";
 import { getCheckRequestById, updateCheckRequestById } from "../services";
-import { TCheckRequestValues, TCheckRequestFormValues } from "../types";
+import type { TCheckRequestValues, TCheckRequestFormValues } from "../types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
 
-const CheckRequestDetailPage = () => {
-  const { id } = useParams(); // /checkrequest/[id]
+const CheckRequestDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>(); // /checkrequest/[id]
   const t = useTranslations("CheckRequest");
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [checkData, setCheckData] = useState<TCheckRequestValues | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState("");
-  const [modalMessage, setModalMessage] = useState("");
-  const [modalSuccess, setModalSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [modalTitle, setModalTitle] = useState<string>("");
+  const [modalMessage, setModalMessage] = useState<string>("");
+  const [modalSuccess, setModalSuccess] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id) return;
 
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
         const item = await getCheckRequestById(id.toString());
         setCheckData(item);
@@ -41,7 +41,7 @@ const CheckRequestDetailPage = () => {
       }
     };
 
-    fetchData();
+    void fetchData();
   }, [id, t]);
 
   if (loading) {
@@ -56,15 +56,16 @@ const CheckRequestDetailPage = () => {
     );
   }
 
-  // Convert the API shape -> form shape
+  // Convert API shape -> form shape (include phone and branchNum)
   const initialFormValues: TCheckRequestFormValues = {
     branch: checkData.branch,
-    /** Convert date string to a JS Date for the form */
-    date: new Date(checkData.date),
+    branchNum: checkData.branchNum ?? "",
+    date: new Date(checkData.date), // form expects a real Date
     customerName: checkData.customerName,
     cardNum: checkData.cardNum,
     accountNum: checkData.accountNum,
     beneficiary: checkData.beneficiary,
+    phone: checkData.phone ?? "", // REQUIRED in TCheckRequestFormValues
     representativeId: checkData.representativeId,
     lineItems: checkData.lineItems.map((li) => ({
       dirham: li.dirham,
@@ -75,7 +76,9 @@ const CheckRequestDetailPage = () => {
   };
 
   // Handle form submission for updates
-  const handleFormSubmit = async (updatedItem: TCheckRequestFormValues) => {
+  const handleFormSubmit = async (
+    updatedItem: TCheckRequestFormValues
+  ): Promise<void> => {
     if (isSubmitting || !id) return;
 
     setIsSubmitting(true);
@@ -103,22 +106,18 @@ const CheckRequestDetailPage = () => {
     }
   };
 
-  const handleFormCancel = () => {
-    // Navigate back to the check request list
+  const handleFormCancel = (): void => {
     router.push("/requests/checkrequest");
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = (): void => {
     setModalOpen(false);
-
-    // If it was a successful update, optionally redirect back to the list
     if (modalSuccess) {
-      // You can uncomment this if you want to redirect after successful update
       // router.push("/requests/checkrequest");
     }
   };
 
-  const isReadOnly = checkData.status !== "Pending";
+  const isReadOnly: boolean = checkData.status !== "Pending";
 
   return (
     <div className="p-4">

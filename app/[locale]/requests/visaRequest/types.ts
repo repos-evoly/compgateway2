@@ -18,25 +18,32 @@ export type Attachment = {
   displayUrl?: string; // Added for display purposes
 };
 
+// types (where VisaRequestFormValues is defined)
 export type VisaRequestFormValues = {
-    branch?: string;
-    date?: string;
-    accountHolderName?: string;
-    accountNumber?: string;
-    nationalId?: number;
-    phoneNumberLinkedToNationalId?: string;
-    cbl?: string;
-    cardMovementApproval?: string;
-    cardUsingAcknowledgment?: string;
-    foreignAmount?: number;
-    localAmount?: number;
-    pldedge?: string;
-    status?: string;
-    files?: File[]; // Added for document uploads
-    newFiles?: File[]; // Added for new document uploads in edit mode
-    attachmentUrls?: string[]; // Added for displaying existing attachments
-    reason?: string; 
-  }
+  // new fields:
+  visaId?: number | string;          // selected visa id (select stores string; service converts to number)
+  quantity?: number;                 // >= 1
+
+  branch?: string;
+  date?: string;                     // "YYYY-MM-DD" or ISO; service converts to ISO
+  accountHolderName?: string;
+  accountNumber?: string;
+  nationalId?: number | string;      // safe to allow string if length can exceed JS int
+  phoneNumberLinkedToNationalId?: string;
+  cbl?: string;
+  cardMovementApproval?: string;
+  cardUsingAcknowledgment?: string;
+  foreignAmount?: number;
+  localAmount?: number;
+  pldedge?: string;
+  status?: string;
+
+  files?: File[];        // uploads (create)
+  newFiles?: File[];     // uploads (edit mode)
+  attachmentUrls?: string[];
+  reason?: string;
+};
+
 
 
   export type VisaRequestApiItem = {

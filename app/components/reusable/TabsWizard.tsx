@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import type { FormikProps } from "formik";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiLoader } from "react-icons/fi";
 import { useTranslations } from "next-intl";
 
 import BackButton from "@/app/components/reusable/BackButton"; // NEW
@@ -231,12 +231,22 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
         {!isLastStep && !readOnly && isEditing && (
           <button
             type="button"
-            onClick={onSubmit}
-            className="px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90
-                 transition-colors duration-300 font-semibold"
+            onClick={() => !formik.isSubmitting && onSubmit()}
+            className={`px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90 transition-colors duration-300 font-semibold flex items-center gap-2 ${
+              formik.isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+            }`}
             disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
+            aria-busy={formik.isSubmitting}
           >
-            {t("submit")}
+            {formik.isSubmitting ? (
+              <>
+                <FiLoader className="animate-spin" />
+                {t("submitting", { defaultValue: "Submitting..." })}
+              </>
+            ) : (
+              t("submit")
+            )}
           </button>
         )}
 
@@ -244,12 +254,22 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
         {isLastStep && !readOnly && (
           <button
             type="button"
-            onClick={onSubmit}
-            className="px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90
-                 transition-colors duration-300 font-semibold"
+            onClick={() => !formik.isSubmitting && onSubmit()}
+            className={`px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90 transition-colors duration-300 font-semibold flex items-center gap-2 ${
+              formik.isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+            }`}
             disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
+            aria-busy={formik.isSubmitting}
           >
-            {t("submit")}
+            {formik.isSubmitting ? (
+              <>
+                <FiLoader className="animate-spin" />
+                {t("submitting", { defaultValue: "Submitting..." })}
+              </>
+            ) : (
+              t("submit")
+            )}
           </button>
         )}
       </div>

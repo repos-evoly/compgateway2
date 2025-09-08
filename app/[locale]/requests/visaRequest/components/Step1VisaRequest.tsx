@@ -1,12 +1,6 @@
-/* --------------------------------------------------------------------------
- * app/[locale]/requests/visaRequest/components/Step1VisaRequest.tsx
- * Renders visaType (from JSON) and accountNumber with <InputSelectCombo>
- * + KYC auto-population for accountNumber
- * ----------------------------------------------------------------------- */
-
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useFormikContext, useField } from "formik";
 
@@ -19,34 +13,27 @@ import InputSelectCombo, {
 import { getKycByCode } from "../services";
 import BranchesSelect from "@/app/components/reusable/BranchesSelect";
 
-/** Static data for visa types */
-import visaTypes from "../visaTypes.json";
-
-type VisaType = { id: number; name: string; price: number };
-
 type Step1VisaRequestProps = {
   readOnly?: boolean;
   /** Options for the accountNumber dropdown (passed from the wizard) */
   accountOptions: InputSelectComboOption[];
+  /** Options for visa types (fetched at the form level) */
+  visaTypeOptions: InputSelectComboOption[];
+  /** Loading state for visas (to show placeholder/disable) */
+  isLoadingVisas?: boolean;
 };
 
 export function Step1VisaRequest({
   readOnly = false,
   accountOptions,
+  visaTypeOptions,
+  isLoadingVisas = false,
 }: Step1VisaRequestProps) {
   const t = useTranslations("visaRequest");
-  const { setFieldValue } = useFormikContext();
-  const [field] = useField<string>("accountNumber");
-  const [isLoadingKyc, setIsLoadingKyc] = useState(false);
+  const { setFieldValue } = useFormikContext<Record<string, unknown>>();
+  const [accountField] = useField<string>("accountNumber");
 
-  /** Build options for visaType: "Name — Price دينار" */
-  const visaTypeOptions: InputSelectComboOption[] = useMemo(() => {
-    const list = (visaTypes as VisaType[]) || [];
-    return list.map((v) => ({
-      label: `${v.name} — ${v.price} دينار`,
-      value: String(v.id),
-    }));
-  }, []);
+  const [isLoadingKyc, setIsLoadingKyc] = useState(false);
 
   /* -- helpers ------------------------------------------------------ */
   const extractCompanyCode = (acc: string): string => {
@@ -87,10 +74,10 @@ export function Step1VisaRequest({
 
   /* -- effect: run when accountNumber changes ----------------------- */
   useEffect(() => {
-    if (field.value) {
-      handleAccountNumberChange(field.value);
+    if (accountField.value) {
+      void handleAccountNumberChange(accountField.value);
     }
-  }, [field.value, handleAccountNumberChange]);
+  }, [accountField.value, handleAccountNumberChange]);
 
   /* -- render ------------------------------------------------------- */
   return (
@@ -101,16 +88,27 @@ export function Step1VisaRequest({
           name === "branch" || name === "accountHolderName";
         const isDisabled = readOnly || isReadOnlyField;
 
+        // Replace old "visaType" with new "visaId" select + quantity
         if (name === "visaType") {
           return (
-            <InputSelectCombo
-              key={name}
-              name="visaType"
-              label={t(label)}
-              options={visaTypeOptions}
-              width="w-full"
-              disabled={readOnly}
-            />
+            <React.Fragment key="visaId+quantity">
+              <InputSelectCombo
+                name="visaId" // <- bind to visaId in the form
+                label={t(label)}
+                options={visaTypeOptions}
+                width="w-full"
+                disabled={readOnly || isLoadingVisas}
+                placeholder={isLoadingVisas ? t("loading") : undefined}
+              />
+              {/* Quantity beside the visa select */}
+              <FormInputIcon
+                name="quantity"
+                label={t("quantity")}
+                type="number"
+                width="w-full"
+                disabled={readOnly}
+              />
+            </React.Fragment>
           );
         }
 

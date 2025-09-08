@@ -120,6 +120,8 @@ export const getVisaRequestById = async (
   return data;
 };
 
+
+
 export const createVisaRequest = async (
   formValues: VisaRequestFormValues & { files?: File[] }
 ): Promise<VisaRequestApiItem> => {
@@ -129,29 +131,40 @@ export const createVisaRequest = async (
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
 
+  // Normalize ISO date (accept "YYYY-MM-DD" or ISO)
   const isoDate =
     formValues.date && formValues.date.length === 10
       ? new Date(`${formValues.date}T00:00:00Z`).toISOString()
       : formValues.date ?? "";
 
+  // Coerce select values and numerics
+  const visaIdNum = Number(formValues.visaId ?? 0);
+  const quantityNum = Number(formValues.quantity ?? 1);
+
+  // Build DTO with EXACT PascalCase keys expected by backend
   const dto = {
-    branch: formValues.branch ?? "",
-    date: isoDate,
-    accountHolderName: formValues.accountHolderName ?? "",
-    accountNumber:
+    VisaId: visaIdNum,
+    Quantity: quantityNum,
+    Branch: String(formValues.branch ?? ""),
+    Date: isoDate,
+    AccountHolderName: String(formValues.accountHolderName ?? ""),
+    AccountNumber:
       typeof formValues.accountNumber === "string"
         ? formValues.accountNumber
         : String(formValues.accountNumber ?? ""),
-    phoneNumberLinkedToNationalId: String(
+    NationalId:
+      typeof formValues.nationalId === "string"
+        ? formValues.nationalId
+        : Number(formValues.nationalId ?? 0),
+    PhoneNumberLinkedToNationalId: String(
       formValues.phoneNumberLinkedToNationalId ?? ""
     ),
-    nationalId: Number(formValues.nationalId) || 0,
-    foreignAmount: Number(formValues.foreignAmount) || 0,
-    localAmount: Number(formValues.localAmount) || 0,
-    cbl: String(formValues.cbl ?? ""),
-    cardMovementApproval: String(formValues.cardMovementApproval ?? ""),
-    cardUsingAcknowledgment: String(formValues.cardUsingAcknowledgment ?? ""),
-    pldedge: String(formValues.pldedge ?? ""),
+    Cbl: String(formValues.cbl ?? ""),
+    CardMovementApproval: String(formValues.cardMovementApproval ?? ""),
+    CardUsingAcknowledgment: String(formValues.cardUsingAcknowledgment ?? ""),
+    ForeignAmount: Number(formValues.foreignAmount ?? 0),
+    LocalAmount: Number(formValues.localAmount ?? 0),
+    Pldedge: String(formValues.pldedge ?? ""),
   } as const;
 
   const formData = new FormData();
@@ -159,11 +172,14 @@ export const createVisaRequest = async (
 
   const files = formValues.files ?? [];
   if (files.length > 1) {
+    // Your current behavior: merge >1 into a single PDF
     const { blob } = await mergeFilesToPdf(files, 5);
     formData.append("files", blob, "documents.pdf");
   } else if (files.length === 1) {
     formData.append("files", files[0], files[0].name);
   }
+  // If you prefer to send multiple as-is:
+  // files.forEach((f) => formData.append("files", f, f.name));
 
   const url = `${baseUrl}/visarequests`;
 
@@ -172,6 +188,7 @@ export const createVisaRequest = async (
     headers: {
       Authorization: `Bearer ${bearer}`,
       Accept: "application/json",
+      // DO NOT set Content-Type; browser will add proper boundary
     },
     body: formData,
     cache: "no-store",
@@ -195,6 +212,7 @@ export const createVisaRequest = async (
 
   return (await response.json()) as VisaRequestApiItem;
 };
+
 
 export const updateVisaRequest = async (
   id: number,

@@ -584,7 +584,8 @@
         "next":"التالي",
         "back":"رجوع",
         "submit":"تقديم",
-        "backToPage":"العودة إلى الصفحة"
+        "backToPage":"العودة إلى الصفحة",
+        "submitting":"جاري التقديم..."
       },
       "visaRequest": {
         "step1Title": "الخطوة الأولى",

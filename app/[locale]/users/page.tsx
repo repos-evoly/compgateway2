@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 
 /* --------------------------------------------------
  * Helpers: read & normalize permissions from cookies
+ * + isCompanyAdmin override for showing the Lock action
  * -------------------------------------------------- */
 const COOKIE_CANDIDATES: ReadonlyArray<string> = [
   "permissions",
@@ -65,6 +66,29 @@ function readPermissionsFromCookies(): Set<string> {
   return new Set<string>();
 }
 
+/** Robust boolean cookie reader for isCompanyAdmin */
+function readIsCompanyAdminFromCookie(): boolean {
+  const raw = Cookies.get("isCompanyAdmin");
+  if (!raw) return false;
+  const decoded = safeDecodeURIComponent(raw).trim().toLowerCase();
+
+  if (decoded === "true" || decoded === "1") return true;
+  if (decoded === "false" || decoded === "0") return false;
+
+  try {
+    const parsed: unknown = JSON.parse(decoded);
+    if (typeof parsed === "boolean") return parsed;
+    if (typeof parsed === "string") {
+      const s = parsed.trim().toLowerCase();
+      if (s === "true" || s === "1") return true;
+      if (s === "false" || s === "0") return false;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return false;
+}
+
 export default function EmployeesPage() {
   /* --------------------------------------------------
    * Local state
@@ -81,6 +105,7 @@ export default function EmployeesPage() {
   // Permission flags
   const [canAddUser, setCanAddUser] = useState(false);
   const [canEditUser, setCanEditUser] = useState(false);
+  const [isCompanyAdmin, setIsCompanyAdmin] = useState(false); // NEW
 
   /* Modal state */
   const [modalOpen, setModalOpen] = useState(false);
@@ -98,6 +123,7 @@ export default function EmployeesPage() {
     const perms = readPermissionsFromCookies();
     setCanAddUser(perms.has("companycanadduser"));
     setCanEditUser(perms.has("companycanedituser"));
+    setIsCompanyAdmin(readIsCompanyAdminFromCookie()); // NEW
   }, []);
 
   /* --------------------------------------------------
@@ -225,8 +251,13 @@ export default function EmployeesPage() {
   const handleModalConfirm = () => setModalOpen(false);
 
   /* --------------------------------------------------
-   * Derived props for CrudDataGrid (respect discriminated unions)
+   * Derived props for CrudDataGrid
+   * If isCompanyAdmin === true → force-show the actions column
+   * (only for the Edit Permissions button appearance).
+   * Other conditions remain as-is.
    * -------------------------------------------------- */
+  const shouldShowActions = isCompanyAdmin || canEditUser;
+
   const gridBaseProps = {
     data: rowData,
     columns,
@@ -237,14 +268,14 @@ export default function EmployeesPage() {
     showSearchInput: false,
     showDropdown: false,
     loading,
-    canEdit: canEditUser,
+    canEdit: canEditUser, // unchanged
   } as const;
 
   const gridAddProps = canAddUser
     ? ({ showAddButton: true as const, onAddClick: handleAddClick } as const)
     : ({ showAddButton: false as const } as const);
 
-  const gridActionProps = canEditUser
+  const gridActionProps = shouldShowActions
     ? ({ showActions: true as const, actions } as const)
     : ({ showActions: false as const } as const);
 

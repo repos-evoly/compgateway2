@@ -1,54 +1,64 @@
-/* ─────────── app/auth/layout.tsx  COMPLETE & FIXED ─────────── */
+/* app/auth/layout.tsx – allow-list enforcement for selected auth pages */
 import "../globals.css";
 import { Cairo } from "next/font/google";
-import { headers } from "next/headers";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 
-/* Google font */
 const cairo = Cairo({ subsets: ["latin", "arabic"] });
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ locale?: string }>;
-}) {
-  /* locale resolution */
-  const { locale = "en" } = await params;
-  const isRtl = locale === "ar";
+type Props = { children: ReactNode };
 
-  /* 🔐 read the per-request nonce from middleware */
-  const hdrs = await headers(); // ← await here
-  const nonce = hdrs.get("x-nonce") ?? "";
-
-  /* allowed full URL comes from env */
-  const ALLOWED_URL = process.env.NEXT_PUBLIC_ALLOWED_URL;
+export default function AuthLayout({ children }: Props): React.JSX.Element {
+  // Comma-separated list of allowed URLs/paths (absolute enforces origin; relative resolved against current origin)
+  const allowedRaw =
+    process.env.NEXT_PUBLIC_ALLOWED_URLS ??
+    process.env.NEXT_PUBLIC_ALLOWED_URL ??
+    "";
 
   return (
-    <html
-      className={`h-full ${cairo.className}`}
-      lang={locale}
-      dir={isRtl ? "rtl" : "ltr"}
-    >
+    <html className={`h-full ${cairo.className}`} lang="ar" dir="rtl">
       <body className="h-full flex flex-row">
         {children}
 
-        {/* self-destruct on wrong URL */}
+        {/* Enforce only on allow-listed pages; ignore query/hash/trailing slashes */}
         <script
-          nonce={nonce}
+          // If you later add CSP script nonces, you can set nonce here.
           dangerouslySetInnerHTML={{
             __html: `
-              (function () {
-                var allowed = ${JSON.stringify(ALLOWED_URL)};
-                if (window.location.href !== allowed) {
-                  document.documentElement.innerHTML =
-                    '<style>body{font-family:sans-serif;text-align:center;padding:4rem}</style>' +
-                    '<h1>موقع مزيّف</h1>' +
-                    '<p>الرابط الصحيح هو <b>' + allowed + '</b></p>';
-                }
-              })();
+(function () {
+  var raw = ${JSON.stringify(allowedRaw)};
+  if (!raw) return;
+
+  function norm(p) { return p.replace(/\\/+$/, "") || "/"; }
+
+  // Build entries from env; support absolute URLs or relative paths; support "/*" wildcard suffix
+  var items = raw.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+  if (!items.length) return;
+
+  var entries = items.map(function (item) {
+    var url = new URL(item, window.location.origin);
+    var wildcard = url.pathname.endsWith("/*");
+    var path = wildcard ? url.pathname.slice(0, -2) : url.pathname; // remove "/*"
+    return { origin: url.origin, path: norm(path), href: url.href, wildcard: wildcard };
+  });
+
+  var currentPath = norm(window.location.pathname);
+
+  // Only enforce on paths present in the allow-list (exact match or wildcard prefix)
+  var match = entries.find(function (e) {
+    return e.wildcard ? currentPath.startsWith(e.path) : currentPath === e.path;
+  });
+
+  if (!match) return;                 // Not one of the enforced pages → do nothing
+  if (window.location.origin === match.origin) return; // Correct origin → OK
+
+  // Wrong origin on an enforced page → block
+  document.documentElement.innerHTML =
+    '<style>body{font-family:sans-serif;text-align:center;padding:4rem}</style>' +
+    '<h1>موقع مزيّف</h1>' +
+    '<p>الرابط الصحيح هو <b>' + match.href + '</b></p>';
+})();
             `,
           }}
         />

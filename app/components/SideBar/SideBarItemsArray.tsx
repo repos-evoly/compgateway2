@@ -124,13 +124,13 @@ export const sidebarItems = [
         icon: FaUniversity,
         enabledTransactionCategories: ["InternalTransfer"],
       },
-      {
-        id: 5,
-        label: "transfer.group",
-        path: "/transfers/group-transfer",
-        icon: FaUsers,
-        enabledTransactionCategories: ["GroupTransfer"],
-      },
+      // {
+      //   id: 5,
+      //   label: "transfer.group",
+      //   path: "/transfers/group-transfer",
+      //   icon: FaUsers,
+      //   enabledTransactionCategories: ["GroupTransfer"],
+      // },
       {
         id: 6,
         label: "transfer.out",

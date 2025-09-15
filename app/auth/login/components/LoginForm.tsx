@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useEffect, useState } from "react";
+import React, { JSX, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import Link from "next/link";
@@ -32,36 +32,88 @@ import {
 /* =========================================================
    Two-line banner — text on top, URL underneath
    ========================================================= */
-function URLBanner() {
-  const EXPECTED_URL = process.env.NEXT_PUBLIC_ALLOWED_URL ?? "<URL_NOT_SET>";
+/* Drop-in replacement for your URLBanner (login page) */
+function URLBanner(): React.JSX.Element | null {
+  const RAW =
+    process.env.NEXT_PUBLIC_ALLOWED_URLS ??
+    process.env.NEXT_PUBLIC_ALLOWED_URL ??
+    "/auth/login";
 
-  const [actual, setActual] = useState("…");
-  const [ok, setOk] = useState(true);
+  const [actualHref, setActualHref] = React.useState<string>("…");
+  const [ok, setOk] = React.useState<boolean>(true);
+  const [expectedForThisPage, setExpectedForThisPage] =
+    React.useState<string>("");
 
-  useEffect(() => {
-    const here = window.location.href; // full URL inc. path
-    setActual(here);
-    setOk(here === EXPECTED_URL);
-  }, [EXPECTED_URL]);
+  React.useEffect(() => {
+    const normalize = (p: string): string => p.replace(/\/+$/, "") || "/";
+    const actual = new URL(window.location.href);
+    const currentPath = normalize(actual.pathname);
+
+    // Build allow-list entries
+    type Entry = {
+      href: string;
+      origin: string;
+      path: string;
+      wildcard: boolean;
+      isAbsolute: boolean;
+    };
+    const items = RAW.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const entries: Entry[] = items.map((item) => {
+      const isAbsolute = /^https?:\/\//i.test(item);
+      const url = new URL(item, actual.origin); // relative → resolve against current origin
+      const wildcard = url.pathname.endsWith("/*");
+      const path = normalize(
+        wildcard ? url.pathname.slice(0, -2) : url.pathname
+      );
+      return { href: url.href, origin: url.origin, path, wildcard, isAbsolute };
+    });
+
+    // Find entries that apply to THIS path
+    const candidates = entries.filter((e) =>
+      e.wildcard ? currentPath.startsWith(e.path) : currentPath === e.path
+    );
+
+    // If this page isn’t in the allow-list, hide the banner
+    if (candidates.length === 0) {
+      setExpectedForThisPage("");
+      setOk(true);
+      setActualHref(actual.href);
+      return;
+    }
+
+    // Prefer an absolute candidate (so we can enforce origin), else first
+    const candidate = candidates.find((c) => c.isAbsolute) ?? candidates[0];
+
+    // Origin check only if the allow-list used an absolute URL
+    const originOk = candidate.isAbsolute
+      ? actual.origin === candidate.origin
+      : true;
+
+    setExpectedForThisPage(candidate.href);
+    setOk(originOk);
+    setActualHref(actual.href);
+  }, [RAW]);
+
+  // If current page isn’t in allow-list, don’t render the banner
+  if (!expectedForThisPage) return null;
 
   const baseClass = "mb-4 rounded-lg border px-3 py-2 text-xs font-semibold";
-
   const okClass = "bg-green-50 text-green-700 border-green-300";
   const badClass = "bg-red-50 text-red-700 border-red-300";
 
   return (
     <div dir="rtl" className={`${baseClass} ${ok ? okClass : badClass}`}>
-      {/* 1️⃣ Arabic message line */}
       <div className="flex items-center gap-1">
         <FiLockIcon />
         {ok
           ? "✅ تأكد أنك على الرابط الصحيح:"
           : "⚠️ هذا الرابط غير صحيح، يجب أن يكون:"}
       </div>
-
-      {/* 2️⃣ URL line */}
       <div dir="ltr" className="mt-1 font-bold break-all">
-        {ok ? actual : EXPECTED_URL}
+        {ok ? actualHref : expectedForThisPage}
       </div>
     </div>
   );

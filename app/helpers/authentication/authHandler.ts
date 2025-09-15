@@ -243,6 +243,12 @@ export async function loginRoutingHandler(
     });
   }
 
+  Cookies.set("isCompanyAdmin", JSON.stringify(userData.isCompanyAdmin), {
+    expires: 7,
+    secure: false,
+    httpOnly: false,
+  });
+
   // Store other user data in cookies
   Cookies.set("companyCode", JSON.stringify(userData.companyCode), {
     expires: 7,

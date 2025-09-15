@@ -1,31 +1,32 @@
 /* --------------------------------------------------------------------------
    app/[locale]/requests/checkRequest/components/Table.tsx
    – Client component
-   – Fetches commission config (B2C) using servicePackageId from cookies.
-   – When the user types an Amount (row 1) in either column:
-       • Expenses (row 2) = max(amount * pct/100, fixed fee)
-       • Total (row 3)    = amount + expenses
-     Computation happens via Formik value watchers (no changes to FormInputIcon).
+   – Row 1 (Amount): user enters values.
+   – Row 2 (Expenses): 
+       • Dirham *  = fixed **10** (always)
+       • D.L *     = (Amount_LYD + Amount_Dirham/1000) × (2/1000)
+         (i.e., 1 د.ل* = 1000 درهم*)
+   – Row 3 (Total):
+       • Dirham *  = Amount_Dirham + 10
+       • D.L *     = Amount_LYD + computed commission (2/1000 on combined)
+   – Computation happens via Formik watchers; fields are disabled for rows 2 & 3.
    – Strict TypeScript (no `any`), copy-paste ready.
-   -------------------------------------------------------------------------- */
+-------------------------------------------------------------------------- */
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import Cookies from "js-cookie";
+import React, { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useFormikContext } from "formik";
 import { FaMoneyBillWave, FaCalculator } from "react-icons/fa";
 
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import { getTransfersCommision } from "@/app/[locale]/transfers/internal/services";
-import type { TransfersCommision } from "@/app/[locale]/transfers/internal/types";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
 /* ------------------------------------------------------------------ */
 type LineItem = {
-  dirham: number | "";
-  lyd: number | "";
+  dirham: number | string | "";
+  lyd: number | string | "";
 };
 
 type FormShape = {
@@ -33,15 +34,9 @@ type FormShape = {
 };
 
 type TCheckRequestTableProps = {
-  /** If true, inputs are disabled */
+  /** If true, inputs are disabled (row 1 only). Row 2 & 3 are always disabled. */
   readOnly?: boolean;
 };
-
-/* ------------------------------------------------------------------ */
-/* Constants                                                           */
-/* ------------------------------------------------------------------ */
-const COOKIE_KEY: string = "servicePackageId";
-const TRANSACTION_CATEGORY_ID: number = 5;
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -55,11 +50,8 @@ const toNumber = (v: unknown): number => {
   return 0;
 };
 
-const computeCommission = (
-  amount: number,
-  pct: number,
-  fixed: number
-): number => Math.max((amount * pct) / 100, fixed);
+const nearlyEqual = (a: number, b: number, eps: number = 1e-6): boolean =>
+  Math.abs(a - b) < eps;
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
@@ -68,37 +60,7 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
   const t = useTranslations("CheckRequest");
   const { values, setFieldValue } = useFormikContext<FormShape>();
 
-  const [comm, setComm] = useState<TransfersCommision | null>(null);
-
-  /* Fetch commission config once */
-  useEffect(() => {
-    const run = async (): Promise<void> => {
-      const rawId = Cookies.get(COOKIE_KEY);
-      const parsed = rawId ? Number(rawId) : NaN;
-      if (!Number.isFinite(parsed)) {
-        console.error(
-          `Cookie "${COOKIE_KEY}" is missing or not a valid number. Got:`,
-          rawId
-        );
-        return;
-      }
-      try {
-        const data = await getTransfersCommision(
-          parsed,
-          TRANSACTION_CATEGORY_ID
-        );
-        setComm(data);
-      } catch (err) {
-        console.error("[Transfers Commission] Fetch failed:", err);
-      }
-    };
-    void run();
-  }, []);
-
-  const pct = useMemo<number>(() => comm?.b2CCommissionPct ?? 0, [comm]);
-  const fixed = useMemo<number>(() => comm?.b2CFixedFee ?? 0, [comm]);
-
-  /* Extract watched form values into simple variables to satisfy exhaustive-deps */
+  /* Extract form values */
   const li0Dirham = values?.lineItems?.[0]?.dirham ?? "";
   const li1Dirham = values?.lineItems?.[1]?.dirham ?? "";
   const li2Dirham = values?.lineItems?.[2]?.dirham ?? "";
@@ -107,63 +69,46 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
   const li1Lyd = values?.lineItems?.[1]?.lyd ?? "";
   const li2Lyd = values?.lineItems?.[2]?.lyd ?? "";
 
-  /* Watch Amount (Dirham) and auto-fill Expenses & Total */
+  /* Watch Amounts and compute Expenses + Totals
+     Rules:
+       - expenses.dirham = 10
+       - expenses.lyd    = (amount.lyd + amount.dirham/1000) * (2/1000)
+       - total.dirham    = amount.dirham + 10
+       - total.lyd       = amount.lyd + expenses.lyd
+  */
   useEffect(() => {
-    if (readOnly) return;
-    if (!comm) return;
+    const amountDirham = toNumber(li0Dirham);
+    const amountLyd = toNumber(li0Lyd);
 
-    const amount = toNumber(li0Dirham);
-    const expense = computeCommission(amount, pct, fixed);
-    const total = amount + expense;
+    const fixedDirham = 10;
+    const commissionLyd = (amountLyd + amountDirham / 1000) * (2 / 1000);
 
-    const currentExpense =
+    const totalDirham = amountDirham + fixedDirham;
+    const totalLyd = amountLyd + commissionLyd;
+
+    const currentExpenseDirham =
       typeof li1Dirham === "number" ? li1Dirham : toNumber(li1Dirham);
-    const currentTotal =
-      typeof li2Dirham === "number" ? li2Dirham : toNumber(li2Dirham);
-
-    const needsExpenseUpdate = currentExpense !== expense;
-    const needsTotalUpdate = currentTotal !== total;
-
-    if (needsExpenseUpdate) {
-      void setFieldValue("lineItems[1].dirham", expense);
-    }
-    if (needsTotalUpdate) {
-      void setFieldValue("lineItems[2].dirham", total);
-    }
-  }, [
-    readOnly,
-    comm,
-    pct,
-    fixed,
-    li0Dirham,
-    li1Dirham,
-    li2Dirham,
-    setFieldValue,
-  ]);
-
-  /* Watch Amount (LYD) and auto-fill Expenses & Total */
-  useEffect(() => {
-    if (readOnly) return;
-    if (!comm) return;
-
-    const amount = toNumber(li0Lyd);
-    const expense = computeCommission(amount, pct, fixed);
-    const total = amount + expense;
-
-    const currentExpense =
+    const currentExpenseLyd =
       typeof li1Lyd === "number" ? li1Lyd : toNumber(li1Lyd);
-    const currentTotal = typeof li2Lyd === "number" ? li2Lyd : toNumber(li2Lyd);
 
-    const needsExpenseUpdate = currentExpense !== expense;
-    const needsTotalUpdate = currentTotal !== total;
+    const currentTotalDirham =
+      typeof li2Dirham === "number" ? li2Dirham : toNumber(li2Dirham);
+    const currentTotalLyd =
+      typeof li2Lyd === "number" ? li2Lyd : toNumber(li2Lyd);
 
-    if (needsExpenseUpdate) {
-      void setFieldValue("lineItems[1].lyd", expense);
+    if (!nearlyEqual(currentExpenseDirham, fixedDirham)) {
+      void setFieldValue("lineItems[1].dirham", fixedDirham, false);
     }
-    if (needsTotalUpdate) {
-      void setFieldValue("lineItems[2].lyd", total);
+    if (!nearlyEqual(currentExpenseLyd, commissionLyd)) {
+      void setFieldValue("lineItems[1].lyd", commissionLyd, false);
     }
-  }, [readOnly, comm, pct, fixed, li0Lyd, li1Lyd, li2Lyd, setFieldValue]);
+    if (!nearlyEqual(currentTotalDirham, totalDirham)) {
+      void setFieldValue("lineItems[2].dirham", totalDirham, false);
+    }
+    if (!nearlyEqual(currentTotalLyd, totalLyd)) {
+      void setFieldValue("lineItems[2].lyd", totalLyd, false);
+    }
+  }, [li0Dirham, li0Lyd, li1Dirham, li1Lyd, li2Dirham, li2Lyd, setFieldValue]);
 
   return (
     <div className="flex flex-col items-center p-8 bg-gray-100 rounded-lg">
@@ -202,7 +147,7 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
           </div>
         </div>
 
-        {/* Row 2: Expenses (auto-calculated) */}
+        {/* Row 2: Expenses (auto-calculated per rules above) */}
         <div className="grid grid-cols-3 border-b border-gray-300">
           <div className="p-4 bg-gray-100 font-semibold text-gray-700">
             {t("expenses")}

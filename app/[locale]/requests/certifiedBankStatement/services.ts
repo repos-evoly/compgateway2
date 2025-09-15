@@ -22,6 +22,7 @@ type ApiCertifiedBankStatement = {
   oldAccountNumber: number | null;
   newAccountNumber: number | null;
   serviceRequests: ServicesRequest;
+  totalAmountLyd?: number | null;
   statementRequest: {
     currentAccountStatementArabic: boolean | null;
     currentAccountStatementEnglish: boolean | null;
@@ -206,6 +207,7 @@ function transformApiToFormShape(
     accountNumber: apiItem.accountNumber ?? undefined,
     oldAccountNumber: apiItem.oldAccountNumber ?? undefined,
     newAccountNumber: apiItem.newAccountNumber ?? undefined,
+    totalAmountLyd: apiItem.totalAmountLyd ?? 0,
 
     serviceRequests: {
       reactivateIdfaali: srv.reactivateIdfaali,
@@ -251,6 +253,7 @@ export async function createCertifiedBankStatement(
     accountNumber: payload.accountNumber ?? null,
     oldAccountNumber: payload.oldAccountNumber ?? null,
     newAccountNumber: payload.newAccountNumber ?? null,
+    totalAmountLyd: payload.totalAmountLyd ?? 0,
     serviceRequests: {
       reactivateIdfaali: payload.serviceRequests?.reactivateIdfaali ?? false,
       deactivateIdfaali: payload.serviceRequests?.deactivateIdfaali ?? false,

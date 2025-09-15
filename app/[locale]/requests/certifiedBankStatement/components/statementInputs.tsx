@@ -44,6 +44,7 @@ export type CertifiedBankStatementRequest = {
   newAccountNumber?: number;
   statementRequest?: StatementRequest;
   reason?: string;
+  totalAmountLyd?: number;
 };
 
 /**

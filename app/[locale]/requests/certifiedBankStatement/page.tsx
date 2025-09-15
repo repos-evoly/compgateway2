@@ -63,6 +63,8 @@ export default function CertifiedBankStatementPage() {
           limit,
         });
         setData(res.data);
+
+        console.log("Fetched certified bank statements:", res.data);
         setTotalPages(res.totalPages);
       } catch (err) {
         const msg = err instanceof Error ? err.message : t("unknownError");
@@ -84,6 +86,17 @@ export default function CertifiedBankStatementPage() {
     {
       key: "authorizedOnTheAccountName",
       label: t("authorizedOnTheAccountName"),
+    },
+    {
+      key: "totalAmountLyd",
+      label: t("totalAmountLyd"),
+      renderCell: (row: CertifiedBankStatementRequestWithID) =>
+        typeof row.totalAmountLyd === "number"
+          ? row.totalAmountLyd.toLocaleString("en-LY", {
+              minimumFractionDigits: 3,
+              maximumFractionDigits: 3,
+            })
+          : "",
     },
     { key: "statementRequest.fromDate", label: t("fromDate") },
     { key: "statementRequest.toDate", label: t("toDate") },

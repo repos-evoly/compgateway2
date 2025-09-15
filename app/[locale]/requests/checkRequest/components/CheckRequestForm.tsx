@@ -3,7 +3,7 @@
  * – Adds a `phone` input and submits it in the payload.
  * – Also submits a hidden `branchNum` field derived from BranchesSelect.
  * – Number-safe validation (no .trim() on numbers).
- * – Confirmation dialog (account + amount) before submit (no other changes).
+ * – Confirmation dialog (Arabic): يعرض **فقط** المبلغ الإجمالي الذي سيتم خصمه.
  * ----------------------------------------------------------------------- */
 "use client";
 
@@ -53,6 +53,8 @@ const normalizeNumber = (v: unknown): number | null => {
 const hasNumericValue = (v: unknown): boolean => normalizeNumber(v) !== null;
 const hasNonNumericString = (v: unknown): boolean =>
   typeof v === "string" && v.trim() !== "" && normalizeNumber(v) === null;
+
+const fmt3 = (n: number): string => n.toFixed(3);
 
 /* -------------------------------------------------------------------------- */
 /* AccountNumberDropdown Component                                             */
@@ -146,7 +148,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
   const [isLoadingRepresentatives, setIsLoadingRepresentatives] =
     useState(false);
 
-  /* confirmation dialog state (added) */
+  /* confirmation dialog state */
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState<string>("");
   const [pendingValues, setPendingValues] =
@@ -318,7 +320,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
     },
   ] as const;
 
-  /* wrapped submit (now opens confirmation dialog, no other changes) */
+  /* wrapped submit (Arabic modal shows ONLY the final total) */
   const handleSubmit = async (
     values: ExtendedCheckRequestFormValues
   ): Promise<void> => {
@@ -349,20 +351,24 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
       return;
     }
 
-    // Build confirmation message (account + amount only)
-    const dirhamStr = values.lineItems?.[0]?.dirham ?? "";
-    const lydStr = values.lineItems?.[0]?.lyd ?? "";
-    const parts: string[] = [];
-    if (dirhamStr !== "") parts.push(`${dirhamStr} ${t("dirham")}`);
-    if (lydStr !== "") parts.push(`${lydStr} ${t("lyd")}`);
-    const amountCombined = parts.join(" — ");
+    // Base (row 0)
+    const baseDirham = normalizeNumber(values.lineItems?.[0]?.dirham) ?? 0; // درهم *
+    const baseLyd = normalizeNumber(values.lineItems?.[0]?.lyd) ?? 0; // د.ل *
 
-    const message =
-      `${t("accountNum")}: ${values.accountNum}\n` +
-      `${t("amount")}: ${amountCombined || "—"}`;
+    // Convert and compute:
+    // 1 د.ل* = 1000 درهم*
+    const combinedInLyd = baseLyd + baseDirham / 1000; // مجموع بالدينار
+    const commissionLyd = combinedInLyd * (2 / 1000); // عمولة 2/1000
+    const fixedDirham = 10; // مصاريف ثابتة
+    const fixedInLyd = fixedDirham / 1000; // 10 درهم = 0.010 د.ل*
+
+    // إجمالي ما سيتم خصمه بالدينار:
+    const finalTotalInLyd = combinedInLyd + commissionLyd + fixedInLyd;
 
     setPendingValues(values);
-    setConfirmMessage(message);
+    setConfirmMessage(
+      `المبلغ الإجمالي الذي سيتم خصمه: ${fmt3(finalTotalInLyd)} د.ل*`
+    );
     setConfirmOpen(true);
   };
 
@@ -485,7 +491,7 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
         </div>
       </div>
 
-      {/* Confirmation dialog (account + amount only) */}
+      {/* Confirmation dialog (Arabic – ONLY total) */}
       <ConfirmationDialog
         openDialog={confirmOpen}
         message={confirmMessage}

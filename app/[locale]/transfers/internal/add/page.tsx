@@ -58,7 +58,7 @@ const AddInternalTransferPage = () => {
         }}
         onConfirm={() => {
           setModalOpen(false);
-          router.push("..");
+          router.push("/transfers/internal");
         }}
       />
     </div>

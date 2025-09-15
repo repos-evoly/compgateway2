@@ -45,7 +45,6 @@ const FormValidator = () => {
 
   useEffect(() => {
     const { from, to } = values;
-
     if (!from || !to) return;
 
     if (from.slice(-3) !== to.slice(-3)) {
@@ -68,12 +67,10 @@ type ExtendedValues = InternalFormValues & {
   transactionCategoryId?: number;
 };
 
-interface ExtraProps {
-  /** When true form is read-only; no buttons or modal */
+type ExtraProps = {
   viewOnly?: boolean;
-  /** Callback fired after a successful create */
   onSuccess?: () => void;
-}
+};
 
 /* -------------------------------------------------------------------------- */
 /*                               Component                                    */
@@ -95,8 +92,13 @@ function InternalForm({
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
 
-  /* ---------------- account list from cookie ---------------- */
+  /* ---------------- account list from cookie (FROM account) ------------- */
   const [accountOptions, setAccountOptions] = useState<
+    InputSelectComboOption[]
+  >([]);
+
+  /* ---------------- beneficiaries mapped to TO account options ---------- */
+  const [toAccountOptions, setToAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
 
@@ -109,19 +111,16 @@ function InternalForm({
     (async () => {
       try {
         const info = await getCompannyInfoByCode(code);
-        setCommissionOnReceiver(info.commissionOnReceiver!);
+        setCommissionOnReceiver(Boolean(info.commissionOnReceiver));
       } catch (err) {
         console.error("Failed to fetch company info:", err);
       }
     })();
   }, []);
 
-  console.log("Commission on receiver:", commissionOnReceiver);
-
   useEffect(() => {
     const rawCookie = Cookies.get("statementAccounts") ?? "[]";
     let accounts: string[] = [];
-
     try {
       accounts = JSON.parse(rawCookie);
     } catch {
@@ -131,20 +130,10 @@ function InternalForm({
         accounts = [];
       }
     }
-
     setAccountOptions(accounts.map((a) => ({ label: a, value: a })));
   }, []);
 
-  /* ---------------- modal state (ignored in viewOnly) -------- */
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalData, setModalData] = useState<{
-    formikData: ExtendedValues;
-    additionalData?: AdditionalData;
-    commissionAmount: number;
-    commissionCurrency: string;
-    displayAmount: number;
-  } | null>(null);
-
+  /* ---------------- economic sectors ------------------------------------ */
   const [sectorOptions, setSectorOptions] = useState<InputSelectComboOption[]>(
     []
   );
@@ -152,7 +141,7 @@ function InternalForm({
   useEffect(() => {
     (async () => {
       try {
-        const res = await getEconomicSectors(1, 10000); // limit 10 000
+        const res = await getEconomicSectors(1, 10000);
         setSectorOptions(res.data.map((s) => ({ value: s.id, label: s.name })));
       } catch (err) {
         console.error("Fetch economic sectors failed:", err);
@@ -160,18 +149,15 @@ function InternalForm({
     })();
   }, []);
 
-  /* ---------------- beneficiary options ------------------------- */
-  const [beneficiaryOptions, setBeneficiaryOptions] = useState<
-    InputSelectComboOption[]
-  >([]);
-
+  /* ---------------- beneficiaries -> build TO options ------------------- */
   useEffect(() => {
     (async () => {
       try {
-        const res = await getBeneficiaries(1, 1000); // Get all beneficiaries
-        setBeneficiaryOptions(
+        const res = await getBeneficiaries(1, 1000);
+        setToAccountOptions(
           res.data.map((b) => ({
-            value: b.id,
+            // VALUE IS THE ACCOUNT NUMBER so selecting fills "to" with account
+            value: String(b.accountNumber),
             label: `${b.name} (${b.accountNumber})`,
           }))
         );
@@ -181,7 +167,17 @@ function InternalForm({
     })();
   }, []);
 
-  /* ---------------- values & schema ------------------------- */
+  /* ---------------- modal state (ignored in viewOnly) ------------------- */
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    formikData: ExtendedValues;
+    additionalData?: AdditionalData;
+    commissionAmount: number;
+    commissionCurrency: string;
+    displayAmount: number;
+  } | null>(null);
+
+  /* ---------------- values & schema ------------------------------------ */
   const defaults: ExtendedValues = {
     from: "",
     to: "",
@@ -189,13 +185,13 @@ function InternalForm({
     description: "",
     commissionOnRecipient: false,
     transactionCategoryId: 2,
-    economicSectorId: undefined, // ⬅️ new
-    beneficiaryId: undefined, // ⬅️ new
+    economicSectorId: undefined,
   };
+
   const initialValues: ExtendedValues = {
     ...defaults,
     ...initialData,
-    commissionOnRecipient: commissionOnReceiver, // controlled, never shown
+    commissionOnRecipient: commissionOnReceiver,
   };
 
   const schema = Yup.object({
@@ -213,10 +209,45 @@ function InternalForm({
     description: Yup.string().required(t("requiredDescription")),
     transactionCategoryId: Yup.number().required(),
     economicSectorId: Yup.number().required(t("requiredEconomicSector")),
-    beneficiaryId: Yup.number().optional(), // Beneficiary is optional
   });
 
-  /* -------- open confirmation modal (skipped in viewOnly) --- */
+  /* ---------------- check TO account whenever it stabilizes ------------- */
+  const ToAccountChecker = ({ toValue }: { toValue: string }) => {
+    useEffect(() => {
+      if (!toValue) {
+        setToError(undefined);
+        return;
+      }
+      // Debounce to avoid spamming the API while typing
+      const timer = setTimeout(() => {
+        void (async () => {
+          try {
+            const account = await checkAccount(toValue);
+            setToError(undefined);
+            setTransferType(account[0].transferType);
+            console.log("Account check successful:", account);
+          } catch (err: unknown) {
+            console.error("Account check failed:", err);
+            if (
+              typeof err === "object" &&
+              err !== null &&
+              "message" in err &&
+              typeof (err as { message: unknown }).message === "string"
+            ) {
+              setToError((err as { message: string }).message);
+            } else {
+              setToError(t("accountNotFound"));
+            }
+          }
+        })();
+      }, 400);
+      return () => clearTimeout(timer);
+    }, [toValue]);
+
+    return null;
+  };
+
+  /* -------- open confirmation modal (skipped in viewOnly) --------------- */
   const openModal = async (vals: ExtendedValues) => {
     if (viewOnly) return;
 
@@ -231,13 +262,10 @@ function InternalForm({
         vals.transactionCategoryId ?? 2
       );
 
-      console.log("Commission response:", commResp);
-
       const isB2B = transferType === "B2B";
       const pct = isB2B ? commResp.b2BCommissionPct : commResp.b2CCommissionPct;
       const fixed = isB2B ? commResp.b2BFixedFee : commResp.b2CFixedFee;
 
-      /* calculate final fee */
       const pctAmt = (pct * vals.value) / 100;
       const fee = Math.max(pctAmt, fixed);
 
@@ -245,8 +273,6 @@ function InternalForm({
         formikData: vals,
         commissionAmount: fee,
         commissionCurrency: currencyDesc,
-
-        // NEW → what the user should see on top of the modal
         displayAmount: commissionOnReceiver ? vals.value : vals.value + fee,
       });
       setModalOpen(true);
@@ -255,7 +281,7 @@ function InternalForm({
     }
   };
 
-  /* -------- confirm create (no-op in viewOnly) ------------ */
+  /* -------- confirm create (no-op in viewOnly) -------------------------- */
   const confirmModal = async () => {
     if (!modalData) return;
     const {
@@ -282,7 +308,7 @@ function InternalForm({
       onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("unknownError");
-      setAlertTitle(t("createErrorTitle")); // e.g. "Creation Error"
+      setAlertTitle(t("createErrorTitle"));
       setAlertMessage(msg);
       setAlertOpen(true);
     } finally {
@@ -290,55 +316,7 @@ function InternalForm({
     }
   };
 
-  const handleCheckAccount = async (value: string) => {
-    try {
-      const account = await checkAccount(value);
-      setToError(undefined); // clear any old error
-
-      setTransferType(account[0].transferType);
-      console.log("Account check successful:", account);
-    } catch (err: unknown) {
-      console.error("Account check failed:", err);
-
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "message" in err &&
-        typeof (err as { message: unknown }).message === "string"
-      ) {
-        setToError((err as { message: string }).message);
-      } else {
-        setToError(t("accountNotFound"));
-      }
-    }
-  };
-
-  const handleBeneficiaryChange = (
-    beneficiaryId: number,
-    setFieldValue: (field: string, value: unknown) => void
-  ) => {
-    const selectedBeneficiary = beneficiaryOptions.find(
-      (b) => b.value === beneficiaryId
-    );
-    if (selectedBeneficiary) {
-      // Extract account number from the label (format: "Name (AccountNumber)")
-      const accountNumber = selectedBeneficiary.label.match(/\(([^)]+)\)/)?.[1];
-      if (accountNumber) {
-        setFieldValue("to", accountNumber);
-      }
-    }
-  };
-
-  const FormSyncBeneficiary = ({ values, setFieldValue }: { values: ExtendedValues, setFieldValue: (field: string, value: unknown) => void }) => {
-    useEffect(() => {
-      if (values.beneficiaryId) {
-        handleBeneficiaryChange(values.beneficiaryId, setFieldValue);
-      }
-    }, [values.beneficiaryId, setFieldValue]);
-    return null;
-  };
-
-  /* --------------------------- JSX ------------------------- */
+  /* --------------------------- JSX ------------------------------------- */
   return (
     <div className="p-2">
       <Formik<ExtendedValues>
@@ -347,12 +325,16 @@ function InternalForm({
         onSubmit={() => {}}
         enableReinitialize
       >
-        {({ values, setFieldValue }) => {
+        {({ values }) => {
           return (
             <>
-              <FormSyncBeneficiary values={values} setFieldValue={setFieldValue} />
+              <ToAccountChecker toValue={values.to} />
               <Form>
-                <FormHeader showBackButton fallbackPath="/transfers/internal" isEditing={true} />
+                <FormHeader
+                  showBackButton
+                  fallbackPath="/transfers/internal"
+                  isEditing={true}
+                />
 
                 <FormValidator />
 
@@ -366,14 +348,20 @@ function InternalForm({
                     maskingFormat="0000-000000-000"
                   />
 
-                  <FormInputIcon
+                  {/* TO account as InputSelectCombo:
+                      - You can select a beneficiary (value = account no.)
+                      - Or type an account manually */}
+                  <InputSelectCombo
                     name="to"
                     label={t("to")}
-                    maskingFormat="0000-000000-000"
+                    options={toAccountOptions}
                     disabled={fieldsDisabled}
-                    onBlurAdditional={handleCheckAccount}
-                    errorMessage={toError}
+                    maskingFormat="0000-000000-000"
+                    placeholder={t("selectOrTypeToAccount", {
+                      defaultValue: "Select beneficiary or type account",
+                    })}
                   />
+
                   <FormInputIcon
                     name="value"
                     label={t("value")}
@@ -381,20 +369,12 @@ function InternalForm({
                     disabled={fieldsDisabled}
                   />
                 </div>
+
                 <InputSelectCombo
                   name="economicSectorId"
                   label={t("economicSector")}
                   options={sectorOptions}
                   disabled={fieldsDisabled}
-                />
-
-                {/* Beneficiary Selection */}
-                <InputSelectCombo
-                  name="beneficiaryId"
-                  label={t("beneficiary")}
-                  options={beneficiaryOptions}
-                  disabled={fieldsDisabled}
-                  placeholder={t("selectBeneficiary")}
                 />
 
                 {/* Row 2 */}
@@ -431,7 +411,7 @@ function InternalForm({
                         description: true,
                         transactionCategoryId: true,
                       }}
-                      disabled={!!toError} // ⬅️ block submit if error
+                      disabled={!!toError}
                     />
                   </div>
                 )}

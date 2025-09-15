@@ -36,6 +36,7 @@ export type CertifiedBankStatementRequest = {
   oldAccountNumber?: number;
   newAccountNumber?: number;
   statementRequest?: StatementRequest;
+  totalAmountLyd?: number;
 };
 
 /** Extended shape with ID, status and rejectReason */

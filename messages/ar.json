@@ -168,6 +168,7 @@
     "actions":"عمليات",
   
     "RTGSForm":{
+      "beneficiaryBank":"المصرف المستفيد",
       "accountNb":"رقم حساب المحول",
       "name":" الاسم المحول",
       "address":"العنوان",
@@ -214,6 +215,7 @@
     "checkForm":{
       "name":"الاسم بالكامل",
       "address":"العنوان",
+      "rep":"الممثل القانوني",
       "accNum":"حساب رقم",
       "sendTo":" المندوب",
       "book":"دفترا يحتوي على",
@@ -256,6 +258,7 @@
       "title":"طلب صك مصدق",
       "branch":"الفرع",
       "branchNum":"الفرع",
+      "phone":"الهاتف",
       "date":"التاريخ",
       "f":"ف",
       "customerName":"اسم الزبون",
@@ -447,7 +450,13 @@
         "post":"إيداع المرتبات",
         "isTransferred": "تم تحويلها",
         "yes": "نعم",
-        "no": "لا"
+        "no": "لا",
+        "createdTitle": "نجاح",
+        "createdMsg": "تم إنشاء دورة الرواتب بنجاح.",
+        "confirm":"تأكيد",
+        "postedTitle": "نجاح",
+        "failedTitle": "فشل",
+        "postedMsg": "تم نشر دورة الرواتب بنجاح."
       },
       "customizations": {
         "banks": {
@@ -538,6 +547,7 @@
         "button":"تسجيل الدخول"
       },
       "foreignTransfers":{
+        "beneficiary":"المستفيد",
         "id":"المعرف",
         "toBank":"إل مصرف",
         "branch":"الفرع",
@@ -662,7 +672,9 @@
         "unknownError": "حدث خطأ غير متوقع",
         "status":"الحالة",
         "actions": "عمليات",
-        "downloadPdf": "تحميل PDF"
+        "downloadPdf": "تحميل PDF",
+        "noDataTitle": "لا توجد بيانات متاحة",
+        "noDataMsg": "لا توجد طلبات كشف حساب متاحة في الوقت الحالي."
       },
       "dashboard":{
         "accountNb":" رقم الحساب",
@@ -839,7 +851,9 @@
             "purpose": "الغرض",
             "additionalInfo": "معلومات إضافية",
             "currency": "العملة",
-            "referenceNumber": "رقم المرجع"
+            "referenceNumber": "رقم المرجع",
+            "validUntil": "صالح حتى",
+            "letterOfGuaranteePct": "نسبة خطاب الضمان"
           },
           "validation": {
             "required": "هذا الحقل مطلوب",
@@ -870,7 +884,9 @@
             "currency": "العملة",
             "type": "النوع",
             "status": "الحالة",
-            "createdAt": "تاريخ الإنشاء"
+            "createdAt": "تاريخ الإنشاء",
+            "validUntil": "صالح حتى",
+            "letterOfGuaranteePct": "نسبة خطاب الضمان"
           },
           "ui": {
             "addButton": "إضافة",
@@ -976,7 +992,8 @@
             "passportNumberPlaceholder": "أدخل رقم جواز السفر",
             "isActive": "حالة التفعيل",
             "isActiveDescription": "تفعيل أو إلغاء تفعيل هذا الممثل",
-            "photo": "الصورة"
+            "photo": "الصورة",
+            "currentPhoto": "الصورة الحالية"
           },
           "createButton": "إنشاء",
           "updateButton": "تحديث",
@@ -1229,7 +1246,10 @@
           "feePayerRecipient": "المستلم يدفع الرسوم",
           "accountNumber": "رقم الحساب",
           "cancel": "إلغاء",
-          "confirm": "تأكيد"
+          "confirm": "تأكيد",
+          "employeeName": "اسم الموظف",
+          "employeeCommission": "عمولة الموظف",
+          "employeeAmount": "مبلغ "
         }
       },
       "common":{

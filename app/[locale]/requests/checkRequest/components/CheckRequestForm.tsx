@@ -4,6 +4,9 @@
  * – Also submits a hidden `branchNum` field derived from BranchesSelect.
  * – Number-safe validation (no .trim() on numbers).
  * – Confirmation dialog (Arabic): يعرض **فقط** المبلغ الإجمالي الذي سيتم خصمه.
+ * – Commission rule (matches table):
+ *      • إذا كان المبلغ أقل من 10000 د.ل* → العمولة ثابتة = 10 د.ل* + 10 درهم* (10.010)
+ *      • غير ذلك → العمولة النسبية = 2 بالألف (0.2%) من المبلغ.
  * ----------------------------------------------------------------------- */
 "use client";
 
@@ -355,15 +358,19 @@ const CheckRequestForm: React.FC<TCheckRequestFormProps> = ({
     const baseDirham = normalizeNumber(values.lineItems?.[0]?.dirham) ?? 0; // درهم *
     const baseLyd = normalizeNumber(values.lineItems?.[0]?.lyd) ?? 0; // د.ل *
 
-    // Convert and compute:
-    // 1 د.ل* = 1000 درهم*
+    // Convert to LYD*: 1 د.ل* = 1000 درهم*
     const combinedInLyd = baseLyd + baseDirham / 1000; // مجموع بالدينار
-    const commissionLyd = combinedInLyd * (2 / 1000); // عمولة 2/1000
-    const fixedDirham = 10; // مصاريف ثابتة
-    const fixedInLyd = fixedDirham / 1000; // 10 درهم = 0.010 د.ل*
 
-    // إجمالي ما سيتم خصمه بالدينار:
-    const finalTotalInLyd = combinedInLyd + commissionLyd + fixedInLyd;
+    // Commission rule to MATCH TABLE:
+    // If amount < 10000 LYD* → fixed fee = 10 LYD* + 10 dirham* = 10.010 LYD*
+    // Else → percentage = 2 per 1000 (0.2%) of the amount.
+    const FIXED_FEE_LYD = 10 + 10 / 1000; // 10.010
+    const pctFeeInLyd = combinedInLyd * (2 / 1000); // 0.2%
+
+    const commissionInLyd = combinedInLyd < 10000 ? FIXED_FEE_LYD : pctFeeInLyd;
+
+    // الإجمالي الذي سيتم خصمه بالدينار:
+    const finalTotalInLyd = combinedInLyd + commissionInLyd;
 
     setPendingValues(values);
     setConfirmMessage(

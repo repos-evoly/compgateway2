@@ -132,7 +132,7 @@ export default function VisaRequestListPage() {
     {
       key: "actions",
       label: t("actions", { defaultValue: "Actions" }),
-       renderCell: (row: { id: number }) => (
+      renderCell: (row: { id: number }) => (
         <RequestPdfDownloadButton
           requestType="visa" // key used in fetcherMap
           requestId={row.id} // only the ID is sent
@@ -170,7 +170,7 @@ export default function VisaRequestListPage() {
           showSearchInput
           onSearch={(term) => {
             setSearchTerm(term);
-            setCurrentPage(1);
+            // setCurrentPage(1);
           }}
           showAddButton={showAddButton}
           onAddClick={handleAddClick}

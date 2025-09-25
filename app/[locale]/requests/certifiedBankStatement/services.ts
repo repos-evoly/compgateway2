@@ -1,4 +1,4 @@
-// app/(wherever)/certifiedbankstatements/services.ts
+// app/[locale]/certified-bank-statement/services.ts
 "use client";
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
@@ -56,10 +56,22 @@ const BASE_URL =
 
 const shouldRefresh = (s: number) => s === 401 || s === 403;
 
+/** Shared header builder */
+const init = (bearer: string, method: "GET" | "POST" | "PUT", body?: unknown): RequestInit => ({
+  method,
+  headers: {
+    Authorization: `Bearer ${bearer}`,
+    ...(body ? { "Content-Type": "application/json" } : {}),
+  },
+  ...(body ? { body: JSON.stringify(body) } : {}),
+  cache: "no-store",
+});
+
 /**
  * Fetch a list of Certified Bank Statements from the API,
  * with optional pagination/search, returning them in the
  * shape your grid expects (CertifiedBankStatementRequestWithID[]).
+ * — Also exposes top-level fromDate/toDate for convenience.
  */
 export async function getCertifiedBankStatements(params?: {
   searchTerm?: string;
@@ -86,23 +98,15 @@ export async function getCertifiedBankStatements(params?: {
   if (searchBy) url.searchParams.set("searchBy", searchBy);
 
   let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  if (!token) throw new Error("No access token found in cookies");
 
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url.toString(), init(token));
+  let response = await fetch(url.toString(), init(token, "GET"));
 
   if (shouldRefresh(response.status)) {
     try {
       const refreshed = await refreshAuthTokens();
       token = refreshed.accessToken;
-      response = await fetch(url.toString(), init(token));
+      response = await fetch(url.toString(), init(token, "GET"));
     } catch {
       // fall through to shared error handling
     }
@@ -118,7 +122,6 @@ export async function getCertifiedBankStatements(params?: {
     (apiItem) => transformApiToFormShape(apiItem)
   );
 
-  console.log("Transformed Certified Bank Statements:", transformedData);
   return {
     data: transformedData,
     page: result.page,
@@ -130,35 +133,26 @@ export async function getCertifiedBankStatements(params?: {
 
 /**
  * Fetch a single Certified Bank Statement by ID
- * and return it in the shape the form expects.
+ * and return it in the shape the form/page expects.
+ * — Includes top-level fromDate/toDate.
  */
 export async function getCertifiedBankStatementById(
   id: number
 ): Promise<CertifiedBankStatementRequestWithID> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  if (!token) throw new Error("No access token found in cookies");
 
   const url = `${BASE_URL}/certifiedbankstatementrequests/${id}`;
 
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
+  let response = await fetch(url, init(token, "GET"));
 
   if (shouldRefresh(response.status)) {
     try {
       const refreshed = await refreshAuthTokens();
       token = refreshed.accessToken;
-      response = await fetch(url, init(token));
+      response = await fetch(url, init(token, "GET"));
     } catch {
       // fall through
     }
@@ -176,7 +170,9 @@ export async function getCertifiedBankStatementById(
 }
 
 /**
- * Transform the API shape to the shape the form needs.
+ * Transform the API shape to the shape the form/page needs.
+ * Keeps nested statementRequest while also exposing top-level
+ * fromDate/toDate for direct access in grids or actions.
  */
 function transformApiToFormShape(
   apiItem: ApiCertifiedBankStatement
@@ -200,6 +196,9 @@ function transformApiToFormShape(
     toDate: "",
   };
 
+  const fromDate = stmt.fromDate ?? "";
+  const toDate = stmt.toDate ?? "";
+
   return {
     id: apiItem.id,
     accountHolderName: apiItem.accountHolderName ?? "",
@@ -208,6 +207,10 @@ function transformApiToFormShape(
     oldAccountNumber: apiItem.oldAccountNumber ?? undefined,
     newAccountNumber: apiItem.newAccountNumber ?? undefined,
     totalAmountLyd: apiItem.totalAmountLyd ?? 0,
+
+    // top-level convenience fields
+    fromDate,
+    toDate,
 
     serviceRequests: {
       reactivateIdfaali: srv.reactivateIdfaali,
@@ -223,8 +226,8 @@ function transformApiToFormShape(
         english: stmt.currentAccountStatementEnglish ?? false,
       },
       visaAccountStatement: stmt.visaAccountStatement ?? false,
-      fromDate: stmt.fromDate ?? "",
-      toDate: stmt.toDate ?? "",
+      fromDate,
+      toDate,
       accountStatement: stmt.accountStatement ?? false,
       journalMovement: stmt.journalMovement ?? false,
       nonFinancialCommitment: stmt.nonFinancialCommitment ?? false,
@@ -238,14 +241,10 @@ function transformApiToFormShape(
 export async function createCertifiedBankStatement(
   payload: CertifiedBankStatementRequest
 ): Promise<CertifiedBankStatementRequestWithID> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  if (!token) throw new Error("No access token found in cookies");
 
   const apiBody = {
     accountHolderName: payload.accountHolderName ?? null,
@@ -281,23 +280,13 @@ export async function createCertifiedBankStatement(
 
   const url = `${BASE_URL}/certifiedbankstatementrequests`;
 
-  const init = (bearer: string): RequestInit => ({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearer}`,
-    },
-    body: JSON.stringify(apiBody),
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
+  let response = await fetch(url, init(token, "POST", apiBody));
 
   if (shouldRefresh(response.status)) {
     try {
       const refreshed = await refreshAuthTokens();
       token = refreshed.accessToken;
-      response = await fetch(url, init(token));
+      response = await fetch(url, init(token, "POST", apiBody));
     } catch {
       // fall through
     }
@@ -321,14 +310,10 @@ export async function updateCertifiedBankStatement(
   id: number,
   payload: CertifiedBankStatementRequest
 ): Promise<CertifiedBankStatementRequestWithID> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  if (!token) throw new Error("No access token found in cookies");
 
   const apiBody = {
     accountHolderName: payload.accountHolderName ?? null,
@@ -363,23 +348,13 @@ export async function updateCertifiedBankStatement(
 
   const url = `${BASE_URL}/certifiedbankstatementrequests/${id}`;
 
-  const init = (bearer: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearer}`,
-    },
-    body: JSON.stringify(apiBody),
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
+  let response = await fetch(url, init(token, "PUT", apiBody));
 
   if (shouldRefresh(response.status)) {
     try {
       const refreshed = await refreshAuthTokens();
       token = refreshed.accessToken;
-      response = await fetch(url, init(token));
+      response = await fetch(url, init(token, "PUT", apiBody));
     } catch {
       // fall through
     }

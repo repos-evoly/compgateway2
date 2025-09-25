@@ -126,7 +126,7 @@ export default function CreditFacilityPage() {
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     if (!term) setSearchBy("");
-    setCurrentPage(1);
+    // setCurrentPage(1);
   };
 
   const handleDropdownSelect = (val: string) => {

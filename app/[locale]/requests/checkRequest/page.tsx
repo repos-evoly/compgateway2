@@ -1,3 +1,4 @@
+// app/[locale]/requests/checkRequest/page.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -5,15 +6,16 @@ import { useTranslations } from "next-intl";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CheckRequestForm from "./components/CheckRequestForm";
-
-import { TCheckRequestValues } from "./types";
-import { getCheckRequests, createCheckRequest } from "./services";
-import { TCheckRequestFormValues } from "./types";
-
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal"; // ← NEW
+import type { TCheckRequestValues, TCheckRequestFormValues } from "./types";
+import {
+  getCheckRequests,
+  createCheckRequest,
+  type CheckRequestSearchBy,
+} from "./services";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
-// Permission helpers (copied from other pages)
+/* ---------- cookie helpers ---------- */
 const getCookieValue = (key: string): string | undefined =>
   typeof document !== "undefined"
     ? document.cookie
@@ -34,20 +36,20 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
 const CheckRequestPage: React.FC = () => {
   const t = useTranslations("CheckRequest");
 
-  /* ─── Table state ─────────────────────────────────────────── */
+  /* ─── Table / pagination ──────────────────────────────────── */
   const [data, setData] = useState<TCheckRequestValues[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
 
-  /* ─── Search state ────────────────────────────────────────── */
+  /* ─── Search ──────────────────────────────────────────────── */
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchBy, setSearchBy] = useState("");
+  const [searchBy, setSearchBy] = useState<"" | CheckRequestSearchBy>("");
 
   /* ─── Form toggle ─────────────────────────────────────────── */
   const [showForm, setShowForm] = useState(false);
 
-  /* ─── Modal state (NEW) ───────────────────────────────────── */
+  /* ─── Modal ───────────────────────────────────────────────── */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
@@ -65,10 +67,10 @@ const CheckRequestPage: React.FC = () => {
   const canOpenForm = canEdit || canView;
   const isReadOnly = !canEdit && canView;
 
-  /* ─── Fetch data ──────────────────────────────────────────── */
+  /* ─── Fetch ───────────────────────────────────────────────── */
   useEffect(() => {
     async function fetchData() {
-      setLoading(true); // Set loading state
+      setLoading(true);
       try {
         const response = await getCheckRequests(
           currentPage,
@@ -79,14 +81,13 @@ const CheckRequestPage: React.FC = () => {
         setData(response.data);
         setTotalPages(response.totalPages);
       } catch (err) {
-        console.error("Failed to fetch check requests:", err);
         const msg = err instanceof Error ? err.message : t("genericError");
         setModalTitle(t("errorTitle"));
         setModalMessage(msg);
         setModalSuccess(false);
         setModalOpen(true);
       } finally {
-        setLoading(false); // Reset loading state
+        setLoading(false);
       }
     }
     fetchData();
@@ -103,19 +104,9 @@ const CheckRequestPage: React.FC = () => {
     {
       key: "representativeId",
       label: t("delegate"),
-      renderCell: (row: Record<string, unknown>) => {
-        // Debug: Log the row data to see what we're getting
-        console.log("Representative row data:", {
-          representativeId: row.representativeId,
-          representativeName: row.representativeName,
-          representative: row.representative,
-        });
-        // Show representative name from the representativeName field or fallback to ID
-        return (
-          row.representativeName ||
-          (row.representativeId ? `ID: ${row.representativeId}` : "-")
-        );
-      },
+      renderCell: (row: TCheckRequestValues) =>
+        row.representativeName ??
+        (row.representativeId ? `ID: ${row.representativeId}` : "-"),
     },
     { key: "status", label: t("status") },
     {
@@ -123,8 +114,8 @@ const CheckRequestPage: React.FC = () => {
       label: t("actions", { defaultValue: "Actions" }),
       renderCell: (row: TCheckRequestValues) => (
         <RequestPdfDownloadButton
-          requestType="checkrequest" // lower-case, no spaces → matches fetcherMap
-          requestId={row.id!} // primary-key to fetch full record
+          requestType="checkrequest"
+          requestId={row.id ?? 0}
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
@@ -137,17 +128,15 @@ const CheckRequestPage: React.FC = () => {
 
   const handleFormSubmit = async (formVals: TCheckRequestFormValues) => {
     try {
-      const newItem = await createCheckRequest(formVals);
-      setData((prev) => [newItem, ...prev]);
+      const created = await createCheckRequest(formVals);
+      setData((prev) => [created, ...prev]);
       setShowForm(false);
 
-      /* success modal */
       setModalTitle(t("successTitle"));
       setModalMessage(t("successMessage"));
       setModalSuccess(true);
       setModalOpen(true);
     } catch (error) {
-      console.error("Failed to create check request:", error);
       const msg = error instanceof Error ? error.message : t("genericError");
       setModalTitle(t("errorTitle"));
       setModalMessage(msg);
@@ -158,14 +147,21 @@ const CheckRequestPage: React.FC = () => {
 
   const handleFormCancel = () => setShowForm(false);
 
-  /* ─── Search helpers ──────────────────────────────────────── */
+  // search + dropdown
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    setCurrentPage(1);
+    // setCurrentPage(1);
   };
   const handleDropdownSelect = (field: string) => {
-    setSearchBy(field);
-    setCurrentPage(1);
+    if (
+      field === "customer" ||
+      field === "status" ||
+      field === "rep" ||
+      field === ""
+    ) {
+      setSearchBy(field as "" | CheckRequestSearchBy);
+      // setCurrentPage(1);
+    }
   };
 
   /* ─── Render ──────────────────────────────────────────────── */
@@ -187,8 +183,13 @@ const CheckRequestPage: React.FC = () => {
           showSearchBar
           showSearchInput
           showDropdown
-          onSearch={handleSearch}
+          dropdownOptions={[
+            { value: "customer", label: t("customerName") }, // submit "customer"
+            { value: "status", label: t("status") }, // submit "status"
+            { value: "rep", label: t("delegate") }, // submit "rep"
+          ]}
           onDropdownSelect={handleDropdownSelect}
+          onSearch={handleSearch}
           showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
@@ -196,7 +197,6 @@ const CheckRequestPage: React.FC = () => {
         />
       )}
 
-      {/* Error / Success modal (NEW) */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

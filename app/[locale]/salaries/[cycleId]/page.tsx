@@ -1,3 +1,10 @@
+/* --------------------------------------------------------------------------
+   app/[locale]/salaries/[cycleId]/page.tsx
+   – SalaryCycleDetailsPage
+   – Uses SalaryConfirmInfoModal (name + per-employee amount shown there)
+   – Shows ErrorOrSuccessModal (success/error) **from the page** after posting
+   – UPDATED: send each employee's salary amount to the modal (recipients[].salary)
+-------------------------------------------------------------------------- */
 "use client";
 
 import React, { JSX, useEffect, useMemo, useState, useCallback } from "react";
@@ -34,7 +41,8 @@ import {
   checkAccount,
   getTransfersCommision,
 } from "../../transfers/internal/services";
-import ConfirmInfoModal from "../../transfers/group-transfer/components/ConfirmInfoModal";
+import SalaryConfirmInfoModal from "../components/SalaryConfirmInfoModal";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
 
 /* ---------- helpers: cookies ---------- */
@@ -45,7 +53,6 @@ const getCompanyCode = (): string | undefined => {
 };
 
 const getPermissionsFromCookies = (): string[] => {
-  // Expecting a URL-encoded JSON array, e.g. [%22A%22%2C%22B%22]
   const raw =
     Cookies.get("permissions") ??
     Cookies.get("userPermissions") ??
@@ -88,7 +95,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
 
   const [salaryMonthInput, setSalaryMonthInput] = useState<string>("");
 
-  /* --- company config: who pays commission (for modal’s displayAmount) --- */
+  /* --- company config: who pays commission --- */
   const [commissionOnReceiver, setCommissionOnReceiver] =
     useState<boolean>(false);
   useEffect(() => {
@@ -101,12 +108,12 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
           setCommissionOnReceiver(info.commissionOnReceiver);
         }
       } catch {
-        // ignore, default false
+        // ignore
       }
     })();
   }, []);
 
-  /* --- permissions: show Post button only if allowed --- */
+  /* --- permissions --- */
   const hasPostPermission = useMemo(() => {
     const perms = getPermissionsFromCookies();
     return perms.includes("canPostSalaryCycle");
@@ -118,13 +125,22 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     null
   );
 
-  /* --- post button availability ---
-     Starts enabled. Pressing Edit disables it.
-     Successful Save (edit API) re-enables it. */
+  /* Recipients for confirm modal (NOW INCLUDES salary) */
+  const [recipients, setRecipients] = useState<
+    Array<{ accountNumber: string; name?: string; salary?: number }>
+  >([]);
+
+  /* --- post button availability --- */
   const [canPost, setCanPost] = useState<boolean>(true);
 
-  /* --- posting in progress (disable confirm and buttons) --- */
+  /* --- posting in progress --- */
   const [posting, setPosting] = useState<boolean>(false);
+
+  /* --- result modal (success/error) --- */
+  const [resultOpen, setResultOpen] = useState<boolean>(false);
+  const [resultSuccess, setResultSuccess] = useState<boolean>(false);
+  const [resultTitle, setResultTitle] = useState<string>("");
+  const [resultMessage, setResultMessage] = useState<string>("");
 
   /* ───────────────── fetch salary cycle ───────────────── */
   const refetchCycle = useCallback(async (id: number) => {
@@ -273,7 +289,6 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   );
 
   /* ───────── columns ───────── */
-  // View (initial page): no email/phone; add isTransferred at the end
   const columnsView: DataGridColumn[] = [
     { key: "name", label: t("name"), renderCell: (r) => r.name },
     { key: "salary", label: t("salary") },
@@ -289,7 +304,6 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     },
   ];
 
-  // Edit: keep full details for operators
   const columnsEdit: DataGridColumn[] = [
     {
       key: "select",
@@ -336,7 +350,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     { key: "accountType", label: t("accountType") },
   ];
 
-  /* ───────── commission preview (ConfirmInfoModal) prep ───────── */
+  /* ───────── commission preview (build recipients + open modal) ───────── */
   const openCommissionPreview = useCallback(
     async (fromAccOverride?: string) => {
       if (!cycle) return;
@@ -347,21 +361,60 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
             ? fromAccOverride
             : cycle.debitAccount) ?? "";
 
-        const toAccountsRaw: string[] = isEditing
-          ? employees
-              .filter((e) => selectedRows.includes(e.id))
-              .map((e) => e.accountNumber)
-          : (cycle.entries as unknown as SalaryEntryRow[]).map(
-              (e) => e.accountNumber
-            );
+        // Build recipients with name + account + salary
+        let toAccountsRaw: string[] = [];
+        let detailed: Array<{
+          accountNumber: string;
+          name?: string;
+          salary?: number;
+        }> = [];
+
+        if (isEditing) {
+          const selected = employees.filter((e) => selectedRows.includes(e.id));
+          toAccountsRaw = selected.map((e) => e.accountNumber);
+
+          // Deduplicate by accountNumber while preserving the first name/salary
+          const map = new Map<string, { name?: string; salary?: number }>();
+          for (const e of selected) {
+            const acc = (e.accountNumber || "").trim();
+            if (!acc) continue;
+            if (!map.has(acc)) {
+              map.set(acc, { name: e.name, salary: Number(e.salary) || 0 });
+            }
+          }
+          detailed = Array.from(map.entries()).map(([accountNumber, meta]) => ({
+            accountNumber,
+            name: meta.name,
+            salary: meta.salary,
+          }));
+        } else {
+          const entries = (cycle.entries as unknown as SalaryEntryRow[]) || [];
+          toAccountsRaw = entries.map((e) => e.accountNumber);
+
+          const map = new Map<string, { name?: string; salary?: number }>();
+          for (const e of entries) {
+            const acc = (e.accountNumber || "").trim();
+            if (!acc) continue;
+            if (!map.has(acc)) {
+              map.set(acc, { name: e.name, salary: Number(e.salary) || 0 });
+            }
+          }
+          detailed = Array.from(map.entries()).map(([accountNumber, meta]) => ({
+            accountNumber,
+            name: meta.name,
+            salary: meta.salary,
+          }));
+        }
 
         const toAccounts = Array.from(
           new Set(toAccountsRaw.filter((x) => x && x.trim().length > 0))
         );
 
+        setRecipients(detailed); // <-- includes salary for the modal table
+
         const totalAmount = isEditing ? computedTotalEdit : computedTotalView;
 
-        // currency lookup (same method as Internal Form: last 3 chars)
+        // currency lookup (last 3 chars)
         const currencyCode = fromAccount.slice(-3);
         const currencyResp = (await getCurrencies(
           1,
@@ -460,40 +513,58 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         new Date(salaryMonthInput).toISOString(),
         entries
       );
-
       await refetchCycle(cycle.id);
       setIsEditing(false);
-
-      // ✅ Successful save -> allow posting again
       setCanPost(true);
     } catch (err: unknown) {
       alert(
         err instanceof Error ? err.message : "Failed to save salary cycle."
       );
-      // ❌ Keep posting disabled on error
       setCanPost(false);
     }
   };
 
-  /* ───────── confirm modal action: POST cycle then refetch ───────── */
+  /* ───────── confirm modal action: POST cycle then show result modal ───────── */
   const handleConfirmPost = useCallback(async () => {
     if (!cycle) return;
     try {
       setPosting(true);
       await postSalaryCycleById(cycle.id);
       await refetchCycle(cycle.id);
+
+      // Close confirm modal
       setConfirmOpen(false);
+
+      // Show success modal
+      setResultSuccess(true);
+      setResultTitle(t("postedTitle", { defaultValue: "Cycle Posted" }));
+      setResultMessage(
+        t("postedMsg", {
+          defaultValue: "Salaries were submitted successfully.",
+        })
+      );
+      setResultOpen(true);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Failed to post salary cycle.");
+      const msg =
+        e instanceof Error
+          ? e.message
+          : t("genericError", {
+              defaultValue: "Something went wrong while posting the cycle.",
+            });
+
+      // Keep confirm modal open so user can retry, but also show error modal
+      setResultSuccess(false);
+      setResultTitle(t("failedTitle", { defaultValue: "Posting Failed" }));
+      setResultMessage(msg);
+      setResultOpen(true);
     } finally {
       setPosting(false);
     }
-  }, [cycle, refetchCycle]);
+  }, [cycle, refetchCycle, t]);
 
   /* ───────── early states ───────── */
-  if (loading) {
-    return <LoadingPage />;
-  }
+  if (loading) return <LoadingPage />;
+
   if (error || !cycle) {
     return (
       <p className="p-4 text-red-600">
@@ -501,6 +572,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       </p>
     );
   }
+
   if (isEditing && (empError || accError)) {
     return (
       <p className="p-4 text-red-600">
@@ -516,7 +588,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   if (!isEditing) {
     const cycleForSummary: TSalaryTransaction = {
       ...cycle,
-      totalAmount: computedTotalView, // show computed sum in summary
+      totalAmount: computedTotalView,
     };
 
     return (
@@ -537,7 +609,6 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
           totalPages={1}
           onPageChange={() => {}}
           childrens={
-            // If posted => hide both Edit & Post
             !isPosted ? (
               <Formik
                 initialValues={{}}
@@ -589,16 +660,30 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         />
 
         {confirmState && (
-          <ConfirmInfoModal
+          <SalaryConfirmInfoModal
             isOpen={confirmOpen}
             formData={confirmState.formData}
             commissionAmount={confirmState.commissionAmount}
             commissionCurrency={confirmState.commissionCurrency}
             displayAmount={confirmState.displayAmount}
+            recipients={recipients} // <-- includes salary per employee
             onClose={() => setConfirmOpen(false)}
             onConfirm={handleConfirmPost}
           />
         )}
+
+        {/* Result modal */}
+        <ErrorOrSuccessModal
+          isOpen={resultOpen}
+          isSuccess={resultSuccess}
+          title={resultTitle}
+          message={resultMessage}
+          onClose={() => setResultOpen(false)}
+          onConfirm={() => setResultOpen(false)}
+          okLabel={t("ok", { defaultValue: "حسناً" })}
+          confirmLabel={t("confirm", { defaultValue: "تأكيد" })}
+          closeAriaLabel={t("close", { defaultValue: "إغلاق" })}
+        />
       </div>
     );
   }
@@ -606,7 +691,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   /* ───────── edit mode ───────── */
   const cycleForEditSummary: TSalaryTransaction = {
     ...cycle,
-    totalAmount: computedTotalEdit, // live sum of selected employees
+    totalAmount: computedTotalEdit,
   };
 
   return (
@@ -649,7 +734,6 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                     disabled={isSubmitting}
                     fullWidth={false}
                   />
-                  {/* In edit mode, still hide the Post button unless user has permission AND cycle not posted (it will be disabled anyway until save). */}
                   {showPostButton && (
                     <button
                       type="button"
@@ -669,16 +753,30 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
             />
 
             {confirmState && (
-              <ConfirmInfoModal
+              <SalaryConfirmInfoModal
                 isOpen={confirmOpen}
                 formData={confirmState.formData}
                 commissionAmount={confirmState.commissionAmount}
                 commissionCurrency={confirmState.commissionCurrency}
                 displayAmount={confirmState.displayAmount}
+                recipients={recipients} // <-- includes salary per employee
                 onClose={() => setConfirmOpen(false)}
                 onConfirm={handleConfirmPost}
               />
             )}
+
+            {/* Result modal */}
+            <ErrorOrSuccessModal
+              isOpen={resultOpen}
+              isSuccess={resultSuccess}
+              title={resultTitle}
+              message={resultMessage}
+              onClose={() => setResultOpen(false)}
+              onConfirm={() => setResultOpen(false)}
+              okLabel={t("ok", { defaultValue: "حسناً" })}
+              confirmLabel={t("confirm", { defaultValue: "تأكيد" })}
+              closeAriaLabel={t("close", { defaultValue: "إغلاق" })}
+            />
           </div>
         </Form>
       )}

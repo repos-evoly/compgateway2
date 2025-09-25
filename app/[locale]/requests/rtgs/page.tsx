@@ -1,6 +1,7 @@
+// app/[locale]/requests/rtgs/page.tsx
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
@@ -12,7 +13,7 @@ import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownlo
 import type { TRTGSValues, TRTGSFormValues } from "./types";
 import { getRtgsRequests, createRtgsRequest } from "./services";
 
-// Permission helpers (copied from other pages)
+/* ---------- cookie helpers ---------- */
 const getCookieValue = (key: string): string | undefined =>
   typeof document !== "undefined"
     ? document.cookie
@@ -30,38 +31,73 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
   }
 };
 
+/* ---------- local types ---------- */
+type SearchBy = "paymenttype" | "beneficiarybank";
+
+type RTGSRow = {
+  id: number;
+  refNum: string;
+  date: string;
+  paymentType: string;
+  applicantName: string;
+  beneficiaryName: string;
+  beneficiaryBank: string;
+  amount: string;
+  status?: string;
+};
+
 const RTGSListPage: React.FC = () => {
   const t = useTranslations("RTGSForm");
   const pathname = usePathname();
 
-  // Determine the locale based on the pathname
+  // Locale for date formatting
   const [currentLocale, setCurrentLocale] = useState("en");
   useEffect(() => {
-    const segments = pathname?.split("/") || [];
+    const segments = pathname?.split("/") ?? [];
     const locale = segments[1];
     setCurrentLocale(locale === "ar" ? "ar" : "en");
   }, [pathname]);
 
-  /* ─────────────────────────── Grid / form state ────────────────────────── */
+  /* ───────── Grid / form state ───────── */
   const [data, setData] = useState<TRTGSValues[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const limit = 10;
 
-  /* ─────────────────────────── Modal state ──────────────────────────────── */
+  /* ───────── Search (only by paymenttype, beneficiarybank) ───────── */
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchBy, setSearchBy] = useState<SearchBy>("paymenttype");
+
+  /* ───────── Modal state ───────── */
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
-  /* ─────────────────────────── Fetch paginated data ─────────────────────── */
+  /* ───────── Permissions ───────── */
+  const permissionsSet = useMemo(
+    () => decodeCookieArray(getCookieValue("permissions")),
+    []
+  );
+  const canEdit = permissionsSet.has("RTGSCanEdit");
+  const canView = permissionsSet.has("RTGSCanView");
+  const showAddButton = canEdit;
+  const canOpenForm = canEdit || canView;
+  const isReadOnly = !canEdit && canView;
+
+  /* ───────── Fetch paginated data ───────── */
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const res = await getRtgsRequests(currentPage, limit);
+        const res = await getRtgsRequests(
+          currentPage,
+          limit,
+          searchTerm,
+          searchBy
+        );
         setData(res.data);
         setTotalPages(res.totalPages);
       } catch (err) {
@@ -74,13 +110,17 @@ const RTGSListPage: React.FC = () => {
         setLoading(false);
       }
     })();
-  }, [currentPage, limit, t]);
+  }, [currentPage, limit, searchTerm, searchBy, t]);
 
-  /* ─────────────────────────── Column defs ─────────────────────────────── */
+  /* ───────── Columns ───────── */
   const columns = [
     { key: "refNum", label: t("refNum") },
     { key: "date", label: t("date") },
     { key: "paymentType", label: t("payType") },
+    {
+      key: "beneficiaryBank",
+      label: t("beneficiaryBank", { defaultValue: "Beneficiary Bank" }),
+    },
     { key: "applicantName", label: t("name") },
     { key: "beneficiaryName", label: t("benName") },
     { key: "amount", label: t("amount") },
@@ -88,10 +128,10 @@ const RTGSListPage: React.FC = () => {
     {
       key: "actions",
       label: t("actions", { defaultValue: "Actions" }),
-      renderCell: (row: { id: number }) => (
+      renderCell: (row: RTGSRow) => (
         <RequestPdfDownloadButton
-          requestType="rtgs" // key used in the fetcherMap
-          requestId={row.id} // pass only the primary-key
+          requestType="rtgs"
+          requestId={row.id}
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
@@ -99,14 +139,55 @@ const RTGSListPage: React.FC = () => {
     },
   ];
 
-  /* ─────────────────────────── Grid-friendly data ───────────────────────── */
-  const rowData = data.map((item) => ({
-    ...item,
-    refNum: new Date(item.refNum).toLocaleDateString(currentLocale),
-    date: new Date(item.date).toLocaleDateString(currentLocale),
-  }));
+  /* ───────── Grid-friendly data ───────── */
+  const rowData: RTGSRow[] = useMemo(
+    () =>
+      data.map((item) => ({
+        id: Number(item.id),
+        refNum: new Date(item.refNum).toLocaleDateString(currentLocale),
+        date: new Date(item.date).toLocaleDateString(currentLocale),
+        paymentType: item.paymentType,
+        applicantName: item.applicantName,
+        beneficiaryName: item.beneficiaryName,
+        beneficiaryBank: item.beneficiaryBank,
+        amount: item.amount,
+        status: item.status,
+      })),
+    [data, currentLocale]
+  );
 
-  /* ─────────────────────────── Handlers ─────────────────────────────────── */
+  /* ───────── FIX: keep dropdown options stable to prevent reset ─────────
+     Some implementations of <SearchWithDropdown/> reset selection whenever
+     the `dropdownOptions` array identity changes. We memoize the options so
+     selecting the 2nd item doesn’t “refresh” back to the first. */
+  const dropdownOptions = useMemo(
+    () => [
+      {
+        value: "paymenttype",
+        label: t("payType", { defaultValue: "Payment Type" }),
+      },
+      {
+        value: "beneficiarybank",
+        label: t("beneficiaryBank", { defaultValue: "Beneficiary Bank" }),
+      },
+    ],
+    [t]
+  );
+
+  /* Keep handlers stable as well */
+  const handleDropdownSelect = useCallback((val: string) => {
+    if (val === "paymenttype" || val === "beneficiarybank") {
+      setSearchBy(val);
+      // setCurrentPage(1);
+    }
+  }, []);
+
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    // setCurrentPage(1);
+  }, []);
+
+  /* ───────── Handlers (form) ───────── */
   const handleAddClick = () => setShowForm(true);
 
   const handleFormSubmit = async (values: TRTGSFormValues) => {
@@ -135,18 +216,7 @@ const RTGSListPage: React.FC = () => {
     setModalOpen(false);
   };
 
-  // Permissions
-  const permissionsSet = useMemo(
-    () => decodeCookieArray(getCookieValue("permissions")),
-    []
-  );
-  const canEdit = permissionsSet.has("RTGSCanEdit");
-  const canView = permissionsSet.has("RTGSCanView");
-  const showAddButton = canEdit;
-  const canOpenForm = canEdit || canView;
-  const isReadOnly = !canEdit && canView;
-
-  /* ─────────────────────────── Render ───────────────────────────────────── */
+  /* ───────── Render ───────── */
   return (
     <div className="p-4">
       {showForm && canOpenForm ? (
@@ -162,6 +232,13 @@ const RTGSListPage: React.FC = () => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          // Search (only paymenttype, beneficiarybank)
+          showSearchBar
+          showSearchInput
+          showDropdown
+          dropdownOptions={dropdownOptions}
+          onDropdownSelect={handleDropdownSelect}
+          onSearch={handleSearch}
           showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
@@ -169,7 +246,7 @@ const RTGSListPage: React.FC = () => {
         />
       )}
 
-      {/*──────── Error / Success Modal ────────*/}
+      {/* Modal */}
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

@@ -7,6 +7,9 @@
  *     • Balance check validates (amount + commission) <= availableBalance
  *     • Amount field shows helper text: "Commission: X — Total: Y"
  * – Submit: directly replaces `amount` with (amount + commission) and submits.
+ * – Adds:
+ *     • validUntil (DatePickerValue)
+ *     • letterOfGuarenteePct (SelectWrapper) with exact given options
  * – Copy-paste ready. Strict TypeScript (no `any`).
  * ----------------------------------------------------------------------- */
 
@@ -40,6 +43,9 @@ import BackButton from "@/app/components/reusable/BackButton";
 /* Commission service */
 import { getTransfersCommision } from "@/app/[locale]/transfers/internal/services";
 import type { TransfersCommision } from "@/app/[locale]/transfers/internal/types";
+import SelectWrapper from "@/app/components/FormUI/Select";
+
+/* NEW: Select for pct */
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
@@ -173,6 +179,13 @@ function InnerForm({
       ? initialData.reason
       : null;
 
+  /* --- Letter of Guarantee Pct options (exact labels) --- */
+  const pctOptions = [
+    { value: "بتأمين نقدي 25% حتى 49%", label: "بتأمين نقدي 25% حتى 49%" },
+    { value: "بتأمين نقدي 50% حتى 99%", label: "بتأمين نقدي 50% حتى 99%" },
+    { value: "بتأمين نقدي 100%", label: "بتأمين نقدي 100%" },
+  ];
+
   return (
     <Form>
       <ReasonBanner reason={bannerReason} status={bannerStatus} />
@@ -207,6 +220,13 @@ function InnerForm({
         <DatePickerValue
           name="date"
           label={t("date")}
+          disabled={readOnly || isSubmitting}
+        />
+
+        {/* Valid Until (NEW) */}
+        <DatePickerValue
+          name="validUntil"
+          label={t("validUntil")}
           disabled={readOnly || isSubmitting}
         />
 
@@ -251,6 +271,15 @@ function InnerForm({
           label={t("referenceNumber")}
           type="text"
           disabled={readOnly || isSubmitting}
+        />
+
+        {/* Letter of Guarantee % (NEW) */}
+        <SelectWrapper
+          name="letterOfGuarenteePct"
+          label={t("letterOfGuaranteePct")}
+          options={pctOptions}
+          disabled={readOnly || isSubmitting}
+          width="100%"
         />
       </div>
 
@@ -377,15 +406,28 @@ export default function LetterOfGuaranteeForm({
     refferenceNumber: "",
     type: "letterOfGuarantee",
     status: "",
+    // NEW:
+    validUntil: "",
+    letterOfGuarenteePct: 0,
   };
+
   const initialValues: TLetterOfGuarantee = initialData
-    ? { ...defaults, ...initialData, type: "letterOfGuarantee" }
+    ? {
+        ...defaults,
+        ...initialData,
+        type: "letterOfGuarantee",
+      }
     : defaults;
 
-  /* Validation: amount + commission <= availableBalance (if known) */
+  /* Validation:
+     - validUntil optional (not specified as required)
+     - letterOfGuarenteePct optional (not specified as required)
+     Keep existing rules unchanged.
+  */
   const schema = Yup.object({
     accountNumber: Yup.string().required(tv("required")),
     date: Yup.string().required(tv("required")),
+    validUntil: Yup.string().nullable(), // optional
     amount: Yup.number()
       .typeError(tv("amountMustBeNumber"))
       .required(tv("required"))
@@ -401,6 +443,7 @@ export default function LetterOfGuaranteeForm({
     additionalInfo: Yup.string().nullable(),
     curr: Yup.string().required(tv("required")),
     refferenceNumber: Yup.string().required(tv("required")),
+    letterOfGuarenteePct: Yup.string().nullable(),
   });
 
   /* ---- submit (direct) -------------------------------------------------- */
@@ -417,6 +460,9 @@ export default function LetterOfGuaranteeForm({
         ...vals,
         amount: totalToPay,
         type: "letterOfGuarantee",
+        // Make sure optional new fields are passed through
+        validUntil: vals.validUntil,
+        letterOfGuarenteePct: vals.letterOfGuarenteePct,
       };
 
       onSubmit(payload);

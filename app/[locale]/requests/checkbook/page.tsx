@@ -7,7 +7,7 @@ import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import CheckbookForm from "./components/CheckbookForm";
 import { getCheckbookRequests } from "./services";
 import type { TCheckbookFormValues } from "./types";
-import type { TCheckbookValues } from "./types"; // ← import API row type
+import type { TCheckbookValues } from "./types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import RequestPdfDownloadButton from "@/app/components/reusable/RequestPdfDownloadButton";
 
@@ -31,11 +31,11 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
 
 /* Map a newly-added form row into the API row shape held in state */
 const mapFormToApiRow = (v: TCheckbookFormValues): TCheckbookValues => ({
-  id: v.id, // may be undefined; we’ll set a temp id in the caller
+  id: v.id,
   userId: undefined,
   fullName: v.fullName,
   address: v.address,
-  phoneNumber: v.phoneNumber || undefined, // form requires string; state can keep it optional
+  phoneNumber: v.phoneNumber || undefined,
   accountNumber: v.accountNumber,
   representativeId: v.representativeId,
   branch: v.branch,
@@ -47,18 +47,20 @@ const mapFormToApiRow = (v: TCheckbookFormValues): TCheckbookValues => ({
   reason: v.reason,
 });
 
+type SearchBy = "branch" | "status" | "rep";
+
 const CheckbookPage: React.FC = () => {
   const t = useTranslations("checkForm");
 
   /* ---------- table / pagination ---------- */
-  const [data, setData] = useState<TCheckbookValues[]>([]); // ← hold API rows here
+  const [data, setData] = useState<TCheckbookValues[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
   /* ---------- search ---------- */
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchBy, setSearchBy] = useState("");
+  const [searchBy, setSearchBy] = useState<SearchBy>("status");
 
   /* ---------- form toggle ---------- */
   const [showForm, setShowForm] = useState(false);
@@ -92,7 +94,7 @@ const CheckbookPage: React.FC = () => {
           searchTerm,
           searchBy
         );
-        setData(res.data); // OK: data is TCheckbookValues[]
+        setData(res.data);
         setTotalPages(res.totalPages);
       } catch (err) {
         const msg = err instanceof Error ? err.message : t("genericError");
@@ -122,8 +124,8 @@ const CheckbookPage: React.FC = () => {
       width: 120,
       renderCell: (row: TCheckbookValues) => (
         <RequestPdfDownloadButton
-          requestType="checkbook" /* matches fetcherMap key */
-          requestId={row.id ?? 0} /* API rows should have id; safe fallback */
+          requestType="checkbook"
+          requestId={row.id ?? 0}
           title={t("downloadPdf", { defaultValue: "Download PDF" })}
         />
       ),
@@ -134,10 +136,9 @@ const CheckbookPage: React.FC = () => {
   const handleAddClick = () => setShowForm(true);
 
   const handleFormSubmit = (newItem: TCheckbookFormValues) => {
-    // Convert form values → API row shape and add a temporary id + default status
     const apiRow: TCheckbookValues = {
       ...mapFormToApiRow(newItem),
-      id: Date.now(), // temp client id
+      id: Date.now(),
       status: newItem.status ?? "pending",
     };
 
@@ -173,18 +174,19 @@ const CheckbookPage: React.FC = () => {
           showDropdown
           showSearchBar
           dropdownOptions={[
-            { value: "fullName", label: t("name") },
+            { value: "branch", label: t("branch") },
             { value: "status", label: t("status") },
+            { value: "rep", label: t("rep") },
           ]}
           onDropdownSelect={(sel) => {
-            if (sel) {
-              setSearchBy(String(sel));
-              setCurrentPage(1);
+            if (sel === "branch" || sel === "status" || sel === "rep") {
+              setSearchBy(sel);
+              // setCurrentPage(1);
             }
           }}
           onSearch={(term) => {
             setSearchTerm(term);
-            setCurrentPage(1);
+            // setCurrentPage(1);
           }}
           showAddButton={showAddButton}
           onAddClick={handleAddClick}

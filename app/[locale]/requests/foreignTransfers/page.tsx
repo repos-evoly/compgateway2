@@ -12,7 +12,7 @@ import ForeignTransfersForm, {
 
 import { getForeignTransfers, createForeignTransfer } from "./services";
 
-// Permission helpers (copied from other pages)
+/* ---------- cookie helpers ---------- */
 const getCookieValue = (key: string): string | undefined =>
   typeof document !== "undefined"
     ? document.cookie
@@ -30,21 +30,33 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
   }
 };
 
+/* ---------- local types ---------- */
+type SearchBy = "toBank" | "beneficiary";
+
+type GridRow = {
+  id: number;
+  toBank: string;
+  beneficiaryName: string;
+  transferAmount: number;
+  status: string;
+};
+
 export default function ForeignTransfersListPage() {
   const t = useTranslations("foreignTransfers");
 
-  // We'll store the full array of foreign transfers
-  const [data, setData] = useState<ForeignTransfersFormValues[]>([]);
+  // Full items for forms/details
+  const [items, setItems] = useState<ForeignTransfersFormValues[]>([]);
 
-  // For pagination
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
 
-  // Searching
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchBy, setSearchBy] = useState("");
+  // Searching (ONLY by toBank and beneficiary)
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchBy, setSearchBy] = useState<SearchBy>("toBank");
 
-  // Toggle form
+  // UI state
   const [showForm, setShowForm] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
@@ -63,75 +75,97 @@ export default function ForeignTransfersListPage() {
   const canOpenForm = canEdit || canView;
   const isReadOnly = !canEdit && canView;
 
-  // Each page => limit=10
-  const limit = 10;
-
-  // On mount or whenever page/search changes => fetch from API
+  // Fetch data on page / search changes
   useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchTerm, searchBy]);
+    (async () => {
+      setLoading(true);
+      try {
+        const response = await getForeignTransfers(
+          currentPage,
+          limit,
+          searchTerm,
+          searchBy
+        );
+        // Map API -> form values shape (if needed); here we keep as-is
+        const mapped: ForeignTransfersFormValues[] = response.data.map(
+          (item) => ({
+            id: item.id,
+            toBank: item.toBank,
+            branch: item.branch,
+            residentSupplierName: item.residentSupplierName,
+            residentSupplierNationality: item.residentSupplierNationality,
+            nonResidentPassportNumber: item.nonResidentPassportNumber,
+            placeOfIssue: item.placeOfIssue,
+            dateOfIssue: item.dateOfIssue,
+            nonResidentNationality: item.nonResidentNationality,
+            nonResidentAddress: item.nonResidentAddress,
+            transferAmount: item.transferAmount,
+            toCountry: item.toCountry,
+            beneficiaryName: item.beneficiaryName,
+            beneficiaryAddress: item.beneficiaryAddress,
+            externalBankName: item.externalBankName,
+            externalBankAddress: item.externalBankAddress,
+            transferToAccountNumber: item.transferToAccountNumber,
+            transferToAddress: item.transferToAddress,
+            accountHolderName: item.accountHolderName,
+            permanentAddress: item.permanentAddress,
+            purposeOfTransfer: item.purposeOfTransfer,
+            status: item.status,
+            reason: item.reason,
+          })
+        );
+        setItems(mapped);
+        setTotalPages(response.totalPages || 1);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : t("genericError");
+        setModalTitle(t("errorTitle"));
+        setModalMessage(msg);
+        setModalSuccess(false);
+        setModalOpen(true);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [currentPage, limit, searchTerm, searchBy, t]);
 
-  async function fetchData() {
-    setLoading(true); // Set loading state
+  // Grid data: only the fields we show
+  const gridData: GridRow[] = useMemo(
+    () =>
+      items.map((it) => ({
+        id: it.id ?? 0,
+        toBank: it.toBank ?? "",
+        beneficiaryName: it.beneficiaryName ?? "",
+        transferAmount: it.transferAmount ?? 0,
+        status: it.status ?? "",
+      })),
+    [items]
+  );
+
+  // Grid columns (keys must exist in gridData)
+  const columns = [
+    { key: "toBank", label: t("toBank") },
+    { key: "beneficiaryName", label: t("beneficiary") },
+    { key: "transferAmount", label: t("transferAmount") },
+    { key: "status", label: t("status") },
+    {
+      key: "actions",
+      label: t("actions", { defaultValue: "Actions" }),
+      renderCell: (row: GridRow) => (
+        <RequestPdfDownloadButton
+          requestId={row.id}
+          requestType="foreignTransfer"
+          title={t("downloadPdf", { defaultValue: "Download PDF" })}
+        />
+      ),
+      width: 120,
+    },
+  ];
+
+  // Handlers
+  const handleAddClick = () => setShowForm(true);
+
+  const handleFormSubmit = async (values: ForeignTransfersFormValues) => {
     try {
-      const response = await getForeignTransfers(
-        currentPage,
-        limit,
-        searchTerm,
-        searchBy
-      );
-      // Transform the API data => array of ForeignTransfersFormValues
-      const mapped = response.data.map((item) => ({
-        id: item.id,
-        toBank: item.toBank,
-        branch: item.branch,
-        residentSupplierName: item.residentSupplierName,
-        residentSupplierNationality: item.residentSupplierNationality,
-        nonResidentPassportNumber: item.nonResidentPassportNumber,
-        placeOfIssue: item.placeOfIssue,
-        dateOfIssue: item.dateOfIssue,
-        nonResidentNationality: item.nonResidentNationality,
-        nonResidentAddress: item.nonResidentAddress,
-        transferAmount: item.transferAmount,
-        toCountry: item.toCountry,
-        beneficiaryName: item.beneficiaryName,
-        beneficiaryAddress: item.beneficiaryAddress,
-        externalBankName: item.externalBankName,
-        externalBankAddress: item.externalBankAddress,
-        transferToAccountNumber: item.transferToAccountNumber,
-        transferToAddress: item.transferToAddress,
-        accountHolderName: item.accountHolderName,
-        permanentAddress: item.permanentAddress,
-        purposeOfTransfer: item.purposeOfTransfer,
-        status: item.status,
-        reason: item.reason,
-      })) as unknown as ForeignTransfersFormValues[];
-
-      setData(mapped);
-      setTotalPages(response.totalPages || 1);
-    } catch (err) {
-      console.error("Failed to fetch foreign transfers:", err);
-      const msg = err instanceof Error ? err.message : t("genericError");
-      setModalTitle(t("errorTitle"));
-      setModalMessage(msg);
-      setModalSuccess(false);
-      setModalOpen(true);
-    } finally {
-      setLoading(false); // Reset loading state
-    }
-  }
-
-  function handleAddClick() {
-    setShowForm(true);
-  }
-
-  /**
-   * When form is submitted, call createForeignTransfer, then re-fetch the data.
-   */
-  async function handleFormSubmit(values: ForeignTransfersFormValues) {
-    try {
-      // Convert needed fields to string if your API requires them:
       await createForeignTransfer({
         toBank: values.toBank || "",
         branch: values.branch || "",
@@ -158,49 +192,19 @@ export default function ForeignTransfersListPage() {
         status: values.status || "",
         reason: values.reason || "",
       });
-
-      // After successful creation, re-fetch data so new entry is shown
-      await fetchData();
-
-      // Hide the form => back to listing
+      // Refresh list
       setShowForm(false);
+      setCurrentPage(1);
+      // Trigger fetch by updating deps
+      setSearchTerm((s) => s);
     } catch (error) {
-      console.error("Failed to create foreign transfer:", error);
       const msg = error instanceof Error ? error.message : t("genericError");
       setModalTitle(t("errorTitle"));
       setModalMessage(msg);
       setModalSuccess(false);
       setModalOpen(true);
     }
-  }
-
-  // We'll create a smaller "gridData" with just a few columns displayed
-  const gridData = data.map((item) => ({
-    id: item.id ?? 0,
-    toBank: item.toBank ?? "",
-    branch: item.branch ?? "",
-    transferAmount: item.transferAmount ?? 0,
-  }));
-
-  // The columns we want to show
-  const columns = [
-    { key: "branch", label: t("branch") },
-    { key: "toBank", label: t("toBank") },
-    { key: "transferAmount", label: t("transferAmount") },
-    { key: "status", label: t("status") },
-    {
-      key: "actions",
-      label: t("actions", { defaultValue: "Actions" }),
-      renderCell: (row: Record<string, unknown>) => (
-        <RequestPdfDownloadButton
-          requestId={row.id as number}
-          requestType="foreignTransfer"
-          title={t("downloadPdf", { defaultValue: "Download PDF" })}
-        />
-      ),
-      width: 120,
-    },
-  ];
+  };
 
   return (
     <div className="p-4">
@@ -216,29 +220,30 @@ export default function ForeignTransfersListPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          // Searching props
           showSearchBar
           showSearchInput
           showDropdown
+          dropdownOptions={[
+            { value: "toBank", label: t("toBank") },
+            { value: "beneficiary", label: t("beneficiary") },
+          ]}
+          onDropdownSelect={(val) => {
+            if (val === "toBank" || val === "beneficiary") {
+              setSearchBy(val);
+              // setCurrentPage(1);
+            }
+          }}
           onSearch={(term) => {
             setSearchTerm(term);
-            setCurrentPage(1);
+            // setCurrentPage(1);
           }}
-          onDropdownSelect={(val) => {
-            setSearchBy(val);
-            setCurrentPage(1);
-          }}
-          dropdownOptions={[
-            { value: "branch", label: t("branch") },
-            { value: "toBank", label: t("toBank") },
-          ]}
-          // Show "Add" button => open form wizard
           showAddButton={showAddButton}
           onAddClick={handleAddClick}
           loading={loading}
           canEdit={canEdit}
         />
       )}
+
       <ErrorOrSuccessModal
         isOpen={modalOpen}
         isSuccess={modalSuccess}

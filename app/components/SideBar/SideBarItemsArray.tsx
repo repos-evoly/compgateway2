@@ -20,7 +20,7 @@ import {
   FaRegAddressCard,
   FaUserTie,
 } from "react-icons/fa";
-import { IoEarth } from "react-icons/io5";
+// import { IoEarth } from "react-icons/io5";
 import { MdRequestQuote } from "react-icons/md";
 import { RxDashboard } from "react-icons/rx";
 
@@ -131,12 +131,12 @@ export const sidebarItems = [
       //   icon: FaUsers,
       //   enabledTransactionCategories: ["GroupTransfer"],
       // },
-      {
-        id: 6,
-        label: "transfer.out",
-        path: "/transfer/external",
-        icon: IoEarth,
-      },
+      // {
+      //   id: 6,
+      //   label: "transfer.out",
+      //   path: "/transfer/external",
+      //   icon: IoEarth,
+      // },
     ],
   },
   {

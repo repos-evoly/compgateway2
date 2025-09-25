@@ -1,7 +1,7 @@
-// app/[locale]/internalTransfer/components/InternalForm.tsx
+// app/[locale]/transfers/internal/components/InternalForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Cookies from "js-cookie";
 import * as Yup from "yup";
 import { useTranslations } from "next-intl";
@@ -12,8 +12,8 @@ import { getCurrencies } from "@/app/[locale]/currencies/services";
 import {
   getTransfersCommision,
   createTransfer,
+  checkAccount, // used to fetch names for FROM/TO
   getEconomicSectors,
-  checkAccount,
 } from "../services";
 import { getBeneficiaries } from "@/app/[locale]/beneficiaries/services";
 
@@ -70,6 +70,16 @@ type ExtendedValues = InternalFormValues & {
 type ExtraProps = {
   viewOnly?: boolean;
   onSuccess?: () => void;
+};
+
+type AccountLookup = {
+  accountString: string;
+  availableBalance: number;
+  debitBalance: number;
+  transferType?: string;
+  companyName?: string;
+  branchCode?: string;
+  branchName?: string;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -175,6 +185,8 @@ function InternalForm({
     commissionAmount: number;
     commissionCurrency: string;
     displayAmount: number;
+    fromCompanyName?: string;
+    toCompanyName?: string;
   } | null>(null);
 
   /* ---------------- values & schema ------------------------------------ */
@@ -212,6 +224,13 @@ function InternalForm({
   });
 
   /* ---------------- check TO account whenever it stabilizes ------------- */
+  // Keep a stable reference to the translation function to avoid adding `t`
+  // to the dependency array (satisfies react-hooks/exhaustive-deps).
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
+
   const ToAccountChecker = ({ toValue }: { toValue: string }) => {
     useEffect(() => {
       if (!toValue) {
@@ -222,10 +241,9 @@ function InternalForm({
       const timer = setTimeout(() => {
         void (async () => {
           try {
-            const account = await checkAccount(toValue);
+            const account = (await checkAccount(toValue)) as AccountLookup[];
             setToError(undefined);
-            setTransferType(account[0].transferType);
-            console.log("Account check successful:", account);
+            setTransferType(account[0]?.transferType);
           } catch (err: unknown) {
             console.error("Account check failed:", err);
             if (
@@ -234,14 +252,16 @@ function InternalForm({
               "message" in err &&
               typeof (err as { message: unknown }).message === "string"
             ) {
-              setToError((err as { message: string }).message);
+              setToError((err as { message: string }).message as string);
             } else {
-              setToError(t("accountNotFound"));
+              // use stable ref instead of `t` in deps
+              setToError(tRef.current("accountNotFound"));
             }
           }
         })();
       }, 400);
       return () => clearTimeout(timer);
+      // `t` intentionally not included; we read from tRef instead.
     }, [toValue]);
 
     return null;
@@ -252,32 +272,52 @@ function InternalForm({
     if (viewOnly) return;
 
     try {
+      // 1) Resolve currency display
       const currencyCode = vals.from.slice(-3);
       const currResp = await getCurrencies(1, 1, currencyCode, "code");
       const currencyDesc = currResp.data[0]?.description ?? currencyCode;
 
+      // 2) Fetch commission config
       const servicePackageId = Number(Cookies.get("servicePackageId") ?? 0);
       const commResp = await getTransfersCommision(
         servicePackageId,
         vals.transactionCategoryId ?? 2
       );
 
-      const isB2B = transferType === "B2B";
+      // 3) Fetch FROM / TO account info to display companyName
+      const [fromInfoArr, toInfoArr] = await Promise.all([
+        checkAccount(vals.from) as Promise<AccountLookup[]>,
+        checkAccount(vals.to) as Promise<AccountLookup[]>,
+      ]);
+      const fromInfo = fromInfoArr[0];
+      const toInfo = toInfoArr[0];
+
+      // Update transfer type (prefer ToAccountChecker, but ensure we have it)
+      const effectiveTransferType =
+        transferType ?? toInfo?.transferType ?? undefined;
+
+      // 4) Compute fee
+      const isB2B = effectiveTransferType === "B2B";
       const pct = isB2B ? commResp.b2BCommissionPct : commResp.b2CCommissionPct;
       const fixed = isB2B ? commResp.b2BFixedFee : commResp.b2CFixedFee;
-
       const pctAmt = (pct * vals.value) / 100;
       const fee = Math.max(pctAmt, fixed);
 
+      // 5) Open modal with company names
       setModalData({
         formikData: vals,
         commissionAmount: fee,
         commissionCurrency: currencyDesc,
         displayAmount: commissionOnReceiver ? vals.value : vals.value + fee,
+        fromCompanyName: fromInfo?.companyName,
+        toCompanyName: toInfo?.companyName,
       });
       setModalOpen(true);
     } catch (err) {
       console.error("Modal prep failed:", err);
+      setAlertTitle(t("createErrorTitle"));
+      setAlertMessage(err instanceof Error ? err.message : t("unknownError"));
+      setAlertOpen(true);
     }
   };
 
@@ -429,6 +469,8 @@ function InternalForm({
           commissionAmount={modalData.commissionAmount}
           commissionCurrency={modalData.commissionCurrency}
           displayAmount={modalData.displayAmount}
+          fromAccountName={modalData.fromCompanyName}
+          toAccountName={modalData.toCompanyName}
           onClose={() => setModalOpen(false)}
           onConfirm={confirmModal}
         />

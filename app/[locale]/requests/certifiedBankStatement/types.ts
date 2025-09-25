@@ -39,11 +39,13 @@ export type CertifiedBankStatementRequest = {
   totalAmountLyd?: number;
 };
 
-/** Extended shape with ID, status and rejectReason */
+/** Extended shape with ID, status and rejectReason
+ *  PLUS: top-level fromDate/toDate for convenience (mirrors statementRequest)
+ */
 export type CertifiedBankStatementRequestWithID = CertifiedBankStatementRequest & {
   id: number;
   status?: string;
   rejectReason?: string;
+  fromDate?: string; // ← new
+  toDate?: string;   // ← new
 };
-
-

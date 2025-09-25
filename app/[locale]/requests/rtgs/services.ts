@@ -1,10 +1,11 @@
+// app/[locale]/requests/rtgs/services.ts
 "use client";
 
 import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
-import { TRTGSResponse, TRTGSValues } from "./types";
-import { TKycResponse } from "@/app/auth/register/types";
 import { throwApiError } from "@/app/helpers/handleApiError";
+import type { TKycResponse } from "@/app/auth/register/types";
+import type { TRTGSResponse, TRTGSValues } from "./types";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
@@ -12,16 +13,16 @@ const BASE_URL =
 const shouldRefresh = (s: number) => s === 401 || s === 403;
 
 /**
- * GET /rtgsrequests?page={}&limit={}
- * Returns { data, page, limit, totalPages, totalRecords }
+ * GET /rtgsrequests?page={}&limit={}&searchTerm=&searchBy=
+ * searchBy must be "paymenttype" or "beneficiarybank" (lowercase)
  */
 export async function getRtgsRequests(
   page: number,
-  limit: number
+  limit: number,
+  searchTerm: string = "",
+  searchBy: "" | "paymenttype" | "beneficiarybank" = ""
 ): Promise<TRTGSResponse> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -29,6 +30,8 @@ export async function getRtgsRequests(
   const url = new URL(`${BASE_URL}/rtgsrequests`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("limit", String(limit));
+  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
+  if (searchBy) url.searchParams.set("searchBy", searchBy);
 
   const init = (bearer: string): RequestInit => ({
     method: "GET",
@@ -62,9 +65,7 @@ export async function getRtgsRequests(
 export async function getRtgsRequestById(
   id: string | number
 ): Promise<TRTGSValues> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -90,10 +91,7 @@ export async function getRtgsRequestById(
   }
 
   if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to fetch RTGS request by ID ${id}.`
-    );
+    await throwApiError(response, `Failed to fetch RTGS request by ID ${id}.`);
   }
 
   const data = (await response.json()) as TRTGSValues;
@@ -107,9 +105,7 @@ export async function getRtgsRequestById(
 export async function createRtgsRequest(
   values: TRTGSValues
 ): Promise<TRTGSValues> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -132,6 +128,7 @@ export async function createRtgsRequest(
     claim: boolean;
     otherDoc: boolean;
   } = {
+    // keeping your existing mapping
     refNum: new Date(values.refNum).toISOString(),
     date: new Date(values.date).toISOString(),
     paymentType: values.paymentType,
@@ -190,9 +187,7 @@ export async function updateRtgsRequest(
   id: string | number,
   values: TRTGSValues
 ): Promise<TRTGSValues> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -215,6 +210,7 @@ export async function updateRtgsRequest(
     claim: boolean;
     otherDoc: boolean;
   } = {
+    // keeping your existing mapping
     refNum: new Date(values.refNum).toISOString(),
     date: new Date(values.date).toISOString(),
     paymentType: values.paymentType,
@@ -270,9 +266,7 @@ export async function updateRtgsRequest(
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -301,5 +295,5 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
     await throwApiError(response, "Failed to fetch KYC data");
   }
 
-  return response.json();
+  return (await response.json()) as TKycResponse;
 }

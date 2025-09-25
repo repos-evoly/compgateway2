@@ -1,3 +1,4 @@
+// app/[locale]/requests/checkRequest/services.ts
 "use client";
 
 import type {
@@ -10,11 +11,20 @@ import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import type { TKycResponse } from "@/app/auth/register/types";
 
-/* Use the same base used across the app; falls back to the fixed IP if env missing */
-const baseUrl = process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+/* ------------------------------------------------------------------ */
+/* Config & helpers                                                    */
+/* ------------------------------------------------------------------ */
 
-/* Helper to build RequestInit with optional bearer */
-const init = (method: "GET" | "POST" | "PUT" | "DELETE", bearer?: string, body?: unknown): RequestInit => ({
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+
+const init = (
+  method: HttpMethod,
+  bearer?: string,
+  body?: unknown
+): RequestInit => ({
   method,
   headers: {
     ...(body ? { "Content-Type": "application/json" } : {}),
@@ -24,26 +34,29 @@ const init = (method: "GET" | "POST" | "PUT" | "DELETE", bearer?: string, body?:
   cache: "no-store",
 });
 
-/* Minimal type for representatives list used to map names */
+/* Representatives list (for enriching representativeName) */
 type RepresentativesList = {
   data: Array<{ id: number; name: string }>;
 };
 
+/* The allowed search fields for this resource */
+export type CheckRequestSearchBy = "customer" | "status" | "rep";
+
+/* ------------------------------------------------------------------ */
+/* Services                                                            */
+/* ------------------------------------------------------------------ */
+
 /**
- * Fetch all check requests (GET), with optional pagination & search.
- * - Reads token at call time
- * - On 401, refreshes once and retries
- * - Also fetches representatives to annotate representativeName
+ * Fetch paginated check requests with optional search.
+ * - searchBy must be one of: "customer" | "status" | "rep"
  */
 export async function getCheckRequests(
   page: number,
   limit: number,
   searchTerm: string = "",
-  searchBy: string = ""
+  searchBy: "" | CheckRequestSearchBy = ""
 ): Promise<TCheckRequestsResponse> {
-  if (!baseUrl) {
-    throw new Error("Base API URL is not defined");
-  }
+  if (!baseUrl) throw new Error("Base API URL is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -54,17 +67,16 @@ export async function getCheckRequests(
   if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
   if (searchBy) url.searchParams.set("searchBy", searchBy);
 
-  // First attempt
   let response = await fetch(url.toString(), init("GET", token));
 
-  // Refresh + retry once on 401
+  // Refresh once on 401
   if (response.status === 401 && token) {
     try {
       const refreshed = await refreshAuthTokens();
       token = refreshed.accessToken;
       response = await fetch(url.toString(), init("GET", token));
     } catch {
-      // fall through to error handling
+      // fall through
     }
   }
 
@@ -74,10 +86,9 @@ export async function getCheckRequests(
 
   const data = (await response.json()) as TCheckRequestsResponse;
 
-  // Optionally enrich with representative names
-  if (data.data && data.data.length > 0) {
+  // Enrich with representative names
+  if (data.data?.length) {
     try {
-      // Use latest token from cookies (might have been refreshed)
       let repToken = getAccessTokenFromCookies();
       if (!repToken) throw new Error("No access token found for representatives.");
 
@@ -89,57 +100,57 @@ export async function getCheckRequests(
         repToken = refreshed.accessToken;
         repsRes = await fetch(repsUrl, init("GET", repToken));
       }
-
-      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives.`);
 
       const repsData = (await repsRes.json()) as RepresentativesList;
-      const map = new Map<number, string>(repsData.data.map((r) => [r.id, r.name]));
+      const repMap = new Map<number, string>(
+        repsData.data.map((r) => [r.id, r.name])
+      );
 
       data.data = data.data.map((cr) => ({
         ...cr,
         representativeName:
           typeof cr.representativeId === "number"
-            ? map.get(cr.representativeId) ?? `ID: ${cr.representativeId}`
-            : undefined,
+            ? repMap.get(cr.representativeId) ?? `ID: ${cr.representativeId}`
+            : cr.representativeName,
       }));
     } catch {
-      // silently continue without representative names
+      // do nothing if enrichment fails
     }
   }
 
   return data;
 }
 
-// services.ts (or wherever createCheckRequest lives)
-
+/**
+ * Create a check request.
+ */
 export async function createCheckRequest(
   values: TCheckRequestFormValues
 ): Promise<TCheckRequestValues> {
-  if (!baseUrl) {
-    throw new Error("Base API URL is not defined");
-  }
+  if (!baseUrl) throw new Error("Base API URL is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
 
-// inside createCheckRequest(...)
-const payload = {
-  branch: values.branch,
-  branchNum: values.branchNum,
-  date: values.date.toISOString(),
-  customerName: values.customerName,
-  cardNum: values.cardNum,
-  accountNum: values.accountNum,
-  beneficiary: values.beneficiary,
-  phone: values.phone,
-  representativeId:
-    values.representativeId != null ? Number(values.representativeId) : undefined,
-  lineItems: values.lineItems.map((item) => ({
-    dirham: String(item.dirham ?? ""),
-    lyd: String(item.lyd ?? ""),
-  })),
-};
-
+  const payload = {
+    branch: values.branch,
+    branchNum: values.branchNum,
+    date: values.date.toISOString(),
+    customerName: values.customerName,
+    cardNum: values.cardNum,
+    accountNum: values.accountNum,
+    beneficiary: values.beneficiary,
+    phone: values.phone,
+    representativeId:
+      values.representativeId != null
+        ? Number(values.representativeId)
+        : undefined,
+    lineItems: values.lineItems.map((item) => ({
+      dirham: String(item.dirham ?? ""),
+      lyd: String(item.lyd ?? ""),
+    })),
+  };
 
   const url = `${baseUrl}/checkrequests`;
 
@@ -158,10 +169,10 @@ const payload = {
     await throwApiError(response, "Failed to create check request.");
   }
 
-  const responseData = (await response.json()) as TCheckRequestValues;
+  const created = (await response.json()) as TCheckRequestValues;
 
-  // Enrich with representative name if possible
-  if (responseData.representativeId) {
+  // Enrich with representative name
+  if (created.representativeId) {
     try {
       let repToken = getAccessTokenFromCookies();
       if (!repToken) throw new Error("No access token found for representatives.");
@@ -174,32 +185,26 @@ const payload = {
         repToken = refreshed.accessToken;
         repsRes = await fetch(repsUrl, init("GET", repToken));
       }
-
-      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives.`);
 
       const repsData = (await repsRes.json()) as RepresentativesList;
-      const rep = repsData.data.find((r) => r.id === responseData.representativeId);
-      if (rep) {
-        responseData.representativeName = rep.name;
-      }
+      const rep = repsData.data.find((r) => r.id === created.representativeId);
+      if (rep) created.representativeName = rep.name;
     } catch {
       // ignore enrichment failure
     }
   }
 
-  return responseData;
+  return created;
 }
 
-
 /**
- * Fetch a single check request by ID (GET)
- * - On 401, refresh once and retry
- * - Enrich with representativeName if available
+ * Fetch one check request by ID.
  */
-export async function getCheckRequestById(id: string | number): Promise<TCheckRequestValues> {
-  if (!baseUrl) {
-    throw new Error("Base API URL is not defined");
-  }
+export async function getCheckRequestById(
+  id: string | number
+): Promise<TCheckRequestValues> {
+  if (!baseUrl) throw new Error("Base API URL is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -237,14 +242,11 @@ export async function getCheckRequestById(id: string | number): Promise<TCheckRe
         repToken = refreshed.accessToken;
         repsRes = await fetch(repsUrl, init("GET", repToken));
       }
-
-      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives.`);
 
       const repsData = (await repsRes.json()) as RepresentativesList;
       const rep = repsData.data.find((r) => r.id === data.representativeId);
-      if (rep) {
-        data.representativeName = rep.name;
-      }
+      if (rep) data.representativeName = rep.name;
     } catch {
       // ignore enrichment failure
     }
@@ -254,17 +256,13 @@ export async function getCheckRequestById(id: string | number): Promise<TCheckRe
 }
 
 /**
- * Updates a check request (PUT) with all the data fields.
- * - On 401, refresh once and retry
- * - Enrich with representativeName if available
+ * Update a check request by ID.
  */
 export async function updateCheckRequestById(
   id: string | number,
   values: TCheckRequestFormValues
 ): Promise<TCheckRequestValues> {
-  if (!baseUrl) {
-    throw new Error("Base API URL is not defined");
-  }
+  if (!baseUrl) throw new Error("Base API URL is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");
@@ -297,12 +295,16 @@ export async function updateCheckRequestById(
   }
 
   if (!response.ok) {
-    await throwApiError(response, `Failed to update check request with ID ${id}.`);
+    await throwApiError(
+      response,
+      `Failed to update check request with ID ${id}.`
+    );
   }
 
-  const responseData = (await response.json()) as TCheckRequestValues;
+  const updated = (await response.json()) as TCheckRequestValues;
 
-  if (responseData.representativeId) {
+  // Enrich with representative name
+  if (updated.representativeId) {
     try {
       let repToken = getAccessTokenFromCookies();
       if (!repToken) throw new Error("No access token found for representatives.");
@@ -315,30 +317,24 @@ export async function updateCheckRequestById(
         repToken = refreshed.accessToken;
         repsRes = await fetch(repsUrl, init("GET", repToken));
       }
-
-      if (!repsRes.ok) throw new Error(`Failed to fetch representatives. Status: ${repsRes.status}`);
+      if (!repsRes.ok) throw new Error(`Failed to fetch representatives.`);
 
       const repsData = (await repsRes.json()) as RepresentativesList;
-      const rep = repsData.data.find((r) => r.id === responseData.representativeId);
-      if (rep) {
-        responseData.representativeName = rep.name;
-      }
+      const rep = repsData.data.find((r) => r.id === updated.representativeId);
+      if (rep) updated.representativeName = rep.name;
     } catch {
       // ignore enrichment failure
     }
   }
 
-  return responseData;
+  return updated;
 }
 
 /**
- * Fetch KYC data by company code (6 digits after first 4 digits of account number)
- * - On 401, refresh once and retry
+ * Fetch KYC by company code.
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  if (!baseUrl) {
-    throw new Error("Base API URL is not defined");
-  }
+  if (!baseUrl) throw new Error("Base API URL is not defined");
 
   let token = getAccessTokenFromCookies();
   if (!token) throw new Error("No access token found in cookies");

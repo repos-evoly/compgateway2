@@ -126,4 +126,7 @@ export type CheckAccountResponse = {
   availableBalance: number;
   debitBalance: number;
   transferType: string;
+  companyName: string;
+  branchCode: string;
+  branchName: string;
 };

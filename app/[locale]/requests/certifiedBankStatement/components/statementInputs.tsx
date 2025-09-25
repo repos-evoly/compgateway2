@@ -88,20 +88,6 @@ export const step1StatementInputs = [
 // Step 2 fields:
 //   oldAccountNumber, newAccountNumber, statementRequest
 export const step2StatementInputs = [
-  {
-    name: "oldAccountNumber",
-    label: "oldAccountNumber",
-    icon: <FiCreditCard />,
-    type: "number",
-    maskingFormat: "0000-000000-000",
-  },
-  {
-    name: "newAccountNumber",
-    label: "newAccountNumber",
-    icon: <FiCreditCard />,
-    type: "number",
-    maskingFormat: "0000-000000-000",
-  },
   // statementRequest => custom UI (checkboxes, date fields, etc.)
   {
     name: "statementRequest",

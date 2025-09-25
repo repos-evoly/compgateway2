@@ -526,6 +526,7 @@ export default function CertifiedBankStatementForm({
   };
 
   const stepValidations = [
+    // Step 1: keep as-is
     Yup.object({
       accountHolderName: Yup.string().required(
         `${t("accountHolderName")} ${t("isRequired")}`
@@ -537,14 +538,9 @@ export default function CertifiedBankStatementForm({
         .typeError(`${t("accountNumber")} ${t("mustBeNumber")}`)
         .required(`${t("accountNumber")} ${t("isRequired")}`),
     }),
-    Yup.object({
-      oldAccountNumber: Yup.number()
-        .typeError(`${t("oldAccountNumber")} ${t("mustBeNumber")}`)
-        .required(`${t("oldAccountNumber")} ${t("isRequired")}`),
-      newAccountNumber: Yup.number()
-        .typeError(`${t("newAccountNumber")} ${t("mustBeNumber")}`)
-        .required(`${t("newAccountNumber")} ${t("isRequired")}`),
-    }),
+
+    // Step 2: nothing required anymore (validates always)
+    Yup.object({}),
   ];
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -556,7 +552,6 @@ export default function CertifiedBankStatementForm({
   const helpersRef =
     useRef<FormikHelpers<CertifiedBankStatementRequestWithID> | null>(null);
   const fetchedLinesRef = useRef<StatementLine[] | null>(null);
-
 
   return (
     <div className="w-full rounded-md bg-gray-50 p-4">

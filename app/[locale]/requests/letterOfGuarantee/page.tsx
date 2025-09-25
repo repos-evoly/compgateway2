@@ -42,6 +42,12 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
   }
 };
 
+/** Safe row type that includes optional new fields the API may return */
+type RowWithExtras = LetterOfGuaranteeApiItem & {
+  validUntil?: string | null;
+  letterOfGuarenteePct?: string | number | null;
+};
+
 export default function LetterOfGuaranteePage() {
   /* --------------------------------------------------------------
    * Translation hooks
@@ -121,9 +127,33 @@ export default function LetterOfGuaranteePage() {
   const columns = [
     { key: "accountNumber", label: tCol("accountNumber") },
     { key: "date", label: tCol("date") },
+
+    // NEW: Valid Until
+    {
+      key: "validUntil",
+      label: tCol("validUntil"),
+      renderCell: (row: RowWithExtras) =>
+        row.validUntil && String(row.validUntil).trim().length > 0
+          ? row.validUntil
+          : "—",
+    },
+
     { key: "amount", label: tCol("amount") },
     { key: "purpose", label: tCol("purpose") },
     { key: "curr", label: tCol("currency") },
+
+    // NEW: Letter of Guarantee %
+    {
+      key: "letterOfGuarenteePct",
+      label: tCol("letterOfGuaranteePct"),
+      renderCell: (row: RowWithExtras) =>
+        row.letterOfGuarenteePct !== undefined &&
+        row.letterOfGuarenteePct !== null &&
+        String(row.letterOfGuarenteePct).trim().length > 0
+          ? String(row.letterOfGuarenteePct)
+          : "—",
+    },
+
     { key: "type", label: tCol("type") },
     { key: "status", label: tCol("status") },
     { key: "createdAt", label: tCol("createdAt") },

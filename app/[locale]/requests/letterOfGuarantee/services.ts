@@ -100,6 +100,11 @@ export async function addLetterOfGuarantee(
     curr: payload.curr,
     referenceNumber: payload.refferenceNumber, // API field name
     type: payload.type, // "letterOfGuarantee"
+    status: payload.status,
+
+    // NEW FIELDS
+    validUntil: payload.validUntil ?? null,
+    letterOfGuarenteePct: payload.letterOfGuarenteePct ?? "",
   };
 
   let res = await fetch(url, init("POST", token, body));
@@ -184,6 +189,10 @@ export async function updateLetterOfGuaranteeById(
     referenceNumber: payload.refferenceNumber, // API field name
     type: payload.type,
     status: payload.status,
+
+    // NEW FIELDS
+    validUntil: payload.validUntil ?? null,
+    letterOfGuarenteePct: payload.letterOfGuarenteePct ?? "",
   };
 
   let res = await fetch(url, init("PUT", token, body));

@@ -4,11 +4,13 @@
    – Row 1 (Amount): user enters values.
    – Row 2 (Expenses): 
        • Dirham *  = fixed **10** (always)
-       • D.L *     = (Amount_LYD + Amount_Dirham/1000) × (2/1000)
+       • D.L *     = 
+           - If Amount_LYD < 10,000 ⇒ fixed **10** D.L*
+           - Else ⇒ (Amount_LYD + Amount_Dirham/1000) × (2/1000)
          (i.e., 1 د.ل* = 1000 درهم*)
    – Row 3 (Total):
        • Dirham *  = Amount_Dirham + 10
-       • D.L *     = Amount_LYD + computed commission (2/1000 on combined)
+       • D.L *     = Amount_LYD + computed commission
    – Computation happens via Formik watchers; fields are disabled for rows 2 & 3.
    – Strict TypeScript (no `any`), copy-paste ready.
 -------------------------------------------------------------------------- */
@@ -37,6 +39,14 @@ type TCheckRequestTableProps = {
   /** If true, inputs are disabled (row 1 only). Row 2 & 3 are always disabled. */
   readOnly?: boolean;
 };
+
+/* ------------------------------------------------------------------ */
+/* Constants                                                           */
+/* ------------------------------------------------------------------ */
+const FIXED_DIRHAM_EXPENSE = 10; // Row 2 Dirham* is always 10
+const COMMISSION_RATE = 2 / 1000; // 0.2% on combined base (when threshold not met)
+const LYD_COMMISSION_THRESHOLD = 10_000; // If Amount_LYD < 10,000 => fixed 10 LYD commission
+const FIXED_LYD_COMMISSION_UNDER_THRESHOLD = 10;
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -71,8 +81,10 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
 
   /* Watch Amounts and compute Expenses + Totals
      Rules:
-       - expenses.dirham = 10
-       - expenses.lyd    = (amount.lyd + amount.dirham/1000) * (2/1000)
+       - expenses.dirham = 10 (always)
+       - expenses.lyd    = 
+            if amount.lyd < 10000 → fixed 10
+            else → (amount.lyd + amount.dirham/1000) * (2/1000)
        - total.dirham    = amount.dirham + 10
        - total.lyd       = amount.lyd + expenses.lyd
   */
@@ -80,8 +92,12 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
     const amountDirham = toNumber(li0Dirham);
     const amountLyd = toNumber(li0Lyd);
 
-    const fixedDirham = 10;
-    const commissionLyd = (amountLyd + amountDirham / 1000) * (2 / 1000);
+    const fixedDirham = FIXED_DIRHAM_EXPENSE;
+
+    const commissionLyd =
+      amountLyd < LYD_COMMISSION_THRESHOLD
+        ? FIXED_LYD_COMMISSION_UNDER_THRESHOLD
+        : (amountLyd + amountDirham / 1000) * COMMISSION_RATE;
 
     const totalDirham = amountDirham + fixedDirham;
     const totalLyd = amountLyd + commissionLyd;

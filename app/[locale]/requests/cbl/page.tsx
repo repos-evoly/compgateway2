@@ -26,6 +26,9 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
   }
 };
 
+// Only change related to search: enforce exact allowed values
+type SearchBy = "status";
+
 const CBLListPage: React.FC = () => {
   const t = useTranslations("cblForm");
 
@@ -36,7 +39,7 @@ const CBLListPage: React.FC = () => {
   const limit = 10;
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchBy, setSearchBy] = useState("partyName");
+  const [searchBy, setSearchBy] = useState<SearchBy>("status"); // submit EXACT "PartyName"
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
@@ -62,7 +65,7 @@ const CBLListPage: React.FC = () => {
           searchBy,
         });
         const res = await getCblRequests(page, limit, searchTerm, searchBy);
-        console.log("CBL API Response:", res); // Debug log
+        console.log("CBL API Response:", res);
         setRows(res.data);
         setTotalPages(res.totalPages);
         console.log("Updated state:", {
@@ -80,7 +83,6 @@ const CBLListPage: React.FC = () => {
 
   /* ------------ form callbacks ------------ */
   const onFormSave = (created: TCBLValues) => {
-    // add new row on top and close form
     setRows((prev) => [created, ...prev]);
     setShowForm(false);
   };
@@ -93,7 +95,7 @@ const CBLListPage: React.FC = () => {
     setPage(newPage);
   };
 
-  /* ------------ grid columns ------------ */
+  /* ------------ grid columns (unchanged shape, mutable array) ------------ */
   const cols = [
     { key: "partyName", label: t("partyName") },
     { key: "legalRepresentative", label: t("legalRepresentative") },
@@ -114,16 +116,18 @@ const CBLListPage: React.FC = () => {
     },
   ];
 
+  /* ------------ dropdown options (submit EXACT values) ------------ */
   const dropdownOptions = [
-    { value: "partyName", label: t("partyName") },
-    { value: "status", label: t("status") },
+    { value: "status", label: t("status", { defaultValue: "Status" }) },
   ];
 
   const handleDropdownSelect = useCallback(
     (value: string) => {
-      if (value !== searchBy) {
-        setSearchBy(value);
-        setPage(1);
+      if (value === "status") {
+        if (value !== searchBy) {
+          setSearchBy(value);
+          setPage(1);
+        }
       }
     },
     [searchBy]
@@ -137,6 +141,7 @@ const CBLListPage: React.FC = () => {
   /* ------------ render ------------ */
   const canOpenForm = canEdit || canView;
   const isReadOnly = !canEdit && canView;
+
   return (
     <div className="p-4">
       {showForm && canOpenForm ? (

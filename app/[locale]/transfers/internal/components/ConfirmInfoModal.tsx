@@ -1,8 +1,8 @@
+// app/[locale]/internalTransfer/components/ConfirmInfoModal.tsx
 "use client";
 
 import React, { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { AdditionalData } from "../types";
 import {
   FiCheckCircle,
   FiX,
@@ -10,6 +10,7 @@ import {
   FiArrowRight,
   FiAlertTriangle,
 } from "react-icons/fi";
+import { AdditionalData } from "../types";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                              */
@@ -27,6 +28,9 @@ export type ConfirmInfoModalProps = {
   commissionCurrency: string;
   displayAmount: number;
   additionalData?: AdditionalData;
+  /** NEW: resolved account names (company names) */
+  fromAccountName?: string;
+  toAccountName?: string;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -40,6 +44,8 @@ export default function ConfirmInfoModal({
   commissionAmount,
   commissionCurrency,
   displayAmount,
+  fromAccountName,
+  toAccountName,
   onClose,
   onConfirm,
 }: ConfirmInfoModalProps) {
@@ -111,7 +117,7 @@ export default function ConfirmInfoModal({
             </div>
 
             {/* Flow */}
-            <div className="flex items-center justify-center space-x-4 rtl:space-x-reverse">
+            <div className="flex items-center justify-center space-x-4 rtl:space-x-reverse mt-3">
               {/* FROM */}
               <div className="flex-1 text-center">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-info-main/20">
@@ -123,6 +129,12 @@ export default function ConfirmInfoModal({
                 <div className="text-xs text-slate-900 font-mono truncate px-1">
                   {from}
                 </div>
+                {/* NEW: company name under FROM */}
+                {fromAccountName && (
+                  <div className="text-[11px] text-slate-700 mt-1 truncate px-1">
+                    {fromAccountName}
+                  </div>
+                )}
               </div>
 
               {/* Arrow */}
@@ -145,6 +157,12 @@ export default function ConfirmInfoModal({
                 <div className="text-xs text-slate-900 font-mono truncate px-1">
                   {to}
                 </div>
+                {/* NEW: company name under TO */}
+                {toAccountName && (
+                  <div className="text-[11px] text-slate-700 mt-1 truncate px-1">
+                    {toAccountName}
+                  </div>
+                )}
               </div>
             </div>
           </div>

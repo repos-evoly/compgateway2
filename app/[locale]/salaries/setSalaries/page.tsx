@@ -5,14 +5,16 @@
        • Checkbox column with select-all header.
        • “Submit” opens SalariesModal → choose debitAccount **and salaryMonth**.
        • On confirm, calls submitSalaryCycle() with live salaries.
-   – Always sends currency "LYD".
-   – Strict TypeScript, copy-paste ready.
+       • Always sends currency "LYD".
+       • Shows ErrorOrSuccessModal after API call.
+       • On success -> Confirm button navigates back to /[locale]/salaries.
    -------------------------------------------------------------------------- */
 "use client";
 
 import React, { useMemo, useState, useEffect, JSX } from "react";
 import { Formik } from "formik";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
@@ -22,21 +24,35 @@ import type { DataGridColumn } from "@/types";
 import { getEmployees } from "../../employees/services";
 import type { EmployeeResponse } from "../../employees/types";
 
-import SalariesModal from "../components/SalariesModal"; // ⬅️ Modal now returns { debitAccount, salaryMonthISO }
+import SalariesModal from "../components/SalariesModal"; // returns { debitAccount, salaryMonthISO }
 import { submitSalaryCycle, type NewCycleEntry } from "../services";
 import LoadingPage from "@/app/components/reusable/Loading";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+
+/* A safe, minimal shape of the API response without using `any` */
+type PostResult = {
+  success?: boolean;
+  message?: string;
+};
 
 /* ------------------------------------------------------------------ */
 export default function SetSalariesPage(): JSX.Element {
   const locale = useLocale();
   const t = useTranslations("salaries");
+  const router = useRouter();
 
-  /* ---------- state ---------- */
+  /* ---------- table state ---------- */
   const [data, setData] = useState<EmployeeResponse[]>([]);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
+
+  /* ---------- flow modals ---------- */
+  const [showPickerModal, setShowPickerModal] = useState(false); // SalariesModal
+  const [resultOpen, setResultOpen] = useState(false); // ErrorOrSuccessModal
+  const [resultSuccess, setResultSuccess] = useState(false);
+  const [resultTitle, setResultTitle] = useState("");
+  const [resultMessage, setResultMessage] = useState("");
 
   /* ---------- fetch employees ---------- */
   useEffect(() => {
@@ -46,17 +62,22 @@ export default function SetSalariesPage(): JSX.Element {
         const res = await getEmployees(1, 100);
         const employees = res.data;
         setData(employees);
+        // Preselect those flagged to receive salaries
         setSelectedRows(employees.filter((e) => e.sendSalary).map((e) => e.id));
       } catch (err: unknown) {
         setError(
-          err instanceof Error ? err.message : "Failed to fetch employees"
+          err instanceof Error
+            ? err.message
+            : t("fetchEmployeesError", {
+                defaultValue: "Failed to fetch employees",
+              })
         );
       } finally {
         setLoading(false);
       }
     };
     fetchEmployees();
-  }, []);
+  }, [t]);
 
   /* ---------- handlers ---------- */
   const handleRowSelect = (id: number): void => {
@@ -76,14 +97,31 @@ export default function SetSalariesPage(): JSX.Element {
     );
   };
 
-  const handleSubmitSelected = (): void => setShowModal(true);
+  const handleSubmitSelected = (): void => {
+    if (selectedRows.length === 0) {
+      // If nothing selected, show error modal immediately
+      setResultSuccess(false);
+      setResultTitle(
+        t("noSelectionTitle", { defaultValue: "No Employees Selected" })
+      );
+      setResultMessage(
+        t("noSelectionMsg", {
+          defaultValue:
+            "Please select at least one employee to create a salary cycle.",
+        })
+      );
+      setResultOpen(true);
+      return;
+    }
+    setShowPickerModal(true);
+  };
 
   /* ---------- totals ---------- */
   const totalSelectedSalary = useMemo(
     () =>
       data
         .filter((e) => selectedRows.includes(e.id))
-        .reduce((sum, e) => sum + e.salary, 0),
+        .reduce((sum, e) => sum + (Number(e.salary) || 0), 0),
     [data, selectedRows]
   );
 
@@ -157,9 +195,7 @@ export default function SetSalariesPage(): JSX.Element {
   );
 
   /* ---------- early states ---------- */
-  if (loading) {
-    return <LoadingPage />;
-  }
+  if (loading) return <LoadingPage />;
 
   if (error) {
     return (
@@ -187,39 +223,85 @@ export default function SetSalariesPage(): JSX.Element {
         loading={false}
       />
 
-      {/* ---------- modal ---------- */}
+      {/* ---------- salary picker modal (debit account + month) ---------- */}
       <SalariesModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        /* SalariesModal must now call onConfirm(debitAccount, salaryMonthISO) */
+        isOpen={showPickerModal}
+        onClose={() => setShowPickerModal(false)}
         onConfirm={async (
           debitAccount: string,
           salaryMonthISO: string
         ): Promise<void> => {
           const entries: NewCycleEntry[] = data
             .filter((e) => selectedRows.includes(e.id))
-            .map(({ id, salary }) => ({
-              employeeId: id,
-              salary,
-            }));
+            .map(({ id, salary }) => ({ employeeId: id, salary }));
 
           try {
-            const res = await submitSalaryCycle(
+            const res: PostResult = await submitSalaryCycle(
               debitAccount,
               salaryMonthISO,
               entries
             );
-            console.log(res);
+
+            // Treat undefined `success` as success; only explicit false is failure.
+            const ok: boolean = res.success !== false;
+
+            setShowPickerModal(false);
+            setResultSuccess(ok);
+            setResultTitle(
+              ok
+                ? t("createdTitle", { defaultValue: "Salary Cycle Created" })
+                : t("failedTitle", { defaultValue: "Creation Failed" })
+            );
+
+            // Prefer API message if present; fallback to friendly default
+            const apiMsg: string =
+              res.message ??
+              (ok
+                ? t("createdMsg", {
+                    defaultValue: "The salary cycle was created successfully.",
+                  })
+                : t("failedMsg", {
+                    defaultValue: "Could not create the salary cycle.",
+                  }));
+
+            setResultMessage(apiMsg);
+            setResultOpen(true);
           } catch (err: unknown) {
-            alert(
+            // Only thrown errors (network/4xx/5xx via throwApiError) land here
+            setShowPickerModal(false);
+            setResultSuccess(false);
+            setResultTitle(
+              t("failedTitle", { defaultValue: "Creation Failed" })
+            );
+            setResultMessage(
               err instanceof Error
                 ? err.message
-                : "Failed to create salary cycle"
+                : t("genericError", {
+                    defaultValue: "Failed to create salary cycle.",
+                  })
             );
-          } finally {
-            setShowModal(false);
+            setResultOpen(true);
           }
         }}
+      />
+
+      {/* ---------- result modal (success/error) ---------- */}
+      <ErrorOrSuccessModal
+        isOpen={resultOpen}
+        isSuccess={resultSuccess}
+        title={resultTitle}
+        message={resultMessage}
+        onClose={() => setResultOpen(false)}
+        onConfirm={() => {
+          // Only shown for success; navigate back to list
+          setResultOpen(false);
+          if (resultSuccess) {
+            router.push(`/${locale}/salaries`);
+          }
+        }}
+        okLabel={t("ok", { defaultValue: "حسناً" })}
+        confirmLabel={t("confirm", { defaultValue: "تأكيد" })}
+        closeAriaLabel={t("close", { defaultValue: "إغلاق" })}
       />
     </div>
   );

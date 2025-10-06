@@ -16,7 +16,9 @@ export default function EditRepresentativePage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [representative, setRepresentative] = useState<Representative | null>(null);
+  const [representative, setRepresentative] = useState<Representative | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
@@ -34,7 +36,9 @@ export default function EditRepresentativePage() {
         setModalOpen(true);
         setModalSuccess(false);
         setModalTitle(t("errorTitle"));
-        setModalMessage(error instanceof Error ? error.message : t("unexpectedError"));
+        setModalMessage(
+          error instanceof Error ? error.message : t("unexpectedError")
+        );
       } finally {
         setLoading(false);
       }
@@ -106,4 +110,4 @@ export default function EditRepresentativePage() {
       />
     </div>
   );
-} 
+}

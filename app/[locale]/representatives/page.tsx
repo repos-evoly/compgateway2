@@ -9,8 +9,11 @@ import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import ConfirmationDialog from "@/app/components/reusable/ConfirmationDialog";
 
-
-import { getRepresentatives, toggleRepresentativeStatus, deleteRepresentative } from "./services";
+import {
+  getRepresentatives,
+  toggleRepresentativeStatus,
+  deleteRepresentative,
+} from "./services";
 import type { RepresentativeListItem } from "./types";
 
 export default function RepresentativesPage() {
@@ -44,8 +47,11 @@ export default function RepresentativesPage() {
 
   /*─────────────────────────── Confirmation dialog state  ───────────────────*/
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [selectedRepresentative, setSelectedRepresentative] = useState<RepresentativeListItem | null>(null);
-  const [confirmationType, setConfirmationType] = useState<"toggle" | "delete">("toggle");
+  const [selectedRepresentative, setSelectedRepresentative] =
+    useState<RepresentativeListItem | null>(null);
+  const [confirmationType, setConfirmationType] = useState<"toggle" | "delete">(
+    "toggle"
+  );
 
   /*─────────────────────────── Loading state  ───────────────────────────────*/
   const [loading, setLoading] = useState(true);
@@ -64,7 +70,9 @@ export default function RepresentativesPage() {
       setModalOpen(true);
       setModalSuccess(false);
       setModalTitle(t("errorTitle"));
-      setModalMessage(error instanceof Error ? error.message : t("unexpectedError"));
+      setModalMessage(
+        error instanceof Error ? error.message : t("unexpectedError")
+      );
     } finally {
       setLoading(false);
     }
@@ -80,7 +88,10 @@ export default function RepresentativesPage() {
   };
 
   /*─────────────────────────── Handle action click  ─────────────────────────*/
-  const handleActionClick = async (actionName: string, row: RepresentativeListItem) => {
+  const handleActionClick = async (
+    actionName: string,
+    row: RepresentativeListItem
+  ) => {
     if (actionName === "edit") {
       router.push(`/representatives/${row.id}`);
     } else if (actionName === "toggle") {
@@ -97,53 +108,69 @@ export default function RepresentativesPage() {
   /*─────────────────────────── Handle confirmation  ─────────────────────────*/
   const handleConfirmation = async (confirmed: boolean) => {
     setShowConfirmation(false);
-    
+
     if (!confirmed || !selectedRepresentative) return;
 
     try {
       if (confirmationType === "toggle") {
         setTogglingId(selectedRepresentative.id);
-        
-        console.log('Toggling status for representative:', selectedRepresentative.id, 'Current status:', selectedRepresentative.isActive);
-        
+
+        console.log(
+          "Toggling status for representative:",
+          selectedRepresentative.id,
+          "Current status:",
+          selectedRepresentative.isActive
+        );
+
         // Call the API first
-        const updatedRepresentative = await toggleRepresentativeStatus(selectedRepresentative.id);
-        console.log('API response:', updatedRepresentative);
-        console.log('Updated representative isActive:', updatedRepresentative.isActive);
-        
+        const updatedRepresentative = await toggleRepresentativeStatus(
+          selectedRepresentative.id
+        );
+        console.log("API response:", updatedRepresentative);
+        console.log(
+          "Updated representative isActive:",
+          updatedRepresentative.isActive
+        );
+
         // Update the UI with the server response
-        const updatedData = data.map(rep => 
-          rep.id === selectedRepresentative.id 
+        const updatedData = data.map((rep) =>
+          rep.id === selectedRepresentative.id
             ? { ...rep, isActive: updatedRepresentative.isActive }
             : rep
         );
-        console.log('Updated data:', updatedData);
+        console.log("Updated data:", updatedData);
         setData(updatedData);
-        
+
         setModalOpen(true);
         setModalSuccess(true);
         setModalTitle(t("successTitle"));
-        
+
         // Show appropriate message based on the new status
-        const message = updatedRepresentative.isActive 
-          ? t("activatedSuccess") 
+        const message = updatedRepresentative.isActive
+          ? t("activatedSuccess")
           : t("deactivatedSuccess");
         setModalMessage(message);
-        
-        console.log('Status changed from', selectedRepresentative.isActive, 'to', updatedRepresentative.isActive);
-        
+
+        console.log(
+          "Status changed from",
+          selectedRepresentative.isActive,
+          "to",
+          updatedRepresentative.isActive
+        );
       } else if (confirmationType === "delete") {
         setDeletingId(selectedRepresentative.id);
-        
-        console.log('Deleting representative:', selectedRepresentative.id);
-        
+
+        console.log("Deleting representative:", selectedRepresentative.id);
+
         // Call the delete API
         await deleteRepresentative(selectedRepresentative.id);
-        
+
         // Remove from the UI
-        const updatedData = data.filter(rep => rep.id !== selectedRepresentative.id);
+        const updatedData = data.filter(
+          (rep) => rep.id !== selectedRepresentative.id
+        );
         setData(updatedData);
-        
+
         setModalOpen(true);
         setModalSuccess(true);
         setModalTitle(t("successTitle"));
@@ -154,7 +181,9 @@ export default function RepresentativesPage() {
       setModalOpen(true);
       setModalSuccess(false);
       setModalTitle(t("errorTitle"));
-      setModalMessage(error instanceof Error ? error.message : t("unexpectedError"));
+      setModalMessage(
+        error instanceof Error ? error.message : t("unexpectedError")
+      );
     } finally {
       setTogglingId(null);
       setDeletingId(null);
@@ -168,12 +197,14 @@ export default function RepresentativesPage() {
       label: t("columns.id"),
       sortable: true,
       renderCell: (row: RepresentativeListItem) => (
-        <div 
+        <div
           className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors duration-200 border border-transparent hover:border-gray-300 group"
           onDoubleClick={() => router.push(`/representatives/${row.id}`)}
           title={t("doubleClickToEdit")}
         >
-          <span className="text-black font-medium group-hover:text-gray-700">{row.id}</span>
+          <span className="text-black font-medium group-hover:text-gray-700">
+            {row.id}
+          </span>
         </div>
       ),
     },
@@ -206,7 +237,8 @@ export default function RepresentativesPage() {
       key: "createdAt",
       label: t("columns.createdAt"),
       sortable: true,
-      renderCell: (row: RepresentativeListItem) => new Date(row.createdAt).toLocaleDateString(currentLocale),
+      renderCell: (row: RepresentativeListItem) =>
+        new Date(row.createdAt).toLocaleDateString(currentLocale),
     },
     {
       key: "actions",
@@ -229,12 +261,22 @@ export default function RepresentativesPage() {
                 ? "text-gray-400 cursor-not-allowed"
                 : "text-black hover:text-gray-700 hover:bg-gray-50"
             }`}
-            title={row.isActive ? t("actions.deactivate") : t("actions.activate")}
+            title={
+              row.isActive ? t("actions.deactivate") : t("actions.activate")
+            }
           >
             {row.isActive ? (
-              <FaToggleOn className={`w-4 h-4 text-green-500 ${togglingId === row.id ? "animate-pulse" : ""}`} />
+              <FaToggleOn
+                className={`w-4 h-4 text-green-500 ${
+                  togglingId === row.id ? "animate-pulse" : ""
+                }`}
+              />
             ) : (
-              <FaToggleOff className={`w-4 h-4 text-gray-400 ${togglingId === row.id ? "animate-pulse" : ""}`} />
+              <FaToggleOff
+                className={`w-4 h-4 text-gray-400 ${
+                  togglingId === row.id ? "animate-pulse" : ""
+                }`}
+              />
             )}
           </button>
           <button
@@ -247,7 +289,11 @@ export default function RepresentativesPage() {
             }`}
             title={t("actions.delete")}
           >
-            <FaTrash className={`w-4 h-4 ${deletingId === row.id ? "animate-pulse" : ""}`} />
+            <FaTrash
+              className={`w-4 h-4 ${
+                deletingId === row.id ? "animate-pulse" : ""
+              }`}
+            />
           </button>
         </div>
       ),
@@ -279,13 +325,14 @@ export default function RepresentativesPage() {
 
       <ConfirmationDialog
         openDialog={showConfirmation}
-        message={selectedRepresentative 
-          ? confirmationType === "toggle"
-            ? selectedRepresentative.isActive 
-              ? t("confirmDeactivateMessage") 
-              : t("confirmActivateMessage")
-            : t("confirmDeleteMessage")
-          : ""
+        message={
+          selectedRepresentative
+            ? confirmationType === "toggle"
+              ? selectedRepresentative.isActive
+                ? t("confirmDeactivateMessage")
+                : t("confirmActivateMessage")
+              : t("confirmDeleteMessage")
+            : ""
         }
         onClose={handleConfirmation}
       />

@@ -71,13 +71,13 @@ const resolveFromPublic = async (candidates: readonly string[]): Promise<string 
 };
 
 const resolveFooter = (): Promise<string | null> =>
-  resolveFromPublic(["/footer.png", "/images/footer.png"]);
+  resolveFromPublic(["/Companygw/footer.png", "/Companygw/images/footer.png"]);
 
 const resolveLogoSide = (): Promise<string | null> =>
-  resolveFromPublic(["/logoSide.png", "/images/logoSide.png"]);
+  resolveFromPublic(["/Companygw/logoSide.png", "/Companygw/images/logoSide.png"]);
 
 const resolveStamp = (): Promise<string | null> =>
-  resolveFromPublic(["/stamp.png", "/images/stamp.png"]);
+  resolveFromPublic(["/Companygw/stamp.png", "/Companygw/images/stamp.png"]);
 
 /* ---------- text + shape helpers ---------- */
 const tCenter = (

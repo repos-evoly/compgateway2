@@ -11,7 +11,7 @@ type LoadingPageProps = {
 };
 
 export default function LoadingPage({
-  logoSrc = "/images/logo-trans.png",
+  logoSrc = "/Companygw/images/logo-trans.png",
 }: LoadingPageProps): JSX.Element {
   return (
     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-white via-slate-100 to-slate-200">

@@ -42,28 +42,28 @@ export default function ForeignTransfersDetailPage() {
         // Map API fields to your form shape
         const formData: ForeignTransfersFormValues = {
           id: data.id,
-          toBank: data.toBank ?? '',
-          branch: data.branch ?? '',
-          residentSupplierName: data.residentSupplierName ?? '',
-          residentSupplierNationality: data.residentSupplierNationality ?? '',
-          nonResidentPassportNumber: data.nonResidentPassportNumber ?? '',
-          placeOfIssue: data.placeOfIssue ?? '',
-          dateOfIssue: data.dateOfIssue ?? '',
-          nonResidentNationality: data.nonResidentNationality ?? '',
-          nonResidentAddress: data.nonResidentAddress ?? '',
+          toBank: data.toBank ?? "",
+          branch: data.branch ?? "",
+          residentSupplierName: data.residentSupplierName ?? "",
+          residentSupplierNationality: data.residentSupplierNationality ?? "",
+          nonResidentPassportNumber: data.nonResidentPassportNumber ?? "",
+          placeOfIssue: data.placeOfIssue ?? "",
+          dateOfIssue: data.dateOfIssue ?? "",
+          nonResidentNationality: data.nonResidentNationality ?? "",
+          nonResidentAddress: data.nonResidentAddress ?? "",
           transferAmount: data.transferAmount ?? 0,
-          toCountry: data.toCountry ?? '',
-          beneficiaryName: data.beneficiaryName ?? '',
-          beneficiaryAddress: data.beneficiaryAddress ?? '',
-          externalBankName: data.externalBankName ?? '',
-          externalBankAddress: data.externalBankAddress ?? '',
-          transferToAccountNumber: data.transferToAccountNumber ?? '',
-          transferToAddress: data.transferToAddress ?? '',
-          accountHolderName: data.accountHolderName ?? '',
-          permanentAddress: data.permanentAddress ?? '',
-          purposeOfTransfer: data.purposeOfTransfer ?? '',
-          status: data.status ?? '',
-          reason: data.reason ?? ''
+          toCountry: data.toCountry ?? "",
+          beneficiaryName: data.beneficiaryName ?? "",
+          beneficiaryAddress: data.beneficiaryAddress ?? "",
+          externalBankName: data.externalBankName ?? "",
+          externalBankAddress: data.externalBankAddress ?? "",
+          transferToAccountNumber: data.transferToAccountNumber ?? "",
+          transferToAddress: data.transferToAddress ?? "",
+          accountHolderName: data.accountHolderName ?? "",
+          permanentAddress: data.permanentAddress ?? "",
+          purposeOfTransfer: data.purposeOfTransfer ?? "",
+          status: data.status ?? "",
+          reason: data.reason ?? "",
         };
 
         setInitialValues(formData);
@@ -80,34 +80,36 @@ export default function ForeignTransfersDetailPage() {
 
   async function handleSubmit(updatedValues: ForeignTransfersFormValues) {
     if (!id) return;
-    
+
     try {
       // Convert form values to API payload
       const payload: CreateForeignTransferPayload = {
-        toBank: updatedValues.toBank ?? '',
-        branch: updatedValues.branch ?? '',
-        residentSupplierName: updatedValues.residentSupplierName ?? '',
-        residentSupplierNationality: updatedValues.residentSupplierNationality ?? '',
-        nonResidentPassportNumber: updatedValues.nonResidentPassportNumber ?? '',
-        placeOfIssue: updatedValues.placeOfIssue ?? '',
-        dateOfIssue: updatedValues.dateOfIssue ?? '',
-        nonResidentNationality: updatedValues.nonResidentNationality ?? '',
-        nonResidentAddress: updatedValues.nonResidentAddress ?? '',
+        toBank: updatedValues.toBank ?? "",
+        branch: updatedValues.branch ?? "",
+        residentSupplierName: updatedValues.residentSupplierName ?? "",
+        residentSupplierNationality:
+          updatedValues.residentSupplierNationality ?? "",
+        nonResidentPassportNumber:
+          updatedValues.nonResidentPassportNumber ?? "",
+        placeOfIssue: updatedValues.placeOfIssue ?? "",
+        dateOfIssue: updatedValues.dateOfIssue ?? "",
+        nonResidentNationality: updatedValues.nonResidentNationality ?? "",
+        nonResidentAddress: updatedValues.nonResidentAddress ?? "",
         transferAmount: updatedValues.transferAmount ?? 0,
-        toCountry: updatedValues.toCountry ?? '',
-        beneficiaryName: updatedValues.beneficiaryName ?? '',
-        beneficiaryAddress: updatedValues.beneficiaryAddress ?? '',
-        externalBankName: updatedValues.externalBankName ?? '',
-        externalBankAddress: updatedValues.externalBankAddress ?? '',
-        transferToAccountNumber: updatedValues.transferToAccountNumber ?? '',
-        transferToAddress: updatedValues.transferToAddress ?? '',
-        accountHolderName: updatedValues.accountHolderName ?? '',
-        permanentAddress: updatedValues.permanentAddress ?? '',
-        purposeOfTransfer: updatedValues.purposeOfTransfer ?? '',
-        status: updatedValues.status ?? '',
-        reason: updatedValues.reason ?? ''
+        toCountry: updatedValues.toCountry ?? "",
+        beneficiaryName: updatedValues.beneficiaryName ?? "",
+        beneficiaryAddress: updatedValues.beneficiaryAddress ?? "",
+        externalBankName: updatedValues.externalBankName ?? "",
+        externalBankAddress: updatedValues.externalBankAddress ?? "",
+        transferToAccountNumber: updatedValues.transferToAccountNumber ?? "",
+        transferToAddress: updatedValues.transferToAddress ?? "",
+        accountHolderName: updatedValues.accountHolderName ?? "",
+        permanentAddress: updatedValues.permanentAddress ?? "",
+        purposeOfTransfer: updatedValues.purposeOfTransfer ?? "",
+        status: updatedValues.status ?? "",
+        reason: updatedValues.reason ?? "",
       };
-      
+
       await updateForeignTransfer(id.toString(), payload);
       alert("Foreign transfer updated successfully!");
       router.push("/requests/foreignTransfers");
@@ -136,8 +138,14 @@ export default function ForeignTransfersDetailPage() {
       {/* The same form you use for "add," pre-filled with initialValues */}
       <ForeignTransfersForm
         initialValues={initialValues}
-        onSubmit={(values) => handleSubmit(values as unknown as ForeignTransfersFormValues)}
-        readOnly={initialValues.status === undefined ? false : initialValues.status === "pending"}
+        onSubmit={(values) =>
+          handleSubmit(values as unknown as ForeignTransfersFormValues)
+        }
+        readOnly={
+          initialValues.status === undefined
+            ? false
+            : initialValues.status === "pending"
+        }
       />
       <ErrorOrSuccessModal
         isOpen={modalOpen}

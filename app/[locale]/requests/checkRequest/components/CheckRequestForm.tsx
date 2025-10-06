@@ -22,7 +22,7 @@ import InputSelectCombo, {
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import Description from "@/app/components/FormUI/Description";
-import CheckRequestTable from "../components/Table";
+import CheckRequestTable from "./Table";
 import { FaPaperPlane } from "react-icons/fa";
 import { useFormikContext, useField } from "formik";
 

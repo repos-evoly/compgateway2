@@ -32,7 +32,7 @@ const PdfDownloadButton: React.FC<PdfDownloadButtonProps> = ({
       const fromDateFormatted = new Date(values.fromDate).toLocaleDateString('en-GB');
       const toDateFormatted = new Date(values.toDate).toLocaleDateString('en-GB');
       // Load the image from public/images/pdfbg.jpg
-      const bgImageBase64 = await loadImageAsBase64('/images/pdfbg.jpg');
+      const bgImageBase64 = await loadImageAsBase64('/Companygw/images/pdfbg.jpg');
       generateStatementPdf(lines, {
         accountNumber: values.account,
         customerName: lines[0]?.nr1 || 'Customer Name',

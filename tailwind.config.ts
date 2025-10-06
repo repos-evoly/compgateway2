@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-import colors from './public/colors';
+import colors from './public/Companygw/colors';
 
 
 export default {

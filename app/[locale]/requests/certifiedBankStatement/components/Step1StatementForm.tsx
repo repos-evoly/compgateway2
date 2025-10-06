@@ -21,7 +21,6 @@ import {
 } from "./statementInputs";
 import { getKycByCode } from "@/app/auth/register/services";
 
-
 /* ──────────────────────────────────────────────────────────────────────── */
 type Props = { readOnly?: boolean };
 

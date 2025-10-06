@@ -1,7 +1,7 @@
 /* app/auth/layout.tsx – allow-list enforcement for selected auth pages */
-import "../globals.css";
 import { Cairo } from "next/font/google";
 import type { ReactNode } from "react";
+import "../globals.css";
 
 export const dynamic = "force-dynamic";
 

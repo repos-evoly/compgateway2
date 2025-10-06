@@ -67,7 +67,7 @@ export default function RegisterForm({
     return (
       <div className="bg-white p-8 rounded-lg shadow-md" dir="rtl">
         <Image
-          src="/images/logo-trans.png"
+          src="/Companygw/images/logo-trans.png"
           alt="الشعار"
           width={80}
           height={80}
@@ -145,7 +145,7 @@ export default function RegisterForm({
           <div className="flex justify-center mb-6">
             <div className="bg-white p-3 rounded-full">
               <Image
-                src="/images/logo-trans.png"
+                src="/Companygw/images/logo-trans.png"
                 alt="الشعار"
                 width={80}
                 height={80}

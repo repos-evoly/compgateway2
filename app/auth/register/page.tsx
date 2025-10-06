@@ -53,7 +53,7 @@ export default function RegisterPage() {
 
       if (response?.success === true) {
         resetForm();
-        window.location.href = `/auth/register/uploadDocuments?companyCode=${values.companyCode}&email=${values.email}`;
+        window.location.href = `/Companygw/auth/register/uploadDocuments?companyCode=${values.companyCode}&email=${values.email}`;
       } else {
         const apiMsg =
           typeof response?.message === "string" &&

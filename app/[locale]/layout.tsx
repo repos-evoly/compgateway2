@@ -4,13 +4,12 @@
 -------------------------------------------------------------------------- */
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
-import "../globals.css";
 import { Cairo } from "next/font/google";
 import MainHeader from "@/app/components/mainHeader/MainHeader";
-import logoUrl from "@/public/images/logo-trans.png";
+import logoUrl from "@/public/Companygw/images/logo-trans.png";
 import SideBar2 from "@/app/components/SideBar/SideBar2";
 import { GlobalProvider } from "@/app/context/GlobalContext";
-
+import "../globals.css";
 /* ---------- Cairo font ---------- */
 const cairo = Cairo({ subsets: ["latin", "arabic"] });
 

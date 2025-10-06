@@ -5,6 +5,7 @@
 
 import React, { JSX, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import Cookies from "js-cookie";
 import { FiAlertCircle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 
@@ -22,6 +23,7 @@ import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
 /* ---------------------------------------------------------------------- */
 export default function ProfilePage(): JSX.Element {
   const router = useRouter();
+  const locale = useLocale();
 
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -121,7 +123,9 @@ export default function ProfilePage(): JSX.Element {
   /* ----- render -------------------------------------------------------- */
   if (loading) return <LoadingPage />;
   if (error || !company)
-    return <CompanyNotFound onBack={() => router.push("/dashboard")} />;
+    return (
+      <CompanyNotFound onBack={() => router.push(`/${locale}/dashboard`)} />
+    );
 
   return (
     <div className="bg-gray-50">

@@ -45,6 +45,10 @@ const nextConfig = {
     sri: { algorithm: 'sha384' },
   },
   crossOrigin: 'anonymous',
+  output: 'standalone',
+  images: {
+    unoptimized: true,
+  },
   trailingSlash: false,
 
   // Webpack tweaks

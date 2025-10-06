@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 import GroupTransferForm from "../components/GroupTransferForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -17,6 +17,7 @@ const AddGroupTransferPage = () => {
   /*                       Router                             */
   /* -------------------------------------------------------- */
   const router = useRouter();
+  const locale = useLocale();
 
   /* -------------------------------------------------------- */
   /*                        Modals                            */
@@ -54,11 +55,11 @@ const AddGroupTransferPage = () => {
         message={modalMessage}
         onClose={() => {
           setModalOpen(false);
-          router.push(".."); // ← back to /group-transfer
+          router.push(`/${locale}/transfers/group-transfer`);
         }}
         onConfirm={() => {
           setModalOpen(false);
-          router.push("..");
+          router.push(`/${locale}/transfers/group-transfer`);
         }}
       />
     </div>

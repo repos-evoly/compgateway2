@@ -16,7 +16,9 @@ import LoadingPage from "@/app/components/reusable/Loading";
  */
 const CheckbookDetailPage: React.FC = () => {
   const t = useTranslations("checkForm");
-  const { id } = useParams(); // The ID in the URL: /checkbook/123
+  const params = useParams<{ locale: string; id: string }>(); // params include locale and id
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const router = useRouter();
 
   // Local state for the fetched record
@@ -111,7 +113,7 @@ const CheckbookDetailPage: React.FC = () => {
 
   const handleFormCancel = () => {
     // Navigate back to the checkbook list
-    router.push("/requests/checkbook");
+    router.push(`/${locale}/requests/checkbook`);
   };
 
   const handleModalClose = () => {

@@ -15,7 +15,9 @@ import LoadingPage from "@/app/components/reusable/Loading";
  */
 const RtgsDetailPage: React.FC = () => {
   const t = useTranslations("RTGSForm");
-  const { id } = useParams(); // The "[id]" in the URL
+  const params = useParams<{ locale: string; id: string }>(); // The "[locale]/[id]" in the URL
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<TRTGSValues | null>(null);
@@ -83,7 +85,7 @@ const RtgsDetailPage: React.FC = () => {
 
       await updateRtgsRequest(id.toString(), updateValues);
       alert("RTGS request updated successfully!");
-      router.push("/requests/rtgs");
+      router.push(`/${locale}/requests/rtgs`);
     } catch (error) {
       console.error("Failed to update RTGS request:", error);
       alert("Failed to update RTGS request!");
@@ -91,7 +93,7 @@ const RtgsDetailPage: React.FC = () => {
   };
 
   const handleFormCancel = () => {
-    router.push("/requests/rtgs");
+    router.push(`/${locale}/requests/rtgs`);
   };
 
   return (

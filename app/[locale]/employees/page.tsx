@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -17,6 +17,7 @@ import EmployeeForm from "./components/EmployeesForm";
 const Page = () => {
   const t = useTranslations("employees");
   const router = useRouter();
+  const locale = useLocale();
 
   // Table/pagination states
   const [data, setData] = useState<EmployeesApiResponse["data"]>([]);
@@ -72,7 +73,7 @@ const Page = () => {
       tip: t("editEmployee", { defaultValue: "Edit Employee" }),
       icon: <FaEdit />,
       onClick: (row) => {
-        router.push(`/employees/${row.id}`);
+        router.push(`/${locale}/employees/${row.id}`);
       },
     },
     {
@@ -119,7 +120,7 @@ const Page = () => {
       renderCell: (row: EmployeeResponse) => (
         <div
           className="cursor-pointer hover:bg-gray-100 p-1 rounded"
-          onDoubleClick={() => router.push(`/employees/${row.id}`)}
+          onDoubleClick={() => router.push(`/${locale}/employees/${row.id}`)}
           title={t("doubleClickToEdit", {
             defaultValue: "Double-click to edit",
           })}

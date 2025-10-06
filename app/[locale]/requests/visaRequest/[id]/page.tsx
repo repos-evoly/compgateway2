@@ -12,7 +12,9 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function SingleVisaRequestPage() {
-  const { id } = useParams(); // e.g. /visarequests/123  → id = "123"
+  const params = useParams<{ locale: string; id: string }>(); // e.g. /[locale]/requests/visaRequest/[id]
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const numericId = Number(id);
   const router = useRouter();
 
@@ -61,7 +63,7 @@ export default function SingleVisaRequestPage() {
   const closeModal = () => setModalOpen(false);
   const confirmModal = () => {
     setModalOpen(false);
-    router.push("/requests/visaRequest"); // Navigate to main VISA page
+    router.push(`/${locale}/requests/visaRequest`); // Navigate to main VISA page
   };
 
   /*──────────────────────────── Early states ──────────────────────────────*/

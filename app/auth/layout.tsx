@@ -1,11 +1,30 @@
 /* app/auth/layout.tsx – allow-list enforcement for selected auth pages */
-import { Cairo } from "next/font/google";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import "../globals.css";
 
 export const dynamic = "force-dynamic";
 
-const cairo = Cairo({ subsets: ["latin", "arabic"] });
+const cairo = localFont({
+  src: [
+    {
+      path: "../../public/Companygw/fonts/Cairo-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/Companygw/fonts/Cairo-SemiBold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/Companygw/fonts/Cairo-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  display: "swap",
+});
 
 type Props = { children: ReactNode };
 
@@ -46,12 +65,14 @@ export default function AuthLayout({ children }: Props): React.JSX.Element {
   var currentPath = norm(window.location.pathname);
 
   // Only enforce on paths present in the allow-list (exact match or wildcard prefix)
-  var match = entries.find(function (e) {
+  var matches = entries.filter(function (e) {
     return e.wildcard ? currentPath.startsWith(e.path) : currentPath === e.path;
   });
 
-  if (!match) return;                 // Not one of the enforced pages → do nothing
-  if (window.location.origin === match.origin) return; // Correct origin → OK
+  if (!matches.length) return;                 // Not one of the enforced pages → do nothing
+  if (matches.some(function (e) { return window.location.origin === e.origin; })) return; // Correct origin present → OK
+
+  var match = matches[0];
 
   // Wrong origin on an enforced page → block
   document.documentElement.innerHTML =

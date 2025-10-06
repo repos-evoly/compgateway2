@@ -18,7 +18,9 @@ import LoadingPage from "@/app/components/reusable/Loading";
  * A page to display/edit a single foreign transfer by ID.
  */
 export default function ForeignTransfersDetailPage() {
-  const { id } = useParams() || {};
+  const params = useParams<{ locale: string; id: string }>() || {};
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const router = useRouter();
   const t = useTranslations("foreignTransfers");
 
@@ -112,7 +114,7 @@ export default function ForeignTransfersDetailPage() {
 
       await updateForeignTransfer(id.toString(), payload);
       alert("Foreign transfer updated successfully!");
-      router.push("/requests/foreignTransfers");
+      router.push(`/${locale}/requests/foreignTransfers`);
     } catch (error) {
       console.error("Failed to update foreign transfer:", error);
       alert("Failed to update foreign transfer!");

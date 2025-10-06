@@ -15,7 +15,8 @@ import LoadingPage from "@/app/components/reusable/Loading";
  * GET /creditfacilities/{id} -> Display in form -> (pretend) update
  */
 export default function CreditFacilityDetailPage() {
-  const params = useParams();
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
   const router = useRouter();
 
   /* ─── Data state ─────────────────────────────────────────── */
@@ -36,7 +37,7 @@ export default function CreditFacilityDetailPage() {
   useEffect(() => {
     async function fetchOne() {
       try {
-        if (!params.id) return;
+        if (!params?.id) return;
 
         const numericId = Number(params.id);
         if (Number.isNaN(numericId)) {
@@ -96,7 +97,7 @@ export default function CreditFacilityDetailPage() {
           onClose={() => setModalOpen(false)}
           onConfirm={() => {
             setModalOpen(false);
-            router.push("/creditfacility");
+            router.push(`/${locale}/creditfacility`);
           }}
         />
       </>
@@ -142,7 +143,7 @@ export default function CreditFacilityDetailPage() {
     }
   };
 
-  const handleCancel = () => router.push("/creditfacility");
+  const handleCancel = () => router.push(`/${locale}/creditfacility`);
 
   /* ─── Render form ────────────────────────────────────────── */
   return (
@@ -165,12 +166,12 @@ export default function CreditFacilityDetailPage() {
         message={modalMessage}
         onClose={() => {
           setModalOpen(false);
-          if (modalSuccess) router.push("/creditfacility");
+          if (modalSuccess) router.push(`/${locale}/creditfacility`);
         }}
         onConfirm={() => {
           setModalOpen(false);
-          if (modalSuccess) router.push("/creditfacility");
-        }}
+          if (modalSuccess) router.push(`/${locale}/creditfacility`);
+      }}
       />
     </>
   );

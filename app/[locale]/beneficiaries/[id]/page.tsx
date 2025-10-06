@@ -10,7 +10,9 @@ import LoadingPage from "@/app/components/reusable/Loading";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 export default function BeneficiaryDetailsPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const router = useRouter();
   const t = useTranslations("beneficiaries");
 
@@ -24,6 +26,11 @@ export default function BeneficiaryDetailsPage() {
 
   /* ---------------------- fetch by id --------------------- */
   useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
         const res = await getBeneficiaryById(Number(id));
@@ -71,7 +78,7 @@ export default function BeneficiaryDetailsPage() {
   };
 
   const handleBack = () => {
-    router.push("/beneficiaries");
+    router.push(`/${locale}/beneficiaries`);
   };
 
   if (loading) {
@@ -83,7 +90,7 @@ export default function BeneficiaryDetailsPage() {
       <div className="p-4">
         <h2 className="text-xl font-bold">Beneficiary not found</h2>
         <button
-          onClick={() => router.push("/beneficiaries")}
+          onClick={() => router.push(`/${locale}/beneficiaries`)}
           className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
         >
           Back
@@ -108,18 +115,18 @@ export default function BeneficiaryDetailsPage() {
         isSuccess={modalSuccess}
         title={modalTitle}
         message={modalMessage}
-        onClose={() => {
-          setModalOpen(false);
-          if (modalSuccess) {
-            router.push("/beneficiaries");
-          }
-        }}
-        onConfirm={() => {
-          setModalOpen(false);
-          if (modalSuccess) {
-            router.push("/beneficiaries");
-          }
-        }}
+          onClose={() => {
+            setModalOpen(false);
+            if (modalSuccess) {
+              router.push(`/${locale}/beneficiaries`);
+            }
+          }}
+          onConfirm={() => {
+            setModalOpen(false);
+            if (modalSuccess) {
+              router.push(`/${locale}/beneficiaries`);
+            }
+          }}
       />
     </div>
   );

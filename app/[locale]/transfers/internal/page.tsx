@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { FaFilePdf } from "react-icons/fa";
 
@@ -77,6 +77,7 @@ const mapApiRowToUi = (row: ApiTransferRow): TransfersApiRow => ({
 const Page = () => {
   const t = useTranslations("internalTransferForm");
   const router = useRouter();
+  const locale = useLocale();
 
   const [data, setData] = useState<TransfersApiRow[]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -128,7 +129,7 @@ const Page = () => {
   };
 
   const handleAddClick = () => {
-    router.push("/transfers/internal/add");
+    router.push(`/${locale}/transfers/internal/add`);
   };
 
   const handleDownload = async (row: TransfersApiRow) => {

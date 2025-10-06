@@ -1,17 +1,44 @@
 /* --------------------------------------------------------------------------
    app/[locale]/layout.tsx
-   – Global layout with fixed sidebar + header, RTL/LTR aware.
+   – Locale root layout WITH <html>/<body> (no app/layout.tsx).
+   Locale-aware shell: fixed sidebar + header. Works with basePath "/Companygw".
 -------------------------------------------------------------------------- */
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
-import { Cairo } from "next/font/google";
+import React from "react";
+import { NextIntlClientProvider, type AbstractIntlMessages } from "next-intl";
+import { getMessages, setRequestLocale } from "next-intl/server";
+import localFont from "next/font/local";
+
 import MainHeader from "@/app/components/mainHeader/MainHeader";
-import logoUrl from "@/public/Companygw/images/logo-trans.png";
 import SideBar2 from "@/app/components/SideBar/SideBar2";
 import { GlobalProvider } from "@/app/context/GlobalContext";
+
+import logoUrl from "@/public/Companygw/images/logo-trans.png";
 import "../globals.css";
+
+/* ---------- Locale type (no unused value) ---------- */
+type Locale = "en" | "ar";
+
 /* ---------- Cairo font ---------- */
-const cairo = Cairo({ subsets: ["latin", "arabic"] });
+const cairo = localFont({
+  src: [
+    {
+      path: "../../public/Companygw/fonts/Cairo-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/Companygw/fonts/Cairo-SemiBold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/Companygw/fonts/Cairo-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  display: "swap",
+});
 
 /* ---------- Component ---------- */
 export default async function LocaleLayout({
@@ -19,24 +46,24 @@ export default async function LocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale?: string }>;
+  params: { locale: Locale };
 }) {
-  /* ---------------- debug logs ---------------- */
+  // Debug
   console.log("LocaleLayout: Rendering started");
+  console.log("LocaleLayout: Resolved params:", params);
 
-  const resolvedParams = await params;
-  console.log("LocaleLayout: Resolved params:", resolvedParams);
-
-  const locale: string = resolvedParams?.locale ?? "en";
+  const locale = params.locale;
+  setRequestLocale(locale); // bind locale for this subtree
   console.log("LocaleLayout: Locale resolved as:", locale);
 
   try {
-    const messages = await getMessages({ locale });
+    const messages: AbstractIntlMessages = await getMessages({ locale });
     console.log("LocaleLayout: Messages fetched");
 
     const isRtl = locale === "ar";
     console.log("LocaleLayout: Direction:", isRtl ? "rtl" : "ltr");
 
+    // Keeping <html>/<body> here (no app/layout.tsx in your project)
     return (
       <html
         lang={locale}
@@ -44,35 +71,32 @@ export default async function LocaleLayout({
         className={`${cairo.className} min-h-screen w-full`}
         suppressHydrationWarning
       >
-        {/* Root flex row: sidebar + main column */}
         <body
           className="min-h-screen w-full flex flex-row overflow-hidden"
           suppressHydrationWarning
         >
           <GlobalProvider>
-            <NextIntlClientProvider messages={messages}>
-              {/* ---------- Fixed sidebar ---------- */}
+            <NextIntlClientProvider messages={messages} locale={locale}>
+              {/* Sidebar */}
               <SideBar2 />
 
-              {/* ---------- Main column ---------- */}
+              {/* Main column */}
               <div
                 className="
                   flex-1
                   flex
                   flex-col
-                  h-screen           /* ⬅ ensure full viewport height */
+                  h-screen
                   transition-all
                   duration-300
                   ease-in-out
                 "
-                style={{
-                  maxWidth: "calc(100vw - var(--sidebar-width))",
-                }}
+                style={{ maxWidth: "calc(100vw - var(--sidebar-width))" }}
               >
                 {/* Header */}
                 <MainHeader logoUrl={logoUrl} isRtl={isRtl} title="" />
 
-                {/* Page content – single scroll container */}
+                {/* Content */}
                 <main className="flex-1 overflow-y-auto overflow-x-auto min-w-0 bg-gray-100">
                   {children}
                 </main>
@@ -85,6 +109,7 @@ export default async function LocaleLayout({
   } catch (error) {
     console.error("LocaleLayout Error:", error);
 
+    // Keep <html>/<body> here for your no-root-layout setup
     return (
       <html lang="en" dir="ltr" className="min-h-screen w-full">
         <body className="min-h-screen flex items-center justify-center">

@@ -8,7 +8,9 @@ import type { InternalFormValues } from "../types";
 import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function InternalTransferDetailsPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,7 @@ export default function InternalTransferDetailsPage() {
   useEffect(() => {
     (async () => {
       try {
+        if (!id) return;
         const res = await getTransferById(Number(id));
         /* map API response → InternalFormValues */
         setInitial({
@@ -44,7 +47,7 @@ export default function InternalTransferDetailsPage() {
       <div className="p-4">
         <h2 className="text-xl font-bold">Transfer not found</h2>
         <button
-          onClick={() => router.push("/transfers/internal")}
+          onClick={() => router.push(`/${locale}/transfers/internal`)}
           className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
         >
           Back

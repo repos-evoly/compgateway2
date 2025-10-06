@@ -11,7 +11,9 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
 
 const CblDetailPage: React.FC = () => {
-  const { id } = useParams(); // e.g. /cbl/123
+  const params = useParams<{ locale: string; id: string }>(); // e.g. /[locale]/requests/cbl/[id]
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const t = useTranslations("cblForm");
   const router = useRouter();
 
@@ -54,7 +56,7 @@ const CblDetailPage: React.FC = () => {
   const handleModalClose = () => setModalOpen(false);
   const handleModalConfirm = () => {
     setModalOpen(false);
-    router.push("/requests/cbl"); // Navigate to main CBL page
+    router.push(`/${locale}/requests/cbl`); // Navigate to main CBL page
   };
 
   /* handle form submission */

@@ -1,100 +1,73 @@
-/* ───────────── middleware.ts (Companygw-scoped, locale-aware) ───────────── */
+/* ───────── middleware.ts (Companygw + locales, loop-proof) ───────── */
 import { NextResponse, type NextRequest } from "next/server";
-import createMiddleware from "next-intl/middleware";
 
-/* ---------- Constants ---------- */
-const BASE = "/Companygw";
+/* Config (keep BASE in sync with next.config basePath) */
+const BASE: string = "/Companygw";
 const LOCALES = ["en", "ar"] as const;
 type Locale = (typeof LOCALES)[number];
 const DEFAULT_LOCALE: Locale = "ar";
 
-/* ---------- next-intl ---------- */
-const intlMiddleware = createMiddleware({
-  locales: [...LOCALES],
-  defaultLocale: DEFAULT_LOCALE,
-  // next-intl will operate only on paths we forward to it (below)
-});
+/* Helpers */
+const isStatic = (p: string): boolean =>
+  p === "/favicon.ico" ||
+  p === `${BASE}/favicon.ico` ||
+  /\.(?:js|mjs|css|map|png|jpg|jpeg|gif|svg|ico|webp|avif|txt|xml|json|pdf|woff2?|ttf|otf)$/i.test(p);
 
 export default function middleware(request: NextRequest) {
   const url = request.nextUrl;
-  const { pathname } = url;
+  const path = url.pathname;
 
-  /* 0) Legacy rewrites (keep old links working)
-        /auth/**         -> /Companygw/auth/**
-        /(en|ar)/**      -> /Companygw/(en|ar)/**
-  */
-  if (pathname.startsWith("/auth/") || pathname === "/auth") {
-    const to = `${BASE}${pathname}`;
-    const next = NextResponse.rewrite(new URL(to, url));
-    // Security headers for auth
-    next.headers.set("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'none'");
-    next.headers.set("X-Frame-Options", "DENY");
-    return next;
-  }
-  for (const l of LOCALES) {
-    const prefix = `/${l}`;
-    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
-      const to = `${BASE}${pathname}`;
-      return NextResponse.redirect(new URL(to, url));
-    }
+  /* 0) Bypass Next internals & static files (also under /Companygw) */
+  if (path.startsWith("/_next") || path.startsWith(`${BASE}/_next`) || isStatic(path)) {
+    return NextResponse.next();
   }
 
-  /* 1) Base landings
-        "/"              -> "/Companygw/ar"
-        "/Companygw"     -> "/Companygw/ar"
-  */
-  if (pathname === "/") {
-    const to = `${BASE}/${DEFAULT_LOCALE}`;
-    return NextResponse.redirect(new URL(to, url));
-  }
-  if (pathname === BASE) {
-    const to = `${BASE}/${DEFAULT_LOCALE}`;
-    return NextResponse.redirect(new URL(to, url));
+  /* 1) Health */
+  if (path === "/api/health" || path === `${BASE}/api/health`) {
+    return new NextResponse("ok", { status: 200 });
   }
 
-  /* 2) Auth guard only for localized app paths under /Companygw/(ar|en)
-        – Do NOT guard /Companygw/auth/**
-  */
-  const isUnderBase = pathname === BASE || pathname.startsWith(`${BASE}/`);
-  const isAuth = pathname === `${BASE}/auth` || pathname.startsWith(`${BASE}/auth/`);
-
-  const isLocalePath =
-    isUnderBase &&
-    LOCALES.some((l) => pathname === `${BASE}/${l}` || pathname.startsWith(`${BASE}/${l}/`));
-
-  if (isLocalePath) {
-    const token = request.cookies.get("accessToken")?.value ?? "";
-    if (!token) {
-      return NextResponse.redirect(new URL(`${BASE}/auth/login`, url));
-    }
+  /* 2) Landings: / and /Companygw → /Companygw/ar */
+  if (path === "/") {
+    return NextResponse.redirect(new URL(`${BASE}/${DEFAULT_LOCALE}`, url));
+  }
+  if (path === BASE) {
+    return NextResponse.redirect(new URL(`${BASE}/${DEFAULT_LOCALE}`, url));
   }
 
-  /* 3) Run next-intl for localized app paths only; skip for auth */
-  if (!isAuth && isLocalePath) {
-    return intlMiddleware(request);
-  }
-
-  /* 4) Security headers for /Companygw/auth/** */
-  if (isAuth) {
+  /* 3) Auth zone is never guarded but gets security headers */
+  if (path === `${BASE}/auth` || path.startsWith(`${BASE}/auth/`)) {
     const res = NextResponse.next();
     res.headers.set("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'none'");
     res.headers.set("X-Frame-Options", "DENY");
     return res;
   }
 
-  /* 5) Everything else proceeds as-is */
+  /* 4) Only guard localized app paths: /Companygw/(en|ar)/** */
+  const isLocalePath =
+    path.startsWith(`${BASE}/en/`) ||
+    path === `${BASE}/en` ||
+    path.startsWith(`${BASE}/ar/`) ||
+    path === `${BASE}/ar`;
+
+  if (isLocalePath) {
+    const token = request.cookies.get("accessToken")?.value ?? "";
+    if (!token) {
+      return NextResponse.redirect(new URL(`${BASE}/auth/login`, url));
+    }
+    return NextResponse.next();
+  }
+
+  /* 5) Everything else passes through (e.g., legacy or non-scoped routes in dev) */
   return NextResponse.next();
 }
 
-/* 6) Match everything except API, Next internals, and static assets.
-      Include legacy roots so we can rewrite /auth/** and /(en|ar)/**. */
+/* 6) Explicit matcher (no template strings; avoids touching _next & files by logic above) */
 export const config = {
   matcher: [
-    "/",
-    "/auth/:path*",
-    "/:locale(en|ar)/:path*",
-    "/Companygw",
-    "/Companygw/:path*",
-    "/((?!api|_next|.*\\..*).*)",
+    "/",                 // root → redirect to /Companygw/ar
+    "/api/health",       // health probe
+    "/Companygw",        // base landing → /Companygw/ar
+    "/Companygw/:path*", // all app routes under basePath
   ],
 };

@@ -13,8 +13,9 @@ import type { Representative } from "../types";
 export default function EditRepresentativePage() {
   const t = useTranslations("representatives");
   const router = useRouter();
-  const params = useParams();
-  const id = params.id as string;
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
+  const id = params?.id ?? "";
 
   const [representative, setRepresentative] = useState<Representative | null>(
     null
@@ -58,13 +59,13 @@ export default function EditRepresentativePage() {
     if (success) {
       // Navigate back to representatives list after successful update
       setTimeout(() => {
-        router.push("/representatives");
+        router.push(`/${locale}/representatives`);
       }, 1500);
     }
   };
 
   const handleCancel = () => {
-    router.push("/representatives");
+    router.push(`/${locale}/representatives`);
   };
 
   if (loading) {

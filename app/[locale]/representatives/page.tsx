@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
-import { useRouter, usePathname } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { FaEdit, FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -19,15 +19,8 @@ import type { RepresentativeListItem } from "./types";
 export default function RepresentativesPage() {
   const t = useTranslations("representatives");
   const router = useRouter();
-  const pathname = usePathname();
-
-  // Determine the locale based on the pathname
-  const [currentLocale, setCurrentLocale] = useState("en");
-  useEffect(() => {
-    const segments = pathname?.split("/") || [];
-    const locale = segments[1];
-    setCurrentLocale(locale === "ar" ? "ar" : "en");
-  }, [pathname]);
+  const locale = useLocale();
+  const currentLocale = locale === "ar" ? "ar" : "en";
 
   /*─────────────────────────── Table / pagination ───────────────────────────*/
   const [data, setData] = useState<RepresentativeListItem[]>([]);
@@ -84,7 +77,7 @@ export default function RepresentativesPage() {
 
   /*─────────────────────────── Handle add  ──────────────────────────────────*/
   const handleAdd = () => {
-    router.push("/representatives/add");
+    router.push(`/${currentLocale}/representatives/add`);
   };
 
   /*─────────────────────────── Handle action click  ─────────────────────────*/
@@ -93,7 +86,7 @@ export default function RepresentativesPage() {
     row: RepresentativeListItem
   ) => {
     if (actionName === "edit") {
-      router.push(`/representatives/${row.id}`);
+      router.push(`/${currentLocale}/representatives/${row.id}`);
     } else if (actionName === "toggle") {
       setSelectedRepresentative(row);
       setConfirmationType("toggle");
@@ -199,7 +192,9 @@ export default function RepresentativesPage() {
       renderCell: (row: RepresentativeListItem) => (
         <div
           className="cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors duration-200 border border-transparent hover:border-gray-300 group"
-          onDoubleClick={() => router.push(`/representatives/${row.id}`)}
+          onDoubleClick={() =>
+            router.push(`/${currentLocale}/representatives/${row.id}`)
+          }
           title={t("doubleClickToEdit")}
         >
           <span className="text-black font-medium group-hover:text-gray-700">

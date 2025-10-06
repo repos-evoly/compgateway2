@@ -1,0 +1,27 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_BASE_API: ${NEXT_PUBLIC_BASE_API}
+        NEXT_PUBLIC_AUTH_API: ${NEXT_PUBLIC_AUTH_API}
+        NEXT_PUBLIC_IMAGE_URL: ${NEXT_PUBLIC_IMAGE_URL}
+        NEXT_PUBLIC_ALLOWED_URLS: ${NEXT_PUBLIC_ALLOWED_URLS}
+    image: comp/compgateway:1.0.0
+    container_name: next_web_local
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_BASE_API=${NEXT_PUBLIC_BASE_API}
+      - NEXT_PUBLIC_AUTH_API=${NEXT_PUBLIC_AUTH_API}
+      - NEXT_PUBLIC_IMAGE_URL=${NEXT_PUBLIC_IMAGE_URL}
+      - NEXT_PUBLIC_ALLOWED_URLS=${NEXT_PUBLIC_ALLOWED_URLS}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 5

@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
   /* crossorigin="anonymous" on all <script>/<link> */
   crossOrigin: 'anonymous',
 
+  output: 'standalone',
+
+  images: {
+    unoptimized: true,
+  },
+
   trailingSlash: false,
 };
 

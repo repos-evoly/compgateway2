@@ -28,11 +28,13 @@ export const REFRESH_API_URL =
 /* ------------------------- Cookie Helpers -------------------------------- */
 /* EXACT style as requested */
 export const getAccessTokenFromCookies = (): string | null => {
+  if (typeof document === "undefined") return null;
   const match = document.cookie.match(new RegExp("(^| )accessToken=([^;]+)"));
   return match ? match[2] : null;
 };
 
 export const getRefreshTokenFromCookies = (): string | null => {
+  if (typeof document === "undefined") return null;
   const match = document.cookie.match(new RegExp("(^| )refreshToken=([^;]+)"));
   return match ? match[2] : null;
 };
@@ -40,6 +42,7 @@ export const getRefreshTokenFromCookies = (): string | null => {
 /* Setter: path=/, SameSite=Lax, adds Secure on HTTPS
    Writing a cookie with the same name+path overwrites the existing one. */
 const setCookie = (name: string, value: string): void => {
+  if (typeof document === "undefined") return;
   const isHttps =
     typeof window !== "undefined" && window.location.protocol === "https:";
   document.cookie = `${name}=${value}; path=/; SameSite=Lax${
@@ -75,6 +78,9 @@ export const _resetRefreshGuard = (): void => {
  * - Throws on missing cookies, invalid response, or non-2xx status
  */
 export const refreshAuthTokens = async (): Promise<RefreshResponse> => {
+  if (typeof document === "undefined") {
+    throw new Error("refreshAuthTokens requires a browser environment.");
+  }
   const rawAccess = getAccessTokenFromCookies();
   const rawRefresh = getRefreshTokenFromCookies();
 

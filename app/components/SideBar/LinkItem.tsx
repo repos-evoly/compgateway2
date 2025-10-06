@@ -76,10 +76,18 @@ const LinkItem: React.FC<LinkItemProps> = ({
   buttonBaseClass = fallbackButtonCls,
 }) => {
   const pathname = usePathname();
+  const basePath = pathname.startsWith("/Companygw") ? "/Companygw" : "";
+  const relativePath = basePath
+    ? pathname.slice(basePath.length) || "/"
+    : pathname || "/";
+  const normalizedPath = relativePath.startsWith("/")
+    ? relativePath
+    : `/${relativePath}`;
+
   const { setHeaderInfo } = useGlobalContext();
 
   const isRtl = currentLocale === "ar";
-  const isActive = pathname === `/${currentLocale}${item.path}`;
+  const isActive = normalizedPath === `/${currentLocale}${item.path}`;
   const hasChildren = item.children && item.children.length > 0;
 
   /* -------------------------------------------------------------- */
@@ -149,7 +157,8 @@ const LinkItem: React.FC<LinkItemProps> = ({
         {submenuOpen === item.id && (
           <div className="flex flex-col">
             {item.children!.map((child) => {
-              const childActive = pathname === `/${currentLocale}${child.path}`;
+            const childActive =
+              normalizedPath === `/${currentLocale}${child.path}`;
 
               return (
                 <Link

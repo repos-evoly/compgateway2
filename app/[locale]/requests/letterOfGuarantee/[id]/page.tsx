@@ -19,7 +19,8 @@ import LoadingPage from "@/app/components/reusable/Loading";
  * GET /creditfacilities/{id} → show item in form (read-only)
  */
 export default function LetterOfGuaranteeDetailPage() {
-  const params = useParams();
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
   const router = useRouter();
 
   const [guaranteeData, setGuaranteeData] = useState<TLetterOfGuarantee | null>(
@@ -38,7 +39,7 @@ export default function LetterOfGuaranteeDetailPage() {
   useEffect(() => {
     const fetchOne = async () => {
       try {
-        if (!params.id) return;
+        if (!params?.id) return;
 
         const numericId = Number(params.id);
         if (Number.isNaN(numericId)) {
@@ -123,7 +124,7 @@ export default function LetterOfGuaranteeDetailPage() {
     }
   };
 
-  const handleCancel = () => router.push("/letterofguarantee");
+  const handleCancel = () => router.push(`/${locale}/letterofguarantee`);
 
   /* ────────── ui states ──────────── */
   if (loading) return <LoadingPage />;
@@ -161,7 +162,7 @@ export default function LetterOfGuaranteeDetailPage() {
         onClose={() => setModalOpen(false)}
         onConfirm={() => {
           setModalOpen(false);
-          if (modalSuccess) router.push("/letterofguarantee");
+          if (modalSuccess) router.push(`/${locale}/letterofguarantee`);
         }}
       />
     </div>

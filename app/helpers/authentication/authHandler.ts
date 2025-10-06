@@ -279,7 +279,10 @@ export async function loginRoutingHandler(
     userData.companyStatus === "approved" &&
     (userData.isCompanyAdmin || userData.isActive)
   ) {
-    router.push("/dashboard");
+    const localeCookie = Cookies.get("NEXT_LOCALE");
+    const locale =
+      (localeCookie?.split("-")[0]?.toLowerCase() === "en" ? "en" : "ar");
+    router.push(`/${locale}/dashboard`);
   }
   
   /* NEW branch – non-admin & inactive */

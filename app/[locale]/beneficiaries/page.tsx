@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -17,6 +17,7 @@ import BeneficiaryForm from "./components/BeneficiaryForm";
 const Page = () => {
   const t = useTranslations("beneficiaries");
   const router = useRouter();
+  const locale = useLocale();
 
   // Table/pagination states
   const [data, setData] = useState<BeneficiariesApiResponse["data"]>([]);
@@ -67,7 +68,7 @@ const Page = () => {
       tip: t("editBeneficiary", { defaultValue: "Edit Beneficiary" }),
       icon: <FaEdit />,
       onClick: (row) => {
-        router.push(`/beneficiaries/${row.id}`);
+        router.push(`/${locale}/beneficiaries/${row.id}`);
       },
     },
     {
@@ -114,7 +115,7 @@ const Page = () => {
       renderCell: (row: BeneficiaryResponse) => (
         <div
           className="cursor-pointer hover:bg-gray-100 p-1 rounded"
-          onDoubleClick={() => router.push(`/beneficiaries/${row.id}`)}
+          onDoubleClick={() => router.push(`/${locale}/beneficiaries/${row.id}`)}
           title={t("doubleClickToEdit", {
             defaultValue: "Double-click to edit",
           })}

@@ -84,15 +84,16 @@ function URLBanner(): React.JSX.Element | null {
       return;
     }
 
-    // Prefer an absolute candidate (so we can enforce origin), else first
-    const candidate = candidates.find((c) => c.isAbsolute) ?? candidates[0];
+    // Determine if ANY candidate matches the current origin (or is relative)
+    const originOk = candidates.some((candidate) =>
+      candidate.isAbsolute ? actual.origin === candidate.origin : true
+    );
 
-    // Origin check only if the allow-list used an absolute URL
-    const originOk = candidate.isAbsolute
-      ? actual.origin === candidate.origin
-      : true;
+    // Use the first absolute URL for the guidance message, otherwise the first entry
+    const displayEntry =
+      candidates.find((candidate) => candidate.isAbsolute) ?? candidates[0];
 
-    setExpectedForThisPage(candidate.href);
+    setExpectedForThisPage(displayEntry.href);
     setOk(originOk);
     setActualHref(actual.href);
   }, [RAW]);

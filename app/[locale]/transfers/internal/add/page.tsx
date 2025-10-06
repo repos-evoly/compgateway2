@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 import InternalForm from "../components/InternalForm";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -17,6 +17,7 @@ const AddInternalTransferPage = () => {
   /*                       Router                             */
   /* -------------------------------------------------------- */
   const router = useRouter();
+  const locale = useLocale();
 
   /* -------------------------------------------------------- */
   /*                        Modals                            */
@@ -54,11 +55,11 @@ const AddInternalTransferPage = () => {
         message={modalMessage}
         onClose={() => {
           setModalOpen(false);
-          router.push(".."); // ← back to /internalTransfer
+          router.push(`/${locale}/transfers/internal`);
         }}
         onConfirm={() => {
           setModalOpen(false);
-          router.push("/transfers/internal");
+          router.push(`/${locale}/transfers/internal`);
         }}
       />
     </div>

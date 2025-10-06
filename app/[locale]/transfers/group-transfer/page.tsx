@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
@@ -17,6 +17,7 @@ import TransferPdfDownloadButton from "./components/TransferPdfDownloadButton";
 const Page = () => {
   const t = useTranslations("groupTransferForm");
   const router = useRouter();
+  const locale = useLocale();
 
   // Table/pagination states
   const [data, setData] = useState<TransfersApiResponse["data"]>([]);
@@ -91,7 +92,7 @@ const Page = () => {
   // Show/hide form
   const handleAddClick = () => {
     // pushes to /group-transfer/add (locale prefix is preserved automatically)
-    router.push("/transfers/group-transfer/add");
+    router.push(`/${locale}/transfers/group-transfer/add`);
   };
 
   return (

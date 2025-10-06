@@ -11,7 +11,7 @@ import { FaLock } from "react-icons/fa";
 import type { Action } from "@/types";
 import { useRouter } from "next/navigation";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 /* --------------------------------------------------
  * Helpers: read & normalize permissions from cookies
@@ -115,6 +115,7 @@ export default function EmployeesPage() {
 
   const t = useTranslations("employees");
   const router = useRouter();
+  const locale = useLocale();
 
   /* --------------------------------------------------
    * Permissions bootstrap
@@ -199,11 +200,11 @@ export default function EmployeesPage() {
         icon: <FaLock />,
         onClick: (row) => {
           const r = row as CompanyEmployee;
-          router.push(`/users/permissions/${r.id}/${r.roleId}`);
+          router.push(`/${locale}/users/permissions/${r.id}/${r.roleId}`);
         },
       },
     ],
-    [router, t]
+    [router, t, locale]
   );
 
   /* --------------------------------------------------

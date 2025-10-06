@@ -11,7 +11,9 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
 
 const CheckRequestDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // /checkrequest/[id]
+  const params = useParams<{ locale: string; id: string }>(); // /[locale]/requests/checkrequest/[id]
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const t = useTranslations("CheckRequest");
   const router = useRouter();
 
@@ -107,7 +109,7 @@ const CheckRequestDetailPage: React.FC = () => {
   };
 
   const handleFormCancel = (): void => {
-    router.push("/requests/checkrequest");
+    router.push(`/${locale}/requests/checkrequest`);
   };
 
   const handleModalClose = (): void => {

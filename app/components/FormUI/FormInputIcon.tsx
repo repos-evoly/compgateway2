@@ -111,6 +111,12 @@ const FormInputIcon = ({
   const showError = errorMessage || formikError;
   const hasError = !!showError;
 
+  const sideLabelSpacing =
+    typeof document !== "undefined" &&
+    document.documentElement?.dir === "rtl"
+      ? "rtl:ml-2"
+      : "ltr:mr-2";
+
   return (
     <div
       className={`${width} mb-4 ${
@@ -122,7 +128,7 @@ const FormInputIcon = ({
         <label
           htmlFor={name}
           className={`text-sm font-medium ${textColor} whitespace-nowrap ${
-            document.documentElement.dir === "rtl" ? "rtl:ml-2" : "ltr:mr-2"
+            sideLabelSpacing
           }`}
         >
           {label}

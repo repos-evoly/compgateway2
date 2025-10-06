@@ -10,8 +10,9 @@ import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function CertifiedBankStatementDetailPage() {
   const router = useRouter();
-  const params = useParams();
-  const rowId = parseInt(params.id as string, 10);
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
+  const rowId = parseInt((params?.id as string) ?? "", 10);
 
   const [rowData, setRowData] =
     useState<CertifiedBankStatementRequestWithID | null>(null);
@@ -41,9 +42,9 @@ export default function CertifiedBankStatementDetailPage() {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...updatePayload } = values;
       await updateCertifiedBankStatement(rowId, updatePayload as CertifiedBankStatementRequest);
-      
+
       alert("Certified Bank Statement updated successfully!");
-      router.push("/requests/certifiedBankStatement");
+      router.push(`/${locale}/requests/certifiedBankStatement`);
     } catch (error) {
       console.error("Failed to update statement:", error);
       alert("Failed to update Certified Bank Statement!");

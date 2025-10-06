@@ -361,7 +361,14 @@ const Sidebar = () => {
   const t = useTranslations("sidebarItems");
 
   /* ---------- locale ----------------------------- */
-  const currentLocale = pathname.startsWith("/ar") ? "ar" : "en";
+  const basePath = pathname.startsWith("/Companygw") ? "/Companygw" : "";
+  const relativePath = basePath
+    ? pathname.slice(basePath.length) || "/"
+    : pathname || "/";
+  const normalizedPath = relativePath.startsWith("/")
+    ? relativePath
+    : `/${relativePath}`;
+  const currentLocale = normalizedPath.startsWith("/en") ? "en" : "ar";
   const isRtl = currentLocale === "ar";
 
   /* ---------- responsive / ui -------------------- */
@@ -483,8 +490,10 @@ const Sidebar = () => {
 
   const toggleLocale = () => {
     const newLocale = currentLocale === "ar" ? "en" : "ar";
-    const newPath = `/${newLocale}${pathname.replace(/^\/(en|ar)/, "")}`;
-    window.location.assign(newPath);
+    const stripped = normalizedPath.replace(/^\/(en|ar)/, "") || "/";
+    const remainder = stripped === "/" ? "" : stripped;
+    const nextPath = `${basePath}/${newLocale}${remainder}`;
+    window.location.assign(nextPath || "/");
   };
 
   const COOKIE_NAMES = [
@@ -504,7 +513,8 @@ const Sidebar = () => {
     COOKIE_NAMES.forEach((name) => {
       document.cookie = `${name}=; ${CLEAR_OPTS}`;
     });
-    window.location.reload();
+    const loginPath = basePath ? `${basePath}/auth/login` : "/auth/login";
+    window.location.replace(loginPath);
   };
 
   /* ------------------------------------------------

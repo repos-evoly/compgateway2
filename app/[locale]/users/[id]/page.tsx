@@ -12,7 +12,9 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 export default function SingleEmployeePage() {
   const router = useRouter();
-  const { id } = useParams(); // e.g. /employees/123
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const numericId = Number(id);
   // const t = useTranslations("employees"); // Removed unused variable
 
@@ -60,7 +62,7 @@ export default function SingleEmployeePage() {
         <h2 className="text-xl font-bold text-red-500 mb-2">Not Found</h2>
         <p className="text-gray-700">No employee found with ID: {id}</p>
         <button
-          onClick={() => router.push("/employees")}
+          onClick={() => router.push(`/${locale}/employees`)}
           className="mt-4 px-4 py-2 bg-gray-900 text-white rounded"
         >
           Go Back
@@ -102,7 +104,7 @@ export default function SingleEmployeePage() {
             ? values.isActive
             : employeeWithStatus.isActive, // Use form value or current status
       });
-      router.push("/employees");
+      router.push(`/${locale}/employees`);
     } catch (error) {
       console.error("Error updating employee:", error);
       setModalOpen(true);
@@ -124,7 +126,7 @@ export default function SingleEmployeePage() {
       <EmployeeForm
         initialValues={initialValues}
         onSubmit={handleSubmit}
-        onCancel={() => router.push("/employees")}
+        onCancel={() => router.push(`/${locale}/employees`)}
         employeeStatus={employeeWithStatus.isActive}
         onStatusChange={handleStatusChange}
       />

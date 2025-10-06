@@ -8,7 +8,9 @@ import type { GroupTransferFormValues } from "../types";
 import LoadingPage from "@/app/components/reusable/Loading";
 
 export default function GroupTransferDetailsPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ locale: string; id: string }>();
+  const locale = params?.locale ?? "ar";
+  const id = params?.id;
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,7 @@ export default function GroupTransferDetailsPage() {
   useEffect(() => {
     (async () => {
       try {
+        if (!id) return;
         const res = await getTransferById(Number(id));
         /* map API response → GroupTransferFormValues */
         setInitial({
@@ -44,7 +47,7 @@ export default function GroupTransferDetailsPage() {
       <div className="p-4">
         <h2 className="text-xl font-bold">Transfer not found</h2>
         <button
-          onClick={() => router.push("/transfers/group-transfer")}
+          onClick={() => router.push(`/${locale}/transfers/group-transfer`)}
           className="mt-4 rounded bg-blue-600 px-4 py-2 text-white"
         >
           Back

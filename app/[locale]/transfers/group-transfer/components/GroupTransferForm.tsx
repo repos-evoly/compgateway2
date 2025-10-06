@@ -13,10 +13,7 @@ import InputSelectCombo, {
 } from "@/app/components/FormUI/InputSelectCombo";
 import MultiSelect from "@/app/components/FormUI/MultiSelect";
 
-import type {
-  GroupTransferFormProps,
-  GroupTransferFormValues,
-} from "../types";
+import type { GroupTransferFormProps, GroupTransferFormValues } from "../types";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import ConfirmInfoModal from "./ConfirmInfoModal";
@@ -25,8 +22,6 @@ import {
   getTransfersCommision,
 } from "../../internal/services";
 import { createGroupTransfer } from "../services";
-
-
 
 /* -------------------------------------------------------------------------- */
 /*                                 Types                                      */
@@ -124,7 +119,10 @@ function GroupTransferForm({
   /* ---------------- form validation schema ---------------- */
   const validationSchema = Yup.object().shape({
     from: Yup.string().required(t("fromRequired")),
-    to: Yup.array().of(Yup.string()).min(1, t("toRequired")).required(t("toRequired")),
+    to: Yup.array()
+      .of(Yup.string())
+      .min(1, t("toRequired"))
+      .required(t("toRequired")),
     value: Yup.number()
       .required(t("valueRequired"))
       .positive(t("valuePositive")),
@@ -167,8 +165,8 @@ function GroupTransferForm({
 
     try {
       // Handle multiple accounts by creating a single group transfer
-      const toAccounts = Array.isArray(modalData.formikData.to) 
-        ? modalData.formikData.to 
+      const toAccounts = Array.isArray(modalData.formikData.to)
+        ? modalData.formikData.to
         : [modalData.formikData.to];
 
       // Create a single group transfer with all account numbers
@@ -262,10 +260,7 @@ function GroupTransferForm({
               {/* Buttons – hide in viewOnly */}
               {!viewOnly && (
                 <div className="mt-6 flex justify-center gap-4">
-                  {!isNew && (
-                    <>
-                    </>
-                  )}
+                  {!isNew && <></>}
                   <ContinueButton
                     onClick={() => openModal(values)}
                     touchedFields={{

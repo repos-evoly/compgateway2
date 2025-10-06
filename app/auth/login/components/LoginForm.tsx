@@ -172,7 +172,7 @@ export default function LoginForm(): JSX.Element {
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <Image
-            src="/images/logo-trans.png"
+            src="/Companygw/images/logo-trans.png"
             alt="الشعار"
             width={80}
             height={80}

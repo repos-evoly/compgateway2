@@ -84,3 +84,9 @@ git pull
 Moftah (inside branch moftah):
 git pull
 Their single git pull command fast-forwards them to the state you just pushed; they never touch merge conflicts.
+
+
+
+Build Projects + deployment: 
+1. in the env the url before build should be the same as the one of the server that we are deploying on.
+2. build and move the .next to he server and run pm2 restart.

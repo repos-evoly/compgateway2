@@ -60,10 +60,10 @@ const CblDetailPage: React.FC = () => {
   /* handle form submission */
   const handleSubmit = async (values: TCBLValues) => {
     if (!id) return;
-    
+
     try {
       await updateCblRequest(id.toString(), values);
-      
+
       setModalTitle(t("updateSuccessTitle"));
       setModalMessage(t("updateSuccessMessage"));
       setModalOpen(true);
@@ -82,9 +82,11 @@ const CblDetailPage: React.FC = () => {
   return (
     <div className="p-4">
       {cblData && (
-        <CBLForm 
-          initialValues={cblData} 
-          readOnly={cblData.status === undefined ? false : cblData.status === "pending"}
+        <CBLForm
+          initialValues={cblData}
+          readOnly={
+            cblData.status === undefined ? false : cblData.status === "pending"
+          }
           onSubmit={handleSubmit}
         />
       )}

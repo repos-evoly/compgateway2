@@ -1,16 +1,42 @@
-// app/[locale]/requests/rtgs/services.ts
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
-import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import type { TKycResponse } from "@/app/auth/register/types";
 import type { TRTGSResponse, TRTGSValues } from "./types";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+const API_BASE = "/Companygw/api/requests/rtgs" as const;
+const KYC_API_BASE = "/Companygw/api/companies/kyc" as const;
 
-const shouldRefresh = (s: number) => s === 401 || s === 403;
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  cache: "no-store",
+  ...init,
+});
+
+const buildListUrl = (
+  page: number,
+  limit: number,
+  searchTerm: string,
+  searchBy: "" | "paymenttype" | "beneficiarybank"
+): string => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (searchTerm) params.set("searchTerm", searchTerm);
+  if (searchBy) params.set("searchBy", searchBy);
+  const qs = params.toString();
+  return qs ? `${API_BASE}?${qs}` : API_BASE;
+};
+
+const jsonInit = (method: "POST" | "PUT", payload: unknown): RequestInit =>
+  withCredentials({
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
 /**
  * GET /rtgsrequests?page={}&limit={}&searchTerm=&searchBy=
@@ -22,41 +48,16 @@ export async function getRtgsRequests(
   searchTerm: string = "",
   searchBy: "" | "paymenttype" | "beneficiarybank" = ""
 ): Promise<TRTGSResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = new URL(`${BASE_URL}/rtgsrequests`);
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("limit", String(limit));
-  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
-  if (searchBy) url.searchParams.set("searchBy", searchBy);
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url.toString(), init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url.toString(), init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    buildListUrl(page, limit, searchTerm, searchBy),
+    withCredentials({ method: "GET" })
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch RTGS requests.");
   }
 
-  const data = (await response.json()) as TRTGSResponse;
-  return data;
+  return (await response.json()) as TRTGSResponse;
 }
 
 /**
@@ -65,37 +66,16 @@ export async function getRtgsRequests(
 export async function getRtgsRequestById(
   id: string | number
 ): Promise<TRTGSValues> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/rtgsrequests/${id}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({ method: "GET" })
+  );
 
   if (!response.ok) {
     await throwApiError(response, `Failed to fetch RTGS request by ID ${id}.`);
   }
 
-  const data = (await response.json()) as TRTGSValues;
-  return data;
+  return (await response.json()) as TRTGSValues;
 }
 
 /**
@@ -105,30 +85,7 @@ export async function getRtgsRequestById(
 export async function createRtgsRequest(
   values: TRTGSValues
 ): Promise<TRTGSValues> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const body: {
-    refNum: string;
-    date: string;
-    paymentType: string;
-    accountNo: string;
-    applicantName: string;
-    address: string;
-    beneficiaryName: string;
-    beneficiaryAccountNo: string;
-    beneficiaryBank: string;
-    branchName: string;
-    amount: string;
-    remittanceInfo: string;
-    invoice: boolean;
-    contract: boolean;
-    claim: boolean;
-    otherDoc: boolean;
-  } = {
-    // keeping your existing mapping
+  const body = {
     refNum: new Date(values.refNum).toISOString(),
     date: new Date(values.date).toISOString(),
     paymentType: values.paymentType,
@@ -147,36 +104,13 @@ export async function createRtgsRequest(
     otherDoc: values.otherDoc ?? false,
   };
 
-  const url = `${BASE_URL}/rtgsrequests`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearer}`,
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(API_BASE, jsonInit("POST", body));
 
   if (!response.ok) {
     await throwApiError(response, "Failed to create RTGS request.");
   }
 
-  const created = (await response.json()) as TRTGSValues;
-  return created;
+  return (await response.json()) as TRTGSValues;
 }
 
 /**
@@ -187,30 +121,7 @@ export async function updateRtgsRequest(
   id: string | number,
   values: TRTGSValues
 ): Promise<TRTGSValues> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const body: {
-    refNum: string;
-    date: string;
-    paymentType: string;
-    accountNo: string;
-    applicantName: string;
-    address: string;
-    beneficiaryName: string;
-    beneficiaryAccountNo: string;
-    beneficiaryBank: string;
-    branchName: string;
-    amount: string;
-    remittanceInfo: string;
-    invoice: boolean;
-    contract: boolean;
-    claim: boolean;
-    otherDoc: boolean;
-  } = {
-    // keeping your existing mapping
+  const body = {
     refNum: new Date(values.refNum).toISOString(),
     date: new Date(values.date).toISOString(),
     paymentType: values.paymentType,
@@ -229,36 +140,13 @@ export async function updateRtgsRequest(
     otherDoc: values.otherDoc ?? false,
   };
 
-  const url = `${BASE_URL}/rtgsrequests/${id}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearer}`,
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(`${API_BASE}/${id}`, jsonInit("PUT", body));
 
   if (!response.ok) {
     await throwApiError(response, "Failed to update RTGS request.");
   }
 
-  const updated = (await response.json()) as TRTGSValues;
-  return updated;
+  return (await response.json()) as TRTGSValues;
 }
 
 /**
@@ -266,30 +154,10 @@ export async function updateRtgsRequest(
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/companies/kyc/${code}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    `${KYC_API_BASE}/${code}`,
+    withCredentials({ method: "GET" })
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch KYC data");

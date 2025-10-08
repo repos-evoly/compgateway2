@@ -1,21 +1,14 @@
 // app/auth/register/services.ts
-import {
+import type {
+  TAttachment,
+  TCompanyRegistrationInfo,
+  TEditCompanyInfoPayload,
   TKycResponse,
   TRegisterFields,
   TRegisterResponse,
-  TCompanyRegistrationInfo,
-  TEditCompanyInfoPayload,
-  TAttachment,
 } from "./types";
 
-const BASE_API = process.env.NEXT_PUBLIC_BASE_API;
-
-function requireBaseApi(): string {
-  if (!BASE_API || BASE_API.trim().length === 0) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
-  return BASE_API;
-}
+const API_ROOT = "/Companygw/api" as const;
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((v) => typeof v === "string");
@@ -68,40 +61,47 @@ async function readServerError(response: Response): Promise<string> {
   return `Request failed with status ${response.status}`;
 }
 
+const withDefaults = (init: RequestInit = {}): RequestInit => ({
+  cache: "no-store",
+  credentials: "include",
+  ...init,
+});
+
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  const api = requireBaseApi();
-  const response = await fetch(`${api}/companies/kyc/${encodeURIComponent(code)}`, {
-    method: "GET",
-  });
+  const response = await fetch(
+    `${API_ROOT}/companies/kyc/${encodeURIComponent(code)}`,
+    withDefaults({ method: "GET" })
+  );
+
   if (!response.ok) {
-    const msg = await readServerError(response);
-    throw new Error(msg);
+    throw new Error(await readServerError(response));
   }
+
   return response.json();
 }
 
 export async function registerCompany(
   data: TRegisterFields
 ): Promise<TRegisterResponse> {
-  const api = requireBaseApi();
-  const response = await fetch(`${api}/companies/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      companyCode: data.companyCode,
-      username: data.username,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      password: data.password,
-      phone: data.phone,
-      roleId: data.roleId,
+  const response = await fetch(`${API_ROOT}/companies/register`, {
+    ...withDefaults({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        companyCode: data.companyCode,
+        username: data.username,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+        roleId: data.roleId,
+      }),
     }),
   });
 
   if (!response.ok) {
-    const message = await readServerError(response);
-    throw new Error(message);
+    throw new Error(await readServerError(response));
   }
 
   return response.json();
@@ -113,12 +113,10 @@ export async function uploadDocuments(
   passportFiles: File[],
   birthFiles: File[]
 ): Promise<void> {
-  const api = requireBaseApi();
-
   const allFiles = [...passportFiles, ...birthFiles];
   if (allFiles.length === 0) {
     throw new Error("No files selected for upload.");
-    }
+  }
 
   const subjects: string[] = [];
   const descriptions: string[] = [];
@@ -133,33 +131,78 @@ export async function uploadDocuments(
   });
 
   const formData = new FormData();
-  allFiles.forEach((file, i) => {
+  allFiles.forEach((file, index) => {
     formData.append("files", file);
-    formData.append("Subject", subjects[i]);
-    formData.append("Description", descriptions[i]);
+    formData.append("Subject", subjects[index]);
+    formData.append("Description", descriptions[index]);
   });
   formData.append("CreatedBy", email);
 
-  const url = `${api}/companies/${encodeURIComponent(code)}/attachments/UploadBatch`;
-  const res = await fetch(url, { method: "POST", body: formData });
+  const response = await fetch(
+    `${API_ROOT}/companies/${encodeURIComponent(code)}/attachments/UploadBatch`,
+    withDefaults({ method: "POST", body: formData })
+  );
 
-  if (!res.ok) {
-    const msg = await readServerError(res);
-    throw new Error(`Failed to upload documents. ${msg}`);
+  if (!response.ok) {
+    throw new Error(`Failed to upload documents. ${await readServerError(response)}`);
   }
+}
+
+export async function uploadSingleDocument(
+  code: string,
+  file: File,
+  options: {
+    subject?: string;
+    description?: string;
+    createdBy?: string;
+  } = {}
+): Promise<string | undefined> {
+  if (!file) {
+    throw new Error("No file provided for upload.");
+  }
+
+  const formData = new FormData();
+  formData.append("files", file);
+  formData.append("Subject", options.subject ?? "Logo");
+  formData.append("Description", options.description ?? "Company logo");
+  if (options.createdBy && options.createdBy.trim()) {
+    formData.append("CreatedBy", options.createdBy.trim());
+  }
+
+  const response = await fetch(
+    `${API_ROOT}/companies/${encodeURIComponent(code)}/attachments/UploadBatch`,
+    withDefaults({ method: "POST", body: formData })
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to upload document. ${await readServerError(response)}`);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    try {
+      const payload = (await response.json()) as { id?: string } | null;
+      return payload?.id;
+    } catch (error) {
+      console.warn("uploadSingleDocument: response parsing failed", error);
+    }
+  }
+
+  return undefined;
 }
 
 export async function getCompanyRegistrationInfoByCode(
   code: string
 ): Promise<TCompanyRegistrationInfo> {
-  const api = requireBaseApi();
-  const response = await fetch(`${api}/companies/getInfo/${encodeURIComponent(code)}`, {
-    method: "GET",
-  });
+  const response = await fetch(
+    `${API_ROOT}/companies/getInfo/${encodeURIComponent(code)}`,
+    withDefaults({ method: "GET" })
+  );
+
   if (!response.ok) {
-    const msg = await readServerError(response);
-    throw new Error(msg);
+    throw new Error(await readServerError(response));
   }
+
   return response.json();
 }
 
@@ -167,59 +210,45 @@ export async function editCompanyInfo(
   userId: string,
   data: TEditCompanyInfoPayload
 ): Promise<void> {
-  const api = requireBaseApi();
-  const response = await fetch(`${api}/companies/public/users/${encodeURIComponent(userId)}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  const response = await fetch(
+    `${API_ROOT}/companies/public/users/${encodeURIComponent(userId)}`,
+    {
+      ...withDefaults({
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
+    }
+  );
 
   if (!response.ok) {
-    const msg = await readServerError(response);
-    throw new Error(`Failed to edit company info. ${msg}`);
+    throw new Error(`Failed to edit company info. ${await readServerError(response)}`);
   }
 }
 
 export async function getCompanyAttachments(code: string): Promise<TAttachment[]> {
-  const api = requireBaseApi();
-  const url = `${api}/companies/${encodeURIComponent(code)}/attachments`;
-  const response = await fetch(url, { method: "GET" });
+  const response = await fetch(
+    `${API_ROOT}/companies/${encodeURIComponent(code)}/attachments`,
+    withDefaults({ method: "GET" })
+  );
 
   if (!response.ok) {
-    const msg = await readServerError(response);
-    throw new Error(`Failed to fetch attachments. ${msg}`);
+    throw new Error(`Failed to fetch attachments. ${await readServerError(response)}`);
   }
 
   return response.json() as Promise<TAttachment[]>;
 }
 
-export async function deleteAttachment(code: string, attachmentId: string): Promise<void> {
-  const api = requireBaseApi();
-  const url = `${api}/companies/${encodeURIComponent(code)}/attachments/${encodeURIComponent(attachmentId)}`;
-  const response = await fetch(url, { method: "DELETE" });
+export async function deleteAttachment(
+  code: string,
+  attachmentId: string
+): Promise<void> {
+  const response = await fetch(
+    `${API_ROOT}/companies/${encodeURIComponent(code)}/attachments/${encodeURIComponent(attachmentId)}`,
+    withDefaults({ method: "DELETE" })
+  );
 
   if (!response.ok) {
-    const msg = await readServerError(response);
-    throw new Error(`Failed to delete attachment. ${msg}`);
-  }
-}
-
-export async function uploadSingleDocument(
-  code: string,
-  file: File
-): Promise<void> {
-  const api = requireBaseApi();
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("Subject", "logo");
-  formData.append("Description", "logo");
-
-  const url = `${api}/companies/${encodeURIComponent(code)}/attachments`;
-  const res = await fetch(url, { method: "POST", body: formData });
-
-  if (!res.ok) {
-    const msg = await readServerError(res);
-    throw new Error(`Failed to upload document. ${msg}`);
+    throw new Error(`Failed to delete attachment. ${await readServerError(response)}`);
   }
 }

@@ -320,9 +320,9 @@ import React, {
   useEffect,
   useMemo,
   useCallback,
-  TransitionEvent,
+  type TransitionEvent,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { sidebarItems } from "./SideBarItemsArray";
 import { useTranslations } from "next-intl";
 import { FaBars, FaTimes, FaBell } from "react-icons/fa";
@@ -358,6 +358,8 @@ type SidebarItem = (typeof sidebarItems)[number];
  * -------------------------------------------------- */
 const Sidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("sidebarItems");
 
   /* ---------- locale ----------------------------- */
@@ -490,10 +492,20 @@ const Sidebar = () => {
 
   const toggleLocale = () => {
     const newLocale = currentLocale === "ar" ? "en" : "ar";
-    const stripped = normalizedPath.replace(/^\/(en|ar)/, "") || "/";
-    const remainder = stripped === "/" ? "" : stripped;
-    const nextPath = `${basePath}/${newLocale}${remainder}`;
-    window.location.assign(nextPath || "/");
+    const remainder = normalizedPath.replace(/^\/(en|ar)/, "") || "/";
+    const suffix = remainder === "/" ? "" : remainder;
+    const relative = `/${newLocale}${suffix}`;
+    const fullPath = `${basePath}${relative}`.replace(/\/+/g, "/");
+
+    const nextPath = fullPath.startsWith("/") ? fullPath : `/${fullPath}`;
+    const year = 60 * 60 * 24 * 365;
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${year};`;
+
+    const paramsString = searchParams.toString();
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    const urlWithQuery = paramsString ? `${nextPath}?${paramsString}` : nextPath;
+    const finalUrl = hash ? `${urlWithQuery}${hash}` : urlWithQuery;
+    router.replace(finalUrl);
   };
 
   const COOKIE_NAMES = [
@@ -513,7 +525,9 @@ const Sidebar = () => {
     COOKIE_NAMES.forEach((name) => {
       document.cookie = `${name}=; ${CLEAR_OPTS}`;
     });
-    const loginPath = basePath ? `${basePath}/auth/login` : "/auth/login";
+    const loginPath = basePath
+      ? `${basePath}/Companygw/auth/login`
+      : "/Companygw/auth/login";
     window.location.replace(loginPath);
   };
 

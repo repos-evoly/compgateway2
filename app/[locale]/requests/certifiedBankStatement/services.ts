@@ -1,8 +1,6 @@
 // app/[locale]/certified-bank-statement/services.ts
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
-import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import {
   CertifiedBankStatementRequest,
   CertifiedBankStatementRequestWithID,
@@ -51,123 +49,28 @@ type GetCertifiedBankStatementsResponse = {
   totalRecords: number;
 };
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+const API_BASE = "/Companygw/api/requests/certified-bank-statement" as const;
 
-const shouldRefresh = (s: number) => s === 401 || s === 403;
-
-/** Shared header builder */
-const init = (bearer: string, method: "GET" | "POST" | "PUT", body?: unknown): RequestInit => ({
-  method,
-  headers: {
-    Authorization: `Bearer ${bearer}`,
-    ...(body ? { "Content-Type": "application/json" } : {}),
-  },
-  ...(body ? { body: JSON.stringify(body) } : {}),
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
   cache: "no-store",
+  ...init,
 });
 
-/**
- * Fetch a list of Certified Bank Statements from the API,
- * with optional pagination/search, returning them in the
- * shape your grid expects (CertifiedBankStatementRequestWithID[]).
- * — Also exposes top-level fromDate/toDate for convenience.
- */
-export async function getCertifiedBankStatements(params?: {
+const buildListUrl = (params?: {
   searchTerm?: string;
   searchBy?: string;
   page?: number;
   limit?: number;
-}): Promise<{
-  data: CertifiedBankStatementRequestWithID[];
-  page: number;
-  limit: number;
-  totalPages: number;
-  totalRecords: number;
-}> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
-
-  const { searchTerm, searchBy, page, limit } = params || {};
-  const url = new URL(`${BASE_URL}/certifiedbankstatementrequests`);
-
-  if (page) url.searchParams.set("page", String(page));
-  if (limit) url.searchParams.set("limit", String(limit));
-  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
-  if (searchBy) url.searchParams.set("searchBy", searchBy);
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  let response = await fetch(url.toString(), init(token, "GET"));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url.toString(), init(token, "GET"));
-    } catch {
-      // fall through to shared error handling
-    }
-  }
-
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch Certified Bank Statements.");
-  }
-
-  const result = (await response.json()) as GetCertifiedBankStatementsResponse;
-
-  const transformedData: CertifiedBankStatementRequestWithID[] = result.data.map(
-    (apiItem) => transformApiToFormShape(apiItem)
-  );
-
-  return {
-    data: transformedData,
-    page: result.page,
-    limit: result.limit,
-    totalPages: result.totalPages,
-    totalRecords: result.totalRecords,
-  };
-}
-
-/**
- * Fetch a single Certified Bank Statement by ID
- * and return it in the shape the form/page expects.
- * — Includes top-level fromDate/toDate.
- */
-export async function getCertifiedBankStatementById(
-  id: number
-): Promise<CertifiedBankStatementRequestWithID> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/certifiedbankstatementrequests/${id}`;
-
-  let response = await fetch(url, init(token, "GET"));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token, "GET"));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to fetch Certified Bank Statement #${id}.`
-    );
-  }
-
-  const apiData = (await response.json()) as ApiCertifiedBankStatement;
-  return transformApiToFormShape(apiData);
-}
+}): string => {
+  const sp = new URLSearchParams();
+  if (params?.page) sp.set("page", String(params.page));
+  if (params?.limit) sp.set("limit", String(params.limit));
+  if (params?.searchTerm) sp.set("searchTerm", params.searchTerm);
+  if (params?.searchBy) sp.set("searchBy", params.searchBy);
+  const qs = sp.toString();
+  return qs ? `${API_BASE}?${qs}` : API_BASE;
+};
 
 /**
  * Transform the API shape to the shape the form/page needs.
@@ -236,16 +139,77 @@ function transformApiToFormShape(
 }
 
 /**
+ * Fetch a list of Certified Bank Statements from the API,
+ * with optional pagination/search, returning them in the
+ * shape your grid expects (CertifiedBankStatementRequestWithID[]).
+ * — Also exposes top-level fromDate/toDate for convenience.
+ */
+export async function getCertifiedBankStatements(params?: {
+  searchTerm?: string;
+  searchBy?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  data: CertifiedBankStatementRequestWithID[];
+  page: number;
+  limit: number;
+  totalPages: number;
+  totalRecords: number;
+}> {
+  const response = await fetch(
+    buildListUrl(params),
+    withCredentials({ method: "GET" })
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch Certified Bank Statements.");
+  }
+
+  const result = (await response.json()) as GetCertifiedBankStatementsResponse;
+
+  const transformedData: CertifiedBankStatementRequestWithID[] = result.data.map(
+    (apiItem) => transformApiToFormShape(apiItem)
+  );
+
+  return {
+    data: transformedData,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    totalRecords: result.totalRecords,
+  };
+}
+
+/**
+ * Fetch a single Certified Bank Statement by ID
+ * and return it in the shape the form/page expects.
+ * — Includes top-level fromDate/toDate.
+ */
+export async function getCertifiedBankStatementById(
+  id: number
+): Promise<CertifiedBankStatementRequestWithID> {
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({ method: "GET" })
+  );
+
+  if (!response.ok) {
+    await throwApiError(
+      response,
+      `Failed to fetch Certified Bank Statement #${id}.`
+    );
+  }
+
+  const apiData = (await response.json()) as ApiCertifiedBankStatement;
+  return transformApiToFormShape(apiData);
+}
+
+/**
  * Create a new Certified Bank Statement.
  */
 export async function createCertifiedBankStatement(
   payload: CertifiedBankStatementRequest
 ): Promise<CertifiedBankStatementRequestWithID> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
   const apiBody = {
     accountHolderName: payload.accountHolderName ?? null,
     authorizedOnTheAccountName: payload.authorizedOnTheAccountName ?? null,
@@ -278,19 +242,14 @@ export async function createCertifiedBankStatement(
     },
   };
 
-  const url = `${BASE_URL}/certifiedbankstatementrequests`;
-
-  let response = await fetch(url, init(token, "POST", apiBody));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token, "POST", apiBody));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    API_BASE,
+    withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(apiBody),
+    })
+  );
 
   if (!response.ok) {
     await throwApiError(
@@ -310,11 +269,6 @@ export async function updateCertifiedBankStatement(
   id: number,
   payload: CertifiedBankStatementRequest
 ): Promise<CertifiedBankStatementRequestWithID> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
   const apiBody = {
     accountHolderName: payload.accountHolderName ?? null,
     authorizedOnTheAccountName: payload.authorizedOnTheAccountName ?? null,
@@ -346,19 +300,14 @@ export async function updateCertifiedBankStatement(
     },
   };
 
-  const url = `${BASE_URL}/certifiedbankstatementrequests/${id}`;
-
-  let response = await fetch(url, init(token, "PUT", apiBody));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token, "PUT", apiBody));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(apiBody),
+    })
+  );
 
   if (!response.ok) {
     await throwApiError(

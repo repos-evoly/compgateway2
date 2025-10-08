@@ -1,0 +1,95 @@
+Deployment Procedure for compgateway
+===================================
+
+Prerequisites
+-------------
+- Docker Engine installed and running on the target server (`administrator@192.168.113.10`).
+- SSH access from the macOS workstation.
+- TCP port 3012 allowed through any firewalls on the server and network.
+- Updated environment values ready (see `NEXT_PUBLIC_*` variables below).
+
+1. Prepare the build artifact on macOS
+-------------------------------------
+```bash
+cd /Users/mohamadtaha/Desktop/Nader/Projects/compgateway
+COPYFILE_DISABLE=1 tar czf ~/compgateway_docker.tar.gz \
+  --exclude=node_modules --exclude='.next' --exclude='.git' .
+```
+
+2. Upload the artifact to the server
+------------------------------------
+```bash
+scp ~/compgateway_docker.tar.gz administrator@192.168.113.10:~
+```
+
+3. SSH into the server
+----------------------
+```bash
+ssh administrator@192.168.113.10
+```
+
+4. Stop and remove the existing container (if present)
+-----------------------------------------------------
+```bash
+sudo docker stop compgateway && sudo docker rm compgateway
+```
+(Ignore errors if the container does not exist.)
+
+5. Refresh the workspace directory
+----------------------------------
+```bash
+sudo rm -rf ~/compgateway
+mkdir -p ~/compgateway
+tar xzf ~/compgateway_docker.tar.gz -C ~/compgateway
+cd ~/compgateway
+```
+
+6. Build the Docker image with the correct allow list
+-----------------------------------------------------
+```bash
+sudo docker build -t compgateway:latest \
+  --build-arg NEXT_PUBLIC_BASE_API=http://10.1.1.205/compgateapi/api \
+  --build-arg NEXT_PUBLIC_AUTH_API=http://10.1.1.205/compauthapi/api/auth \
+  --build-arg NEXT_PUBLIC_IMAGE_URL=http://10.1.1.205/compgateapi \
+  --build-arg NEXT_PUBLIC_ALLOWED_URLS="/Companygw/auth/login,/Companygw/auth/register/uploadDocuments,/Companygw/auth/register/uploadDocuments/*,http://192.168.113.10:3012/Companygw/auth/login,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments/*,http://10.1.1.205:3012/Companygw/auth/login,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments/*,https://webanking.bcd.ly/Companygw/auth/login,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments/*" \
+  .
+```
+
+7. Run the container on port 3012
+---------------------------------
+```bash
+sudo docker run -d --name compgateway --restart unless-stopped \
+  -p 3012:3000 \
+  -e NEXT_PUBLIC_BASE_API=http://10.1.1.205/compgateapi/api \
+  -e NEXT_PUBLIC_AUTH_API=http://10.1.1.205/compauthapi/api/auth \
+  -e NEXT_PUBLIC_IMAGE_URL=http://10.1.1.205/compgateapi \
+  -e NEXT_PUBLIC_ALLOWED_URLS="/Companygw/auth/login,/Companygw/auth/register/uploadDocuments,/Companygw/auth/register/uploadDocuments/*,http://192.168.113.10:3012/Companygw/auth/login,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments/*,http://10.1.1.205:3012/Companygw/auth/login,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments/*,https://webanking.bcd.ly/Companygw/auth/login,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments/*" \
+  compgateway:latest
+```
+
+8. Verify the deployment
+------------------------
+```bash
+docker ps
+curl http://127.0.0.1:3012/api/health
+```
+Then, from the workstation, browse to `http://192.168.113.10:3012/` and confirm the login page loads without warnings.
+
+9. Clean up the uploaded artifact
+---------------------------------
+```bash
+rm ~/compgateway_docker.tar.gz
+```
+Remove the tarball once the deployment is confirmed so the server does not accumulate large archives over time.
+
+10. (Optional) Review logs and environment
+-----------------------------------------
+```bash
+docker logs compgateway --tail 50
+docker exec compgateway printenv | grep NEXT_PUBLIC
+```
+
+11. Updating the deployment later
+---------------------------------
+- Repeat steps 1–8 whenever the code changes.
+- Ensure you rebuild the image whenever `NEXT_PUBLIC_*` values change, so the client bundle reflects the new configuration.

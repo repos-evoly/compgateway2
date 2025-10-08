@@ -46,13 +46,14 @@ export default async function LocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: Locale };
+  params: Promise<{ locale: Locale }>;
 }) {
   // Debug
   console.log("LocaleLayout: Rendering started");
-  console.log("LocaleLayout: Resolved params:", params);
+  const resolvedParams = await params;
+  console.log("LocaleLayout: Resolved params:", resolvedParams);
 
-  const locale = params.locale;
+  const locale = resolvedParams.locale;
   setRequestLocale(locale); // bind locale for this subtree
   console.log("LocaleLayout: Locale resolved as:", locale);
 

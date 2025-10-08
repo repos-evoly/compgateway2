@@ -1,7 +1,5 @@
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
-import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import type {
   ForeignTransferDetailResponse,
   ForeignTransfersListResponse,
@@ -10,10 +8,39 @@ import type {
 import { throwApiError } from "@/app/helpers/handleApiError";
 import type { TKycResponse } from "@/app/auth/register/types";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+const API_BASE = "/Companygw/api/requests/foreign-transfers" as const;
+const KYC_API_BASE = "/Companygw/api/companies/kyc" as const;
 
-const shouldRefresh = (s: number) => s === 401 || s === 403;
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  cache: "no-store",
+  ...init,
+});
+
+const buildListUrl = (
+  page: number,
+  limit: number,
+  searchTerm: string,
+  searchBy: string
+): string => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (searchTerm) params.set("searchTerm", searchTerm);
+  if (searchBy) params.set("searchBy", searchBy);
+  const qs = params.toString();
+  return qs ? `${API_BASE}?${qs}` : API_BASE;
+};
+
+const jsonInit = (method: "POST" | "PUT", payload: unknown): RequestInit =>
+  withCredentials({
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
 /**
  * GET /foreigntransfers => listing with pagination
@@ -24,41 +51,16 @@ export async function getForeignTransfers(
   searchTerm = "",
   searchBy = ""
 ): Promise<ForeignTransfersListResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    buildListUrl(page, limit, searchTerm, searchBy),
+    withCredentials({ method: "GET" })
+  );
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = new URL(`${BASE_URL}/foreigntransfers`);
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("limit", String(limit));
-  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
-  if (searchBy) url.searchParams.set("searchBy", searchBy);
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url.toString(), init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url.toString(), init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch foreign transfers.");
   }
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to fetch foreign transfers.");
-  }
-
-  const data = (await res.json()) as ForeignTransfersListResponse;
-  return data;
+  return (await response.json()) as ForeignTransfersListResponse;
 }
 
 /**
@@ -67,37 +69,16 @@ export async function getForeignTransfers(
 export async function getForeignTransferById(
   id: string | number
 ): Promise<ForeignTransferDetailResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({ method: "GET" })
+  );
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/foreigntransfers/${id}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, `Failed to fetch foreign transfer ${id}.`);
   }
 
-  if (!res.ok) {
-    await throwApiError(res, `Failed to fetch foreign transfer ${id}.`);
-  }
-
-  const data = (await res.json()) as ForeignTransferDetailResponse;
-  return data;
+  return (await response.json()) as ForeignTransferDetailResponse;
 }
 
 /**
@@ -106,41 +87,13 @@ export async function getForeignTransferById(
 export async function createForeignTransfer(
   payload: CreateForeignTransferPayload
 ): Promise<ForeignTransferDetailResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(API_BASE, jsonInit("POST", payload));
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/foreigntransfers`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearer}`,
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, "Failed to create foreign transfer.");
   }
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to create foreign transfer.");
-  }
-
-  const data = (await res.json()) as ForeignTransferDetailResponse;
-  return data;
+  return (await response.json()) as ForeignTransferDetailResponse;
 }
 
 /**
@@ -150,41 +103,13 @@ export async function updateForeignTransfer(
   id: string | number,
   payload: CreateForeignTransferPayload
 ): Promise<ForeignTransferDetailResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(`${API_BASE}/${id}`, jsonInit("PUT", payload));
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/foreigntransfers/${id}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${bearer}`,
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, "Failed to update foreign transfer.");
   }
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to update foreign transfer.");
-  }
-
-  const data = (await res.json()) as ForeignTransferDetailResponse;
-  return data;
+  return (await response.json()) as ForeignTransferDetailResponse;
 }
 
 /**
@@ -192,34 +117,14 @@ export async function updateForeignTransfer(
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    `${KYC_API_BASE}/${code}`,
+    withCredentials({ method: "GET" })
+  );
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/companies/kyc/${code}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch KYC data");
   }
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to fetch KYC data");
-  }
-
-  return (await res.json()) as TKycResponse;
+  return (await response.json()) as TKycResponse;
 }

@@ -1,118 +1,67 @@
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
-import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
-import {
+import type {
+  BeneficiariesApiResponse,
   BeneficiaryPayload,
   BeneficiaryResponse,
-  BeneficiariesApiResponse,
 } from "./types";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
+const API_BASE = "/Companygw/api/beneficiaries" as const;
 
-/**
- * POST /beneficiaries
- * Create a new beneficiary
- */
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  cache: "no-store",
+  ...init,
+});
+
+const jsonRequest = (method: string, body?: unknown): RequestInit =>
+  withCredentials({
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+const buildListUrl = (page: number, limit: number, searchTerm: string): string => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (searchTerm) {
+    params.set("search", searchTerm);
+  }
+  const qs = params.toString();
+  return qs ? `${API_BASE}?${qs}` : API_BASE;
+};
+
 export async function createBeneficiary(
   payload: BeneficiaryPayload
 ): Promise<BeneficiaryResponse> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(API_BASE, jsonRequest("POST", payload));
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to create beneficiary.");
   }
 
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = `${BASE_URL}/beneficiaries`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (res.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to create beneficiary.");
-  }
-
-  const data = (await res.json()) as BeneficiaryResponse;
-  return data;
+  return (await response.json()) as BeneficiaryResponse;
 }
 
-/**
- * GET /beneficiaries
- * Get all beneficiaries with pagination and search
- */
 export async function getBeneficiaries(
   page = 1,
   limit = 10,
   searchTerm = ""
 ): Promise<BeneficiariesApiResponse> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    buildListUrl(page, limit, searchTerm),
+    withCredentials()
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch beneficiaries.");
   }
 
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
+  const data = await response.json();
 
-  const url = new URL(`${BASE_URL}/beneficiaries`);
-  url.searchParams.set("page", page.toString());
-  url.searchParams.set("limit", limit.toString());
-  if (searchTerm) {
-    url.searchParams.set("search", searchTerm);
-  }
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url.toString(), init(token));
-
-  if (res.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url.toString(), init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to fetch beneficiaries.");
-  }
-
-  const data = await res.json();
-
-  // If API returns a plain array, wrap it to the expected paginated structure
   if (Array.isArray(data)) {
     return {
       data,
@@ -126,142 +75,41 @@ export async function getBeneficiaries(
   return data as BeneficiariesApiResponse;
 }
 
-/**
- * GET /beneficiaries/{id}
- * Get beneficiary by ID
- */
 export async function getBeneficiaryById(
   id: number
 ): Promise<BeneficiaryResponse> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(`${API_BASE}/${id}`, withCredentials());
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch beneficiary.");
   }
 
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = `${BASE_URL}/beneficiaries/${id}`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (res.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to fetch beneficiary.");
-  }
-
-  const data = (await res.json()) as BeneficiaryResponse;
-  return data;
+  return (await response.json()) as BeneficiaryResponse;
 }
 
-/**
- * PUT /beneficiaries/{id}
- * Update beneficiary by ID
- */
 export async function updateBeneficiary(
   id: number,
   payload: BeneficiaryPayload
 ): Promise<BeneficiaryResponse> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    jsonRequest("PUT", payload)
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to update beneficiary.");
   }
 
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = `${BASE_URL}/beneficiaries/${id}`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (res.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to update beneficiary.");
-  }
-
-  const data = (await res.json()) as BeneficiaryResponse;
-  return data;
+  return (await response.json()) as BeneficiaryResponse;
 }
 
-/**
- * DELETE /beneficiaries/{id}
- * Delete beneficiary by ID
- */
 export async function deleteBeneficiary(id: number): Promise<void> {
-  if (!BASE_URL) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({ method: "DELETE" })
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to delete beneficiary.");
   }
-
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = `${BASE_URL}/beneficiaries/${id}`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (res.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to delete beneficiary.");
-  }
-
-  return;
 }

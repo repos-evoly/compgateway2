@@ -49,7 +49,7 @@ const CBLListPage: React.FC = () => {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
-  const canEdit = permissionsSet.has("CBLCanEdit");
+  const canEdit = permissionsSet.has("CBLCanAdd");
   const canView = permissionsSet.has("CBLCanView");
   const showAddButton = canEdit;
 

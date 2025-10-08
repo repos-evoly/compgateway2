@@ -1,9 +1,37 @@
 "use client";
 
-import type { TCheckbookFormValues, TCheckbookResponse, TCheckbookValues } from "./types";
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
-import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
+import type {
+  TCheckbookFormValues,
+  TCheckbookResponse,
+  TCheckbookValues,
+} from "./types";
 import { throwApiError } from "@/app/helpers/handleApiError";
+
+const API_BASE = "/Companygw/api/requests/checkbook" as const;
+
+type SearchBy = string;
+
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  cache: "no-store",
+  ...init,
+});
+
+const buildQuery = (
+  page: number,
+  limit: number,
+  searchTerm: string,
+  searchBy: SearchBy
+): string => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (searchTerm) params.set("searchTerm", searchTerm);
+  if (searchBy) params.set("searchBy", searchBy);
+  const qs = params.toString();
+  return qs ? `${API_BASE}?${qs}` : API_BASE;
+};
 
 /**
  * Fetch all checkbook requests (GET), with optional pagination & search.
@@ -12,44 +40,11 @@ export async function getCheckbookRequests(
   page: number,
   limit: number,
   searchTerm: string = "",
-  searchBy: string = ""
+  searchBy: SearchBy = ""
 ): Promise<TCheckbookResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
+  const url = buildQuery(page, limit, searchTerm, searchBy);
 
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = new URL(`${baseUrl}/checkbookrequests`);
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("limit", String(limit));
-  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
-  if (searchBy) url.searchParams.set("searchBy", searchBy);
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "GET",
-    headers: {
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url.toString(), init(token));
-
-  // If unauthorized, refresh once and retry
-  if (response.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url.toString(), init(token));
-    } catch {
-      // fall through to shared error handling
-    }
-  }
+  const response = await fetch(url, withCredentials({ method: "GET" }));
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch checkbook requests.");
@@ -64,16 +59,6 @@ export async function getCheckbookRequests(
 export async function createCheckbookRequest(
   values: TCheckbookFormValues
 ): Promise<TCheckbookValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
-
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
   const payload = {
     fullName: values.fullName,
     address: values.address,
@@ -84,29 +69,14 @@ export async function createCheckbookRequest(
     bookContaining: values.bookContaining,
   };
 
-  const url = `${baseUrl}/checkbookrequests`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (response.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    API_BASE,
+    withCredentials({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to create checkbook.");
@@ -118,44 +88,19 @@ export async function createCheckbookRequest(
 export async function getCheckbookRequestById(
   id: string | number
 ): Promise<TCheckbookValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
-
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = `${baseUrl}/checkbookrequests/${id}`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "GET",
-    headers: {
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (response.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({ method: "GET" })
+  );
 
   if (!response.ok) {
-    await throwApiError(response, `Failed to fetch checkbook request by ID ${id}.`);
+    await throwApiError(
+      response,
+      `Failed to fetch checkbook request by ID ${id}.`
+    );
   }
 
-  const data = (await response.json()) as TCheckbookValues;
-  return data;
+  return (await response.json()) as TCheckbookValues;
 }
 
 /**
@@ -165,16 +110,6 @@ export async function updateCheckBookById(
   id: string | number,
   values: TCheckbookFormValues
 ): Promise<TCheckbookValues> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
-
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
   const payload = {
     fullName: values.fullName,
     address: values.address,
@@ -185,34 +120,21 @@ export async function updateCheckBookById(
     bookContaining: values.bookContaining,
   };
 
-  const url = `${baseUrl}/checkbookrequests/${id}`;
-
-  const init = (bearer?: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (response.status === 401 && token) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  );
 
   if (!response.ok) {
-    await throwApiError(response, `Failed to update checkbook request with ID ${id}.`);
+    await throwApiError(
+      response,
+      `Failed to update checkbook request with ID ${id}.`
+    );
   }
 
-  const responseData = (await response.json()) as TCheckbookValues;
-  return responseData;
+  return (await response.json()) as TCheckbookValues;
 }

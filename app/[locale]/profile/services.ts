@@ -1,29 +1,22 @@
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { Company } from "./types";
 
-const token = getAccessTokenFromCookies();
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_API;
+const API_BASE = "/Companygw/api/profile/company" as const;
 
-export function getCompannyInfoByCode(code:string):Promise<Company>{
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  cache: "no-store",
+  ...init,
+});
 
-    if (!BASE_URL) {
-        throw new Error("NEXT_PUBLIC_BASE_API is not set.");
-    }
-    
-    const url = `${BASE_URL}/companies/getInfo/${code}`;
-    
-    return fetch(url, {
-        method: "GET",
-        headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        },
-    })
-        .then((res) => {
-        if (!res.ok) {
-            throw new Error(`Failed to fetch company info for code: ${code}`);
-        }
-        return res.json();
-        })
-        .then((data) => data as Company);
+export async function getCompannyInfoByCode(code: string): Promise<Company> {
+  const response = await fetch(
+    `${API_BASE}/${code}`,
+    withCredentials({ method: "GET" })
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch company info for code: ${code}`);
+  }
+
+  return (await response.json()) as Company;
 }

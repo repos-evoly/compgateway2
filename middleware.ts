@@ -3,52 +3,86 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /* Config (keep BASE in sync with next.config basePath) */
 const BASE: string = "/Companygw";
+
 const LOCALES = ["en", "ar"] as const;
-type Locale = (typeof LOCALES)[number];
-const DEFAULT_LOCALE: Locale = "ar";
+
+/* Build CSP connect-src allow list from env (include new backend domains) */
+const connectSrcValues: Set<string> = (() => {
+  const sources = new Set<string>(["'self'"]);
+
+  const addOrigin = (value: string | undefined): void => {
+    if (!value) return;
+    try {
+      const origin = new URL(value).origin;
+      if (origin) sources.add(origin);
+    } catch {
+      /* ignore relative or invalid entries */
+    }
+  };
+
+  const addCsvOrigins = (csv: string | undefined): void => {
+    if (!csv) return;
+    csv
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .forEach(addOrigin);
+  };
+
+  addOrigin(process.env.NEXT_PUBLIC_BASE_API);
+  addOrigin(process.env.NEXT_PUBLIC_AUTH_API);
+  addOrigin(process.env.NEXT_PUBLIC_IMAGE_URL);
+  addCsvOrigins(process.env.NEXT_PUBLIC_ALLOWED_URLS);
+
+  return sources;
+})();
+
+const CONNECT_SRC_DIRECTIVE = Array.from(connectSrcValues).join(" ");
 
 /* Helpers */
 const isStatic = (p: string): boolean =>
   p === "/favicon.ico" ||
-  p === `${BASE}/favicon.ico` ||
   /\.(?:js|mjs|css|map|png|jpg|jpeg|gif|svg|ico|webp|avif|txt|xml|json|pdf|woff2?|ttf|otf)$/i.test(p);
 
 export default function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const path = url.pathname;
 
-  /* 0) Bypass Next internals & static files (also under /Companygw) */
-  if (path.startsWith("/_next") || path.startsWith(`${BASE}/_next`) || isStatic(path)) {
+  /* 0) Bypass Next internals & static files */
+  if (path.startsWith("/_next") || isStatic(path)) {
     return NextResponse.next();
   }
 
   /* 1) Health */
-  if (path === "/api/health" || path === `${BASE}/api/health`) {
+  if (path === "/api/health") {
     return new NextResponse("ok", { status: 200 });
   }
 
-  /* 2) Landings: / and /Companygw → /Companygw/ar */
+  /* 2) Landings: / and basePath → auth login */
   if (path === "/") {
-    return NextResponse.redirect(new URL(`${BASE}/${DEFAULT_LOCALE}`, url));
-  }
-  if (path === BASE) {
-    return NextResponse.redirect(new URL(`${BASE}/${DEFAULT_LOCALE}`, url));
+    return NextResponse.redirect(new URL(`${BASE}/auth/login`, url));
   }
 
   /* 3) Auth zone is never guarded but gets security headers */
-  if (path === `${BASE}/auth` || path.startsWith(`${BASE}/auth/`)) {
+  if (path === "/auth" || path.startsWith("/auth/")) {
     const res = NextResponse.next();
-    res.headers.set("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'none'");
+    const cspParts = [
+      "frame-ancestors 'none'",
+      "base-uri 'none'",
+      CONNECT_SRC_DIRECTIVE ? `connect-src ${CONNECT_SRC_DIRECTIVE}` : "",
+    ].filter(Boolean);
+
+    res.headers.set("Content-Security-Policy", cspParts.join("; "));
     res.headers.set("X-Frame-Options", "DENY");
     return res;
   }
 
-  /* 4) Only guard localized app paths: /Companygw/(en|ar)/** */
+  /* 4) Only guard localized app paths: /(en|ar)/** */
   const isLocalePath =
-    path.startsWith(`${BASE}/en/`) ||
-    path === `${BASE}/en` ||
-    path.startsWith(`${BASE}/ar/`) ||
-    path === `${BASE}/ar`;
+    path.startsWith("/en/") ||
+    path === "/en" ||
+    path.startsWith("/ar/") ||
+    path === "/ar";
 
   if (isLocalePath) {
     const token = request.cookies.get("accessToken")?.value ?? "";
@@ -61,13 +95,3 @@ export default function middleware(request: NextRequest) {
   /* 5) Everything else passes through (e.g., legacy or non-scoped routes in dev) */
   return NextResponse.next();
 }
-
-/* 6) Explicit matcher (no template strings; avoids touching _next & files by logic above) */
-export const config = {
-  matcher: [
-    "/",                 // root → redirect to /Companygw/ar
-    "/api/health",       // health probe
-    "/Companygw",        // base landing → /Companygw/ar
-    "/Companygw/:path*", // all app routes under basePath
-  ],
-};

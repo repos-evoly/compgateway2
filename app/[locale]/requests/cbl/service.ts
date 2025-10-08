@@ -1,7 +1,5 @@
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
-import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import { throwApiError } from "@/app/helpers/handleApiError";
 import type { TKycResponse } from "@/app/auth/register/types";
 import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
@@ -64,13 +62,33 @@ type TApiCblRequest = {
   signatures?: TApiSignature[];
 };
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-const baseImgUrl = process.env.NEXT_PUBLIC_IMAGE_URL;
-const shouldRefresh = (s: number) => s === 401 || s === 403;
+const API_BASE = "/Companygw/api/requests/cbl" as const;
+const KYC_API_BASE = "/Companygw/api/companies/kyc" as const;
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  cache: "no-store",
+  ...init,
+});
+const baseImgUrl = (process.env.NEXT_PUBLIC_IMAGE_URL || "").replace(/\/$/, "");
 
 /* ---------- helpers ---------- */
 const parseDate = (iso?: string | null) => (iso ? new Date(iso) : null);
+
+const buildListUrl = (
+  page: number,
+  limit: number,
+  searchTerm: string,
+  searchBy: string
+): string => {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (searchTerm) params.set("searchTerm", searchTerm);
+  if (searchBy) params.set("searchBy", searchBy);
+  const qs = params.toString();
+  return qs ? `${API_BASE}?${qs}` : API_BASE;
+};
 
 function toTCBLValues(api: TApiCblRequest): TCBLValues {
   return {
@@ -116,12 +134,33 @@ function toTCBLValues(api: TApiCblRequest): TCBLValues {
     attachments: api.attachments || [],
     attachmentUrls:
       api.attachments?.map((att) => {
-        const base = (baseImgUrl || "").replace(/\/$/, "");
         const path = String(att.attUrl || "").replace(/^\//, "");
-        return `${base}/${path}`;
+        return baseImgUrl ? `${baseImgUrl}/${path}` : path;
       }) ?? [],
   };
 }
+
+const sendFormData = async (
+  url: string,
+  method: "POST" | "PUT",
+  formData: FormData,
+  errorMessage: string
+): Promise<TApiCblRequest> => {
+  const response = await fetch(
+    url,
+    withCredentials({
+      method,
+      headers: { Accept: "application/json" },
+      body: formData,
+    })
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, errorMessage);
+  }
+
+  return (await response.json()) as TApiCblRequest;
+};
 
 /**
  * Fetch a list of CBL requests from the API, with optional pagination and search.
@@ -132,51 +171,21 @@ export async function getCblRequests(
   searchTerm: string,
   searchBy: string
 ): Promise<TCblRequestsResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    buildListUrl(page, limit, searchTerm, searchBy),
+    withCredentials({ method: "GET" })
+  );
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = new URL(`${BASE_URL}/cblrequests`);
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("limit", String(limit));
-  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
-  if (searchBy) url.searchParams.set("searchBy", searchBy);
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url.toString(), init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url.toString(), init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch CBL requests.");
   }
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to fetch CBL requests.");
-  }
-
-  return (await res.json()) as TCblRequestsResponse;
+  return (await response.json()) as TCblRequestsResponse;
 }
 
 export async function addCblRequest(
   values: TCBLValues & { files?: File[] }
 ): Promise<TCBLValues> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  /* ---------- 1 · build JSON payload ---------- */
   const dto = {
     partyName: values.partyName,
     capital: values.capital as number,
@@ -218,7 +227,6 @@ export async function addCblRequest(
     })),
   };
 
-  /* ---------- 2 · FormData ---------- */
   const formData = new FormData();
   formData.append("Dto", JSON.stringify(dto));
 
@@ -230,73 +238,30 @@ export async function addCblRequest(
     formData.append("files", files[0], files[0].name);
   }
 
-  /* ---------- 3 · POST (no manual Content-Type) ---------- */
-  const url = `${BASE_URL}/cblrequests`;
+  const api = await sendFormData(
+    API_BASE,
+    "POST",
+    formData,
+    "Failed to create CBL."
+  );
 
-  const init = (bearer: string): RequestInit => ({
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${bearer}`,
-      Accept: "application/json",
-    },
-    body: formData,
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to create CBL.");
-  }
-
-  const created = (await res.json()) as TApiCblRequest;
-  return toTCBLValues(created);
+  return toTCBLValues(api);
 }
 
 /**
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    `${KYC_API_BASE}/${code}`,
+    withCredentials({ method: "GET" })
+  );
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/companies/kyc/${code}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch KYC data");
   }
 
-  if (!res.ok) {
-    await throwApiError(res, "Failed to fetch KYC data");
-  }
-
-  return (await res.json()) as TKycResponse;
+  return (await response.json()) as TKycResponse;
 }
 
 /**
@@ -304,36 +269,16 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
  * Converts the API's ISO dates into JS Dates and maps nested arrays.
  */
 export async function getCblRequestById(id: string | number): Promise<TCBLValues> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined");
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({ method: "GET" })
+  );
 
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  const url = `${BASE_URL}/cblrequests/${id}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
+  if (!response.ok) {
+    await throwApiError(response, `Failed to fetch CBL request by ID ${id}.`);
   }
 
-  if (!res.ok) {
-    await throwApiError(res, `Failed to fetch CBL request by ID ${id}.`);
-  }
-
-  const api = (await res.json()) as TApiCblRequest;
+  const api = (await response.json()) as TApiCblRequest;
   return toTCBLValues(api);
 }
 
@@ -344,11 +289,6 @@ export async function updateCblRequest(
   id: string | number,
   values: TCBLValues & { files?: File[]; newFiles?: File[] }
 ): Promise<TCBLValues> {
-  if (!BASE_URL) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
   const dto = {
     partyName: values.partyName,
     capital: values.capital,
@@ -401,34 +341,12 @@ export async function updateCblRequest(
     formData.append("files", allFiles[0], allFiles[0].name);
   }
 
-  const url = `${BASE_URL}/cblrequests/${id}`;
+  const api = await sendFormData(
+    `${API_BASE}/${id}`,
+    "PUT",
+    formData,
+    "Failed to update CBL request."
+  );
 
-  const init = (bearer: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${bearer}`,
-      Accept: "application/json",
-    },
-    body: formData,
-    cache: "no-store",
-  });
-
-  let res = await fetch(url, init(token));
-
-  if (shouldRefresh(res.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      res = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!res.ok) {
-    await throwApiError(res, "Failed to update CBL request.");
-  }
-
-  const updated = (await res.json()) as TApiCblRequest;
-  return toTCBLValues(updated);
+  return toTCBLValues(api);
 }

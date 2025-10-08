@@ -1,22 +1,12 @@
 /* --------------------------------------------------------------------------
    services/branches.ts
-   – Helper to fetch all bank branches.
-   – Uses the access-token stored in cookies; throws detailed errors via
-     throwApiError; returns a strongly-typed array of Branch objects.
-   – No missing lines.  Strict TypeScript, no “any”.
+   – Helper to fetch all bank branches via the Next.js proxy.
    -------------------------------------------------------------------------- */
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
 import { throwApiError } from "@/app/helpers/handleApiError";
 
-/* ------------------------------------------------------------------ */
-/* Environment                                                         */
-/* ------------------------------------------------------------------ */
-const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
+const API_BASE = "/Companygw/api/branches" as const;
 
-/* ------------------------------------------------------------------ */
-/* Types                                                               */
-/* ------------------------------------------------------------------ */
 export type Branch = {
   branchNumber: string;
   branchName: string;
@@ -41,27 +31,11 @@ type ApiResponse = {
   };
 };
 
-/* ------------------------------------------------------------------ */
-/* Helper                                                              */
-/* ------------------------------------------------------------------ */
 export const getBranches = async (): Promise<Branch[]> => {
-  if (!baseUrl) {
-    throw new Error("Base URL is not defined");
-  }
-
-  const token = await getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found");
-  }
-
-  const url = `${baseUrl}/branches`;
-
-  const response = await fetch(url, {
+  const response = await fetch(API_BASE, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    credentials: "include",
+    cache: "no-store",
   });
 
   if (!response.ok) {

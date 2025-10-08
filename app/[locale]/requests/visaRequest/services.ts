@@ -1,8 +1,6 @@
 // app/(wherever)/visarequests/services.ts
 "use client";
 
-import { getAccessTokenFromCookies } from "@/app/helpers/tokenHandler";
-import { refreshAuthTokens } from "@/app/helpers/authentication/refreshTokens";
 import {
   VisaRequestApiResponse,
   VisaRequestApiItem,
@@ -12,46 +10,39 @@ import { throwApiError } from "@/app/helpers/handleApiError";
 import { TKycResponse } from "@/app/auth/register/types";
 import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
 
-const shouldRefresh = (s: number) => s === 401 || s === 403;
+const API_BASE = "/Companygw/api/requests/visa-request" as const;
+const KYC_API_BASE = "/Companygw/api/companies/kyc" as const;
+const withCredentials = (init: RequestInit = {}): RequestInit => ({
+  credentials: "include",
+  cache: "no-store",
+  ...init,
+});
+const DISPLAY_BASE =
+  (process.env.NEXT_PUBLIC_BASE_API || "").replace(/\/$/, "");
+
+const buildListUrl = (
+  page: number,
+  limit: number,
+  searchTerm: string
+): string => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (searchTerm) params.set("searchTerm", searchTerm);
+  const qs = params.toString();
+  return qs ? `${API_BASE}?${qs}` : API_BASE;
+};
 
 export const getVisaRequests = async (
   page: number = 1,
   limit: number = 10,
   searchTerm: string = ""
 ): Promise<VisaRequestApiResponse> => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
-  }
-
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = new URL(`${baseUrl}/visarequests`);
-  url.searchParams.set("page", page.toString());
-  url.searchParams.set("limit", limit.toString());
-  if (searchTerm) url.searchParams.set("searchTerm", searchTerm);
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url.toString(), init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url.toString(), init(token));
-    } catch {
-      // fall through to shared error handling
-    }
-  }
+  const response = await fetch(
+    buildListUrl(page, limit, searchTerm),
+    withCredentials({ method: "GET" })
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch visa requests");
@@ -64,45 +55,18 @@ export const getVisaRequests = async (
  * Convert API attachment URLs to displayable URLs
  */
 const convertAttachmentToUrl = (attachment: { attUrl: string }): string => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_API || "http://10.3.3.11/compgateapi/api";
   const urlPath = attachment.attUrl.replace(/\\/g, "/");
-  return `${baseUrl}/${urlPath}`;
+  return DISPLAY_BASE ? `${DISPLAY_BASE}/${urlPath}` : urlPath;
 };
 
 /** New function: get by ID => returns a single VisaRequestApiItem */
 export const getVisaRequestById = async (
   id: number
 ): Promise<VisaRequestApiItem> => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
-  }
-
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = `${baseUrl}/visarequests/${id}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    `${API_BASE}/${id}`,
+    withCredentials({ method: "GET" })
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch visa request by ID");
@@ -120,28 +84,43 @@ export const getVisaRequestById = async (
   return data;
 };
 
+const submitFormData = async (
+  url: string,
+  method: "POST" | "PUT",
+  formData: FormData
+): Promise<VisaRequestApiItem> => {
+  const response = await fetch(
+    url,
+    withCredentials({
+      method,
+      headers: { Accept: "application/json" },
+      body: formData,
+    })
+  );
 
+  if (!response.ok) {
+    await throwApiError(
+      response,
+      method === "POST"
+        ? "Failed to create visa request"
+        : "Failed to update visa request"
+    );
+  }
+
+  return (await response.json()) as VisaRequestApiItem;
+};
 
 export const createVisaRequest = async (
   formValues: VisaRequestFormValues & { files?: File[] }
 ): Promise<VisaRequestApiItem> => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
-  // Normalize ISO date (accept "YYYY-MM-DD" or ISO)
   const isoDate =
     formValues.date && formValues.date.length === 10
       ? new Date(`${formValues.date}T00:00:00Z`).toISOString()
       : formValues.date ?? "";
 
-  // Coerce select values and numerics
   const visaIdNum = Number(formValues.visaId ?? 0);
   const quantityNum = Number(formValues.quantity ?? 1);
 
-  // Build DTO with EXACT PascalCase keys expected by backend
   const dto = {
     VisaId: visaIdNum,
     Quantity: quantityNum,
@@ -172,58 +151,19 @@ export const createVisaRequest = async (
 
   const files = formValues.files ?? [];
   if (files.length > 1) {
-    // Your current behavior: merge >1 into a single PDF
     const { blob } = await mergeFilesToPdf(files, 5);
     formData.append("files", blob, "documents.pdf");
   } else if (files.length === 1) {
     formData.append("files", files[0], files[0].name);
   }
-  // If you prefer to send multiple as-is:
-  // files.forEach((f) => formData.append("files", f, f.name));
 
-  const url = `${baseUrl}/visarequests`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${bearer}`,
-      Accept: "application/json",
-      // DO NOT set Content-Type; browser will add proper boundary
-    },
-    body: formData,
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create visa request");
-  }
-
-  return (await response.json()) as VisaRequestApiItem;
+  return submitFormData(API_BASE, "POST", formData);
 };
-
 
 export const updateVisaRequest = async (
   id: number,
   formValues: VisaRequestFormValues & { files?: File[] }
 ): Promise<VisaRequestApiItem> => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) throw new Error("NEXT_PUBLIC_BASE_API is not defined in .env");
-
-  let token = getAccessTokenFromCookies();
-  if (!token) throw new Error("No access token found in cookies");
-
   const isoDate =
     formValues.date && formValues.date.length === 10
       ? new Date(`${formValues.date}T00:00:00Z`).toISOString()
@@ -260,70 +200,17 @@ export const updateVisaRequest = async (
     formData.append("files", files[0], files[0].name);
   }
 
-  const url = `${baseUrl}/visarequests/${id}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${bearer}`,
-      Accept: "application/json",
-    },
-    body: formData,
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
-
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update visa request");
-  }
-
-  return (await response.json()) as VisaRequestApiItem;
+  return submitFormData(`${API_BASE}/${id}`, "PUT", formData);
 };
 
 /**
  * Fetch KYC data by company code (6 digits after first 4 digits of account number)
  */
 export async function getKycByCode(code: string): Promise<TKycResponse> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_API;
-  if (!baseUrl) {
-    throw new Error("NEXT_PUBLIC_BASE_API is not defined");
-  }
-
-  let token = getAccessTokenFromCookies();
-  if (!token) {
-    throw new Error("No access token found in cookies");
-  }
-
-  const url = `${baseUrl}/companies/kyc/${code}`;
-
-  const init = (bearer: string): RequestInit => ({
-    method: "GET",
-    headers: { Authorization: `Bearer ${bearer}` },
-    cache: "no-store",
-  });
-
-  let response = await fetch(url, init(token));
-
-  if (shouldRefresh(response.status)) {
-    try {
-      const refreshed = await refreshAuthTokens();
-      token = refreshed.accessToken;
-      response = await fetch(url, init(token));
-    } catch {
-      // fall through
-    }
-  }
+  const response = await fetch(
+    `${KYC_API_BASE}/${code}`,
+    withCredentials({ method: "GET" })
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch KYC data");

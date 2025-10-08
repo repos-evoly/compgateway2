@@ -155,8 +155,10 @@ export default function HeaderSection({
         await deleteAttachment(code, currentLogoId);
         setCurrentLogoId(null);
       }
-      await uploadSingleDocument(code, selectedFile);
-      /* Optionally store new ID if API returns it */
+      const newId = await uploadSingleDocument(code, selectedFile);
+      if (newId) {
+        setCurrentLogoId(newId);
+      }
     } catch (err) {
       console.error(err);
       alert(

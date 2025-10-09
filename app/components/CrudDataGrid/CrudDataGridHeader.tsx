@@ -29,11 +29,11 @@ const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
 
   return (
     <div
-      className={`flex items-center ${
-        !childrens ? "justify-between" : "gap-4 h-max"
-      } bg-info-dark p-2 h-16 rounded rounded-b-none`}
+      className={`flex flex-col gap-3 sm:flex-row sm:items-center ${
+        !childrens ? "sm:justify-between" : "sm:gap-4"
+      } bg-info-dark p-3 sm:p-4 rounded rounded-b-none`}
     >
-      <div className="flex items-center gap-4 h-full">
+      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
         {showAddButton && onAddClick && (
           <AddButton onClick={onAddClick} label={finalAddLabel} />
         )}
@@ -50,7 +50,7 @@ const CrudDataGridHeader: React.FC<CrudDataGridHeaderProps> = ({
         )}
       </div>
 
-      {childrens && childrens}
+      {childrens && <div className="w-full sm:w-auto">{childrens}</div>}
     </div>
   );
 };

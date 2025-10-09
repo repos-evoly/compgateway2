@@ -203,6 +203,17 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
     return "";
   };
 
+  const resolveCellContent = (
+    row: T,
+    col: DataGridColumn,
+    rowIndex: number
+  ): React.ReactNode => {
+    if (col.renderCell) {
+      return col.renderCell(row, rowIndex);
+    }
+    return getCellDisplayValue(row, col);
+  };
+
   // Function to measure text width
   const measureTextWidth = (
     text: string,
@@ -276,34 +287,57 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
             {data.map((row, rowIndex) => (
               <div
                 key={rowIndex}
-                className="border rounded-lg shadow-sm bg-white overflow-hidden"
+                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
                 onClick={() => handleRowTap(rowIndex)}
               >
-                <div className="divide-y">
-                  {columns.map((col, colIndex) => (
-                    <div key={colIndex} className="flex p-3">
-                      <div className="font-medium text-gray-700 w-1/2">
-                        {col.label}:
+                <div className="space-y-3 p-4">
+                  {columns.map((col, colIndex) => {
+                    const cellContent = resolveCellContent(row, col, rowIndex);
+                    const isSimpleValue =
+                      typeof cellContent === "string" ||
+                      typeof cellContent === "number" ||
+                      typeof cellContent === "boolean";
+
+                    return (
+                      <div
+                        key={colIndex}
+                        className="rounded-lg bg-gray-50 px-3 py-2"
+                      >
+                        <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          {col.label}
+                        </span>
+                        <div className="mt-1 text-sm font-medium text-gray-900 break-words">
+                          {cellContent === null || cellContent === undefined || cellContent === ""
+                            ? (
+                                <span className="text-gray-400">-</span>
+                              )
+                            : isSimpleValue
+                            ? String(cellContent)
+                            : (
+                                <div className="flex flex-wrap items-center gap-2 text-gray-900">
+                                  {cellContent}
+                                </div>
+                              )}
+                        </div>
                       </div>
-                      <div className="text-gray-600 w-1/2">
-                        {getCellDisplayValue(row, col)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Actions row */}
                   {showActions && (
-                    <div className="p-3 bg-gray-50">
-                      <div className="font-medium text-gray-700 mb-2">
-                        {t("actions")}:
+                    <div className="rounded-lg bg-gray-100 px-3 py-2">
+                      <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {t("actions")}
+                      </span>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <ActionButtons
+                          actions={actions}
+                          onActionClick={(actionName) =>
+                            onActionClick &&
+                            onActionClick(actionName, row, rowIndex)
+                          }
+                        />
                       </div>
-                      <ActionButtons
-                        actions={actions}
-                        onActionClick={(actionName) =>
-                          onActionClick &&
-                          onActionClick(actionName, row, rowIndex)
-                        }
-                      />
                     </div>
                   )}
                 </div>

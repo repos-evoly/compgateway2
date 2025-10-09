@@ -186,92 +186,82 @@ export function TabsWizard<FormValues extends Record<string, unknown>>({
         {allSteps[currentStep].component}
       </div>
       {/* Footer buttons */}
-      <div className="flex items-center gap-4 mt-6 justify-end">
-        {/* Back to page (always visible) */}
-        {/* Back to page (always visible) */}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <BackButton
           fallbackPath={backFallbackPath}
           onBack={onBackPage}
           label={t("backToPage")}
           isEditing={isEditing}
-          className="px-6 py-2 bg-info-dark text-white rounded-md hover:bg-warning-light
-            hover:text-info-dark transition-colors duration-300 flex items-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-info-dark px-4 py-2 text-sm font-semibold text-white transition-colors duration-300 hover:bg-warning-light hover:text-info-dark sm:w-auto sm:px-6"
         />
 
-        {/* Back (step) */}
-        {!isFirstStep && (
-          <button
-            type="button"
-            onClick={handleBack}
-            className={`
-            px-4 py-2 border border-info-main text-info-dark rounded-md
-            hover:bg-info-main hover:text-white transition-colors duration-300
-            flex items-center gap-2
-          `}
-          >
-            <BackIcon />
-            {t("back")}
-          </button>
-        )}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          {!isFirstStep && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-info-main px-4 py-2 text-sm font-semibold text-info-dark transition-colors duration-300 hover:bg-info-main hover:text-white sm:w-auto"
+            >
+              <BackIcon />
+              {t("back")}
+            </button>
+          )}
 
-        {/* Next  (all modes except final step) */}
-        {!isLastStep && (
-          <button
-            type="button"
-            onClick={handleNext}
-            className="px-6 py-2 bg-info-dark text-white rounded-md hover:opacity-90
-                 transition-colors duration-300 flex items-center gap-2"
-          >
-            {t("next")}
-            <NextIcon />
-          </button>
-        )}
+          {!isLastStep && (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-info-dark px-5 py-2 text-sm font-semibold text-white transition-colors duration-300 hover:opacity-90 sm:w-auto"
+            >
+              {t("next")}
+              <NextIcon />
+            </button>
+          )}
 
-        {/* Submit button in edit mode (next to Next button) */}
-        {!isLastStep && !readOnly && isEditing && (
-          <button
-            type="button"
-            onClick={() => !formik.isSubmitting && onSubmit()}
-            className={`px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90 transition-colors duration-300 font-semibold flex items-center gap-2 ${
-              formik.isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
-            aria-busy={formik.isSubmitting}
-          >
-            {formik.isSubmitting ? (
-              <>
-                <FiLoader className="animate-spin" />
-                {t("submitting", { defaultValue: "Submitting..." })}
-              </>
-            ) : (
-              t("submit")
-            )}
-          </button>
-        )}
+          {!isLastStep && !readOnly && isEditing && (
+            <button
+              type="button"
+              onClick={() => !formik.isSubmitting && onSubmit()}
+              className={`flex w-full items-center justify-center gap-2 rounded-md bg-success-main px-5 py-2 text-sm font-semibold text-white transition-colors duration-300 hover:opacity-90 sm:w-auto ${
+                formik.isSubmitting ? "cursor-not-allowed opacity-70" : ""
+              }`}
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
+              aria-busy={formik.isSubmitting}
+            >
+              {formik.isSubmitting ? (
+                <>
+                  <FiLoader className="animate-spin" />
+                  {t("submitting", { defaultValue: "Submitting..." })}
+                </>
+              ) : (
+                t("submit")
+              )}
+            </button>
+          )}
 
-        {/* Submit (when adding or editing ― not read-only, final step) */}
-        {isLastStep && !readOnly && (
-          <button
-            type="button"
-            onClick={() => !formik.isSubmitting && onSubmit()}
-            className={`px-6 py-2 bg-success-main text-white rounded-md hover:opacity-90 transition-colors duration-300 font-semibold flex items-center gap-2 ${
-              formik.isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
-            aria-busy={formik.isSubmitting}
-          >
-            {formik.isSubmitting ? (
-              <>
-                <FiLoader className="animate-spin" />
-                {t("submitting", { defaultValue: "Submitting..." })}
-              </>
-            ) : (
-              t("submit")
-            )}
-          </button>
-        )}
+          {isLastStep && !readOnly && (
+            <button
+              type="button"
+              onClick={() => !formik.isSubmitting && onSubmit()}
+              className={`flex w-full items-center justify-center gap-2 rounded-md bg-success-main px-5 py-2 text-sm font-semibold text-white transition-colors duration-300 hover:opacity-90 sm:w-auto ${
+                formik.isSubmitting ? "cursor-not-allowed opacity-70" : ""
+              }`}
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
+              aria-busy={formik.isSubmitting}
+            >
+              {formik.isSubmitting ? (
+                <>
+                  <FiLoader className="animate-spin" />
+                  {t("submitting", { defaultValue: "Submitting..." })}
+                </>
+              ) : (
+                t("submit")
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

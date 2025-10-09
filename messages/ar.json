@@ -56,6 +56,8 @@
     },
     "cblForm":{
       "partyName":"اسم الجهة",
+      "infoBoxTitle":"معلومات",
+      "showMore":"عرض المزيد",
       "capital":"رأس المال",
       "foundingDate":"تاريخ التأسيس",
       "legalForm":"الشكل القانوني",
@@ -601,7 +603,7 @@
         "step1Title": "الخطوة الأولى",
         "step2Title": "الخطوة الثانية",
         "reviewStepTitle": "مراجعة وإرسال",
-    
+        "quantity":"الكمية",
         "branch": "الفرع أو الوكالة",
         "date": "التاريخ",
         "accountHolderName": "اسم صاحب الحساب",

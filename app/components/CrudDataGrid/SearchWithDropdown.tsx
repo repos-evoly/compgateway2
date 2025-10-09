@@ -38,13 +38,13 @@ const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
   };
 
   return (
-    <div className="flex items-center h-12 w-max bg-white/30 rounded px-1 text-gray-600">
+    <div className="flex w-full flex-wrap items-center gap-2 rounded bg-white/30 px-2 py-2 text-gray-600 sm:h-12 sm:flex-nowrap sm:gap-0 sm:px-1 sm:py-0">
       {showDropdown && (
-        <div className="relative flex items-center h-full">
+        <div className="relative flex items-center h-10 w-full sm:h-full sm:w-auto">
           <select
             value={selectedValue}
             onChange={handleDropdownChange}
-            className="appearance-none bg-transparent text-sm outline-none cursor-pointer pr-6 pl-2 h-full"
+            className="h-full w-full appearance-none bg-transparent pr-6 pl-2 text-sm outline-none sm:w-auto"
           >
             {dropdownOptions.map((option: DropdownOption, index) => (
               <option key={index} value={option.value}>
@@ -60,11 +60,11 @@ const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
       )}
 
       {showDropdown && showSearchInput && (
-        <div className="h-6 w-px bg-gray-300 mx-2" />
+        <div className="hidden h-6 w-px bg-gray-300 sm:mx-2 sm:block" />
       )}
 
       {showSearchInput && (
-        <div className="flex items-center flex-1 h-full">
+        <div className="flex h-10 min-w-0 flex-1 items-center sm:h-full">
           <input
             type="text"
             value={searchValue}
@@ -76,7 +76,7 @@ const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
               }
             }}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 text-sm placeholder-gray-500 py-0 h-full"
+            className="h-full min-w-0 flex-1 bg-transparent py-0 text-sm placeholder-gray-500 outline-none"
           />
 
           <button
@@ -90,7 +90,9 @@ const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
         </div>
       )}
 
-      {showSearchInput && <div className="h-6 w-px bg-gray-300 mx-2" />}
+      {showSearchInput && (
+        <div className="hidden h-6 w-px bg-gray-300 sm:mx-2 sm:block" />
+      )}
 
       {showSearchInput && (
         <button

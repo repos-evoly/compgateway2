@@ -285,8 +285,8 @@ const CBLForm: React.FC<CBLFormProps> = ({
           </div>
 
           {/* documents + info */}
-          <div className="mt-6 flex w-full gap-6">
-            <div className="flex flex-1 flex-col">
+          <div className="mt-6 flex w-full flex-col gap-6 lg:flex-row">
+            <div className="flex flex-col lg:flex-1">
               <DocumentUploader
                 name="files"
                 maxFiles={9}
@@ -300,7 +300,7 @@ const CBLForm: React.FC<CBLFormProps> = ({
                 initialPreviewUrls={initialValues?.attachmentUrls}
               />
             </div>
-            <div className="flex-1">
+            <div className="lg:flex-1">
               <InfoBox />
             </div>
           </div>

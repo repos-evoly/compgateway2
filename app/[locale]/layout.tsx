@@ -73,7 +73,7 @@ export default async function LocaleLayout({
         suppressHydrationWarning
       >
         <body
-          className="min-h-screen w-full flex flex-row overflow-hidden"
+          className="min-h-screen w-full flex flex-row overflow-x-hidden bg-gray-100"
           suppressHydrationWarning
         >
           <GlobalProvider>
@@ -87,7 +87,7 @@ export default async function LocaleLayout({
                   flex-1
                   flex
                   flex-col
-                  h-screen
+                  min-h-screen
                   transition-all
                   duration-300
                   ease-in-out
@@ -98,7 +98,7 @@ export default async function LocaleLayout({
                 <MainHeader logoUrl={logoUrl} isRtl={isRtl} title="" />
 
                 {/* Content */}
-                <main className="flex-1 overflow-y-auto overflow-x-auto min-w-0 bg-gray-100">
+                <main className="flex-1 overflow-y-auto overflow-x-auto min-w-0">
                   {children}
                 </main>
               </div>

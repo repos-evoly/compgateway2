@@ -127,21 +127,30 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
   }, [li0Dirham, li0Lyd, li1Dirham, li1Lyd, li2Dirham, li2Lyd, setFieldValue]);
 
   return (
-    <div className="flex flex-col items-center p-8 bg-gray-100 rounded-lg">
-      <div className="w-full max-w-5xl border border-gray-300 rounded-lg">
-        {/* Table Header */}
-        <div className="grid grid-cols-3 bg-info-dark text-white rounded-t-lg">
-          <div className="p-4 text-center font-bold">&nbsp;</div>
-          <div className="p-4 text-center font-bold">{t("dirham")} *</div>
-          <div className="p-4 text-center font-bold">{t("lyd")} *</div>
+    <div className="flex flex-col items-center gap-4 rounded-lg bg-gray-100 p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-5xl overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm">
+        {/* Table Header (desktop / tablet) */}
+        <div className="hidden grid-cols-3 bg-info-dark text-white sm:grid">
+          <div className="px-4 py-3 text-center text-sm font-bold sm:text-base">
+            &nbsp;
+          </div>
+          <div className="px-4 py-3 text-center text-sm font-bold sm:text-base">
+            {t("dirham")} *
+          </div>
+          <div className="px-4 py-3 text-center text-sm font-bold sm:text-base">
+            {t("lyd")} *
+          </div>
         </div>
 
         {/* Row 1: Amount (user-editable) */}
-        <div className="grid grid-cols-3 border-b border-gray-300">
-          <div className="p-4 bg-gray-100 font-semibold text-gray-700">
-            {t("amount")}
+        <div className="grid grid-cols-1 gap-3 border-b border-gray-200 sm:grid-cols-3 sm:gap-0">
+          <div className="flex items-center justify-between bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 sm:block sm:py-4">
+            <span>{t("amount")}</span>
           </div>
-          <div className="p-4">
+          <div className="px-4 pb-2 sm:py-4">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+              {t("dirham")} *
+            </span>
             <FormInputIcon
               name="lineItems[0].dirham"
               label=""
@@ -151,7 +160,10 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
               disabled={readOnly}
             />
           </div>
-          <div className="p-4">
+          <div className="px-4 pb-3 sm:py-4">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+              {t("lyd")} *
+            </span>
             <FormInputIcon
               name="lineItems[0].lyd"
               label=""
@@ -164,11 +176,14 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
         </div>
 
         {/* Row 2: Expenses (auto-calculated per rules above) */}
-        <div className="grid grid-cols-3 border-b border-gray-300">
-          <div className="p-4 bg-gray-100 font-semibold text-gray-700">
-            {t("expenses")}
+        <div className="grid grid-cols-1 gap-3 border-b border-gray-200 sm:grid-cols-3 sm:gap-0">
+          <div className="flex items-center justify-between bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 sm:block sm:py-4">
+            <span>{t("expenses")}</span>
           </div>
-          <div className="p-4">
+          <div className="px-4 pb-2 sm:py-4">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+              {t("dirham")} *
+            </span>
             <FormInputIcon
               name="lineItems[1].dirham"
               label=""
@@ -178,7 +193,10 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
               disabled
             />
           </div>
-          <div className="p-4">
+          <div className="px-4 pb-3 sm:py-4">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+              {t("lyd")} *
+            </span>
             <FormInputIcon
               name="lineItems[1].lyd"
               label=""
@@ -191,11 +209,14 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
         </div>
 
         {/* Row 3: Total Amount (auto-calculated) */}
-        <div className="grid grid-cols-3">
-          <div className="p-4 bg-gray-100 font-semibold text-gray-700">
-            {t("totalAmount")}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-0">
+          <div className="flex items-center justify-between bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 sm:block sm:py-4">
+            <span>{t("totalAmount")}</span>
           </div>
-          <div className="p-4">
+          <div className="px-4 pb-2 sm:py-4">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+              {t("dirham")} *
+            </span>
             <FormInputIcon
               name="lineItems[2].dirham"
               label=""
@@ -205,7 +226,10 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
               disabled
             />
           </div>
-          <div className="p-4">
+          <div className="px-4 pb-3 sm:py-4">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+              {t("lyd")} *
+            </span>
             <FormInputIcon
               name="lineItems[2].lyd"
               label=""
@@ -219,7 +243,7 @@ const CheckRequestTable: React.FC<TCheckRequestTableProps> = ({ readOnly }) => {
       </div>
 
       {/* Note about required amounts */}
-      <div className="mt-4 text-center text-sm text-gray-600">
+      <div className="text-center text-sm text-gray-600">
         {t("amountNote")}
       </div>
     </div>

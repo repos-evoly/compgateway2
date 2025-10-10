@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse, ensureApiSuccess } from "@/app/helpers/apiResponse";
 import type {
   BeneficiariesApiResponse,
   BeneficiaryPayload,
@@ -39,11 +39,10 @@ export async function createBeneficiary(
 ): Promise<BeneficiaryResponse> {
   const response = await fetch(API_BASE, jsonRequest("POST", payload));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create beneficiary.");
-  }
-
-  return (await response.json()) as BeneficiaryResponse;
+  return handleApiResponse<BeneficiaryResponse>(
+    response,
+    "Failed to create beneficiary."
+  );
 }
 
 export async function getBeneficiaries(
@@ -56,11 +55,9 @@ export async function getBeneficiaries(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch beneficiaries.");
-  }
-
-  const data = await response.json();
+  const data = await handleApiResponse<
+    BeneficiariesApiResponse | BeneficiaryResponse[]
+  >(response, "Failed to fetch beneficiaries.");
 
   if (Array.isArray(data)) {
     return {
@@ -80,11 +77,10 @@ export async function getBeneficiaryById(
 ): Promise<BeneficiaryResponse> {
   const response = await fetch(`${API_BASE}/${id}`, withCredentials());
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch beneficiary.");
-  }
-
-  return (await response.json()) as BeneficiaryResponse;
+  return handleApiResponse<BeneficiaryResponse>(
+    response,
+    "Failed to fetch beneficiary."
+  );
 }
 
 export async function updateBeneficiary(
@@ -96,11 +92,10 @@ export async function updateBeneficiary(
     jsonRequest("PUT", payload)
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update beneficiary.");
-  }
-
-  return (await response.json()) as BeneficiaryResponse;
+  return handleApiResponse<BeneficiaryResponse>(
+    response,
+    "Failed to update beneficiary."
+  );
 }
 
 export async function deleteBeneficiary(id: number): Promise<void> {
@@ -109,7 +104,5 @@ export async function deleteBeneficiary(id: number): Promise<void> {
     withCredentials({ method: "DELETE" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to delete beneficiary.");
-  }
+  await ensureApiSuccess(response, "Failed to delete beneficiary.");
 }

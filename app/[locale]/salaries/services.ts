@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type {
   PostSalaryCycleResponse,
   SalaryCyclesResponse,
@@ -51,11 +51,10 @@ export async function getEmployeeSalaryCycles(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch salary cycles.");
-  }
-
-  return (await response.json()) as SalaryCyclesResponse;
+  return handleApiResponse<SalaryCyclesResponse>(
+    response,
+    "Failed to fetch salary cycles."
+  );
 }
 
 export async function submitSalaryCycle(
@@ -75,11 +74,10 @@ export async function submitSalaryCycle(
     jsonRequest("POST", payload)
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to submit salary cycle.");
-  }
-
-  return (await response.json()) as SubmitCycleResponse;
+  return handleApiResponse<SubmitCycleResponse>(
+    response,
+    "Failed to submit salary cycle."
+  );
 }
 
 export async function submitSalaryCycleForEmployee(
@@ -96,14 +94,10 @@ export async function submitSalaryCycleForEmployee(
     jsonRequest("POST", payload)
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      "Failed to submit salary cycle for employee."
-    );
-  }
-
-  return (await response.json()) as { success: boolean; message: string };
+  return handleApiResponse<{ success: boolean; message: string }>(
+    response,
+    "Failed to submit salary cycle for employee."
+  );
 }
 
 export async function getSalaryCycleById(
@@ -114,11 +108,10 @@ export async function getSalaryCycleById(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch salary cycle by ID.");
-  }
-
-  return (await response.json()) as TSalaryTransaction;
+  return handleApiResponse<TSalaryTransaction>(
+    response,
+    "Failed to fetch salary cycle by ID."
+  );
 }
 
 export async function editSalaryCycle(
@@ -139,11 +132,10 @@ export async function editSalaryCycle(
     jsonRequest("PUT", payload)
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to edit salary cycle.");
-  }
-
-  return (await response.json()) as SubmitCycleResponse;
+  return handleApiResponse<SubmitCycleResponse>(
+    response,
+    "Failed to edit salary cycle."
+  );
 }
 
 export async function postSalaryCycleById(
@@ -154,9 +146,8 @@ export async function postSalaryCycleById(
     jsonRequest("POST", {})
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to post salary cycle.");
-  }
-
-  return (await response.json()) as PostSalaryCycleResponse;
+  return handleApiResponse<PostSalaryCycleResponse>(
+    response,
+    "Failed to post salary cycle."
+  );
 }

@@ -63,13 +63,23 @@ const QRCodeDisplay: React.FC = () => {
           }
         );
 
+        const data = await response.json();
+
+        if (data?.success === false) {
+          const message =
+            data?.details?.message ||
+            data?.message ||
+            "فشل تحميل رمز الاستجابة السريعة. يرجى المحاولة مرة أخرى.";
+          throw new Error(message);
+        }
+
         if (!response.ok) {
           throw new Error(
-            "فشل تحميل رمز الاستجابة السريعة. يرجى المحاولة مرة أخرى."
+            data?.message ||
+              "فشل تحميل رمز الاستجابة السريعة. يرجى المحاولة مرة أخرى."
           );
         }
 
-        const data = await response.json();
         const timestamp = new Date().getTime();
         setQrCodePath(`${BASE_URL}${data.qrCodePath}?t=${timestamp}`);
       } catch (err: unknown) {

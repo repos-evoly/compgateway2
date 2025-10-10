@@ -46,6 +46,7 @@ export default function SetSalariesPage(): JSX.Element {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  console.log("SetSalariesPage render, error:", error);
 
   /* ---------- flow modals ---------- */
   const [showPickerModal, setShowPickerModal] = useState(false); // SalariesModal
@@ -65,13 +66,21 @@ export default function SetSalariesPage(): JSX.Element {
         // Preselect those flagged to receive salaries
         setSelectedRows(employees.filter((e) => e.sendSalary).map((e) => e.id));
       } catch (err: unknown) {
-        setError(
+        const message =
           err instanceof Error
             ? err.message
             : t("fetchEmployeesError", {
                 defaultValue: "Failed to fetch employees",
-              })
+              });
+        setError(message);
+        setResultSuccess(false);
+        setResultTitle(
+          t("fetchEmployeesErrorTitle", {
+            defaultValue: "تعذر تحميل الموظفين",
+          })
         );
+        setResultMessage(message);
+        setResultOpen(true);
       } finally {
         setLoading(false);
       }
@@ -197,14 +206,6 @@ export default function SetSalariesPage(): JSX.Element {
   /* ---------- early states ---------- */
   if (loading) return <LoadingPage />;
 
-  if (error) {
-    return (
-      <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-
   /* ---------- main render ---------- */
   return (
     <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
@@ -267,7 +268,7 @@ export default function SetSalariesPage(): JSX.Element {
             setResultMessage(apiMsg);
             setResultOpen(true);
           } catch (err: unknown) {
-            // Only thrown errors (network/4xx/5xx via throwApiError) land here
+            // Only thrown errors from the submit request land here
             setShowPickerModal(false);
             setResultSuccess(false);
             setResultTitle(
@@ -291,12 +292,19 @@ export default function SetSalariesPage(): JSX.Element {
         isSuccess={resultSuccess}
         title={resultTitle}
         message={resultMessage}
-        onClose={() => setResultOpen(false)}
+        onClose={() => {
+          setResultOpen(false);
+          if (!resultSuccess) {
+            setError(null);
+          }
+        }}
         onConfirm={() => {
           // Only shown for success; navigate back to list
           setResultOpen(false);
           if (resultSuccess) {
             router.push(`/${locale}/salaries`);
+          } else {
+            setError(null);
           }
         }}
         okLabel={t("ok", { defaultValue: "حسناً" })}

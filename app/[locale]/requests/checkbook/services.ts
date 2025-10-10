@@ -5,7 +5,7 @@ import type {
   TCheckbookResponse,
   TCheckbookValues,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 
 const API_BASE = "/Companygw/api/requests/checkbook" as const;
 
@@ -46,11 +46,10 @@ export async function getCheckbookRequests(
 
   const response = await fetch(url, withCredentials({ method: "GET" }));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch checkbook requests.");
-  }
-
-  return response.json() as Promise<TCheckbookResponse>;
+  return handleApiResponse<TCheckbookResponse>(
+    response,
+    "Failed to fetch checkbook requests."
+  );
 }
 
 /**
@@ -78,11 +77,10 @@ export async function createCheckbookRequest(
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create checkbook.");
-  }
-
-  return (await response.json()) as TCheckbookValues;
+  return handleApiResponse<TCheckbookValues>(
+    response,
+    "Failed to create checkbook."
+  );
 }
 
 export async function getCheckbookRequestById(
@@ -93,14 +91,10 @@ export async function getCheckbookRequestById(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to fetch checkbook request by ID ${id}.`
-    );
-  }
-
-  return (await response.json()) as TCheckbookValues;
+  return handleApiResponse<TCheckbookValues>(
+    response,
+    `Failed to fetch checkbook request by ID ${id}.`
+  );
 }
 
 /**
@@ -129,12 +123,8 @@ export async function updateCheckBookById(
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to update checkbook request with ID ${id}.`
-    );
-  }
-
-  return (await response.json()) as TCheckbookValues;
+  return handleApiResponse<TCheckbookValues>(
+    response,
+    `Failed to update checkbook request with ID ${id}.`
+  );
 }

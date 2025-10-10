@@ -1,3 +1,4 @@
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import { Company } from "./types";
 
 const API_BASE = "/Companygw/api/profile/company" as const;
@@ -14,9 +15,8 @@ export async function getCompannyInfoByCode(code: string): Promise<Company> {
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch company info for code: ${code}`);
-  }
-
-  return (await response.json()) as Company;
+  return handleApiResponse<Company>(
+    response,
+    `Failed to fetch company info for code: ${code}`
+  );
 }

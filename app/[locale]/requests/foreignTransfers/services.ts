@@ -5,7 +5,7 @@ import type {
   ForeignTransfersListResponse,
   CreateForeignTransferPayload,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type { TKycResponse } from "@/app/auth/register/types";
 
 const API_BASE = "/Companygw/api/requests/foreign-transfers" as const;
@@ -56,11 +56,10 @@ export async function getForeignTransfers(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch foreign transfers.");
-  }
-
-  return (await response.json()) as ForeignTransfersListResponse;
+  return handleApiResponse<ForeignTransfersListResponse>(
+    response,
+    "Failed to fetch foreign transfers."
+  );
 }
 
 /**
@@ -74,11 +73,10 @@ export async function getForeignTransferById(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, `Failed to fetch foreign transfer ${id}.`);
-  }
-
-  return (await response.json()) as ForeignTransferDetailResponse;
+  return handleApiResponse<ForeignTransferDetailResponse>(
+    response,
+    `Failed to fetch foreign transfer ${id}.`
+  );
 }
 
 /**
@@ -89,11 +87,10 @@ export async function createForeignTransfer(
 ): Promise<ForeignTransferDetailResponse> {
   const response = await fetch(API_BASE, jsonInit("POST", payload));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create foreign transfer.");
-  }
-
-  return (await response.json()) as ForeignTransferDetailResponse;
+  return handleApiResponse<ForeignTransferDetailResponse>(
+    response,
+    "Failed to create foreign transfer."
+  );
 }
 
 /**
@@ -105,11 +102,10 @@ export async function updateForeignTransfer(
 ): Promise<ForeignTransferDetailResponse> {
   const response = await fetch(`${API_BASE}/${id}`, jsonInit("PUT", payload));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update foreign transfer.");
-  }
-
-  return (await response.json()) as ForeignTransferDetailResponse;
+  return handleApiResponse<ForeignTransferDetailResponse>(
+    response,
+    "Failed to update foreign transfer."
+  );
 }
 
 /**
@@ -122,9 +118,8 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch KYC data");
-  }
-
-  return (await response.json()) as TKycResponse;
+  return handleApiResponse<TKycResponse>(
+    response,
+    "Failed to fetch KYC data"
+  );
 }

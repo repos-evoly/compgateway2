@@ -5,7 +5,7 @@ import type {
   CreditFacilitiesApiResponse,
   TCreditFacility,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 
 const API_BASE = "/Companygw/api/requests/credit-facility" as const;
 
@@ -54,11 +54,10 @@ export async function getCreditFacilities(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch credit facilities.");
-  }
-
-  return (await response.json()) as CreditFacilitiesApiResponse;
+  return handleApiResponse<CreditFacilitiesApiResponse>(
+    response,
+    "Failed to fetch credit facilities."
+  );
 }
 
 export async function addCreditFacility(
@@ -77,11 +76,10 @@ export async function addCreditFacility(
 
   const response = await fetch(API_BASE, jsonInit("POST", body));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create credit facility.");
-  }
-
-  return (await response.json()) as CreditFacilityApiItem;
+  return handleApiResponse<CreditFacilityApiItem>(
+    response,
+    "Failed to create credit facility."
+  );
 }
 
 export async function getCreditFacilityById(
@@ -92,11 +90,10 @@ export async function getCreditFacilityById(
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    await throwApiError(response, `Failed to fetch credit facility ID=${id}.`);
-  }
-
-  return (await response.json()) as CreditFacilityApiItem;
+  return handleApiResponse<CreditFacilityApiItem>(
+    response,
+    `Failed to fetch credit facility ID=${id}.`
+  );
 }
 
 export async function updateCreditFacilityById(
@@ -117,9 +114,8 @@ export async function updateCreditFacilityById(
 
   const response = await fetch(`${API_BASE}/${id}`, jsonInit("PUT", body));
 
-  if (!response.ok) {
-    await throwApiError(response, `Failed to update credit facility ID=${id}.`);
-  }
-
-  return (await response.json()) as CreditFacilityApiItem;
+  return handleApiResponse<CreditFacilityApiItem>(
+    response,
+    `Failed to update credit facility ID=${id}.`
+  );
 }

@@ -1,4 +1,5 @@
 // app/auth/register/services.ts
+import { handleApiResponse, ensureApiSuccess } from "@/app/helpers/apiResponse";
 import type {
   TAttachment,
   TCompanyRegistrationInfo,
@@ -9,57 +10,6 @@ import type {
 } from "./types";
 
 const API_ROOT = "/Companygw/api" as const;
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((v) => typeof v === "string");
-}
-
-async function readServerError(response: Response): Promise<string> {
-  const contentType = response.headers.get("content-type") ?? "";
-
-  if (contentType.includes("application/json")) {
-    const body: unknown = await response.json();
-
-    if (body && typeof body === "object") {
-      const obj = body as Record<string, unknown>;
-
-      if (typeof obj.message === "string" && obj.message.trim().length > 0) {
-        return obj.message;
-      }
-      if (typeof obj.error === "string" && obj.error.trim().length > 0) {
-        return obj.error;
-      }
-
-      if (Array.isArray(obj.errors) && isStringArray(obj.errors)) {
-        return obj.errors.join(" • ");
-      }
-      if (obj.errors && typeof obj.errors === "object") {
-        const entries = Object.entries(obj.errors as Record<string, unknown>);
-        const parts: string[] = [];
-        for (const [key, val] of entries) {
-          if (isStringArray(val)) {
-            parts.push(`${key}: ${val.join(", ")}`);
-          } else if (typeof val === "string") {
-            parts.push(`${key}: ${val}`);
-          }
-        }
-        if (parts.length > 0) return parts.join(" • ");
-      }
-
-      if (typeof obj.title === "string" && obj.title.trim().length > 0) {
-        return obj.title;
-      }
-      if (typeof obj.detail === "string" && obj.detail.trim().length > 0) {
-        return obj.detail;
-      }
-    }
-  }
-
-  const fallbackText = (await response.text()).trim();
-  if (fallbackText.length > 0) return fallbackText;
-
-  return `Request failed with status ${response.status}`;
-}
 
 const withDefaults = (init: RequestInit = {}): RequestInit => ({
   cache: "no-store",
@@ -73,11 +23,10 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
     withDefaults({ method: "GET" })
   );
 
-  if (!response.ok) {
-    throw new Error(await readServerError(response));
-  }
-
-  return response.json();
+  return handleApiResponse<TKycResponse>(
+    response,
+    "Failed to fetch KYC details."
+  );
 }
 
 export async function registerCompany(
@@ -100,11 +49,10 @@ export async function registerCompany(
     }),
   });
 
-  if (!response.ok) {
-    throw new Error(await readServerError(response));
-  }
-
-  return response.json();
+  return handleApiResponse<TRegisterResponse>(
+    response,
+    "Failed to register company."
+  );
 }
 
 export async function uploadDocuments(
@@ -143,9 +91,7 @@ export async function uploadDocuments(
     withDefaults({ method: "POST", body: formData })
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to upload documents. ${await readServerError(response)}`);
-  }
+  await ensureApiSuccess(response, "Failed to upload documents.");
 }
 
 export async function uploadSingleDocument(
@@ -174,21 +120,12 @@ export async function uploadSingleDocument(
     withDefaults({ method: "POST", body: formData })
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to upload document. ${await readServerError(response)}`);
-  }
+  const payload = await handleApiResponse<{ id?: string } | undefined>(
+    response,
+    "Failed to upload document."
+  );
 
-  const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json")) {
-    try {
-      const payload = (await response.json()) as { id?: string } | null;
-      return payload?.id;
-    } catch (error) {
-      console.warn("uploadSingleDocument: response parsing failed", error);
-    }
-  }
-
-  return undefined;
+  return payload?.id;
 }
 
 export async function getCompanyRegistrationInfoByCode(
@@ -199,11 +136,10 @@ export async function getCompanyRegistrationInfoByCode(
     withDefaults({ method: "GET" })
   );
 
-  if (!response.ok) {
-    throw new Error(await readServerError(response));
-  }
-
-  return response.json();
+  return handleApiResponse<TCompanyRegistrationInfo>(
+    response,
+    "Failed to fetch company info."
+  );
 }
 
 export async function editCompanyInfo(
@@ -221,9 +157,7 @@ export async function editCompanyInfo(
     }
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to edit company info. ${await readServerError(response)}`);
-  }
+  await ensureApiSuccess(response, "Failed to edit company info.");
 }
 
 export async function getCompanyAttachments(code: string): Promise<TAttachment[]> {
@@ -232,11 +166,10 @@ export async function getCompanyAttachments(code: string): Promise<TAttachment[]
     withDefaults({ method: "GET" })
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch attachments. ${await readServerError(response)}`);
-  }
-
-  return response.json() as Promise<TAttachment[]>;
+  return handleApiResponse<TAttachment[]>(
+    response,
+    "Failed to fetch attachments."
+  );
 }
 
 export async function deleteAttachment(
@@ -248,7 +181,5 @@ export async function deleteAttachment(
     withDefaults({ method: "DELETE" })
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to delete attachment. ${await readServerError(response)}`);
-  }
+  await ensureApiSuccess(response, "Failed to delete attachment.");
 }

@@ -331,6 +331,8 @@ import LinkItem from "./LinkItem";
 import SidebarSkeleton from "./SidebarSkeleton";
 import NotificationPanel, { Notification } from "./NotificationPanel";
 
+const COMPANY_BASE_PATH = "/Companygw";
+
 /* --------------------------------------------------
  * Helpers
  * -------------------------------------------------- */
@@ -509,6 +511,7 @@ const Sidebar = () => {
   };
 
   const COOKIE_NAMES = [
+    "acceessToken", // legacy typo cookie kept for safety during logout
     "accessToken",
     "refreshToken",
     "kycToken",
@@ -519,15 +522,49 @@ const Sidebar = () => {
     "enabledTransactionCategories",
   ] as const; // ensures this is a readonly tuple of string literals
 
-  const CLEAR_OPTS = "max-age=0; path=/;";
+  const cookiePaths = Array.from(
+    new Set(
+      [basePath || undefined, COMPANY_BASE_PATH, "/"].filter(
+        (path): path is string => Boolean(path)
+      )
+    )
+  );
+  const isHttps =
+    typeof window !== "undefined" && window.location.protocol === "https:";
 
-  const handleLogout = (): void => {
-    COOKIE_NAMES.forEach((name) => {
-      document.cookie = `${name}=; ${CLEAR_OPTS}`;
+  const clearCookie = (name: (typeof COOKIE_NAMES)[number]) => {
+    cookiePaths.forEach((path) => {
+      const commonAttrs = [
+        `path=${path}`,
+        "max-age=0",
+        "SameSite=Lax",
+        isHttps ? "secure" : undefined,
+      ]
+        .filter(Boolean)
+        .join("; ");
+
+      document.cookie = `${name}=; ${commonAttrs}`;
+      document.cookie = `${name}=; expires=${new Date(0).toUTCString()}; ${commonAttrs}`;
     });
-    const loginPath = basePath
-      ? `${basePath}/Companygw/auth/login`
-      : "/Companygw/auth/login";
+  };
+
+  const handleLogout = async (): Promise<void> => {
+    const logoutEndpoint = `${COMPANY_BASE_PATH}/api/auth/logout`;
+
+    try {
+      await fetch(logoutEndpoint, { method: "POST", credentials: "include" });
+    } catch (error) {
+      console.error("Failed to notify backend about logout:", error);
+      try {
+        await fetch(`/api/auth/logout`, { method: "POST", credentials: "include" });
+      } catch (fallbackError) {
+        console.error("Fallback logout request also failed:", fallbackError);
+      }
+    }
+
+    COOKIE_NAMES.forEach(clearCookie);
+
+    const loginPath = `${COMPANY_BASE_PATH}/auth/login`;
     window.location.replace(loginPath);
   };
 

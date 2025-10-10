@@ -16,9 +16,9 @@ export async function CheckAccount(accountNumber: string): Promise<AccountInfo[]
     }
   );
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch account info. Status: ${response.status}`);
-  }
-
-  return (await response.json()) as AccountInfo[];
+  return handleApiResponse<AccountInfo[]>(
+    response,
+    "Failed to fetch account info."
+  );
 }
+import { handleApiResponse } from "@/app/helpers/apiResponse";

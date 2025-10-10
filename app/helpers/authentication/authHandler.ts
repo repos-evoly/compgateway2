@@ -372,6 +372,10 @@ type LoginHandlerOptions = {
 };
 
 type LoginUpstream = {
+  success?: boolean;
+  status?: number;
+  message?: string;
+  details?: { message?: string | null } | null;
   requiresTwoFactorEnable?: boolean;
   requiresTwoFactor?: boolean;
   accessToken?: string;
@@ -404,6 +408,14 @@ export async function loginHandler(
     }
 
     const data: LoginUpstream = await response.json();
+
+    if (data.success === false) {
+      const detailMessage = data.details?.message?.trim();
+      const message = detailMessage && detailMessage !== "{"
+        ? detailMessage
+        : data.message?.trim();
+      throw new Error(message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
+    }
 
     // Save login so verification form can reuse it (if needed)
     localStorage.setItem("auth_login", values.login);

@@ -6,7 +6,7 @@ import {
   CertifiedBankStatementRequestWithID,
   ServicesRequest,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 
 /**
  * The raw shape the API returns for each statement
@@ -161,11 +161,10 @@ export async function getCertifiedBankStatements(params?: {
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch Certified Bank Statements.");
-  }
-
-  const result = (await response.json()) as GetCertifiedBankStatementsResponse;
+  const result = await handleApiResponse<GetCertifiedBankStatementsResponse>(
+    response,
+    "Failed to fetch Certified Bank Statements."
+  );
 
   const transformedData: CertifiedBankStatementRequestWithID[] = result.data.map(
     (apiItem) => transformApiToFormShape(apiItem)
@@ -193,14 +192,10 @@ export async function getCertifiedBankStatementById(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to fetch Certified Bank Statement #${id}.`
-    );
-  }
-
-  const apiData = (await response.json()) as ApiCertifiedBankStatement;
+  const apiData = await handleApiResponse<ApiCertifiedBankStatement>(
+    response,
+    `Failed to fetch Certified Bank Statement #${id}.`
+  );
   return transformApiToFormShape(apiData);
 }
 
@@ -251,14 +246,10 @@ export async function createCertifiedBankStatement(
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      "Failed to create Certified Bank Statement."
-    );
-  }
-
-  const apiResult = (await response.json()) as ApiCertifiedBankStatement;
+  const apiResult = await handleApiResponse<ApiCertifiedBankStatement>(
+    response,
+    "Failed to create Certified Bank Statement."
+  );
   return transformApiToFormShape(apiResult);
 }
 
@@ -309,13 +300,9 @@ export async function updateCertifiedBankStatement(
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      "Failed to update Certified Bank Statement."
-    );
-  }
-
-  const apiResult = (await response.json()) as ApiCertifiedBankStatement;
+  const apiResult = await handleApiResponse<ApiCertifiedBankStatement>(
+    response,
+    "Failed to update Certified Bank Statement."
+  );
   return transformApiToFormShape(apiResult);
 }

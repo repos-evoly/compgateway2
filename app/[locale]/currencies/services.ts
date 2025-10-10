@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type { CurrenciesResponse } from "./types";
 
 const API_BASE = "/Companygw/api/currencies" as const;
@@ -30,9 +30,8 @@ export async function getCurrencies(
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch currencies.");
-  }
-
-  return (await response.json()) as CurrenciesResponse;
+  return handleApiResponse<CurrenciesResponse>(
+    response,
+    "Failed to fetch currencies."
+  );
 }

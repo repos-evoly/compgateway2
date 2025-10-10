@@ -5,7 +5,7 @@ import type {
   LetterOfGuaranteeApiResponse,
   TLetterOfGuarantee,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 
 const API_BASE = "/Companygw/api/requests/credit-facility" as const;
 
@@ -58,11 +58,10 @@ export async function getLetterOfGuarantees(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch letter of guarantee.");
-  }
-
-  return (await response.json()) as LetterOfGuaranteeApiResponse;
+  return handleApiResponse<LetterOfGuaranteeApiResponse>(
+    response,
+    "Failed to fetch letter of guarantee."
+  );
 }
 
 /**
@@ -88,11 +87,10 @@ export async function addLetterOfGuarantee(
 
   const response = await fetch(API_BASE, jsonInit("POST", body));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create letter of guarantee.");
-  }
-
-  return (await response.json()) as LetterOfGuaranteeApiItem;
+  return handleApiResponse<LetterOfGuaranteeApiItem>(
+    response,
+    "Failed to create letter of guarantee."
+  );
 }
 
 /**
@@ -106,11 +104,10 @@ export async function getLetterOfGuaranteeById(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, `Failed to fetch letter of guarantee #${id}.`);
-  }
-
-  return (await response.json()) as LetterOfGuaranteeApiItem;
+  return handleApiResponse<LetterOfGuaranteeApiItem>(
+    response,
+    `Failed to fetch letter of guarantee #${id}.`
+  );
 }
 
 /**
@@ -136,9 +133,8 @@ export async function updateLetterOfGuaranteeById(
 
   const response = await fetch(`${API_BASE}/${id}`, jsonInit("PUT", body));
 
-  if (!response.ok) {
-    await throwApiError(response, `Failed to update letter of guarantee #${id}.`);
-  }
-
-  return (await response.json()) as LetterOfGuaranteeApiItem;
+  return handleApiResponse<LetterOfGuaranteeApiItem>(
+    response,
+    `Failed to update letter of guarantee #${id}.`
+  );
 }

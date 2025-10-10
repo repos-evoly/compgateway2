@@ -27,10 +27,10 @@ import {
   FiMinus,
 } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
-import { MdError } from "react-icons/md";
 import type { IconType } from "react-icons";
 
 import LoadingPage from "@/app/components/reusable/Loading";
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Constants & helpers
@@ -55,6 +55,7 @@ export default function DashboardPage(): JSX.Element {
   const [stats, setStats] = useState<Dashboard | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -72,6 +73,7 @@ export default function DashboardPage(): JSX.Element {
         setError(
           err instanceof Error ? err.message : "An unexpected error occurred"
         );
+        setErrorModalOpen(true);
       } finally {
         setLoadingAccounts(false);
       }
@@ -90,6 +92,7 @@ export default function DashboardPage(): JSX.Element {
         setError(
           err instanceof Error ? err.message : "An unexpected error occurred"
         );
+        setErrorModalOpen(true);
       } finally {
         setLoadingStats(false);
       }
@@ -97,23 +100,14 @@ export default function DashboardPage(): JSX.Element {
   }, [companyCode]);
 
   /* ----------------------- loading / error UI ---------------------- */
-  if (error) {
-    return (
-      <div className="p-3">
-        <div className="rounded bg-red-600 p-3 text-white shadow-md">
-          <div className="mb-2 flex items-center">
-            <MdError className="mr-2 text-xl" />
-            <p className="text-sm font-bold">{t("failedToFetchData")}</p>
-          </div>
-          <p className="text-sm">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   if (loadingAccounts || loadingStats) {
     return <LoadingPage />;
   }
+
+  const closeErrorModal = () => {
+    setErrorModalOpen(false);
+    setError(null);
+  };
 
   /* ------------------------- icon arrays --------------------------- */
   const balanceIcons: IconType[] = [FaMoneyBillWave, FiCreditCard, FiBarChart2];
@@ -153,6 +147,14 @@ export default function DashboardPage(): JSX.Element {
   /* -------------------------- render ------------------------------- */
   return (
     <div className="p-3">
+      <ErrorOrSuccessModal
+        isOpen={errorModalOpen && Boolean(error)}
+        isSuccess={false}
+        title={t("failedToFetchData")}
+        message={error ?? ""}
+        onClose={closeErrorModal}
+        okLabel="حسناً"
+      />
       {/* Stats */}
       {stats && (
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -3,7 +3,7 @@
    – Helper to fetch all bank branches via the Next.js proxy.
    -------------------------------------------------------------------------- */
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 
 const API_BASE = "/Companygw/api/branches" as const;
 
@@ -38,10 +38,9 @@ export const getBranches = async (): Promise<Branch[]> => {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    throw await throwApiError(response, "Failed to fetch branches");
-  }
-
-  const data: ApiResponse = await response.json();
+  const data = await handleApiResponse<ApiResponse>(
+    response,
+    "Failed to fetch branches"
+  );
   return data.details.branches;
 };

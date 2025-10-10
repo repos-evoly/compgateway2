@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type { TKycResponse } from "@/app/auth/register/types";
 import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
 import type {
@@ -155,11 +155,7 @@ const sendFormData = async (
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, errorMessage);
-  }
-
-  return (await response.json()) as TApiCblRequest;
+  return handleApiResponse<TApiCblRequest>(response, errorMessage);
 };
 
 /**
@@ -176,11 +172,10 @@ export async function getCblRequests(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch CBL requests.");
-  }
-
-  return (await response.json()) as TCblRequestsResponse;
+  return handleApiResponse<TCblRequestsResponse>(
+    response,
+    "Failed to fetch CBL requests."
+  );
 }
 
 export async function addCblRequest(
@@ -257,11 +252,10 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch KYC data");
-  }
-
-  return (await response.json()) as TKycResponse;
+  return handleApiResponse<TKycResponse>(
+    response,
+    "Failed to fetch KYC data"
+  );
 }
 
 /**
@@ -274,11 +268,10 @@ export async function getCblRequestById(id: string | number): Promise<TCBLValues
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, `Failed to fetch CBL request by ID ${id}.`);
-  }
-
-  const api = (await response.json()) as TApiCblRequest;
+  const api = await handleApiResponse<TApiCblRequest>(
+    response,
+    `Failed to fetch CBL request by ID ${id}.`
+  );
   return toTCBLValues(api);
 }
 

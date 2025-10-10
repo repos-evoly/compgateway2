@@ -6,7 +6,7 @@ import type {
   TCheckRequestsResponse,
   TCheckRequestValues,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type { TKycResponse } from "@/app/auth/register/types";
 
 /* ------------------------------------------------------------------ */
@@ -66,8 +66,10 @@ const fetchRepresentatives = async (): Promise<RepresentativesList | null> => {
       `${REPRESENTATIVES_API}?page=1&limit=1000`,
       withCredentials({ method: "GET" })
     );
-    if (!res.ok) return null;
-    return (await res.json()) as RepresentativesList;
+    return await handleApiResponse<RepresentativesList | null>(
+      res,
+      "Failed to fetch representatives"
+    );
   } catch {
     return null;
   }
@@ -92,11 +94,10 @@ export async function getCheckRequests(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch check requests.");
-  }
-
-  const data = (await response.json()) as TCheckRequestsResponse;
+  const data = await handleApiResponse<TCheckRequestsResponse>(
+    response,
+    "Failed to fetch check requests."
+  );
 
   // Enrich with representative names
   if (data.data?.length) {
@@ -145,11 +146,10 @@ export async function createCheckRequest(
 
   const response = await fetch(API_BASE, init("POST", payload));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create check request.");
-  }
-
-  const created = (await response.json()) as TCheckRequestValues;
+  const created = await handleApiResponse<TCheckRequestValues>(
+    response,
+    "Failed to create check request."
+  );
 
   // Enrich with representative name
   if (created.representativeId) {
@@ -174,14 +174,10 @@ export async function getCheckRequestById(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to fetch check request by ID ${id}.`
-    );
-  }
-
-  const data = (await response.json()) as TCheckRequestValues;
+  const data = await handleApiResponse<TCheckRequestValues>(
+    response,
+    `Failed to fetch check request by ID ${id}.`
+  );
 
   // Enrich with representative name
   if (data.representativeId) {
@@ -218,14 +214,10 @@ export async function updateCheckRequestById(
 
   const response = await fetch(`${API_BASE}/${id}`, init("PUT", payload));
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      `Failed to update check request with ID ${id}.`
-    );
-  }
-
-  const updated = (await response.json()) as TCheckRequestValues;
+  const updated = await handleApiResponse<TCheckRequestValues>(
+    response,
+    `Failed to update check request with ID ${id}.`
+  );
 
   // Enrich with representative name
   if (updated.representativeId) {
@@ -248,9 +240,8 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch KYC data");
-  }
-
-  return (await response.json()) as TKycResponse;
+  return handleApiResponse<TKycResponse>(
+    response,
+    "Failed to fetch KYC data"
+  );
 }

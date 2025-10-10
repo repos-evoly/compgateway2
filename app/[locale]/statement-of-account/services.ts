@@ -27,6 +27,8 @@ type StatementApiResponseItem = {
   credit: number | string;
 };
 
+import { handleApiResponse } from "@/app/helpers/apiResponse";
+
 const API_ROOT = "/Companygw/api" as const;
 
 export async function getStatement({
@@ -45,11 +47,10 @@ export async function getStatement({
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    throw new Error(`Error fetching statement: ${response.status} ${response.statusText}`);
-  }
-
-  const data = (await response.json()) as StatementApiResponseItem[];
+  const data = await handleApiResponse<StatementApiResponseItem[]>(
+    response,
+    "Error fetching statement"
+  );
 
   return data.map((item) => {
     const [nr1 = "", nr2 = "", nr3 = ""] = item.narratives || [];

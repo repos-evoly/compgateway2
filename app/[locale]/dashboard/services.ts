@@ -1,3 +1,4 @@
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import { Dashboard } from "./types";
 
 const API_ROOT = "/Companygw/api" as const;
@@ -9,9 +10,8 @@ export async function getDashboardData(code: string): Promise<Dashboard> {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch dashboard data. Status: ${response.status}`);
-  }
-
-  return (await response.json()) as Dashboard;
+  return handleApiResponse<Dashboard>(
+    response,
+    "Failed to fetch dashboard data."
+  );
 }

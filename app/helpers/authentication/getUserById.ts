@@ -1,5 +1,6 @@
 "use client";
 
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import { DetailedUser } from "@/types";
 
 export async function getUserById(userId: number): Promise<DetailedUser> {
@@ -9,11 +10,8 @@ export async function getUserById(userId: number): Promise<DetailedUser> {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch user with ID ${userId}: ${response.status} ${response.statusText}`
-    );
-  }
-
-  return (await response.json()) as DetailedUser;
+  return handleApiResponse<DetailedUser>(
+    response,
+    `Failed to fetch user with ID ${userId}.`
+  );
 }

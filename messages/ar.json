@@ -332,6 +332,7 @@
       "delete":"حذف",
 
       "internalTransferForm":{
+        "selectOrTypeToAccount:":"اختر أو اكتب رقم الحساب",
         "title":"التحويل داخل المصرف",
         "id":"المعرف",
         "from":"من حساب",
@@ -425,6 +426,8 @@
         "continue": "متابعة"
       },
       "salaries": {
+        "ok":"حسناً",
+        "close":"إغلاق",
         "name": "الاسم",
         "email": "البريد الإلكتروني",
         "phone": "رقم الهاتف",

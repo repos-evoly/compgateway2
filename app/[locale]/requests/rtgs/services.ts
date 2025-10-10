@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type { TKycResponse } from "@/app/auth/register/types";
 import type { TRTGSResponse, TRTGSValues } from "./types";
 
@@ -53,11 +53,10 @@ export async function getRtgsRequests(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch RTGS requests.");
-  }
-
-  return (await response.json()) as TRTGSResponse;
+  return handleApiResponse<TRTGSResponse>(
+    response,
+    "Failed to fetch RTGS requests."
+  );
 }
 
 /**
@@ -71,11 +70,10 @@ export async function getRtgsRequestById(
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, `Failed to fetch RTGS request by ID ${id}.`);
-  }
-
-  return (await response.json()) as TRTGSValues;
+  return handleApiResponse<TRTGSValues>(
+    response,
+    `Failed to fetch RTGS request by ID ${id}.`
+  );
 }
 
 /**
@@ -106,11 +104,10 @@ export async function createRtgsRequest(
 
   const response = await fetch(API_BASE, jsonInit("POST", body));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create RTGS request.");
-  }
-
-  return (await response.json()) as TRTGSValues;
+  return handleApiResponse<TRTGSValues>(
+    response,
+    "Failed to create RTGS request."
+  );
 }
 
 /**
@@ -142,11 +139,10 @@ export async function updateRtgsRequest(
 
   const response = await fetch(`${API_BASE}/${id}`, jsonInit("PUT", body));
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update RTGS request.");
-  }
-
-  return (await response.json()) as TRTGSValues;
+  return handleApiResponse<TRTGSValues>(
+    response,
+    "Failed to update RTGS request."
+  );
 }
 
 /**
@@ -159,9 +155,8 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch KYC data");
-  }
-
-  return (await response.json()) as TKycResponse;
+  return handleApiResponse<TKycResponse>(
+    response,
+    "Failed to fetch KYC data"
+  );
 }

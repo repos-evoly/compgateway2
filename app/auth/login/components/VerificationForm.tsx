@@ -275,6 +275,14 @@ export default function VerificationForm({
 
       const data = await res.json();
 
+      if (data?.success === false) {
+        throw new Error(
+          data?.details?.message ||
+            data?.message ||
+            "فشل التحقق من الرمز. تأكد من صحة الرمز وحاول مرة أخرى."
+        );
+      }
+
       if (!res.ok) {
         throw new Error(
           data?.message ||

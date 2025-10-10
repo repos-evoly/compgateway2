@@ -6,7 +6,7 @@ import {
   VisaRequestApiItem,
   VisaRequestFormValues,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import { TKycResponse } from "@/app/auth/register/types";
 import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
 
@@ -44,11 +44,10 @@ export const getVisaRequests = async (
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch visa requests");
-  }
-
-  return (await response.json()) as VisaRequestApiResponse;
+  return handleApiResponse<VisaRequestApiResponse>(
+    response,
+    "Failed to fetch visa requests"
+  );
 };
 
 /**
@@ -68,11 +67,10 @@ export const getVisaRequestById = async (
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch visa request by ID");
-  }
-
-  const data = (await response.json()) as VisaRequestApiItem;
+  const data = await handleApiResponse<VisaRequestApiItem>(
+    response,
+    "Failed to fetch visa request by ID"
+  );
 
   if (data.attachments && data.attachments.length > 0) {
     data.attachments = data.attachments.map((attachment) => ({
@@ -98,16 +96,12 @@ const submitFormData = async (
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(
-      response,
-      method === "POST"
-        ? "Failed to create visa request"
-        : "Failed to update visa request"
-    );
-  }
-
-  return (await response.json()) as VisaRequestApiItem;
+  return handleApiResponse<VisaRequestApiItem>(
+    response,
+    method === "POST"
+      ? "Failed to create visa request"
+      : "Failed to update visa request"
+  );
 };
 
 export const createVisaRequest = async (
@@ -212,9 +206,8 @@ export async function getKycByCode(code: string): Promise<TKycResponse> {
     withCredentials({ method: "GET" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch KYC data");
-  }
-
-  return (await response.json()) as TKycResponse;
+  return handleApiResponse<TKycResponse>(
+    response,
+    "Failed to fetch KYC data"
+  );
 }

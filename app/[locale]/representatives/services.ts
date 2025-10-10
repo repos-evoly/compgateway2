@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse, ensureApiSuccess } from "@/app/helpers/apiResponse";
 import type {
   Representative,
   RepresentativeFormValues,
@@ -34,11 +34,10 @@ export const getRepresentatives = async (
 ): Promise<RepresentativesResponse> => {
   const response = await fetch(buildListUrl(page, limit, search), withCredentials());
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch representatives");
-  }
-
-  return (await response.json()) as RepresentativesResponse;
+  return handleApiResponse<RepresentativesResponse>(
+    response,
+    "Failed to fetch representatives"
+  );
 };
 
 const buildFormData = (values: RepresentativeFormValues): FormData => {
@@ -64,11 +63,10 @@ export const createRepresentative = async (
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create representative");
-  }
-
-  return (await response.json()) as Representative;
+  return handleApiResponse<Representative>(
+    response,
+    "Failed to create representative"
+  );
 };
 
 export const updateRepresentative = async (
@@ -83,21 +81,19 @@ export const updateRepresentative = async (
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update representative");
-  }
-
-  return (await response.json()) as Representative;
+  return handleApiResponse<Representative>(
+    response,
+    "Failed to update representative"
+  );
 };
 
 export const getRepresentativeById = async (id: number): Promise<Representative> => {
   const response = await fetch(`${API_BASE}/${id}`, withCredentials());
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch representative by ID");
-  }
-
-  return (await response.json()) as Representative;
+  return handleApiResponse<Representative>(
+    response,
+    "Failed to fetch representative by ID"
+  );
 };
 
 export const deleteRepresentative = async (id: number): Promise<void> => {
@@ -106,9 +102,7 @@ export const deleteRepresentative = async (id: number): Promise<void> => {
     withCredentials({ method: "DELETE" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to delete representative");
-  }
+  await ensureApiSuccess(response, "Failed to delete representative");
 };
 
 export const toggleRepresentativeStatus = async (

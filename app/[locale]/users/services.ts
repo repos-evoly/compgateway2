@@ -10,7 +10,7 @@ import type {
   RoleOption,
   UserPermissions,
 } from "./types";
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse, ensureApiSuccess } from "@/app/helpers/apiResponse";
 
 const API_ROOT = "/Companygw/api" as const;
 
@@ -69,11 +69,10 @@ export async function getEmployees(): Promise<CompanyEmployee[]> {
     withCredentials({ headers: baseHeaders(companyCode) })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch employees.");
-  }
-
-  return (await response.json()) as CompanyEmployee[];
+  return handleApiResponse<CompanyEmployee[]>(
+    response,
+    "Failed to fetch employees."
+  );
 }
 
 export async function getEmployeeById(
@@ -85,11 +84,10 @@ export async function getEmployeeById(
     withCredentials({ headers: baseHeaders(companyCode) })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch employee.");
-  }
-
-  return (await response.json()) as CompanyEmployee;
+  return handleApiResponse<CompanyEmployee>(
+    response,
+    "Failed to fetch employee."
+  );
 }
 
 export async function createEmployee(
@@ -105,11 +103,10 @@ export async function createEmployee(
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create employee.");
-  }
-
-  return (await response.json()) as CompanyEmployee;
+  return handleApiResponse<CompanyEmployee>(
+    response,
+    "Failed to create employee."
+  );
 }
 
 export async function editEmployee(
@@ -126,10 +123,6 @@ export async function editEmployee(
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to edit employee.");
-  }
-
   const fallback: CompanyEmployee = {
     id: userId,
     authUserId: 0,
@@ -143,8 +136,20 @@ export async function editEmployee(
     isActive: payload.isActive,
   };
 
-  const text = await response.text();
-  return parseEmployeeFallback(text, fallback);
+  const raw = await handleApiResponse<CompanyEmployee | string | undefined>(
+    response,
+    "Failed to edit employee."
+  );
+
+  if (!raw) {
+    return fallback;
+  }
+
+  if (typeof raw === "string") {
+    return parseEmployeeFallback(raw, fallback);
+  }
+
+  return raw;
 }
 
 export async function toggleEmployeeStatus(
@@ -166,11 +171,10 @@ export async function toggleEmployeeStatus(
 export async function getRoles(): Promise<RoleOption[]> {
   const response = await fetch(`${API_ROOT}/users/roles?isGlobal=false`, withCredentials());
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch roles.");
-  }
-
-  return (await response.json()) as RoleOption[];
+  return handleApiResponse<RoleOption[]>(
+    response,
+    "Failed to fetch roles."
+  );
 }
 
 export async function getPermissionsByUserId(
@@ -181,11 +185,10 @@ export async function getPermissionsByUserId(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch permissions.");
-  }
-
-  return (await response.json()) as UserPermissions[];
+  return handleApiResponse<UserPermissions[]>(
+    response,
+    "Failed to fetch permissions."
+  );
 }
 
 export async function getCompanyPermissions(): Promise<CompanyPermissions[]> {
@@ -194,11 +197,10 @@ export async function getCompanyPermissions(): Promise<CompanyPermissions[]> {
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch permissions.");
-  }
-
-  return (await response.json()) as CompanyPermissions[];
+  return handleApiResponse<CompanyPermissions[]>(
+    response,
+    "Failed to fetch permissions."
+  );
 }
 
 export async function updateEmployeePermissions(
@@ -214,7 +216,5 @@ export async function updateEmployeePermissions(
     })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update permissions.");
-  }
+  await ensureApiSuccess(response, "Failed to update permissions.");
 }

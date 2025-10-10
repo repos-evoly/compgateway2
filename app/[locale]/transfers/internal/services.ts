@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type {
   CheckAccountResponse,
   EconomicSectorGetResponse,
@@ -53,11 +53,10 @@ export async function createTransfer(
     jsonRequest("POST", payload)
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create transfer.");
-  }
-
-  return (await response.json()) as TransferResponse;
+  return handleApiResponse<TransferResponse>(
+    response,
+    "Failed to create transfer."
+  );
 }
 
 export async function getTransfers(
@@ -70,11 +69,10 @@ export async function getTransfers(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to get transfers.");
-  }
-
-  return (await response.json()) as TransfersApiResponse;
+  return handleApiResponse<TransfersApiResponse>(
+    response,
+    "Failed to get transfers."
+  );
 }
 
 export async function getTransferById(
@@ -85,11 +83,10 @@ export async function getTransferById(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to get transfer.");
-  }
-
-  return (await response.json()) as TransferResponse;
+  return handleApiResponse<TransferResponse>(
+    response,
+    "Failed to get transfer."
+  );
 }
 
 export async function getTransfersCommision(
@@ -103,11 +100,10 @@ export async function getTransfersCommision(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch commission.");
-  }
-
-  return (await response.json()) as TransfersCommision;
+  return handleApiResponse<TransfersCommision>(
+    response,
+    "Failed to fetch commission."
+  );
 }
 
 export async function getEconomicSectors(
@@ -120,11 +116,10 @@ export async function getEconomicSectors(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch economic sectors.");
-  }
-
-  return (await response.json()) as EconomicSectorGetResponse;
+  return handleApiResponse<EconomicSectorGetResponse>(
+    response,
+    "Failed to fetch economic sectors."
+  );
 }
 
 export async function checkAccount(
@@ -135,9 +130,8 @@ export async function checkAccount(
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to check account.");
-  }
-
-  return (await response.json()) as CheckAccountResponse[];
+  return handleApiResponse<CheckAccountResponse[]>(
+    response,
+    "Failed to check account."
+  );
 }

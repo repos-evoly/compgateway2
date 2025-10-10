@@ -1,6 +1,6 @@
 "use client";
 
-import { throwApiError } from "@/app/helpers/handleApiError";
+import { handleApiResponse, ensureApiSuccess } from "@/app/helpers/apiResponse";
 import type {
   EmployeeFormValues,
   EmployeePayload,
@@ -39,11 +39,9 @@ export const getEmployees = async (
 
   const response = await fetch(url, withCredentials());
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch employees");
-  }
-
-  const data = await response.json();
+  const data = await handleApiResponse<
+    EmployeesApiResponse | EmployeeResponse[]
+  >(response, "Failed to fetch employees");
 
   if (Array.isArray(data)) {
     return {
@@ -66,11 +64,10 @@ export const getEmployeeById = async (
     withCredentials()
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch employee by ID");
-  }
-
-  return (await response.json()) as EmployeeResponse;
+  return handleApiResponse<EmployeeResponse>(
+    response,
+    "Failed to fetch employee by ID"
+  );
 };
 
 export const createEmployee = async (
@@ -81,11 +78,10 @@ export const createEmployee = async (
     jsonRequest("POST", employeeData)
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to create employee");
-  }
-
-  return (await response.json()) as EmployeeResponse;
+  return handleApiResponse<EmployeeResponse>(
+    response,
+    "Failed to create employee"
+  );
 };
 
 export const updateEmployee = async (
@@ -97,11 +93,10 @@ export const updateEmployee = async (
     jsonRequest("PUT", employeeData)
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update employee");
-  }
-
-  return (await response.json()) as EmployeeResponse;
+  return handleApiResponse<EmployeeResponse>(
+    response,
+    "Failed to update employee"
+  );
 };
 
 export const deleteEmployee = async (id: number): Promise<void> => {
@@ -110,9 +105,7 @@ export const deleteEmployee = async (id: number): Promise<void> => {
     withCredentials({ method: "DELETE" })
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to delete employee");
-  }
+  await ensureApiSuccess(response, "Failed to delete employee");
 };
 
 export const updateBatchEmployees = async (
@@ -123,7 +116,5 @@ export const updateBatchEmployees = async (
     jsonRequest("PUT", employees)
   );
 
-  if (!response.ok) {
-    await throwApiError(response, "Failed to update batch employees");
-  }
+  await ensureApiSuccess(response, "Failed to update batch employees");
 };

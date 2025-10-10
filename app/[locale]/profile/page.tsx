@@ -16,6 +16,7 @@ import DocumentsSection from "@/app/[locale]/profile/components/DocumentSection"
 import ContactSupportSection from "./components/ContactSupportSection";
 import LoadingPage from "@/app/components/reusable/Loading";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 import type { Company } from "@/app/[locale]/profile/types";
 import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
@@ -36,8 +37,6 @@ export default function ProfilePage(): JSX.Element {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoId, setLogoId] = useState<string>();
 
-  const NEXT_PUBLIC_IMAGE_URL = process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
-
   /* ----- fetch company ------------------------------------------------- */
   useEffect(() => {
     const raw = Cookies.get("companyCode") ?? "";
@@ -55,7 +54,7 @@ export default function ProfilePage(): JSX.Element {
           (a) => a.attSubject?.toLowerCase() === "logo"
         );
         const fullLogoUrl = logoAttachment
-          ? `${NEXT_PUBLIC_IMAGE_URL}${logoAttachment.attUrl}`
+          ? buildImageProxyUrl(logoAttachment.attUrl)
           : null;
         setLogoUrl(fullLogoUrl);
         setLogoId(logoAttachment?.id);
@@ -72,7 +71,7 @@ export default function ProfilePage(): JSX.Element {
         setLoading(false);
       }
     })();
-  }, [NEXT_PUBLIC_IMAGE_URL]);
+  }, []);
 
   /* ----- UI helpers ---------------------------------------------------- */
   const statusBadge = (status: string): JSX.Element => {

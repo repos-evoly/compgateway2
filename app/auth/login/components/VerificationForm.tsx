@@ -203,10 +203,7 @@ import { FiShield, FiX } from "react-icons/fi";
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
-import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import { getUserById } from "@/app/helpers/authentication/getUserById";
-import { parseJwt } from "@/app/helpers/tokenHandler";
 import { loginRoutingHandler } from "@/app/helpers/authentication/authHandler";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
@@ -257,10 +254,14 @@ export default function VerificationForm({
     setApiError(null);
 
     try {
+      if (!storedlogin) {
+        throw new Error("تعذر تحديد البريد الإلكتروني. يرجى إعادة المحاولة.");
+      }
+
       const endpoint =
         sourcePage === "qr"
-          ? `${process.env.NEXT_PUBLIC_AUTH_API}/verify-initial-2fa`
-          : `${process.env.NEXT_PUBLIC_AUTH_API}/verify-2fa`;
+          ? `/Companygw/api/auth/verify-initial-2fa`
+          : `/Companygw/api/auth/verify-2fa`;
 
       const payload = {
         login: storedlogin,
@@ -271,6 +272,8 @@ export default function VerificationForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        credentials: "include",
+        cache: "no-store",
       });
 
       const data = await res.json();
@@ -290,44 +293,18 @@ export default function VerificationForm({
         );
       }
 
-      // If backend returns tokens after 2FA, store them client-side (non-HttpOnly),
-      // unless your Next.js API sets HttpOnly cookies server-side.
-      if (data.accessToken) {
-        Cookies.set("accessToken", data.accessToken, {
-          expires: 1,
-          secure: false,
-          httpOnly: false,
-        });
-      }
-      if (data.refreshToken) {
-        Cookies.set("refreshToken", data.refreshToken, {
-          expires: 7,
-          secure: false,
-          httpOnly: false,
-        });
-      }
-      if (data.kycToken) {
-        Cookies.set("kycToken", data.kycToken, {
-          expires: 7,
-          secure: false,
-          httpOnly: false,
-        });
-      }
-
       /* Remove saved login */
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth_login");
       }
 
-      /* Optional: fetch user if needed for side-effects */
-      if (data.accessToken) {
-        const parsed = parseJwt(data.accessToken);
-        if (!parsed?.nameid) throw new Error("Invalid access token.");
-        await getUserById(Number(parsed.nameid));
-      }
-
       /* Shared post-login routing
          NOTE: new signature is (router, onCompanyNotApproved?) */
+      if (!data.accessToken || !data.refreshToken) {
+        onClose();
+        return;
+      }
+
       await loginRoutingHandler(router, (status, msg) => {
         fallbackTriggered.current = true;
         setModalTitle(`حالة الشركة: ${status}`);

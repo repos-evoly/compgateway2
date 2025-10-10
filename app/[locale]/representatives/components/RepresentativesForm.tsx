@@ -28,6 +28,7 @@ import { FaUser, FaPhone, FaPassport } from "react-icons/fa";
 import { createRepresentative, updateRepresentative } from "../services";
 import type { Representative, RepresentativeFormValues } from "../types";
 import RepresentativePhotoCard from "./RepresentativePhotoCard";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 type RepresentativesFormProps = {
   initialData: Representative | null;
@@ -52,9 +53,8 @@ export default function RepresentativesForm({
   /* Build preview URL for existing photo (edit mode only) */
   const initialPreviewUrl = useMemo(() => {
     if (!isEditMode || !initialData?.photoUrl) return undefined;
-    const base = (process.env.NEXT_PUBLIC_IMAGE_URL ?? "").replace(/\/$/, "");
-    return `${base}${initialData.photoUrl}`;
-  }, [isEditMode, initialData]);
+    return buildImageProxyUrl(initialData.photoUrl);
+  }, [isEditMode, initialData?.photoUrl]);
 
   /* Formik */
   const initialValues: RepresentativeFormValues = {

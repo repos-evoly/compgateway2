@@ -574,8 +574,8 @@ const Sidebar = () => {
   const desktopSidebar = (
     <div
       className={`
-        bg-secondary-dark text-white h-screen
-        transition-all duration-300 text-sm flex-shrink-0 relative
+        bg-secondary-dark text-white min-h-screen lg:h-screen
+        transition-all duration-300 text-sm flex-shrink-0 relative flex flex-col
         ${sidebarOpen ? "w-64" : "w-16"}
       `}
       onTransitionEnd={(e: TransitionEvent<HTMLDivElement>) => {
@@ -622,7 +622,7 @@ const Sidebar = () => {
       </div>
       <Divider />
 
-      <nav className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {visibleItems.map((item, idx) =>
           item.label === "logout" ? (
             <div key={`sidebar-item-${idx}`} className="py-1">
@@ -664,7 +664,7 @@ const Sidebar = () => {
   const mobileSidebar = (
     <div
       className={`
-        fixed inset-y-0 z-40 w-64 bg-secondary-dark text-white
+        fixed inset-y-0 z-40 w-64 bg-secondary-dark text-white flex flex-col
         transition-transform duration-300
         ${
           isRtl
@@ -699,7 +699,7 @@ const Sidebar = () => {
         onNotificationsChange={setNotifications}
       />
       <Divider />
-      <nav className="flex flex-col p-4 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {visibleItems.map((item, idx) =>
           item.label === "logout" ? (
             <div key={`mobile-sidebar-item-${idx}`} className="py-1">

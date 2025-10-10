@@ -8,6 +8,7 @@ import type {
   TCBLValues,
   Attachment,
 } from "./types";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 /** Minimal shape of an "official" from the API */
 type TApiOfficial = {
@@ -69,8 +70,6 @@ const withCredentials = (init: RequestInit = {}): RequestInit => ({
   cache: "no-store",
   ...init,
 });
-const baseImgUrl = (process.env.NEXT_PUBLIC_IMAGE_URL || "").replace(/\/$/, "");
-
 /* ---------- helpers ---------- */
 const parseDate = (iso?: string | null) => (iso ? new Date(iso) : null);
 
@@ -133,10 +132,7 @@ function toTCBLValues(api: TApiCblRequest): TCBLValues {
       })) ?? [],
     attachments: api.attachments || [],
     attachmentUrls:
-      api.attachments?.map((att) => {
-        const path = String(att.attUrl || "").replace(/^\//, "");
-        return baseImgUrl ? `${baseImgUrl}/${path}` : path;
-      }) ?? [],
+      api.attachments?.map((att) => buildImageProxyUrl(att.attUrl)) ?? [],
   };
 }
 

@@ -27,13 +27,15 @@
 // to build for the live server at https://companygw.com/Companygw
 import createNextIntlPlugin from 'next-intl/plugin';
 
+const BASE_PATH = '/Companygw';
+
 const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Serve the app under /Companygw (affects routes and /public assets)
-  basePath: '/Companygw',
-  assetPrefix: '/Companygw',
+  basePath: BASE_PATH,
+  assetPrefix: BASE_PATH,
 
   // Put the production build in a folder named "Companygw" (instead of .next)
   // This lets you copy that folder to the server as your build output.
@@ -50,6 +52,10 @@ const nextConfig = {
     unoptimized: true,
   },
   trailingSlash: false,
+
+  env: {
+    NEXT_PUBLIC_APP_BASE_PATH: BASE_PATH,
+  },
 
   // Webpack tweaks
   webpack(config) {

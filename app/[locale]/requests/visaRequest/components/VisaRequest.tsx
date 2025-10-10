@@ -15,6 +15,7 @@ import type { InputSelectComboOption } from "@/app/components/FormUI/InputSelect
 
 import { getVisas } from "@/app/helpers/getVisas";
 import type { VisaItem } from "@/types";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 type VisaWizardFormProps = {
   initialValues?: Partial<VisaRequestFormValues>;
@@ -29,8 +30,6 @@ export default function VisaWizardForm({
   readOnly = false,
 }: VisaWizardFormProps) {
   const t = useTranslations("visaRequest");
-  const baseImgUrl = process.env.NEXT_PUBLIC_IMAGE_URL;
-
   /* ---- Account dropdown (cookie) ------------------------------------- */
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
@@ -119,7 +118,7 @@ export default function VisaWizardForm({
           <Step2VisaRequest
             readOnly={readOnly}
             attachmentUrls={initialValues?.attachmentUrls?.map((url) =>
-              baseImgUrl ? `${baseImgUrl}/${url}` : url
+              buildImageProxyUrl(url)
             )}
             isEditMode={Boolean(initialValues)}
           />
@@ -133,7 +132,6 @@ export default function VisaWizardForm({
       visaTypeOptions,
       isLoadingVisas,
       initialValues,
-      baseImgUrl,
     ]
   );
 

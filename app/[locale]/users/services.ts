@@ -193,7 +193,7 @@ export async function getPermissionsByUserId(
 
 export async function getCompanyPermissions(): Promise<CompanyPermissions[]> {
   const response = await fetch(
-    `${API_ROOT}/users/permissions?isGlobal=10.2`,
+    `${API_ROOT}/users/permissions/global?isGlobal=false`,
     withCredentials()
   );
 

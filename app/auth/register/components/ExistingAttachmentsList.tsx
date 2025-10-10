@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { FaTrash, FaEye, FaTimes, FaFile } from "react-icons/fa";
 import Image from "next/image";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 // Mock data for demonstration
 const mockAttachments = [
@@ -37,7 +38,12 @@ const mockAttachments = [
   },
 ];
 
-const baseApi = process.env.NEXT_PUBLIC_BASE_API || "";
+const resolveAttachmentUrl = (raw: string): string => {
+  const normalized = raw.replace(/\\+/g, "/");
+  return /^https?:\/\//i.test(normalized)
+    ? normalized
+    : buildImageProxyUrl(normalized);
+};
 
 type TAttachment = {
   id: string;
@@ -68,7 +74,7 @@ export default function ExistingAttachmentsList({
 
   const handleView = (attachment: TAttachment) => {
     if (attachment.attMime?.startsWith("image/")) {
-      const imageUrl = `${baseApi}/${attachment.attUrl}`.replace("\\", "/");
+      const imageUrl = resolveAttachmentUrl(attachment.attUrl);
       setSelectedImage(imageUrl);
     }
   };
@@ -86,7 +92,7 @@ export default function ExistingAttachmentsList({
         <div className="p-4">
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {attachments.map((att) => {
-              const imageUrl = `${baseApi}/${att.attUrl}`.replace("\\", "/");
+              const imageUrl = resolveAttachmentUrl(att.attUrl);
               const isImage = att.attMime?.startsWith("image/");
 
               return (

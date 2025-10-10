@@ -9,6 +9,7 @@ import {
 import { handleApiResponse } from "@/app/helpers/apiResponse";
 import { TKycResponse } from "@/app/auth/register/types";
 import { mergeFilesToPdf } from "@/app/components/reusable/DocumentUploader";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 const API_BASE = "/Companygw/api/requests/visa-request" as const;
 const KYC_API_BASE = "/Companygw/api/companies/kyc" as const;
@@ -17,9 +18,6 @@ const withCredentials = (init: RequestInit = {}): RequestInit => ({
   cache: "no-store",
   ...init,
 });
-const DISPLAY_BASE =
-  (process.env.NEXT_PUBLIC_BASE_API || "").replace(/\/$/, "");
-
 const buildListUrl = (
   page: number,
   limit: number,
@@ -53,10 +51,8 @@ export const getVisaRequests = async (
 /**
  * Convert API attachment URLs to displayable URLs
  */
-const convertAttachmentToUrl = (attachment: { attUrl: string }): string => {
-  const urlPath = attachment.attUrl.replace(/\\/g, "/");
-  return DISPLAY_BASE ? `${DISPLAY_BASE}/${urlPath}` : urlPath;
-};
+const convertAttachmentToUrl = (attachment: { attUrl: string }): string =>
+  buildImageProxyUrl(attachment.attUrl);
 
 /** New function: get by ID => returns a single VisaRequestApiItem */
 export const getVisaRequestById = async (

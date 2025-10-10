@@ -8,6 +8,7 @@ import { FiFile, FiDownload, FiEye, FiX, FiFileText } from "react-icons/fi";
 import Image from "next/image";
 import { Attachment } from "../types";
 import { useTranslations } from "next-intl";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
@@ -23,14 +24,12 @@ export default function DocumentsSection({ documents }: DocumentsSectionProps) {
   );
 
   const t = useTranslations("profile.documentsSection");
-  const NEXT_PUBLIC_IMAGE_URL = process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
-
   /* ------------------------------------------------------------------ */
   /* Helpers                                                             */
   /* ------------------------------------------------------------------ */
   /** Build the full URL for a given attachment. */
   const buildUrl = (doc: Attachment): string =>
-    `${NEXT_PUBLIC_IMAGE_URL}/${doc.attUrl}`;
+    buildImageProxyUrl(doc.attUrl);
 
   /** Check if an attachment is a PDF by its MIME-type. */
   const isPdf = (mime?: string): boolean =>

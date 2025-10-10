@@ -10,6 +10,7 @@ import VisaWizardForm from "../components/VisaRequest";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
+import { buildImageProxyUrl } from "@/app/utils/imageProxy";
 
 export default function SingleVisaRequestPage() {
   const params = useParams<{ locale: string; id: string }>(); // e.g. /[locale]/requests/visaRequest/[id]
@@ -86,7 +87,10 @@ export default function SingleVisaRequestPage() {
     pldedge: requestData.pldedge,
     status: requestData.status,
     // Add attachment URLs for display
-    attachmentUrls: requestData.attachments?.map((att) => att.attUrl) || [],
+    attachmentUrls:
+      requestData.attachments?.map((att) =>
+        att.displayUrl ? att.displayUrl : buildImageProxyUrl(att.attUrl)
+      ) || [],
     reason: requestData.reason || "", // Ensure reason is always a string
   };
 

@@ -42,7 +42,7 @@ export default function SidebarSkeleton({
   const desktop = (
     <div
       className={`
-        bg-secondary-dark text-white h-screen
+        bg-secondary-dark text-white min-h-screen lg:h-screen
         flex-shrink-0 flex flex-col
         transition-all
         ${sidebarOpen ? "w-64" : "w-16"}

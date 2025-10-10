@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import VerificationForm from "@/app/auth/login/components/VerificationForm";
-
-const BASE_URL = "http://10.3.3.11/compauthapi";
+import { buildAuthQrProxyUrl } from "@/app/utils/imageProxy";
 
 // Simple modal wrapper
 const Modal = ({
@@ -40,7 +39,6 @@ const QRCodeDisplay: React.FC = () => {
 
     const storedlogin = localStorage.getItem("auth_login");
     if (storedlogin) {
-      console.log("Retrieved login from local storage:", storedlogin);
       setlogin(storedlogin);
     }
   }, []);
@@ -50,18 +48,16 @@ const QRCodeDisplay: React.FC = () => {
 
     const fetchQRCode = async () => {
       try {
-        console.log("Fetching QR code for login:", login);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_AUTH_API}/enable-2fa`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-            },
-            body: JSON.stringify({ login }),
-          }
-        );
+        const response = await fetch(`/Companygw/api/auth/enable-2fa`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+          },
+          body: JSON.stringify({ login }),
+          credentials: "include",
+          cache: "no-store",
+        });
 
         const data = await response.json();
 
@@ -80,8 +76,21 @@ const QRCodeDisplay: React.FC = () => {
           );
         }
 
+        const qrSource =
+          typeof data.qrCodeUrl === "string"
+            ? data.qrCodeUrl
+            : typeof data.qrCodePath === "string"
+            ? data.qrCodePath
+            : null;
+
+        if (!qrSource) {
+          throw new Error("تعذر تحديد مسار رمز الاستجابة السريعة.");
+        }
+
+        const proxiedUrl = buildAuthQrProxyUrl(qrSource);
         const timestamp = new Date().getTime();
-        setQrCodePath(`${BASE_URL}${data.qrCodePath}?t=${timestamp}`);
+        const separator = proxiedUrl.includes("?") ? "&" : "?";
+        setQrCodePath(`${proxiedUrl}${separator}t=${timestamp}`);
       } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message);

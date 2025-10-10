@@ -26,6 +26,7 @@ import {
   FiDatabase,
   FiLock,
   FiBarChart2,
+  FiSearch,
 } from "react-icons/fi";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 
@@ -46,6 +47,7 @@ export default function PermissionsPage() {
   const [userPerms, setUserPerms] = useState<UserPermissions[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   /* ---------- data fetch ---------- */
   useEffect(() => {
@@ -108,6 +110,41 @@ export default function PermissionsPage() {
   };
 
   const grouped = groupPermissions(companyPerms);
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filterBySearch = (perm: CompanyPermissions) => {
+    if (!normalizedSearch) return true;
+
+    const nameEn = perm.nameEn?.toLowerCase() ?? "";
+    const nameAr = perm.nameAr?.toLowerCase() ?? "";
+    const description = perm.description?.toLowerCase() ?? "";
+
+    return (
+      nameEn.includes(normalizedSearch) ||
+      nameAr.includes(normalizedSearch) ||
+      description.includes(normalizedSearch)
+    );
+  };
+
+  const groupedEntries = Object.entries(grouped) as [
+    GroupKey,
+    CompanyPermissions[],
+  ][];
+
+  const filteredGroups: Array<{
+    key: GroupKey;
+    perms: CompanyPermissions[];
+    visible: CompanyPermissions[];
+  }> = groupedEntries.map(([key, perms]) => ({
+    key,
+    perms,
+    visible: perms.filter(filterBySearch),
+  }));
+
+  const isSearching = normalizedSearch.length > 0;
+  const hasVisiblePermissions = filteredGroups.some(
+    ({ visible }) => visible.length > 0
+  );
 
   /* ---------- icons ---------- */
   const groupIcons: Record<GroupKey, React.ReactNode> = {
@@ -181,25 +218,73 @@ export default function PermissionsPage() {
         <Formik initialValues={initialValues} onSubmit={onSubmit}>
           {({ values, setFieldValue }) => (
             <Form>
+              <div className="mb-6 flex justify-between">
+                <div
+                  className={`relative w-full md:w-96 ${
+                    isArabic ? "md:ml-auto" : ""
+                  }`}
+                >
+                  <FiSearch
+                    className={`pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 ${
+                      isArabic ? "right-3" : "left-3"
+                    }`}
+                  />
+                  <input
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") event.preventDefault();
+                    }}
+                    placeholder={
+                      isArabic
+                        ? "ابحث عن صلاحية..."
+                        : "Search permissions..."
+                    }
+                    className={`w-full rounded-md border border-gray-300 bg-white py-2 ${
+                      isArabic ? "pr-9 pl-3 text-right" : "pl-9 pr-3"
+                    } text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                    dir={isArabic ? "rtl" : "ltr"}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+
               <div className="grid gap-6 lg:grid-cols-2">
-                {(
-                  Object.entries(grouped) as [GroupKey, CompanyPermissions[]][]
-                ).map(([key, perms]) =>
-                  perms.length ? (
+                {filteredGroups.map(({ key, perms, visible }) => {
+                  const displayPermissions = isSearching ? visible : perms;
+                  if (!displayPermissions.length) return null;
+
+                  const enabledCount = perms.reduce(
+                    (acc, perm) =>
+                      values[`perm_${perm.id}`] ? acc + 1 : acc,
+                    0
+                  );
+
+                  return (
                     <PermissionsContainer
                       key={key}
                       title={groupTitles[key]}
                       icon={groupIcons[key]}
-                      permissions={perms}
+                      permissions={displayPermissions}
                       values={values}
                       setFieldValue={setFieldValue}
                       isArabic={isArabic}
                       iconMap={iconMap}
-                      search={perms.length >= 25}
+                      totalCount={perms.length}
+                      enabledCount={enabledCount}
                     />
-                  ) : null
-                )}
+                  );
+                })}
               </div>
+
+              {isSearching && !hasVisiblePermissions && (
+                <p className="mt-6 text-center text-sm text-gray-500">
+                  {isArabic
+                    ? "لم يتم العثور على صلاحيات مطابقة"
+                    : "No permissions match your search."}
+                </p>
+              )}
 
               {/* Footer */}
               <div className="mt-8 flex justify-end">

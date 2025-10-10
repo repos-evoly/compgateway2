@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
-import { FiSearch, FiLock } from "react-icons/fi";
-import { CompanyPermissions } from "../types";
+import type { ReactNode } from "react";
+import { FiLock } from "react-icons/fi";
+import type { CompanyPermissions } from "../types";
 
 /* ---------- props ---------- */
 type PermissionsContainerProps = {
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  /** permissions to render (already filtered if a search is active) */
   permissions: CompanyPermissions[];
   /** Formik values */
   values: Record<string, boolean>;
@@ -15,9 +16,11 @@ type PermissionsContainerProps = {
   setFieldValue: (field: string, value: unknown) => void;
   isArabic: boolean;
   /** map permission name → icon */
-  iconMap: Record<string, React.ReactNode>;
-  /** show search field if `true` */
-  search?: boolean;
+  iconMap: Record<string, ReactNode>;
+  /** total permissions available in this group (used for counters) */
+  totalCount: number;
+  /** enabled permissions count for this group */
+  enabledCount: number;
 };
 
 export default function PermissionsContainer({
@@ -28,27 +31,11 @@ export default function PermissionsContainer({
   setFieldValue,
   isArabic,
   iconMap,
-  search = false,
+  totalCount,
+  enabledCount,
 }: PermissionsContainerProps) {
-  /* ---------- local search ---------- */
-  const [query, setQuery] = useState("");
-
-  const onSearch = (e: ChangeEvent<HTMLInputElement>) =>
-    setQuery(e.target.value);
-
-  const normalizedQuery = query.toLowerCase().trim();
-
   /* ---------- derived ---------- */
   const showTwoColumns = permissions.length > 5;
-  const visiblePermissions = permissions.filter((perm) => {
-    if (!search || normalizedQuery === "") return true;
-    const name = (isArabic ? perm.nameAr : perm.nameEn) ?? "";
-    return name.toLowerCase().includes(normalizedQuery);
-  });
-
-  const enabledCount = permissions.filter(
-    (perm) => values[`perm_${perm.id}`]
-  ).length;
 
   /* ---------- classes ---------- */
   const rootClasses = `
@@ -69,7 +56,7 @@ export default function PermissionsContainer({
           <div>
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             <p className="text-sm text-gray-500">
-              {permissions.length} {isArabic ? "صلاحية" : "permissions"}
+              {totalCount} {isArabic ? "صلاحية" : "permissions"}
             </p>
           </div>
         </div>
@@ -80,27 +67,13 @@ export default function PermissionsContainer({
               : "bg-info-main text-black"
           }`}
         >
-          {enabledCount}/{permissions.length}
+          {enabledCount}/{totalCount}
         </span>
       </div>
 
-      {/* Search (optional) */}
-      {search && (
-        <div className="mt-4 mb-4 flex items-center gap-2 px-6">
-          <FiSearch className="h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder={isArabic ? "بحث عن صلاحية..." : "Search permission..."}
-            value={query}
-            onChange={onSearch}
-            className="w-full rounded-md border border-gray-300 p-2 text-sm focus:border-blue-500 focus:outline-none"
-          />
-        </div>
-      )}
-
       {/* Permissions list */}
       <div className={listClasses}>
-        {visiblePermissions.map((perm, idx) => {
+        {permissions.map((perm, idx) => {
           const titleText = isArabic ? perm.nameAr : perm.nameEn;
           const checked = values[`perm_${perm.id}`];
 
@@ -131,14 +104,14 @@ export default function PermissionsContainer({
                 </div>
               </div>
               {/* keep divider only in single-column mode */}
-              {!showTwoColumns && idx < visiblePermissions.length - 1 && (
+              {!showTwoColumns && idx < permissions.length - 1 && (
                 <hr className="mt-3 border-gray-200" />
               )}
             </div>
           );
         })}
 
-        {visiblePermissions.length === 0 && (
+        {permissions.length === 0 && (
           <p className="py-6 text-center text-sm text-gray-500">
             {isArabic ? "لا توجد نتائج مطابقة" : "No matching permissions"}
           </p>

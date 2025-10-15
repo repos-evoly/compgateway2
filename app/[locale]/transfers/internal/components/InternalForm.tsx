@@ -1,14 +1,13 @@
 // app/[locale]/transfers/internal/components/InternalForm.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Cookies from "js-cookie";
 import * as Yup from "yup";
 import { useTranslations } from "next-intl";
 import { FaTrash } from "react-icons/fa";
 import { Formik, Form, useFormikContext } from "formik";
 
-import { getCurrencies } from "@/app/[locale]/currencies/services";
 import {
   getTransfersCommision,
   createTransfer,
@@ -39,21 +38,81 @@ import FormHeader from "@/app/components/reusable/FormHeader";
 /*                               Helper                                       */
 /* -------------------------------------------------------------------------- */
 
-const FormValidator = () => {
-  const { values, setFieldError, validateForm } =
-    useFormikContext<ExtendedValues>();
+type FormValidatorProps = {
+  fromInfo: AccountLookup | null;
+  toInfo: AccountLookup | null;
+  currencyMismatch: boolean;
+  setCurrencyMismatch: (value: boolean) => void;
+  mismatchMessage: string;
+};
+
+const FormValidator = ({
+  fromInfo,
+  toInfo,
+  currencyMismatch,
+  setCurrencyMismatch,
+  mismatchMessage,
+}: FormValidatorProps) => {
+  const { values, setFieldError, errors } = useFormikContext<ExtendedValues>();
+  const { from, to } = values;
 
   useEffect(() => {
-    const { from, to } = values;
-    if (!from || !to) return;
-
-    if (from.slice(-3) !== to.slice(-3)) {
-      setFieldError("from", "Currency codes must match");
-      setFieldError("to", "Currency codes must match");
-    } else {
-      validateForm();
+    if (!from || !to) {
+      if (currencyMismatch) {
+        setCurrencyMismatch(false);
+        if (errors.from === mismatchMessage) {
+          setFieldError("from", undefined);
+        }
+        if (errors.to === mismatchMessage) {
+          setFieldError("to", undefined);
+        }
+      }
+      return;
     }
-  }, [values, setFieldError, validateForm]);
+
+    const fromCurrency = fromInfo?.currency?.trim();
+    const toCurrency = toInfo?.currency?.trim();
+
+    if (!fromCurrency || !toCurrency) {
+      if (currencyMismatch) {
+        setCurrencyMismatch(false);
+        if (errors.from === mismatchMessage) {
+          setFieldError("from", undefined);
+        }
+        if (errors.to === mismatchMessage) {
+          setFieldError("to", undefined);
+        }
+      }
+      return;
+    }
+
+    if (fromCurrency !== toCurrency) {
+      if (!currencyMismatch) {
+        setCurrencyMismatch(true);
+      }
+      setFieldError("from", mismatchMessage);
+      setFieldError("to", mismatchMessage);
+    } else if (currencyMismatch) {
+      setCurrencyMismatch(false);
+      if (errors.from === mismatchMessage) {
+        setFieldError("from", undefined);
+      }
+      if (errors.to === mismatchMessage) {
+        setFieldError("to", undefined);
+      }
+    }
+  }, [
+    from,
+    to,
+    fromInfo?.currency,
+    toInfo?.currency,
+    currencyMismatch,
+    setCurrencyMismatch,
+    mismatchMessage,
+    setFieldError,
+    errors.from,
+    errors.to,
+  ]);
 
   return null;
 };
@@ -80,6 +139,18 @@ type AccountLookup = {
   companyName?: string;
   branchCode?: string;
   branchName?: string;
+  accountName?: string;
+  currency?: string;
+};
+
+const getCompanyCodeFromCookie = (): string | undefined => {
+  const raw = Cookies.get("companyCode");
+  if (!raw) return undefined;
+  try {
+    return decodeURIComponent(raw).replace(/^"|"$/g, "");
+  } catch {
+    return raw.replace(/^"|"$/g, "");
+  }
 };
 
 /* -------------------------------------------------------------------------- */
@@ -102,7 +173,15 @@ function InternalForm({
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
 
-  /* ---------------- account list from cookie (FROM account) ------------- */
+  const [fromAccountInfo, setFromAccountInfo] = useState<AccountLookup | null>(
+    null
+  );
+  const [toAccountInfo, setToAccountInfo] = useState<AccountLookup | null>(
+    null
+  );
+  const [currencyMismatch, setCurrencyMismatch] = useState(false);
+
+  /* ---------------- account list via checkAccount (FROM account) -------- */
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
@@ -114,8 +193,30 @@ function InternalForm({
 
   const [commissionOnReceiver, setCommissionOnReceiver] = useState(false);
 
+  const accountInfoCache = useRef(new Map<string, AccountLookup | null>());
+
+  const resolveAccountInfo = useCallback(
+    async (accountNumber: string): Promise<AccountLookup | null> => {
+      const normalized = (accountNumber ?? "").replace(/\s+/g, "").trim();
+      if (!normalized) return null;
+
+      if (accountInfoCache.current.has(normalized)) {
+        const cached = accountInfoCache.current.get(normalized) ?? null;
+        return cached;
+      }
+
+      const response = (await checkAccount(normalized)) as AccountLookup[];
+      const info = response?.[0] ?? null;
+      accountInfoCache.current.set(normalized, info);
+      return info;
+    },
+    []
+  );
+
+  const ACCOUNT_LOOKUP_DEBOUNCE = 400;
+
   useEffect(() => {
-    const code = (Cookies.get("companyCode") ?? "").replace(/^"|"$/g, "");
+    const code = getCompanyCodeFromCookie();
     if (!code) return;
 
     (async () => {
@@ -127,20 +228,41 @@ function InternalForm({
       }
     })();
   }, []);
-
   useEffect(() => {
-    const rawCookie = Cookies.get("statementAccounts") ?? "[]";
-    let accounts: string[] = [];
-    try {
-      accounts = JSON.parse(rawCookie);
-    } catch {
+    const code = getCompanyCodeFromCookie();
+    if (!code) return;
+
+    (async () => {
       try {
-        accounts = JSON.parse(decodeURIComponent(rawCookie));
-      } catch {
-        accounts = [];
+        const accounts = (await checkAccount(code)) as AccountLookup[];
+        const seen = new Set<string>();
+        accounts.forEach((acc) => {
+          if (acc?.accountString) {
+            accountInfoCache.current.set(acc.accountString, acc);
+          }
+        });
+        const options = accounts
+          .filter((acc) => {
+            if (!acc?.accountString) return false;
+            if (seen.has(acc.accountString)) return false;
+            seen.add(acc.accountString);
+            return true;
+          })
+          .map((acc) => {
+            const displayName =
+              acc.accountName || acc.companyName || acc.branchName || "";
+            const label = displayName
+              ? `${acc.accountString} - ${displayName}`
+              : acc.accountString;
+            return { label, value: acc.accountString };
+          });
+
+        setAccountOptions(options);
+      } catch (err) {
+        console.error("Failed to fetch debit accounts:", err);
+        setAccountOptions([]);
       }
-    }
-    setAccountOptions(accounts.map((a) => ({ label: a, value: a })));
+    })();
   }, []);
 
   /* ---------------- economic sectors ------------------------------------ */
@@ -187,6 +309,7 @@ function InternalForm({
     displayAmount: number;
     fromCompanyName?: string;
     toCompanyName?: string;
+    currencyDesc: string;
   } | null>(null);
 
   /* ---------------- values & schema ------------------------------------ */
@@ -208,12 +331,7 @@ function InternalForm({
 
   const schema = Yup.object({
     from: Yup.string().required(t("requiredFromAccount")),
-    to: Yup.string()
-      .required(t("requiredToAccount"))
-      .test("match", t("currencyMismatch"), function (v) {
-        const f = (this.parent as ExtendedValues).from;
-        return !f || !v || f.slice(-3) === v.slice(-3);
-      }),
+    to: Yup.string().required(t("requiredToAccount")),
     value: Yup.number()
       .typeError(t("valueMustBeNumber"))
       .required(t("requiredValue"))
@@ -232,37 +350,94 @@ function InternalForm({
   }, [t]);
 
   const ToAccountChecker = ({ toValue }: { toValue: string }) => {
+    const { setFieldError } = useFormikContext<ExtendedValues>();
+
     useEffect(() => {
       if (!toValue) {
         setToError(undefined);
+        setToAccountInfo(null);
+        setTransferType(undefined);
         return;
       }
-      // Debounce to avoid spamming the API while typing
+
       const timer = setTimeout(() => {
         void (async () => {
           try {
-            const account = (await checkAccount(toValue)) as AccountLookup[];
+            const info = await resolveAccountInfo(toValue);
+            if (!info) {
+              const message = tRef.current("accountNotFound");
+              setToError(message);
+              setToAccountInfo(null);
+              setTransferType(undefined);
+              setFieldError("to", message);
+              return;
+            }
+
             setToError(undefined);
-            setTransferType(account[0]?.transferType);
+            setToAccountInfo(info);
+            setTransferType(info.transferType);
+            setFieldError("to", undefined);
           } catch (err: unknown) {
             console.error("Account check failed:", err);
-            if (
-              typeof err === "object" &&
-              err !== null &&
-              "message" in err &&
-              typeof (err as { message: unknown }).message === "string"
-            ) {
-              setToError((err as { message: string }).message as string);
-            } else {
-              // use stable ref instead of `t` in deps
-              setToError(tRef.current("accountNotFound"));
-            }
+            const message =
+              err instanceof Error &&
+              typeof err.message === "string" &&
+              err.message
+                ? err.message
+                : tRef.current("accountNotFound");
+            setToError(message);
+            setToAccountInfo(null);
+            setTransferType(undefined);
+            setFieldError("to", message);
           }
         })();
-      }, 400);
+      }, ACCOUNT_LOOKUP_DEBOUNCE);
+
       return () => clearTimeout(timer);
       // `t` intentionally not included; we read from tRef instead.
-    }, [toValue]);
+    }, [toValue, setFieldError]);
+
+    return null;
+  };
+
+  const FromAccountChecker = ({ fromValue }: { fromValue: string }) => {
+    const { setFieldError } = useFormikContext<ExtendedValues>();
+
+    useEffect(() => {
+      if (!fromValue) {
+        setFromAccountInfo(null);
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        void (async () => {
+          try {
+            const info = await resolveAccountInfo(fromValue);
+            if (!info) {
+              const message = tRef.current("accountNotFound");
+              setFromAccountInfo(null);
+              setFieldError("from", message);
+              return;
+            }
+
+            setFromAccountInfo(info);
+            setFieldError("from", undefined);
+          } catch (err: unknown) {
+            console.error("From account check failed:", err);
+            const message =
+              err instanceof Error &&
+              typeof err.message === "string" &&
+              err.message
+                ? err.message
+                : tRef.current("accountNotFound");
+            setFromAccountInfo(null);
+            setFieldError("from", message);
+          }
+        })();
+      }, ACCOUNT_LOOKUP_DEBOUNCE);
+
+      return () => clearTimeout(timer);
+    }, [fromValue, setFieldError]);
 
     return null;
   };
@@ -272,51 +447,67 @@ function InternalForm({
     if (viewOnly) return;
 
     try {
-      // 1) Resolve currency display
-      const currencyCode = vals.from.slice(-3);
-      const currResp = await getCurrencies(1, 1, currencyCode, "code");
-      const currencyDesc = currResp.data[0]?.description ?? currencyCode;
+      const [fromInfo, toInfo] = await Promise.all([
+        resolveAccountInfo(vals.from),
+        resolveAccountInfo(vals.to),
+      ]);
 
-      // 2) Fetch commission config
+      if (!fromInfo || !toInfo) {
+        throw new Error(tRef.current("accountNotFound"));
+      }
+
+      setFromAccountInfo(fromInfo);
+      setToAccountInfo(toInfo);
+
+      const fromCurrency = fromInfo.currency?.trim();
+      const toCurrency = toInfo.currency?.trim();
+
+      if (fromCurrency && toCurrency && fromCurrency !== toCurrency) {
+        throw new Error(t("currencyMismatch"));
+      }
+
+      const currencyDesc = (fromCurrency ?? toCurrency ?? "").trim();
+      if (!currencyDesc) {
+        throw new Error(
+          t("currencyLookupFailed", {
+            defaultValue: "Unable to resolve currency details.",
+          })
+        );
+      }
+
       const servicePackageId = Number(Cookies.get("servicePackageId") ?? 0);
       const commResp = await getTransfersCommision(
         servicePackageId,
         vals.transactionCategoryId ?? 2
       );
 
-      // 3) Fetch FROM / TO account info to display companyName
-      const [fromInfoArr, toInfoArr] = await Promise.all([
-        checkAccount(vals.from) as Promise<AccountLookup[]>,
-        checkAccount(vals.to) as Promise<AccountLookup[]>,
-      ]);
-      const fromInfo = fromInfoArr[0];
-      const toInfo = toInfoArr[0];
-
-      // Update transfer type (prefer ToAccountChecker, but ensure we have it)
       const effectiveTransferType =
-        transferType ?? toInfo?.transferType ?? undefined;
+        transferType ?? toInfo.transferType ?? undefined;
 
-      // 4) Compute fee
       const isB2B = effectiveTransferType === "B2B";
       const pct = isB2B ? commResp.b2BCommissionPct : commResp.b2CCommissionPct;
       const fixed = isB2B ? commResp.b2BFixedFee : commResp.b2CFixedFee;
       const pctAmt = (pct * vals.value) / 100;
       const fee = Math.max(pctAmt, fixed);
 
-      // 5) Open modal with company names
       setModalData({
         formikData: vals,
         commissionAmount: fee,
         commissionCurrency: currencyDesc,
         displayAmount: commissionOnReceiver ? vals.value : vals.value + fee,
-        fromCompanyName: fromInfo?.companyName,
-        toCompanyName: toInfo?.companyName,
+        fromCompanyName: fromInfo.companyName,
+        toCompanyName: toInfo.companyName,
+        currencyDesc,
       });
       setModalOpen(true);
     } catch (err) {
       console.error("Modal prep failed:", err);
       setAlertTitle(t("createErrorTitle"));
-      setAlertMessage(err instanceof Error ? err.message : t("unknownError"));
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : (t("unknownError") as string);
+      setAlertMessage(message);
       setAlertOpen(true);
     }
   };
@@ -334,14 +525,21 @@ function InternalForm({
     } = modalData.formikData;
 
     try {
-      const currencyId = Number(from.slice(-3));
+      const { currencyDesc } = modalData;
+      if (!currencyDesc) {
+        throw new Error(
+          t("currencyLookupFailed", {
+            defaultValue: "Unable to resolve currency details.",
+          })
+        );
+      }
       await createTransfer({
         transactionCategoryId,
         economicSectorId,
         fromAccount: from,
         toAccount: to,
         amount: value,
-        currencyId,
+        currencyDesc,
         description,
       });
       onSubmit?.(modalData.formikData);
@@ -366,17 +564,26 @@ function InternalForm({
         enableReinitialize
       >
         {({ values }) => {
+          const currencyMismatchMessage = t("currencyMismatch", {
+            defaultValue: "Currencies must match",
+          });
           return (
             <>
+              <FromAccountChecker fromValue={values.from} />
               <ToAccountChecker toValue={values.to} />
+              <FormValidator
+                fromInfo={fromAccountInfo}
+                toInfo={toAccountInfo}
+                currencyMismatch={currencyMismatch}
+                setCurrencyMismatch={setCurrencyMismatch}
+                mismatchMessage={currencyMismatchMessage}
+              />
               <Form>
                 <FormHeader
                   showBackButton
                   fallbackPath="/transfers/internal"
                   isEditing={true}
                 />
-
-                <FormValidator />
 
                 {/* Row 1 */}
                 <div className="grid gap-4 md:grid-cols-3 mt-4">
@@ -397,9 +604,9 @@ function InternalForm({
                     options={toAccountOptions}
                     disabled={fieldsDisabled}
                     maskingFormat="0000-000000-000"
-                    placeholder={t("selectOrTypeToAccount", {
-                      defaultValue: "Select beneficiary or type account",
-                    })}
+                    // placeholder={t("selectOrTypeToAccount", {
+                    //   defaultValue: "Select beneficiary or type account",
+                    // })}
                   />
 
                   <FormInputIcon
@@ -451,7 +658,7 @@ function InternalForm({
                         description: true,
                         transactionCategoryId: true,
                       }}
-                      disabled={!!toError}
+                      disabled={!!toError || currencyMismatch}
                     />
                   </div>
                 )}

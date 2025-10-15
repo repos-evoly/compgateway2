@@ -202,7 +202,7 @@ export default function PermissionsPage() {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 flex items-center gap-4">
-          <BackButton isEditing fallbackPath="/users" />
+          <BackButton isEditing fallbackPath={`/${locale}/users`} />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               {isArabic ? "صلاحيات الموظف" : "Employee Permissions"}

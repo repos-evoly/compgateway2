@@ -144,44 +144,6 @@ export function Step2StatementForm({ readOnly = false }: Props) {
                     {t("accountStatement")}
                   </span>
                 </label>
-
-                {/* Journal movement */}
-                <label className="flex items-center space-x-2">
-                  <Field
-                    type="checkbox"
-                    name="statementRequest.journalMovement"
-                    checked={statementVal.journalMovement || false}
-                    disabled={readOnly}
-                    onChange={() =>
-                      setFieldValue(
-                        "statementRequest.journalMovement",
-                        !statementVal.journalMovement
-                      )
-                    }
-                  />
-                  <span className="text-sm text-gray-700">
-                    {t("journalMovement")}
-                  </span>
-                </label>
-
-                {/* Non-financial commitment */}
-                <label className="flex items-center space-x-2">
-                  <Field
-                    type="checkbox"
-                    name="statementRequest.nonFinancialCommitment"
-                    checked={statementVal.nonFinancialCommitment || false}
-                    disabled={readOnly}
-                    onChange={() =>
-                      setFieldValue(
-                        "statementRequest.nonFinancialCommitment",
-                        !statementVal.nonFinancialCommitment
-                      )
-                    }
-                  />
-                  <span className="text-sm text-gray-700">
-                    {t("nonFinancialCommitment")}
-                  </span>
-                </label>
               </div>
             </div>
           );

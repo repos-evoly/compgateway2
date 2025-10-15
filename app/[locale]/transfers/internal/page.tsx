@@ -54,6 +54,8 @@ export type CheckAccountResponse = {
   companyName: string;
   branchCode: string;
   branchName: string;
+  accountName?: string;
+  currency: string;
 };
 
 type TransfersApiResponse = {

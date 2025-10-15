@@ -48,12 +48,12 @@ const SalariesModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) => {
         if (!companyCode) throw new Error("Company code not found.");
 
         const accounts = await CheckAccount(companyCode);
-        const filtered = accounts.filter((acc: AccountInfo) =>
-          acc.accountString.endsWith("001")
+        const filtered = accounts.filter(
+          (acc: AccountInfo) => acc.currency === "LYD"
         );
 
         const opts = filtered.map<InputSelectComboOption>((acc) => ({
-          label: acc.accountString,
+          label: `${acc.accountString} - ${acc.accountName}`,
           value: acc.accountString,
         }));
         setOptions(opts);

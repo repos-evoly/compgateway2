@@ -767,11 +767,23 @@ async function renderPdfPageToPngDataURL(
 }
 
 /* ------------------------------ chrome ------------------------------- */
-const PUBLIC_HEADER = "/header.png";
-const PUBLIC_NOTE = "/note.png";
-const PUBLIC_FOOTER = "/footer.png";
-const PUBLIC_STAMP = "/stamp.png";
-const PUBLIC_WATERMARK_PDF = "/watermark.pdf";
+const RAW_BASE_PATH = process.env.NEXT_PUBLIC_APP_BASE_PATH ?? "";
+const BASE_PATH_SEGMENT = RAW_BASE_PATH.replace(/^\/+|\/+$/g, "");
+const STATIC_SUBDIR = "Companygw";
+const STATIC_PREFIX = [BASE_PATH_SEGMENT, STATIC_SUBDIR]
+  .filter((segment) => segment && segment.length > 0)
+  .join("/");
+
+const buildStaticPath = (filename: string): string => {
+  const normalized = filename.replace(/^\/+/, "");
+  return STATIC_PREFIX ? `/${STATIC_PREFIX}/${normalized}` : `/${normalized}`;
+};
+
+const PUBLIC_HEADER = buildStaticPath("header.png");
+const PUBLIC_NOTE = buildStaticPath("note.png");
+const PUBLIC_FOOTER = buildStaticPath("footer.png");
+const PUBLIC_STAMP = buildStaticPath("stamp.png");
+const PUBLIC_WATERMARK_PDF = buildStaticPath("watermark.pdf");
 
 const IMAGE_SIDE_MARGIN = 12; // side margin for header & footer images
 const FOOTER_GAP = 6; // vertical gap between note and footer images

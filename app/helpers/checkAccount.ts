@@ -2,6 +2,12 @@ export type AccountInfo = {
   accountString: string;
   availableBalance: number;
   debitBalance: number;
+  transferType: string;
+  companyName: string;
+  accountName: string;
+  currency: string;
+  branchCode: string;
+  branchName: string;
 };
 
 const API_ROOT = "/Companygw/api" as const;

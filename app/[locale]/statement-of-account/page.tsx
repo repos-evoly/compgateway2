@@ -94,11 +94,19 @@ const Page: React.FC = () => {
     try {
       const data = await getStatement(values);
       // Add balance and reference fields required for PDF
-      const processedData = data.map((line, index) => ({
-        ...line,
-        balance: calculateBalance(data, index),
-        reference: line.nr1 || '',
-      }));
+      const processedData = data.map((line, index) => {
+        const fallbackBalance = calculateBalance(data, index);
+        const balanceValue =
+          line.balance !== undefined && line.balance !== null
+            ? Number(line.balance)
+            : fallbackBalance;
+
+        return {
+          ...line,
+          balance: balanceValue,
+          reference: line.nr1 || "",
+        };
+      });
       setLines(processedData);
       setCurrentPage(1);
     } catch (err) {
@@ -122,19 +130,25 @@ const Page: React.FC = () => {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("StatementData");
 
-    ws.mergeCells("A1:D1");
+    ws.mergeCells("A1:E1");
     ws.getCell("A1").value = t("statementOfAccount");
     ws.getCell("A1").font = { size: 18, bold: true };
     ws.getCell("A1").alignment = { horizontal: "center" };
 
-    ws.mergeCells("A2:D2");
+    ws.mergeCells("A2:E2");
     ws.getCell("A2").value = `Exported on: ${new Date().toLocaleDateString()}`;
     ws.getCell("A2").font = { italic: true, size: 12 };
     ws.getCell("A2").alignment = { horizontal: "center" };
 
     ws.addRow([]);
 
-    const headers = [t("postingDate"), t("debit"), t("credit"), t("narrative")];
+    const headers = [
+      t("postingDate"),
+      t("narrative"),
+      t("debit"),
+      t("credit"),
+      t("balance"),
+    ];
     const hdrRow = ws.addRow(headers);
     headers.forEach((_, i) => {
       const c = hdrRow.getCell(i + 1);
@@ -147,7 +161,7 @@ const Page: React.FC = () => {
       c.alignment = { horizontal: "center" };
     });
 
-    lines.forEach((ln) => {
+    lines.forEach((ln, idx) => {
       const narrative = [ln.nr1, ln.nr2, ln.nr3]
         .filter((n) => n && n.trim() !== "")
         .join(" ");
@@ -155,16 +169,26 @@ const Page: React.FC = () => {
 
       const credit = ln.amount > 0 ? ln.amount : toNumber(ln.credit) ?? "";
       const dateOnly = ln.postingDate.split("T")[0];
-      ws.addRow([dateOnly, debit, credit, narrative || "-"]);
+      const balanceValue =
+        ln.balance !== undefined && ln.balance !== null
+          ? Number(ln.balance)
+          : calculateBalance(lines, idx);
+      ws.addRow([dateOnly, narrative || "-", debit, credit, balanceValue]);
     });
 
     ws.addRow([]);
     const foot = ws.addRow(["Thank you for your business!"]);
-    ws.mergeCells(`A${foot.number}:D${foot.number}`);
+    ws.mergeCells(`A${foot.number}:E${foot.number}`);
     foot.getCell(1).font = { italic: true, color: { argb: "FF305496" } };
     foot.getCell(1).alignment = { horizontal: "center" };
 
-    ws.columns = [{ width: 16 }, { width: 14 }, { width: 14 }, { width: 40 }];
+    ws.columns = [
+      { width: 16 },
+      { width: 40 },
+      { width: 14 },
+      { width: 14 },
+      { width: 18 },
+    ];
 
     const buf = await wb.xlsx.writeBuffer();
     saveAs(new Blob([buf]), "Statement.xlsx");
@@ -173,6 +197,16 @@ const Page: React.FC = () => {
   /* ---------------- Grid columns ---------------- */
   const columns = [
     { key: "postingDate", label: t("postingDate") },
+    {
+      key: "narrative",
+      label: t("narrative"),
+      renderCell: (row: StatementLine) => {
+        const narrative = [row.nr1, row.nr2, row.nr3]
+          .filter((n): n is string => typeof n === 'string' && n.trim() !== "")
+          .join(" ");
+        return narrative || "-";
+      },
+    },
     {
       key: "debit",
       label: t("debit"),
@@ -190,14 +224,9 @@ const Page: React.FC = () => {
       },
     },
     {
-      key: "narrative",
-      label: t("narrative"),
-      renderCell: (row: StatementLine) => {
-        const narrative = [row.nr1, row.nr2, row.nr3]
-          .filter((n): n is string => typeof n === 'string' && n.trim() !== "")
-          .join(" ");
-        return narrative || "-";
-      },
+      key: "balance",
+      label: t("balance"),
+      renderCell: (row: StatementLine) => fmt(toNumber(row.balance)),
     },
   ] as Array<{
     key: string;

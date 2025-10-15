@@ -12,11 +12,9 @@ import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import InputSelectCombo, {
   InputSelectComboOption,
 } from "@/app/components/FormUI/InputSelectCombo";
-import CheckboxWrapper from "@/app/components/FormUI/CheckboxWrapper";
 
 import {
   step1StatementInputs,
-  ServicesOptions,
   CertifiedBankStatementRequest,
 } from "./statementInputs";
 import { getKycByCode } from "@/app/auth/register/services";
@@ -96,41 +94,12 @@ export function Step1StatementForm({ readOnly = false }: Props) {
   /* ------------------------------------------------------------------ */
   /* Service-request checkbox list                                      */
   /* ------------------------------------------------------------------ */
-  const serviceOptions: Array<{ value: ServicesOptions; labelKey: string }> = [
-    { value: "reactivateIdfaali", labelKey: "reactivateIdfaali" },
-    { value: "deactivateIdfaali", labelKey: "deactivateIdfaali" },
-    { value: "resetDigitalBankPassword", labelKey: "resetDigitalBankPassword" },
-    { value: "resendMobileBankingPin", labelKey: "resendMobileBankingPin" },
-    { value: "changePhoneNumber", labelKey: "changePhoneNumber" },
-  ];
-
   /* ------------------------------------------------------------------ */
   /* Render                                                              */
   /* ------------------------------------------------------------------ */
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {step1StatementInputs.map(({ name, label, icon, type }) => {
-        /* Service-requests block */
-        if (type === "serviceRequests") {
-          return (
-            <div key={name} className="col-span-1 sm:col-span-2 xl:col-span-3">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                {t(label)}
-              </label>
-              <div className="rounded-md border border-gray-300 p-4">
-                {serviceOptions.map((opt) => (
-                  <CheckboxWrapper
-                    key={opt.value}
-                    name={`serviceRequests.${opt.value}`}
-                    label={t(opt.labelKey)}
-                    disabled={readOnly}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        }
-
         /* Account number field → InputSelectCombo with mask & cookie opts */
         if (name === "accountNumber") {
           return (

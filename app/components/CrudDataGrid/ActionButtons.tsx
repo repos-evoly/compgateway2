@@ -34,31 +34,34 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   }, []);
 
   return (
-    <div className={`flex ${isRTL 
-      ? "flex-row-reverse space-x-reverse space-x-3 justify-center" 
-      : "flex-row space-x-3 justify-center"}`}>
+    <div
+      className={`flex ${
+        isRTL ? "flex-row-reverse justify-center" : "flex-row justify-center"
+      } gap-3`}
+    >
       {actions.map((action) => (
-        <Tooltip tooltip={action.tip} position="top" key={action.name}>
-         
-          {action.selectProps ? (
-            <SelectWrapper
-              name={action.selectProps.name}
-              label={action.selectProps.label}
-              options={action.selectProps.options}
-              disabled={action.selectProps.disabled}
-              width={action.selectProps.width}
-              height={action.selectProps.height}
-            />
-          ) : action.component ? (
-            <div>{action.component}</div>
-          ) : (
-            <ActionButton
-              name={action.name}
-              icon={action.icon!}
-              onClick={() => onActionClick && onActionClick(action.name)}
-            />
-          )}
-        </Tooltip>
+        <div key={action.name} className="flex items-center justify-center">
+          <Tooltip tooltip={action.tip} position="top">
+            {action.selectProps ? (
+              <SelectWrapper
+                name={action.selectProps.name}
+                label={action.selectProps.label}
+                options={action.selectProps.options}
+                disabled={action.selectProps.disabled}
+                width={action.selectProps.width}
+                height={action.selectProps.height}
+              />
+            ) : action.component ? (
+              <div>{action.component}</div>
+            ) : (
+              <ActionButton
+                name={action.name}
+                icon={action.icon!}
+                onClick={() => onActionClick && onActionClick(action.name)}
+              />
+            )}
+          </Tooltip>
+        </div>
       ))}
     </div>
   );

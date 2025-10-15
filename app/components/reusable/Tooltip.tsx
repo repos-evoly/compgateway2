@@ -1,4 +1,7 @@
-import React, { ReactNode, useRef, useState } from "react";
+"use client";
+
+import React, { ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type TooltipProps = {
   children: ReactNode;
@@ -18,6 +21,11 @@ const Tooltip: React.FC<TooltipProps> = ({
     null
   );
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const showTooltip = () => {
     if (!wrapperRef.current) return;
@@ -61,18 +69,22 @@ const Tooltip: React.FC<TooltipProps> = ({
   return (
     <>
       {/* Tooltip itself */}
-      {visible && coords && (
-        <div
-          className="fixed z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap pointer-events-none"
-          style={{
-            top: coords.top,
-            left: coords.left,
-            transform,
-          }}
-        >
-          {tooltip}
-        </div>
-      )}
+      {isMounted &&
+        visible &&
+        coords &&
+        createPortal(
+          <div
+            className="fixed z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap pointer-events-none"
+            style={{
+              top: coords.top,
+              left: coords.left,
+              transform,
+            }}
+          >
+            {tooltip}
+          </div>,
+          document.body
+        )}
 
       {/* Target element */}
       <div

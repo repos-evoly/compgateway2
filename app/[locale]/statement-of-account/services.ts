@@ -25,6 +25,7 @@ type StatementApiResponseItem = {
   isDeleted: boolean;
   debit: number | string;
   credit: number | string;
+  balance?: number;
 };
 
 import { handleApiResponse } from "@/app/helpers/apiResponse";
@@ -65,6 +66,7 @@ export async function getStatement({
       isDeleted: item.isDeleted ? 1 : 0,
       debit: item.debit,
       credit: item.credit,
+      balance: item.balance,
     };
   });
 }

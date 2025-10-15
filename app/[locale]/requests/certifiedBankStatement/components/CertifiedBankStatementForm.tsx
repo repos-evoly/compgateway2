@@ -392,19 +392,16 @@
 import React, { useRef, useState } from "react";
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
-import { ValidationError } from "yup";
 import { useTranslations } from "next-intl";
 
-import { TabsWizard } from "@/app/components/reusable/TabsWizard";
 import { Step1StatementForm } from "./Step1StatementForm";
 import { Step2StatementForm } from "./Step2StatementForm";
-import {
-  CertifiedBankStatementRequest,
-  step1StatementInputs,
-  step2StatementInputs,
-} from "./statementInputs";
+import { CertifiedBankStatementRequest } from "./statementInputs";
 import ReasonBanner from "@/app/components/reusable/ReasonBanner";
 import ConfirmationDialog from "@/app/components/reusable/ConfirmationDialog";
+import FormHeader from "@/app/components/reusable/FormHeader";
+import BackButton from "@/app/components/reusable/BackButton";
+import SubmitButton from "@/app/components/FormUI/SubmitButton";
 
 /* === helpers to fetch statement + pricing and compute amount === */
 import { getPricing } from "@/app/helpers/getPricing";
@@ -506,42 +503,21 @@ export default function CertifiedBankStatementForm({
     ...initialValues,
   };
 
-  const steps = [
-    {
-      title: t("step1Title"),
-      component: <Step1StatementForm readOnly={readOnly} />,
-    },
-    {
-      title: t("step2Title"),
-      component: <Step2StatementForm readOnly={readOnly} />,
-    },
-  ];
-
-  const allInputs = [...step1StatementInputs, ...step2StatementInputs];
-  const xlate = (name: string) => {
-    const input = allInputs.find((f) => f.name === name);
-    if (input) return t(input.label);
-    if (name === "id") return t("id");
-    return name;
-  };
-
-  const stepValidations = [
-    // Step 1: keep as-is
-    Yup.object({
-      accountHolderName: Yup.string().required(
-        `${t("accountHolderName")} ${t("isRequired")}`
-      ),
-      authorizedOnTheAccountName: Yup.string().required(
-        `${t("authorizedOnTheAccountName")} ${t("isRequired")}`
-      ),
-      accountNumber: Yup.number()
-        .typeError(`${t("accountNumber")} ${t("mustBeNumber")}`)
-        .required(`${t("accountNumber")} ${t("isRequired")}`),
-    }),
-
-    // Step 2: nothing required anymore (validates always)
-    Yup.object({}),
-  ];
+  const baseValidation = Yup.object({
+    accountHolderName: Yup.string().required(
+      `${t("accountHolderName")} ${t("isRequired")}`
+    ),
+    authorizedOnTheAccountName: Yup.string().required(
+      `${t("authorizedOnTheAccountName")} ${t("isRequired")}`
+    ),
+    accountNumber: Yup.number()
+      .typeError(`${t("accountNumber")} ${t("mustBeNumber")}`)
+      .required(`${t("accountNumber")} ${t("isRequired")}`),
+    statementRequest: Yup.object({
+      fromDate: Yup.string().optional(),
+      toDate: Yup.string().optional(),
+    }).optional(),
+  });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmMsg, setConfirmMsg] = useState("");
@@ -614,35 +590,11 @@ export default function CertifiedBankStatementForm({
             helpers.setSubmitting(false);
           }
         }}
-        validationSchema={Yup.object({})}
+        validationSchema={baseValidation}
         validateOnBlur
         validateOnChange={false}
       >
-        {(formik) => {
-          const validateCurrentStep = async (idx: number) => {
-            try {
-              await stepValidations[idx].validate(formik.values, {
-                abortEarly: false,
-              });
-              formik.setErrors({});
-              return true;
-            } catch (err) {
-              if (err instanceof ValidationError) {
-                const errs: Record<string, string> = {};
-                const touched: Record<string, boolean> = {};
-                err.inner.forEach((e) => {
-                  if (e.path) {
-                    errs[e.path] = e.message;
-                    touched[e.path] = true;
-                  }
-                });
-                formik.setErrors(errs);
-                formik.setTouched(touched, false);
-              }
-              return false;
-            }
-          };
-
+        {({ isSubmitting }) => {
           const statusVal = (merged as Record<string, unknown>)["status"];
           const bannerStatus: "approved" | "rejected" =
             typeof statusVal === "string" &&
@@ -657,15 +609,27 @@ export default function CertifiedBankStatementForm({
             <>
               <Form>
                 <ReasonBanner reason={bannerReason} status={bannerStatus} />
-                <TabsWizard
-                  steps={steps}
-                  formik={formik}
-                  onSubmit={() => formik.handleSubmit()}
-                  validateCurrentStep={validateCurrentStep}
-                  translateFieldName={xlate}
-                  readOnly={readOnly}
-                  isEditing={!!initialValues}
-                />
+                <FormHeader>
+                  <BackButton
+                    fallbackPath="/requests/certifiedBankStatement"
+                    isEditing={!!initialValues}
+                  />
+                </FormHeader>
+
+                <div className="mt-6 space-y-6">
+                  <Step1StatementForm readOnly={readOnly} />
+                  <Step2StatementForm readOnly={readOnly} />
+                </div>
+
+                {!readOnly && (
+                  <div className="mt-8 flex justify-center">
+                    <SubmitButton
+                      title={t("submit", { defaultValue: "Submit" })}
+                      color="info-dark"
+                      isSubmitting={isSubmitting}
+                    />
+                  </div>
+                )}
               </Form>
 
               <ConfirmationDialog

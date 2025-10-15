@@ -55,6 +55,10 @@
     "title": "Corporate Gateway System"
   },
 
+  "inputSelectCombo": {
+    "typeOrSelect": "Type or select"
+  },
+
   "cblForm": {
     "partyName": "Party Name",
     "capital": "Capital",
@@ -395,6 +399,7 @@
     "amount": "Amount",
     "debit": "Debit",
     "credit": "Credit",
+    "balance": "Balance",
     "narrative": "Narrative",
     "required": "Required",
     "selectAccount": "Please select an account",

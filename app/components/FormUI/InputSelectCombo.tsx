@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useId } from "react";
 import { useField, useFormikContext } from "formik";
 import { FaChevronDown } from "react-icons/fa";
 import IMask, { InputMask } from "imask";
+import { useTranslations } from "next-intl";
 
 export type InputSelectComboOption = {
   label: string;
@@ -29,7 +30,7 @@ const InputSelectCombo: React.FC<InputSelectComboProps> = ({
   name,
   label,
   options,
-  placeholder = "type or select",
+  placeholder,
   disabled = false,
   width = "w-full",
   titleColor = "text-black",
@@ -38,14 +39,18 @@ const InputSelectCombo: React.FC<InputSelectComboProps> = ({
   clearIfDisabledSelected = true,
 }) => {
   const listboxId = useId();
+  const t = useTranslations("inputSelectCombo");
 
   const formik = useFormikContext<Record<string, unknown>>();
   const [field, meta, helpers] = useField(name);
 
+  const defaultPlaceholder = t("typeOrSelect", {
+    defaultValue: "Type or select",
+  });
   const effectivePlaceholder =
     placeholder && placeholder.trim().length > 0
       ? placeholder
-      : "type or select";
+      : defaultPlaceholder;
 
   const [displayText, setDisplayText] = useState("");
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);

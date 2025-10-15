@@ -14,7 +14,7 @@ export type InternalFormValues = {
   date?: string | null;
   receiverOrSender?: string;
   transactionCategoryId?: number;
-  currencyId?: number | null;
+  currencyDesc?: string | null;
   economicSectorId?: number;
 };
 
@@ -50,7 +50,8 @@ export interface TransferPayload {
   fromAccount: string;
   toAccount: string;
   amount: number;
-  currencyId: number; // or null if unknown
+  currencyDesc: string;
+  currencyId?: number; // kept optional for backward compatibility
   description: string;
   commissionOnRecipient?: boolean; // optional, if your API supports it
   economicSectorId?: number;
@@ -66,7 +67,8 @@ export interface TransferResponse {
   fromAccount: string;
   toAccount: string;
   amount: number;
-  currencyId: number;
+  currencyId?: number;
+  currencyDesc?: string;
   description: string;
   createdAt: string;
   updatedAt: string;
@@ -129,4 +131,6 @@ export type CheckAccountResponse = {
   companyName: string;
   branchCode: string;
   branchName: string;
+  accountName?: string;
+  currency: string;
 };

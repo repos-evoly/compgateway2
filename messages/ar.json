@@ -54,6 +54,9 @@
     "mainHeader":{
       "title":"منظومة بوابة الشركات"
     },
+    "inputSelectCombo":{
+      "typeOrSelect":"اكتب أو اختر"
+    },
     "cblForm":{
       "partyName":"اسم الجهة",
       "infoBoxTitle":"معلومات",
@@ -332,6 +335,8 @@
       "delete":"حذف",
 
       "internalTransferForm":{
+        "createErrorTitle":"خطأ",
+        "currencyLookupFailed":"فشل في جلب العملات",
         "selectOrTypeToAccount:":"اختر أو اكتب رقم الحساب",
         "title":"التحويل داخل المصرف",
         "id":"المعرف",
@@ -408,6 +413,7 @@
         "amount": "المبلغ",
         "debit": "مدين",
         "credit": "دائن",
+        "balance": "الرصيد",
         "narrative": "البيان",
         "required": "مطلوب",
         "selectAccount": "الرجاء اختيار حساب",

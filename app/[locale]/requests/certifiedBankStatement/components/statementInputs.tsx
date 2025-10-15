@@ -1,12 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  FiUser,
-  FiCreditCard,
-  FiFileText,
-  FiCheckSquare,
-} from "react-icons/fi";
+import { FiUser, FiCreditCard, FiFileText } from "react-icons/fi";
 
 /**
  * 1) Type definitions
@@ -52,7 +47,7 @@ export type CertifiedBankStatementRequest = {
  */
 
 // Step 1 fields:
-//   accountHolderName, authorizedOnTheAccountName, accountNumber, serviceRequests
+//   accountHolderName, authorizedOnTheAccountName, accountNumber
 export const step1StatementInputs = [
   {
     name: "accountNumber",
@@ -72,16 +67,6 @@ export const step1StatementInputs = [
     label: "authorizedOnTheAccountName",
     icon: <FiUser />,
     type: "text",
-  },
-
-  // For serviceRequests, you may handle it in a special UI
-  // (like multiple checkboxes). We'll treat it as a single "group" for now.
-  {
-    name: "serviceRequests",
-    label: "serviceRequests",
-    icon: <FiCheckSquare />,
-    type: "serviceRequests",
-    // We'll handle it specially in Step1StatementForm
   },
 ];
 

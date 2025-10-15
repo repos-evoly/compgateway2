@@ -62,7 +62,7 @@ export default function SingleEmployeePage() {
         <h2 className="text-xl font-bold text-red-500 mb-2">Not Found</h2>
         <p className="text-gray-700">No employee found with ID: {id}</p>
         <button
-          onClick={() => router.push(`/${locale}/employees`)}
+          onClick={() => router.push(`/${locale}/users`)}
           className="mt-4 px-4 py-2 bg-gray-900 text-white rounded"
         >
           Go Back
@@ -104,7 +104,7 @@ export default function SingleEmployeePage() {
             ? values.isActive
             : employeeWithStatus.isActive, // Use form value or current status
       });
-      router.push(`/${locale}/employees`);
+      router.push(`/${locale}/users`);
     } catch (error) {
       console.error("Error updating employee:", error);
       setModalOpen(true);
@@ -126,7 +126,7 @@ export default function SingleEmployeePage() {
       <EmployeeForm
         initialValues={initialValues}
         onSubmit={handleSubmit}
-        onCancel={() => router.push(`/${locale}/employees`)}
+        onCancel={() => router.push(`/${locale}/users`)}
         employeeStatus={employeeWithStatus.isActive}
         onStatusChange={handleStatusChange}
       />

@@ -19,7 +19,8 @@
         "certifiedBankStatement":"طلب كشف حساب مصدق",
         "rtgs":"طلب حوالة RTGS",
         "foreign":"طلب اصدار cbl",
-        "cbl":"طلب استفسار عن CBL"
+        "cbl":"طلب استفسار عن CBL",
+        "edfaali":"طلب الاشتراك في خدمة ادفعلي كمورد"
       },
       "salaryLocalization":{
         "title":"توطين المرتبات",
@@ -162,9 +163,71 @@
       "maxFiles": "الحد الأقصى 9 ملفات مسموح بها",
       "actions": "عمليات",
       "downloadPdf": "تحميل PDF"
-  
+
     },
-  
+
+    "edfaaliForm":{
+      "title":"طلب اشتراك خدمة ادفعلي للموردين",
+      "subtitle":"زودنا بمعلومات المورد ليتم تفعيل خدمة ادفعلي له.",
+      "representative":"المندوب",
+      "selectRepresentative":"اختر المندوب",
+      "nationalId":"الرقم الوطني",
+      "identificationNumber":"رقم التعريف",
+      "identificationType":"نوع التعريف",
+      "selectIdentificationType":"اختر نوع التعريف",
+      "companyEnglishName":"اسم الشركة بالإنجليزية",
+      "workAddress":"عنوان العمل",
+      "storeAddress":"عنوان المخزن",
+      "city":"المدينة",
+      "area":"المنطقة",
+      "street":"الشارع",
+      "mobileNumber":"رقم الهاتف المحمول",
+      "servicePhoneNumber":"رقم هاتف الخدمة",
+      "bankAnnouncementPhoneNumber":"رقم هاتف إشعار البنك",
+      "email":"البريد الإلكتروني",
+      "accountNumber":"رقم الحساب",
+      "accountNumberHelper":"يبدأ رقم الحساب دائماً بـ 0123 وينتهي بـ 001. أدخل الأرقام الستة في الوسط.",
+      "createdAt":"تاريخ الإنشاء",
+      "fieldRequired":"{field} مطلوب",
+      "numericOnly":"يسمح بالأرقام فقط.",
+      "phoneFormat":"أدخل رقم هاتف صالح.",
+      "invalidEmail":"أدخل بريدًا إلكترونيًا صالحًا.",
+      "accountNumberInvalid":"يجب أن يبدأ رقم الحساب بـ 0123 وينتهي بـ 001 مع ستة أرقام في الوسط.",
+      "submit":"إرسال",
+      "update":"تحديث",
+      "cancel":"إلغاء",
+      "sections":{
+        "generalInfo":"بيانات المورد",
+        "generalInfoDescription":"حدد المندوب ووثائق تسجيل المورد.",
+        "addresses":"العناوين",
+        "addressesDescription":"أدخل مقر العمل الرسمي ومواقع التخزين المعتمدة للتسليم.",
+        "contact":"قنوات التواصل",
+        "contactDescription":"حدد الأرقام والبريد الإلكتروني التي سيعتمدها المصرف للتواصل.",
+        "account":"حساب التسوية",
+        "accountDescription":"أكد الحساب الذي ستودع فيه مبالغ خدمة ادفعلي.",
+        "documents":"المستندات الداعمة",
+        "documentsDescription":"حمّل صور المستندات المطلوبة لتفعيل المورد."
+      },
+      "documents":{
+        "helper":"أرفق صوراً واضحة بصيغة JPG أو PNG لكل مستند.",
+        "uploadButton":"اختر صورة",
+        "noFile":"لم يتم اختيار ملف",
+        "passport":"جواز السفر",
+        "birthStatement":"شهادة الميلاد",
+        "activityLicense":"رخصة مزاولة النشاط"
+      },
+      "representatives":{
+        "sampleOne":"المندوب الأول",
+        "sampleTwo":"المندوب الثاني",
+        "sampleThree":"المندوب الثالث"
+      },
+      "identificationTypes":{
+        "nationalId":"الرقم الوطني",
+        "passport":"جواز سفر",
+        "commercialLicense":"رخصة تجارية"
+      }
+    },
+
     "signaturePad": {
       "open": "افتح لوحة التوقيع",
       "done": "تم",
@@ -526,6 +589,7 @@
           "rtgsDescription": "تنفيذ معاملات RTGS",
           "foreignRequestsDescription": "طلب تحويلات بالعملة الأجنبية",
           "cblDescription": "عرض التفاصيل المتعلقة بمصرف ليبيا المركزي",
+          "edfaaliDescription": "الاشتراك في خدمة ادفعلي للموردين",
       
           "currenciesDescription": "إدارة العملات وأسعار الصرف",
       

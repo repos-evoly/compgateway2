@@ -24,7 +24,7 @@ export function Step2BankingDetails({
   const row2 = [step2Inputs[3], step2Inputs[4], step2Inputs[5]];
   const row3 = [step2Inputs[6], step2Inputs[7], step2Inputs[8]];
   const row4 = [step2Inputs[9], step2Inputs[10]];
-  // const rowUpload = [step2Inputs[11]]; // if needed
+  const rowUpload = step2Inputs.slice(11, 12);
 
   const renderField = (field: (typeof step2Inputs)[number]) =>
     field.type === "file" ? (
@@ -32,6 +32,7 @@ export function Step2BankingDetails({
         key={field.name}
         name={field.name}
         label={t(field.label)}
+        buttonLabel={t("uploadDocuments")}
         multiple={field.multiple}
         accept=".pdf,.jpg,.png"
         disabled={readOnly}
@@ -68,6 +69,12 @@ export function Step2BankingDetails({
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[1fr_2fr]">
         {row4.map(renderField)}
       </div>
+
+      {rowUpload.length ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rowUpload.map(renderField)}
+        </div>
+      ) : null}
 
       {/* Helpful note */}
       <div className="flex items-start gap-2 rounded-lg border bg-gray-50 p-4 text-sm text-gray-600">

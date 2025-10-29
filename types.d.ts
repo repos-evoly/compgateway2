@@ -37,6 +37,11 @@ export type FormItemsProps = {
     onMouseDown?: (event: React.MouseEvent<HTMLButtonElement>) => void;
     helpertext?: string;
     width?: string;
+    inputMode?: React.InputHTMLAttributes<HTMLInputElement>["inputMode"];
+    pattern?: string;
+    maxLength?: number;
+    placeholder?: string;
+    autoComplete?: string;
   
     /** New optional props */
     errorMessage?: string; // For API-based or custom error display

@@ -228,6 +228,13 @@ export const sidebarItems = [
         permissions: ["CompanyCanRequestCBL"],
         enabledTransactionCategories: ["CBL"],
       },
+      // {
+      //   id: 38,
+      //   label: "requests.edfaali",
+      //   path: "/requests/edfaali",
+      //   icon: FaFileInvoice,
+      //   permissions: [],
+      // },
     ],
   },
   {

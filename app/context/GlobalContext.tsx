@@ -140,6 +140,10 @@ const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
     icon: <FaClipboardList />,
     description: "cblDescription",
   },
+  "requests.edfaali": {
+    icon: <FaFileInvoice />,
+    description: "edfaaliDescription",
+  },
   currencies: {
     icon: <FaCoins />,
     description: "currenciesDescription",

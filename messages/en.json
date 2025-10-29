@@ -19,7 +19,8 @@
       "certifiedBankStatement": "Certified Bank‑Statement Request",
       "rtgs": "RTGS Transfer Request",
       "foreign": "Foreign‑Transfer Licence Request",
-      "cbl": "CBL Inquiry Request"
+      "cbl": "CBL Inquiry Request",
+      "edfaali": "Edfaali Supplier Subscription"
     },
     "salaryLocalization": {
       "title": "Salary Localization",
@@ -157,6 +158,68 @@
     "maxFiles": "Maximum 9 files allowed",
     "actions": "Actions",
     "downloadPdf": "Download PDF"
+  },
+
+  "edfaaliForm": {
+    "title": "Edfaali Supplier Subscription",
+    "subtitle": "Share the supplier's information so we can enable the Edfaali service for them.",
+    "representative": "Representative",
+    "selectRepresentative": "Select representative",
+    "nationalId": "National ID",
+    "identificationNumber": "Identification Number",
+    "identificationType": "Identification Type",
+    "selectIdentificationType": "Select identification type",
+    "companyEnglishName": "Company English Name",
+    "workAddress": "Work Address",
+    "storeAddress": "Store Address",
+    "city": "City",
+    "area": "Area",
+    "street": "Street",
+    "mobileNumber": "Mobile Number",
+    "servicePhoneNumber": "Service Phone Number",
+    "bankAnnouncementPhoneNumber": "Bank Announcement Phone Number",
+    "email": "Email",
+    "accountNumber": "Account Number",
+    "accountNumberHelper": "Account numbers always start with 0123 and end with 001. Enter the six middle digits.",
+    "createdAt": "Created At",
+    "fieldRequired": "{field} is required",
+    "numericOnly": "Only digits are allowed.",
+    "phoneFormat": "Enter a valid phone number.",
+    "invalidEmail": "Enter a valid email address.",
+    "accountNumberInvalid": "Account number must be 0123 followed by six digits and end with 001.",
+    "submit": "Submit",
+    "update": "Update",
+    "cancel": "Cancel",
+    "sections": {
+      "generalInfo": "Supplier Details",
+      "generalInfoDescription": "Identify the representative and the supplier's registration documents.",
+      "addresses": "Addresses",
+      "addressesDescription": "Provide the official workplace and storage locations used for deliveries.",
+      "contact": "Contact Channels",
+      "contactDescription": "Set the numbers and email the bank should use for the subscription.",
+      "account": "Settlement Account",
+      "accountDescription": "Confirm the account that will receive payments from the Edfaali service.",
+      "documents": "Supporting Documents",
+      "documentsDescription": "Upload the identification documents required to activate the supplier."
+    },
+    "documents": {
+      "helper": "Attach clear JPG or PNG images so the bank can verify each document.",
+      "uploadButton": "Select image",
+      "noFile": "No file selected",
+      "passport": "Passport",
+      "birthStatement": "Birth Statement",
+      "activityLicense": "Activity License"
+    },
+    "representatives": {
+      "sampleOne": "Representative A",
+      "sampleTwo": "Representative B",
+      "sampleThree": "Representative C"
+    },
+    "identificationTypes": {
+      "nationalId": "National ID",
+      "passport": "Passport",
+      "commercialLicense": "Commercial License"
+    }
   },
 
   "signaturePad": {
@@ -506,6 +569,7 @@
     "rtgsDescription": "Execute RTGS transactions",
     "foreignRequestsDescription": "Request foreign-currency transfers",
     "cblDescription": "View Central Bank of Libya related details",
+    "edfaaliDescription": "Subscribe suppliers to the Edfaali service",
 
     "currenciesDescription": "Manage currencies and exchange rates",
 

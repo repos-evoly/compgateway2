@@ -19,6 +19,11 @@ const FormInputIcon = ({
   onMouseDown,
   helpertext,
   width = "w-full",
+  inputMode,
+  pattern,
+  maxLength,
+  placeholder,
+  autoComplete,
   errorMessage,
   onBlurAdditional,
   titlePosition = "top",
@@ -154,6 +159,11 @@ const FormInputIcon = ({
           id={name}
           name={field.name}
           type={effectiveType}
+          inputMode={inputMode}
+          pattern={pattern}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
           disabled={disabled}
           ref={inputRef}
           value={inputValue}

@@ -36,10 +36,65 @@ export type TEdfaaliFormValues = {
   documents: TEdfaaliDocument[];
 };
 
-export type TEdfaaliListItem = TEdfaaliFormValues & {
+export type TEdfaaliListItem = {
   id: string;
-  createdAt: string;
-  representativeName: string;
+  representativeId: string;
+  representativeName?: string;
+  nationalId: string;
+  identificationNumber: string;
+  identificationType: string;
+  companyEnglishName: string;
+  workAddress: string;
+  storeAddress: string;
+  city: string;
+  area: string;
+  street: string;
+  mobileNumber: string;
+  servicePhoneNumber: string;
+  bankAnnouncementPhoneNumber: string;
+  email: string;
+  accountNumber: string;
+  createdAt?: string;
+};
+
+export type EdfaaliRequestApiItem = {
+  id?: string | number | null;
+  representativeId?: string | null;
+  representativeName?: string | null;
+  nationalId?: string | null;
+  identificationNumber?: string | null;
+  identificationType?: string | null;
+  companyEnglishName?: string | null;
+  workAddress?: string | null;
+  storeAddress?: string | null;
+  city?: string | null;
+  area?: string | null;
+  street?: string | null;
+  mobileNumber?: string | null;
+  servicePhoneNumber?: string | null;
+  bankAnnouncementPhoneNumber?: string | null;
+  email?: string | null;
+  accountNumber?: string | null;
+  createdAt?: string | null;
+  [key: string]: unknown;
+};
+
+export type EdfaaliRequestsListApiResponse =
+  | EdfaaliRequestApiItem[]
+  | {
+      data?: EdfaaliRequestApiItem[];
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+      totalRecords?: number;
+    };
+
+export type EdfaaliRequestsList = {
+  data: TEdfaaliListItem[];
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+  totalRecords?: number;
 };
 
 type BaseFieldConfig = {
@@ -82,7 +137,7 @@ export type EdfaaliFormProps = {
   onSubmit?: (
     values: TEdfaaliFormValues,
     helpers: FormikHelpers<TEdfaaliFormValues>
-  ) => void;
+  ) => void | Promise<void>;
   onBack?: () => void;
   readOnly?: boolean;
 };

@@ -182,6 +182,11 @@
     "accountNumber": "Account Number",
     "accountNumberHelper": "Account numbers always start with 0123 and end with 001. Enter the six middle digits.",
     "createdAt": "Created At",
+    "successTitle": "Request submitted",
+    "successMessage": "The Edfaali request was submitted successfully.",
+    "errorTitle": "Error",
+    "genericError": "Something went wrong. Please try again.",
+    "close": "Close",
     "fieldRequired": "{field} is required",
     "numericOnly": "Only digits are allowed.",
     "phoneFormat": "Enter a valid phone number.",
@@ -202,8 +207,8 @@
       "documents": "Supporting Documents",
       "documentsDescription": "Upload the identification documents required to activate the supplier."
     },
-    "documents": {
-      "helper": "Attach clear JPG or PNG images so the bank can verify each document.",
+  "documents": {
+    "helper": "Attach clear PDF or image files so the bank can verify each document.",
       "uploadButton": "Select image",
       "noFile": "No file selected",
       "passport": "Passport",

@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Cookies from "js-cookie";
 import * as Yup from "yup";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { FaTrash } from "react-icons/fa";
 import { Formik, Form, useFormikContext } from "formik";
 
@@ -164,6 +164,7 @@ function InternalForm({
   onSuccess,
 }: InternalFormProps & ExtraProps) {
   const t = useTranslations("internalTransferForm");
+  const locale = useLocale();
 
   const isNew = !initialData || Object.keys(initialData).length === 0;
   const [fieldsDisabled, setFieldsDisabled] = useState(viewOnly || !isNew);
@@ -490,13 +491,21 @@ function InternalForm({
       const pctAmt = (pct * vals.value) / 100;
       const fee = Math.max(pctAmt, fixed);
 
+      const resolveDisplayName = (info: AccountLookup | null) => {
+        if (!info) return undefined;
+        if (locale === "ar") {
+          return info.accountName || info.companyName || undefined;
+        }
+        return info.companyName || info.accountName || undefined;
+      };
+
       setModalData({
         formikData: vals,
         commissionAmount: fee,
         commissionCurrency: currencyDesc,
         displayAmount: commissionOnReceiver ? vals.value : vals.value + fee,
-        fromCompanyName: fromInfo.companyName,
-        toCompanyName: toInfo.companyName,
+        fromCompanyName: resolveDisplayName(fromInfo),
+        toCompanyName: resolveDisplayName(toInfo),
         currencyDesc,
       });
       setModalOpen(true);

@@ -19,17 +19,17 @@ export const documentUploadDefinitions: Array<{
   {
     type: "passport",
     labelKey: "documents.passport",
-    accept: "image/*",
+    accept: "application/pdf,image/*",
   },
   {
     type: "birthStatement",
     labelKey: "documents.birthStatement",
-    accept: "image/*",
+    accept: "application/pdf,image/*",
   },
   {
     type: "activityLicense",
     labelKey: "documents.activityLicense",
-    accept: "image/*",
+    accept: "application/pdf,image/*",
   },
 ];
 
@@ -59,12 +59,6 @@ export const identificationTypeOptions = [
   { value: "nationalId", labelKey: "identificationTypes.nationalId" },
   { value: "passport", labelKey: "identificationTypes.passport" },
   { value: "commercialLicense", labelKey: "identificationTypes.commercialLicense" },
-];
-
-export const representativePlaceholderOptions = [
-  { value: "rep-1", labelKey: "representatives.sampleOne" },
-  { value: "rep-2", labelKey: "representatives.sampleTwo" },
-  { value: "rep-3", labelKey: "representatives.sampleThree" },
 ];
 
 export const composedAccountNumber = (middleDigits: string): string =>

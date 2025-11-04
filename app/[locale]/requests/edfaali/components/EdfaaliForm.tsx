@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode, useMemo } from "react";
+import React, { ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "use-intl";
 import { FormikHelpers, useField, useFormikContext } from "formik";
 
@@ -14,7 +14,6 @@ import {
   initialValues as defaultValues,
   validationSchema,
   identificationTypeOptions,
-  representativePlaceholderOptions,
   composedAccountNumber,
   pluckMiddleDigits,
   buildSectionConfigs,
@@ -27,6 +26,13 @@ import {
   TEdfaaliFormValues,
 } from "../types";
 import DocumentUploadFields from "./DocumentUploadFields";
+
+import { getRepresentatives } from "@/app/[locale]/representatives/services";
+
+type RepresentativeOption = {
+  label: string;
+  value: string;
+};
 
 type AccountNumberFieldProps = {
   name: keyof TEdfaaliFormValues;
@@ -173,17 +179,55 @@ const EdfaaliForm: React.FC<EdfaaliFormProps> = ({
     ...initialValues,
   };
 
+  const [representativeOptions, setRepresentativeOptions] = useState<
+    RepresentativeOption[]
+  >([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const response = await getRepresentatives(1, 10_000);
+        if (!mounted) return;
+
+        const options = response.data
+          .map<RepresentativeOption | null>((rep) => {
+            if (rep.id == null) return null;
+            const value = String(rep.id);
+            const label = rep.name?.trim() || `#${rep.id}`;
+            return { label, value };
+          })
+          .filter((option): option is RepresentativeOption =>
+            Boolean(option && option.value.length > 0)
+          );
+
+        const currentId = (mergedValues.representativeId ?? "").trim();
+        const hasCurrent = options.some((option) => option.value === currentId);
+
+        setRepresentativeOptions(
+          hasCurrent || currentId.length === 0
+            ? options
+            : [...options, { label: currentId, value: currentId }]
+        );
+      } catch (error) {
+        console.error("Failed to fetch representatives:", error);
+        const currentId = (mergedValues.representativeId ?? "").trim();
+        setRepresentativeOptions(
+          currentId.length > 0
+            ? [{ label: currentId, value: currentId }]
+            : []
+        );
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [mergedValues.representativeId]);
+
   const schema = useMemo(() => validationSchema(t), [t]);
   const isEdit = Boolean(initialValues);
-
-  const representativeOptions = useMemo(
-    () =>
-      representativePlaceholderOptions.map((option) => ({
-        label: t(option.labelKey),
-        value: option.value,
-      })),
-    [t]
-  );
 
   const idTypeOptions = useMemo(
     () =>
@@ -209,7 +253,7 @@ const EdfaaliForm: React.FC<EdfaaliFormProps> = ({
     helpers: FormikHelpers<TEdfaaliFormValues>
   ) => {
     if (readOnly) return;
-    onSubmit?.(values, helpers);
+    return onSubmit?.(values, helpers);
   };
 
   const renderField = (field: FieldConfig) => {

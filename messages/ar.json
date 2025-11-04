@@ -188,6 +188,11 @@
       "accountNumber":"رقم الحساب",
       "accountNumberHelper":"يبدأ رقم الحساب دائماً بـ 0123 وينتهي بـ 001. أدخل الأرقام الستة في الوسط.",
       "createdAt":"تاريخ الإنشاء",
+      "successTitle":"تم إرسال الطلب",
+      "successMessage":"تم إرسال طلب خدمة ادفعلي بنجاح.",
+      "errorTitle":"خطأ",
+      "genericError":"حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "close":"إغلاق",
       "fieldRequired":"{field} مطلوب",
       "numericOnly":"يسمح بالأرقام فقط.",
       "phoneFormat":"أدخل رقم هاتف صالح.",
@@ -209,7 +214,7 @@
         "documentsDescription":"حمّل صور المستندات المطلوبة لتفعيل المورد."
       },
       "documents":{
-        "helper":"أرفق صوراً واضحة بصيغة JPG أو PNG لكل مستند.",
+        "helper":"أرفق ملفات PDF أو صوراً واضحة لكل مستند.",
         "uploadButton":"اختر صورة",
         "noFile":"لم يتم اختيار ملف",
         "passport":"جواز السفر",

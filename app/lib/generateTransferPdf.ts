@@ -1,4 +1,9 @@
 import { jsPDF } from "jspdf";
+import type { StaticImageData } from "next/image";
+import logoSideStatic from "@/public/Companygw/logoSide.png";
+import stampStatic from "@/public/Companygw/stamp.png";
+import noteStatic from "@/public/Companygw/note.png";
+import footerStatic from "@/public/Companygw/footer.png";
 import { registerAmiriFont } from "./pdfFonts";
 
 /* Optional: if you pass these in from the page, keep the type here for clarity */
@@ -64,22 +69,119 @@ const fetchImageAsDataURL = async (path: string): Promise<string | null> => {
   }
 };
 
+const RAW_BASE_PATH = process.env.NEXT_PUBLIC_APP_BASE_PATH ?? "";
+const BASE_PATH_SEGMENT = RAW_BASE_PATH.replace(/^\/+|\/+$/g, "");
+const STATIC_SUBDIR = "Companygw";
+
+const staticSrc = (asset: StaticImageData | string): string | null => {
+  if (!asset) return null;
+  if (typeof asset === "string") return asset;
+  return asset.src ?? null;
+};
+
+const LOGO_SIDE_SRC = staticSrc(logoSideStatic);
+const STAMP_SRC = staticSrc(stampStatic);
+const NOTE_SRC = staticSrc(noteStatic);
+const FOOTER_SRC = staticSrc(footerStatic);
+
+const buildCandidates = (
+  ...items: Array<string | null | undefined>
+): string[] => items.filter((item): item is string => Boolean(item && item.length > 0));
+
+const stripSlashes = (value: string): string => value.replace(/^\/+|\/+$/g, "");
+
+const expandPublicCandidates = (path: string): string[] => {
+  const normalized = stripSlashes(path);
+  const basePrefix = stripSlashes(BASE_PATH_SEGMENT);
+  const basePrefixWithStatic = stripSlashes([BASE_PATH_SEGMENT, STATIC_SUBDIR].filter(Boolean).join("/"));
+  const basePrefixWithStaticImages = stripSlashes([BASE_PATH_SEGMENT, STATIC_SUBDIR, "images"].filter(Boolean).join("/"));
+
+  const candidates = new Set<string>([
+    `/${normalized}`,
+    `/${STATIC_SUBDIR}/${normalized}`,
+    `/${STATIC_SUBDIR}/images/${normalized}`,
+    basePrefix ? `/${basePrefix}/${normalized}` : `/${normalized}`,
+    basePrefixWithStatic ? `/${basePrefixWithStatic}/${normalized}` : `/${STATIC_SUBDIR}/${normalized}`,
+    basePrefixWithStaticImages
+      ? `/${basePrefixWithStaticImages}/${normalized}`
+      : `/${STATIC_SUBDIR}/images/${normalized}`,
+  ]);
+
+  if (normalized.startsWith(`${STATIC_SUBDIR}/`)) {
+    const withoutStatic = stripSlashes(normalized.slice(STATIC_SUBDIR.length));
+    if (withoutStatic) {
+      candidates.add(`/${withoutStatic}`);
+      if (basePrefix) candidates.add(`/${basePrefix}/${withoutStatic}`);
+    }
+  }
+
+  const result = Array.from(candidates);
+  if (typeof window !== "undefined") {
+    console.debug("generateTransferPdf: candidates", path, result);
+  }
+  return result;
+};
+
 const resolveFromPublic = async (candidates: readonly string[]): Promise<string | null> => {
+  const tried = new Set<string>();
   for (const p of candidates) {
-    const data = await fetchImageAsDataURL(p);
-    if (data) return data;
+    for (const variant of expandPublicCandidates(p)) {
+      if (tried.has(variant)) continue;
+      tried.add(variant);
+      const data = await fetchImageAsDataURL(variant);
+      if (data) {
+        if (typeof window !== "undefined") {
+          console.debug("generateTransferPdf: resolved", variant);
+        }
+        return data;
+      }
+    }
+  }
+  if (typeof window !== "undefined") {
+    console.warn("generateTransferPdf: failed to resolve asset", candidates);
   }
   return null;
 };
 
 const resolveFooter = (): Promise<string | null> =>
-  resolveFromPublic(["/Companygw/footer.png", "/Companygw/images/footer.png"]);
+  resolveFromPublic(
+    buildCandidates(
+      FOOTER_SRC,
+      "footer.png",
+      "/Companygw/footer.png",
+      "/Companygw/images/footer.png"
+    )
+  );
 
 const resolveLogoSide = (): Promise<string | null> =>
-  resolveFromPublic(["/Companygw/logoSide.png", "/Companygw/images/logoSide.png"]);
+  resolveFromPublic(
+    buildCandidates(
+      LOGO_SIDE_SRC,
+      "logoSide.png",
+      "/Companygw/logoSide.png",
+      "/Companygw/images/logoSide.png"
+    )
+  );
+
+const resolveNote = (): Promise<string | null> =>
+  resolveFromPublic(
+    buildCandidates(
+      NOTE_SRC,
+      "note.png",
+      "/Companygw/note.png",
+      "/Companygw/images/note.png"
+    )
+  );
 
 const resolveStamp = (): Promise<string | null> =>
-  resolveFromPublic(["/Companygw/stamp.png", "/Companygw/images/stamp.png"]);
+  resolveFromPublic(
+    buildCandidates(
+      STAMP_SRC,
+      "stamp.png",
+      "/Companygw/stamp.png",
+      "/Companygw/images/stamp.png"
+    )
+  );
 
 /* ---------- text + shape helpers ---------- */
 const tCenter = (
@@ -168,17 +270,24 @@ export const generateTransferPdf = async (
   doc.setLanguage("ar");
 
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 10;
   const fullWidth = pageWidth - margin * 2;
   const gap = 8;
 
-  const logoSide = await resolveLogoSide();
+  const [logoSide, stampData, noteData, footerData] = await Promise.all([
+    resolveLogoSide(),
+    resolveStamp(),
+    resolveNote(),
+    resolveFooter(),
+  ]);
+
   if (logoSide) {
     try {
       const props = doc.getImageProperties(logoSide) as ImageProps;
       const fmt = detectImageFormat(logoSide);
-      const size = fitInto(props.width, props.height, 28, 18);
-      doc.addImage(logoSide, fmt, margin, margin, size.w, size.h);
+      const size = fitInto(props.width, props.height, 40, 30);
+      doc.addImage(logoSide, fmt, margin, margin - 2, size.w, size.h);
     } catch { /* noop */ }
   }
 
@@ -199,9 +308,9 @@ export const generateTransferPdf = async (
 
   const customerName = extra?.from?.companyName ?? "";
   // center value between left edge and where labels start (~78mm from right)
-  const labelsReserve = 78;
+  const labelsReserve = 55;
   const custRegionX = rightX + 6;
-  const custRegionW = Math.max(20, rightStackW - labelsReserve - 12);
+  const custRegionW = Math.max(40, rightStackW - labelsReserve - 12);
   const custCx = custRegionX + custRegionW / 2;
   tCenterWrapped(doc, customerName, custCx, rightY + 9.2, custRegionW, "Amiri", 8);
 
@@ -310,7 +419,7 @@ export const generateTransferPdf = async (
   vline(doc, clarContentX, bodyTop, bodyTop + bodyH);
 
   const r1H = Math.round(bodyH * 0.25);
-  const r2H = Math.round(bodyH * 0.20);
+  const r2H = Math.round(bodyH * 0.22);
   const r3H = Math.round(bodyH * 0.18);
   const r4H = Math.round(bodyH * 0.18);
   const r5H = bodyH - (r1H + r2H + r3H + r4H);
@@ -338,18 +447,17 @@ export const generateTransferPdf = async (
 
   // CENTER the recipient name, the to-account number, and the purpose
   const clarCx = clarContentX + clarContentW / 2;
-  tCenterWrapped(doc, extra?.to?.companyName ?? "", clarCx, r2Y + r2H / 2, clarContentW - 12, "Amiri", 8);
+  tCenterWrapped(doc, extra?.to?.companyName ?? "", clarCx, r2Y + r2H / 2, clarContentW - 12, "Amiri", 7.2, 1.6);
   tCenterWrapped(doc, toAccountStr,                clarCx, r3Y + r3H / 2, clarContentW - 12, "Helvetica", 8);
   tCenterWrapped(doc, transfer.description ?? "",  clarCx, r5Y + r5H / 2, clarContentW - 12, "Amiri", 8);
 
   // Stamp column
   box(doc, clarStampX, bodyTop, clarStampW, bodyH);
-  const stampData = await resolveStamp();
   if (stampData) {
     try {
       const props = doc.getImageProperties(stampData) as ImageProps;
       const fmt = detectImageFormat(stampData);
-      const sPad = 6;
+      const sPad = 2;
       const maxW = clarStampW - sPad * 2;
       const maxH = bodyH - sPad * 2;
       const size = fitInto(props.width, props.height, maxW, maxH);
@@ -402,15 +510,46 @@ export const generateTransferPdf = async (
   box(doc, margin,            signTop + signHHeader, signColW, signHBody);
   box(doc, margin + signColW, signTop + signHHeader, signColW, signHBody);
 
-  const footerData = await resolveFooter();
+  const bottomMargin = margin;
+  const footerGap = 4;
+  const bottomMaxWidth = pageWidth - margin * 2;
+  let footerSize: FittedSize | null = null;
+  let noteSize: FittedSize | null = null;
+
   if (footerData) {
     try {
       const props = doc.getImageProperties(footerData) as ImageProps;
+      footerSize = fitInto(props.width, props.height, bottomMaxWidth, 24);
+    } catch { /* noop */ }
+  }
+
+  if (noteData) {
+    try {
+      const props = doc.getImageProperties(noteData) as ImageProps;
+      noteSize = fitInto(props.width, props.height, bottomMaxWidth, 22);
+    } catch { /* noop */ }
+  }
+
+  if (footerData && footerSize) {
+    try {
       const fmt = detectImageFormat(footerData);
-      const size = fitInto(props.width, props.height, pageWidth - 20, 24);
-      const fx = (pageWidth - size.w) / 2;
-      const fy = signTop + signHHeader + signHBody + 8;
-      doc.addImage(footerData, fmt, fx, fy, size.w, size.h);
+      const fx = (pageWidth - footerSize.w) / 2;
+      const fy = pageHeight - bottomMargin - footerSize.h;
+      doc.addImage(footerData, fmt, fx, fy, footerSize.w, footerSize.h);
+
+      if (noteData && noteSize) {
+        const fmtNote = detectImageFormat(noteData);
+        const nx = (pageWidth - noteSize.w) / 2;
+        const ny = Math.max(margin, fy - footerGap - noteSize.h);
+        doc.addImage(noteData, fmtNote, nx, ny, noteSize.w, noteSize.h);
+      }
+    } catch { /* noop */ }
+  } else if (noteData && noteSize) {
+    try {
+      const fmtNote = detectImageFormat(noteData);
+      const nx = (pageWidth - noteSize.w) / 2;
+      const ny = pageHeight - bottomMargin - noteSize.h;
+      doc.addImage(noteData, fmtNote, nx, ny, noteSize.w, noteSize.h);
     } catch { /* noop */ }
   }
 

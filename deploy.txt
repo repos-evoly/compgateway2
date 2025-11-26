@@ -28,14 +28,37 @@ scp ~/compgateway_docker.tar.gz administrator@192.168.113.10:~
 ssh administrator@192.168.113.10
 ```
 
-4. Stop and remove the existing container (if present)
+4. Backup the current image (optional rollback safety)
+-----------------------------------------------------
+```bash
+if sudo docker image inspect compgateway:latest >/dev/null 2>&1; then
+  BACKUP_TAG="compgateway:predeploy-$(date +%Y%m%d%H%M%S)"
+  echo "Backing up compgateway:latest to ${BACKUP_TAG}"
+  sudo docker tag compgateway:latest "$BACKUP_TAG"
+fi
+```
+If the deployment fails, stop the new container, retag the backup to `compgateway:latest`, and rerun step 8 using that image. Example rollback sequence:
+```bash
+sudo docker stop compgateway && sudo docker rm compgateway
+sudo docker tag compgateway:predeploy-<timestamp> compgateway:latest
+sudo docker run -d --name compgateway --restart unless-stopped \
+  -p 3012:3000 \
+  -e NEXT_PUBLIC_BASE_API=http://10.1.1.205/compgateapi/api \
+  -e NEXT_PUBLIC_AUTH_API=http://10.1.1.205/compauthapi/api/auth \
+  -e NEXT_PUBLIC_IMAGE_URL=http://10.1.1.205/compgateapi \
+  -e NEXT_PUBLIC_ALLOWED_URLS="/Companygw/auth/login,/Companygw/auth/register/uploadDocuments,/Companygw/auth/register/uploadDocuments/*,http://192.168.113.10:3012/Companygw/auth/login,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments/*,http://10.1.1.205:3012/Companygw/auth/login,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments/*,https://webanking.bcd.ly/Companygw/auth/login,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments/*" \
+  compgateway:latest
+```
+Replace `<timestamp>` with the value printed during the backup step (for example `compgateway:predeploy-20240603104512`).
+
+5. Stop and remove the existing container (if present)
 -----------------------------------------------------
 ```bash
 sudo docker stop compgateway && sudo docker rm compgateway
 ```
 (Ignore errors if the container does not exist.)
 
-5. Refresh the workspace directory
+6. Refresh the workspace directory
 ----------------------------------
 ```bash
 sudo rm -rf ~/compgateway
@@ -44,7 +67,7 @@ tar xzf ~/compgateway_docker.tar.gz -C ~/compgateway
 cd ~/compgateway
 ```
 
-6. Build the Docker image with the correct allow list
+7. Build the Docker image with the correct allow list
 -----------------------------------------------------
 ```bash
 sudo docker build -t compgateway:latest \
@@ -55,7 +78,7 @@ sudo docker build -t compgateway:latest \
   .
 ```
 
-7. Run the container on port 3012
+8. Run the container on port 3012
 ---------------------------------
 ```bash
 sudo docker run -d --name compgateway --restart unless-stopped \
@@ -67,7 +90,7 @@ sudo docker run -d --name compgateway --restart unless-stopped \
   compgateway:latest
 ```
 
-8. Verify the deployment
+9. Verify the deployment
 ------------------------
 ```bash
 docker ps
@@ -75,21 +98,21 @@ curl http://127.0.0.1:3012/api/health
 ```
 Then, from the workstation, browse to `http://192.168.113.10:3012/` and confirm the login page loads without warnings.
 
-9. Clean up the uploaded artifact
----------------------------------
+10. Clean up the uploaded artifact
+----------------------------------
 ```bash
 rm ~/compgateway_docker.tar.gz
 ```
 Remove the tarball once the deployment is confirmed so the server does not accumulate large archives over time.
 
-10. (Optional) Review logs and environment
+11. (Optional) Review logs and environment
 -----------------------------------------
 ```bash
 docker logs compgateway --tail 50
 docker exec compgateway printenv | grep NEXT_PUBLIC
 ```
 
-11. Updating the deployment later
+12. Updating the deployment later
 ---------------------------------
 - Repeat steps 1–8 whenever the code changes.
 - Ensure you rebuild the image whenever `NEXT_PUBLIC_*` values change, so the client bundle reflects the new configuration.

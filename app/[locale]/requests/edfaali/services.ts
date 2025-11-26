@@ -40,6 +40,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const sanitize = (value: string | null | undefined): string =>
   typeof value === "string" ? value.trim() : "";
 
+const normalizeId = (
+  value: string | number | null | undefined
+): string => {
+  if (typeof value === "number") {
+    return String(value);
+  }
+  return typeof value === "string" ? value.trim() : "";
+};
+
 const isApiItem = (value: unknown): value is EdfaaliRequestApiItem =>
   isRecord(value) &&
   ("representativeId" in value ||
@@ -92,12 +101,14 @@ const mapApiItemToListItem = (
   item: EdfaaliRequestApiItem,
   fallback?: TEdfaaliListItem
 ): TEdfaaliListItem => {
-  const id = item.id ?? fallback?.id ?? Date.now();
+  const idValue = item.id ?? fallback?.id ?? Date.now();
   const representativeId =
-    item.representativeId ?? fallback?.representativeId ?? "";
+    normalizeId(item.representativeId) ||
+    normalizeId(fallback?.representativeId) ||
+    "";
 
   return {
-    id: String(id),
+    id: String(idValue),
     representativeId,
     representativeName:
       item.representativeName ?? fallback?.representativeName ?? representativeId,

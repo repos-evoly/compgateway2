@@ -59,7 +59,7 @@ export type TEdfaaliListItem = {
 
 export type EdfaaliRequestApiItem = {
   id?: string | number | null;
-  representativeId?: string | null;
+  representativeId?: string | number | null;
   representativeName?: string | null;
   nationalId?: string | null;
   identificationNumber?: string | null;

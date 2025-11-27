@@ -115,9 +115,9 @@ export async function editEmployee(
 ): Promise<CompanyEmployee> {
   const companyCode = getCompanyCodeFromCookies();
   const response = await fetch(
-    buildCompanyUsersUrl(companyCode, `/${userId}`),
+    buildCompanyUsersUrl(companyCode, `/${userId}/update`),
     withCredentials({
-      method: "PUT",
+      method: "POST",
       headers: jsonHeaders(companyCode),
       body: JSON.stringify(payload),
     })
@@ -208,9 +208,9 @@ export async function updateEmployeePermissions(
   permissions: { permissionId: number; roleId: number }[]
 ): Promise<void> {
   const response = await fetch(
-    `${API_ROOT}/users/edit-permissions/${userId}`,
+    `${API_ROOT}/users/edit-permissions/${userId}/update`,
     withCredentials({
-      method: "PUT",
+      method: "POST",
       headers: jsonHeaders(),
       body: JSON.stringify({ userId: Number(userId), permissions }),
     })

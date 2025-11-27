@@ -10,11 +10,25 @@ type Handler = (req: NextRequest, context: RouteContext) => Promise<Response>;
 const forward: Handler = async (req, context) => {
   const params = await context.params;
   const segments = params.proxy ?? [];
-  const path = segments.join("/");
+
+  const originalPath = segments.join("/");
+  const originalMethod = req.method;
+
+  let method = originalMethod;
+  let path = originalPath;
+
+  if (originalMethod === "PUT") {
+    method = "POST";
+    path = originalPath.replace(/\/$/, "") + "/update";
+  } else if (originalMethod === "DELETE") {
+    method = "POST";
+    path = originalPath.replace(/\/$/, "") + "/delete";
+  }
+
   const target = buildBaseApiUrl(path);
   target.search = req.nextUrl.search;
 
-  const { upstream, refreshed } = await proxyUpstream(req, target);
+  const { upstream, refreshed } = await proxyUpstream(req, target, { method });
   return nextResponseFrom(upstream, refreshed);
 };
 

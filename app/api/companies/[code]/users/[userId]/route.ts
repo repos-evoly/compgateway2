@@ -61,7 +61,7 @@ const buildHeaders = (
 const forward = async (
   req: NextRequest,
   context: RouteContext,
-  method: "GET" | "PUT"
+  method: "GET" | "POST"
 ): Promise<NextResponse> => {
   const { code, userId } = await context.params;
   const cookieStore = await cookies();
@@ -72,6 +72,10 @@ const forward = async (
   }
 
   const target = buildTargetUrl(code, userId, req.nextUrl.search);
+
+  if (method !== "GET") {
+    target.pathname = target.pathname.replace(/\/$/, "") + "/update";
+  }
 
   let body: ArrayBuffer | undefined;
   if (method !== "GET") {
@@ -121,6 +125,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
   return forward(req, context, "GET");
 }
 
-export async function PUT(req: NextRequest, context: RouteContext) {
-  return forward(req, context, "PUT");
+export async function POST(req: NextRequest, context: RouteContext) {
+  return forward(req, context, "POST");
 }

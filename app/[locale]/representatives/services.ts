@@ -74,9 +74,9 @@ export const updateRepresentative = async (
   values: RepresentativeFormValues
 ): Promise<Representative> => {
   const response = await fetch(
-    `${API_BASE}/${id}`,
+    `${API_BASE}/${id}/update`,
     withCredentials({
-      method: "PUT",
+      method: "POST",
       body: buildFormData(values),
     })
   );
@@ -98,8 +98,8 @@ export const getRepresentativeById = async (id: number): Promise<Representative>
 
 export const deleteRepresentative = async (id: number): Promise<void> => {
   const response = await fetch(
-    `${API_BASE}/${id}`,
-    withCredentials({ method: "DELETE" })
+    `${API_BASE}/${id}/delete`,
+    withCredentials({ method: "POST" })
   );
 
   await ensureApiSuccess(response, "Failed to delete representative");

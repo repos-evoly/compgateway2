@@ -4,9 +4,9 @@ import { buildBaseApiUrl, nextResponseFrom, proxyUpstream } from "@/app/api/_lib
 
 type RouteContext = { params: Promise<{ userId: string }> };
 
-export async function PUT(req: NextRequest, context: RouteContext) {
+export async function POST(req: NextRequest, context: RouteContext) {
   const { userId } = await context.params;
-  const target = buildBaseApiUrl(`companies/public/users/${encodeURIComponent(userId)}`);
+  const target = buildBaseApiUrl(`companies/public/users/${encodeURIComponent(userId)}/update`);
 
   const hasAccessToken = req.cookies.has("accessToken");
 
@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const body = await req.arrayBuffer();
 
     const upstream = await fetch(target.toString(), {
-      method: "PUT",
+      method: "POST",
       headers,
       body,
       cache: "no-store",
@@ -35,6 +35,6 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     return nextResponseFrom(upstream);
   }
 
-  const { upstream, refreshed } = await proxyUpstream(req, target, { method: "PUT" });
+  const { upstream, refreshed } = await proxyUpstream(req, target, { method: "POST" });
   return nextResponseFrom(upstream, refreshed);
 }

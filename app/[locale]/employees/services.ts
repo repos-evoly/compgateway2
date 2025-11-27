@@ -89,8 +89,8 @@ export const updateEmployee = async (
   employeeData: EmployeePayload
 ): Promise<EmployeeResponse> => {
   const response = await fetch(
-    `${API_BASE}/${id}`,
-    jsonRequest("PUT", employeeData)
+    `${API_BASE}/${id}/update`,
+    jsonRequest("POST", employeeData)
   );
 
   return handleApiResponse<EmployeeResponse>(
@@ -101,8 +101,8 @@ export const updateEmployee = async (
 
 export const deleteEmployee = async (id: number): Promise<void> => {
   const response = await fetch(
-    `${API_BASE}/${id}`,
-    withCredentials({ method: "DELETE" })
+    `${API_BASE}/${id}/delete`,
+    withCredentials({ method: "POST" })
   );
 
   await ensureApiSuccess(response, "Failed to delete employee");
@@ -112,8 +112,8 @@ export const updateBatchEmployees = async (
   employees: EmployeeFormValues[]
 ): Promise<void> => {
   const response = await fetch(
-    `${API_BASE}/batch`,
-    jsonRequest("PUT", employees)
+    `${API_BASE}/batch/update`,
+    jsonRequest("POST", employees)
   );
 
   await ensureApiSuccess(response, "Failed to update batch employees");

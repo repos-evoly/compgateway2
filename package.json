@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "engines": {
-    "node": ">=18 <21"
+    "node": ">=18"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",

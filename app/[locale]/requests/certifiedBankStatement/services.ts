@@ -292,9 +292,9 @@ export async function updateCertifiedBankStatement(
   };
 
   const response = await fetch(
-    `${API_BASE}/${id}`,
+    `${API_BASE}/${id}/update`,
     withCredentials({
-      method: "PUT",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(apiBody),
     })

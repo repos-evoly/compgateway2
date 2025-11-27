@@ -4,10 +4,10 @@ import { buildBaseApiUrl, nextResponseFrom, proxyUpstream } from "@/app/api/_lib
 
 type RouteContext = { params: Promise<{ code: string; attachmentId: string }> };
 
-export async function DELETE(req: NextRequest, context: RouteContext) {
+export async function POST(req: NextRequest, context: RouteContext) {
   const { code, attachmentId } = await context.params;
   const target = buildBaseApiUrl(
-    `companies/${encodeURIComponent(code)}/attachments/${encodeURIComponent(attachmentId)}`
+    `companies/${encodeURIComponent(code)}/attachments/${encodeURIComponent(attachmentId)}/delete`
   );
 
   const hasAccessToken = req.cookies.has("accessToken");
@@ -22,7 +22,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     if (acceptLanguage) headers.set("accept-language", acceptLanguage);
 
     const upstream = await fetch(target.toString(), {
-      method: "DELETE",
+      method: "POST",
       headers,
       cache: "no-store",
       redirect: "manual",

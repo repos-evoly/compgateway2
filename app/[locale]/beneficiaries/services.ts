@@ -88,8 +88,8 @@ export async function updateBeneficiary(
   payload: BeneficiaryPayload
 ): Promise<BeneficiaryResponse> {
   const response = await fetch(
-    `${API_BASE}/${id}`,
-    jsonRequest("PUT", payload)
+    `${API_BASE}/${id}/update`,
+    jsonRequest("POST", payload)
   );
 
   return handleApiResponse<BeneficiaryResponse>(
@@ -100,8 +100,8 @@ export async function updateBeneficiary(
 
 export async function deleteBeneficiary(id: number): Promise<void> {
   const response = await fetch(
-    `${API_BASE}/${id}`,
-    withCredentials({ method: "DELETE" })
+    `${API_BASE}/${id}/delete`,
+    withCredentials({ method: "POST" })
   );
 
   await ensureApiSuccess(response, "Failed to delete beneficiary.");

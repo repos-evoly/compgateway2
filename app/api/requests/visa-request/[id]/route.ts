@@ -11,9 +11,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
   return nextResponseFrom(upstream, refreshed);
 }
 
-export async function PUT(req: NextRequest, context: RouteContext) {
+export async function POST(req: NextRequest, context: RouteContext) {
   const { id } = await context.params;
-  const target = buildBaseApiUrl(`visarequests/${id}`);
+  const target = buildBaseApiUrl(`visarequests/${id}/update`);
 
   const { upstream, refreshed } = await proxyUpstream(req, target);
   return nextResponseFrom(upstream, refreshed);

@@ -147,10 +147,10 @@ export async function editCompanyInfo(
   data: TEditCompanyInfoPayload
 ): Promise<void> {
   const response = await fetch(
-    `${API_ROOT}/companies/public/users/${encodeURIComponent(userId)}`,
+    `${API_ROOT}/companies/public/users/${encodeURIComponent(userId)}/update`,
     {
       ...withDefaults({
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }),
@@ -177,8 +177,8 @@ export async function deleteAttachment(
   attachmentId: string
 ): Promise<void> {
   const response = await fetch(
-    `${API_ROOT}/companies/${encodeURIComponent(code)}/attachments/${encodeURIComponent(attachmentId)}`,
-    withDefaults({ method: "DELETE" })
+    `${API_ROOT}/companies/${encodeURIComponent(code)}/attachments/${encodeURIComponent(attachmentId)}/delete`,
+    withDefaults({ method: "POST" })
   );
 
   await ensureApiSuccess(response, "Failed to delete attachment.");

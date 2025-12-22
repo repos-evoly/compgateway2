@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { Formik, Form as FormikForm, FormikProps } from "formik";
 import * as Yup from "yup";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { FaSearch, FaDownload } from "react-icons/fa";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -58,6 +58,7 @@ const fmt = (n: number | undefined): string =>
 /* ------------------------------------------------------------------ */
 const Page: React.FC = () => {
   const t = useTranslations("statementOfAccount");
+  const locale = useLocale();
 
   /* ---------------- State ---------------- */
   const [lines, setLines] = useState<StatementLine[]>([]);
@@ -275,6 +276,10 @@ const Page: React.FC = () => {
                   sel.setHours(0, 0, 0, 0);
                   return sel.getTime() === today.getTime();
                 };
+                const todaySelected = isTodaySelected();
+                const printDisabled = !lines.length || todaySelected;
+                const downloadNote = t("toDateTodayPrintNote");
+                const isRtl = locale === "ar";
 
                 return (
                   <FormikForm className="flex flex-wrap w-full px-1 py-1">
@@ -317,27 +322,53 @@ const Page: React.FC = () => {
                           disabled={!isValid || !dirty || isFetching}
                           isSubmitting={isFetching}
                         />
-                        <button
-                          type="button"
-                          onClick={handleDownloadExcel}
-                          disabled={!lines.length || isTodaySelected()}
-                          className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${
-                            !lines.length || isTodaySelected()
-                              ? "bg-gray-300 text-gray-500 cursor-not-allowed border border-white"
-                              : "border border-white bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
-                          }`}
-                          title={
-                            isTodaySelected() ? t("toDateCannotBeToday") : ""
-                          }
+                        <div
+                          className={`relative inline-flex ${
+                            printDisabled ? "group" : ""
+                          } ${isRtl ? "rtl" : "ltr"}`}
+                          aria-disabled={printDisabled}
                         >
-                          <FaDownload className="h-5 w-5" />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={handleDownloadExcel}
+                            disabled={printDisabled}
+                            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${
+                              printDisabled
+                                ? "bg-gray-300 text-gray-500 cursor-not-allowed border border-white"
+                                : "border border-white bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
+                            }`}
+                            title={!printDisabled ? downloadNote : undefined}
+                          >
+                            <FaDownload className="h-5 w-5" />
+                          </button>
+                          {printDisabled && (
+                            <>
+                              <span
+                                className="absolute inset-0"
+                                style={{ pointerEvents: "auto" }}
+                              />
+                              <div
+                                className={`pointer-events-none absolute top-full mt-1 w-[180px] whitespace-normal break-words rounded border border-gray-300 bg-white px-2 py-0.5 text-[10px] leading-tight text-gray-800 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-75 ${
+                                  isRtl
+                                    ? "left-0 text-right"
+                                    : "left-1/2 -translate-x-1/2"
+                                }`}
+                                role="tooltip"
+                              >
+                                {t("toDateTodayPrintNote")}
+                              </div>
+                            </>
+                          )}
+                        </div>
                         <PdfDownloadButton
                           lines={lines}
-                          disabled={!lines.length || isTodaySelected()}
+                          disabled={printDisabled}
                           values={values}
-                          title={isTodaySelected() ? t("toDateCannotBeToday") : ""}
+                          title={downloadNote}
                         />
+                      </div>
+                      <div className="w-full text-xs font-semibold text-warning-light">
+                        {downloadNote}
                       </div>
                     </div>
                   </FormikForm>

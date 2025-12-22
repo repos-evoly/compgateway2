@@ -1,11 +1,15 @@
-export type ApiErrorDetails = {
-  message?: string | null;
-  [key: string]: unknown;
-} | null;
+export type ApiErrorDetails =
+  | {
+      message?: string | null;
+      [key: string]: unknown;
+    }
+  | string
+  | Array<unknown>
+  | null;
 
 export type ApiErrorEnvelope = {
-  success?: boolean;
-  status?: number;
+  success?: boolean | string | number;
+  status?: number | string;
   message?: string | null;
   details?: ApiErrorDetails;
   [key: string]: unknown;
@@ -16,8 +20,83 @@ const ERROR_FALLBACK = "حدث خطأ غير متوقع";
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const isErrorEnvelope = (value: unknown): value is ApiErrorEnvelope =>
-  isObject(value) && "success" in value && value.success === false;
+const coerceStatusCode = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+};
+
+const indicatesFailure = (value: unknown): boolean => {
+  if (typeof value === "boolean") {
+    return value === false;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value === 0;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return false;
+    return normalized === "false" || normalized === "0";
+  }
+  return false;
+};
+
+const extractDetailMessage = (
+  details: ApiErrorDetails | undefined
+): string | undefined => {
+  if (!details) return undefined;
+
+  if (typeof details === "string") {
+    const trimmed = details.trim();
+    return trimmed || undefined;
+  }
+
+  if (Array.isArray(details)) {
+    for (const entry of details) {
+      if (typeof entry === "string") {
+        const trimmed = entry.trim();
+        if (trimmed) return trimmed;
+      } else if (isObject(entry) && typeof entry.message === "string") {
+        const msg = entry.message.trim();
+        if (msg) return msg;
+      }
+    }
+    return undefined;
+  }
+
+  if (isObject(details) && typeof details.message === "string") {
+    const trimmed = details.message.trim();
+    if (trimmed) return trimmed;
+  }
+
+  return undefined;
+};
+
+const isErrorEnvelope = (value: unknown): value is ApiErrorEnvelope => {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  if ("success" in value && indicatesFailure(value.success)) {
+    return true;
+  }
+
+  if ("status" in value) {
+    const statusCode = coerceStatusCode(value.status);
+    if (statusCode !== undefined && statusCode >= 400) {
+      return true;
+    }
+  }
+
+  return false;
+};
 
 const extractMessage = (
   envelope: ApiErrorEnvelope | undefined,
@@ -25,22 +104,17 @@ const extractMessage = (
 ): string => {
   if (!envelope) return fallback ?? ERROR_FALLBACK;
 
-  const detailMessage =
-    (typeof envelope.details === "object" && envelope.details?.message) ||
-    null;
-  if (detailMessage && typeof detailMessage === "string" && detailMessage.trim()) {
-    return detailMessage.trim();
+  const detailMessage = extractDetailMessage(envelope.details);
+  if (detailMessage) {
+    return detailMessage;
   }
 
   if (typeof envelope.message === "string" && envelope.message.trim()) {
     return envelope.message.trim();
   }
 
-  if (
-    typeof envelope.status === "number" &&
-    envelope.status >= 400 &&
-    envelope.status !== 200
-  ) {
+  const statusCode = coerceStatusCode(envelope.status);
+  if (statusCode !== undefined && statusCode >= 400 && statusCode !== 200) {
     return `Request failed with status ${envelope.status}`;
   }
 
@@ -80,7 +154,12 @@ export async function handleApiResponse<T = unknown>(
 
   if (shouldThrow) {
     const message = extractMessage(envelope, fallbackMessage);
-    const status = envelope?.status ?? (response.ok ? undefined : response.status);
+    const status =
+      envelope !== undefined
+        ? coerceStatusCode(envelope.status)
+        : response.ok
+        ? undefined
+        : response.status;
     const details = envelope?.details;
     throw new ApiError(message, status, details);
   }

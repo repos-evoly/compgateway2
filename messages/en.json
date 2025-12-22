@@ -471,7 +471,8 @@
     "narrative": "Narrative",
     "required": "Required",
     "selectAccount": "Please select an account",
-    "toDateCannotBeToday": "To Date cannot be today. Please select a date at least one day earlier."
+    "toDateCannotBeToday": "To Date cannot be today. Please select a date at least one day earlier.",
+    "toDateTodayPrintNote": "Note: To download the statments the to date should be at least one day before today."
   },
 
   "formTypeSelect": {

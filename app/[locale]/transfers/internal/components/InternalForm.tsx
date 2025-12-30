@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Cookies from "js-cookie";
 import * as Yup from "yup";
 import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { FaTrash } from "react-icons/fa";
 import { Formik, Form, useFormikContext } from "formik";
 
@@ -33,6 +34,7 @@ import type {
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
 import FormHeader from "@/app/components/reusable/FormHeader";
+import { postTransfer } from "../services";
 
 /* -------------------------------------------------------------------------- */
 /*                               Helper                                       */
@@ -162,9 +164,12 @@ function InternalForm({
   onSubmit,
   viewOnly = false,
   onSuccess,
+  transferId,
+  canPostTransfer,
 }: InternalFormProps & ExtraProps) {
   const t = useTranslations("internalTransferForm");
   const locale = useLocale();
+  const router = useRouter();
 
   const isNew = !initialData || Object.keys(initialData).length === 0;
   const [fieldsDisabled, setFieldsDisabled] = useState(viewOnly || !isNew);
@@ -173,6 +178,7 @@ function InternalForm({
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
+  const [alertSuccess, setAlertSuccess] = useState(false);
 
   const [fromAccountInfo, setFromAccountInfo] = useState<AccountLookup | null>(
     null
@@ -443,9 +449,10 @@ function InternalForm({
     return null;
   };
 
-  /* -------- open confirmation modal (skipped in viewOnly) --------------- */
+  /* -------- open confirmation modal --------------- */
   const openModal = async (vals: ExtendedValues) => {
-    if (viewOnly) return;
+    // Allow opening in viewOnly when posting is permitted
+    if (viewOnly && !canPostTransfer) return;
 
     try {
       const [fromInfo, toInfo] = await Promise.all([
@@ -487,7 +494,11 @@ function InternalForm({
 
       const isB2B = effectiveTransferType === "B2B";
       const pct = isB2B ? commResp.b2BCommissionPct : commResp.b2CCommissionPct;
-      const fixed = isB2B ? commResp.b2BFixedFee : commResp.b2CFixedFee;
+      // Use foreign fixed fee when currency is not LYD
+      const isLYD = currencyDesc.trim().toUpperCase() === "LYD";
+      const fixed = isB2B
+        ? (isLYD ? commResp.b2BFixedFee : commResp.b2BFixedFeeForeign)
+        : (isLYD ? commResp.b2CFixedFee : commResp.b2CFixedFeeForeign);
       const pctAmt = (pct * vals.value) / 100;
       const fee = Math.max(pctAmt, fixed);
 
@@ -534,6 +545,29 @@ function InternalForm({
     } = modalData.formikData;
 
     try {
+      // If we're in details page with permission, post existing transfer instead of creating
+      if (transferId && canPostTransfer) {
+        const result = await postTransfer(transferId);
+        if (!result.success) {
+          throw new Error(
+            (result.message as string) ||
+              (t("postErrorMsg", {
+                defaultValue: "The transfer could not be confirmed.",
+              }) as string)
+          );
+        }
+        setAlertTitle(t("postSuccessTitle", { defaultValue: "Transfer confirmed" }));
+        setAlertMessage(
+          result.message ||
+            (t("postSuccessMsg", {
+              defaultValue: "The transfer was confirmed successfully.",
+            }) as string)
+        );
+        setAlertSuccess(true);
+        setAlertOpen(true);
+        return;
+      }
+
       const { currencyDesc } = modalData;
       if (!currencyDesc) {
         throw new Error(
@@ -555,13 +589,21 @@ function InternalForm({
       onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("unknownError");
-      setAlertTitle(t("createErrorTitle"));
+      setAlertTitle(
+        t(
+          transferId && canPostTransfer ? "postErrorTitle" : "createErrorTitle",
+          { defaultValue: transferId && canPostTransfer ? "Confirm error" : "Create error" }
+        )
+      );
       setAlertMessage(msg);
+      setAlertSuccess(false);
       setAlertOpen(true);
     } finally {
       setModalOpen(false);
     }
   };
+
+  // No separate button; posting is triggered from the confirm modal when on details page
 
   /* --------------------------- JSX ------------------------------------- */
   return (
@@ -643,9 +685,9 @@ function InternalForm({
                 </div>
 
                 {/* Buttons – hide in viewOnly */}
-                {!viewOnly && (
+                {(!viewOnly || canPostTransfer) && (
                   <div className="mt-6 flex justify-center gap-4">
-                    {!isNew && (
+                    {!viewOnly && !isNew && (
                       <>
                         <EditButton
                           fieldsDisabled={fieldsDisabled}
@@ -678,7 +720,7 @@ function InternalForm({
       </Formik>
 
       {/* Modal – disabled in viewOnly */}
-      {modalData && !viewOnly && (
+      {modalData && (!viewOnly || canPostTransfer) && (
         <ConfirmInfoModal
           isOpen={modalOpen}
           formData={modalData.formikData}
@@ -694,14 +736,21 @@ function InternalForm({
 
       <ErrorOrSuccessModal
         isOpen={alertOpen}
-        isSuccess={false}
+        isSuccess={alertSuccess}
         title={alertTitle}
         message={alertMessage}
         onClose={() => setAlertOpen(false)}
-        onConfirm={() => setAlertOpen(false)}
+        onConfirm={() => {
+          setAlertOpen(false);
+          if (alertSuccess && transferId && canPostTransfer) {
+            router.push(`/${locale}/transfers/internal`);
+          }
+        }}
       />
     </div>
   );
 }
 
 export default InternalForm;
+
+

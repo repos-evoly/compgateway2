@@ -1,10 +1,4 @@
-/* --------------------------------------------------------------------------
-   app/[locale]/salaries/[cycleId]/page.tsx
-   – SalaryCycleDetailsPage
-   – Uses SalaryConfirmInfoModal (name + per-employee amount shown there)
-   – Shows ErrorOrSuccessModal (success/error) **from the page** after posting
-   – UPDATED: send each employee's salary amount to the modal (recipients[].salary)
--------------------------------------------------------------------------- */
+
 "use client";
 
 import React, { JSX, useEffect, useMemo, useState, useCallback } from "react";
@@ -12,7 +6,6 @@ import { Formik, Form } from "formik";
 import Cookies from "js-cookie";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import type { DataGridColumn } from "@/types";
@@ -24,7 +17,7 @@ import {
 import {
   CommissionConfig,
   ConfirmModalState,
-  CurrencyLookup,
+  // CurrencyLookup,
   EmployeeRow,
   SalaryEntryRow,
   TSalaryTransaction,
@@ -34,8 +27,6 @@ import type { EmployeeResponse } from "../../employees/types";
 import { CheckAccount, type AccountInfo } from "@/app/helpers/checkAccount";
 import { type InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
 import SalaryCycleSummaryCard from "../components/SalaryCycleSummaryCard";
-
-import { getCurrencies } from "@/app/[locale]/currencies/services";
 import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
 import {
   checkAccount,
@@ -44,8 +35,8 @@ import {
 import SalaryConfirmInfoModal from "../components/SalaryConfirmInfoModal";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
+import NotTransferredHeader from "../components/NotTransferredHeader";
 
-/* ---------- helpers: cookies ---------- */
 const getCompanyCode = (): string | undefined => {
   const raw = Cookies.get("companyCode");
   if (!raw) return undefined;
@@ -73,26 +64,19 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   const locale = useLocale();
   const t = useTranslations("salaries");
   const { cycleId } = useParams<{ cycleId: string }>();
-
-  /* ---------- view state ---------- */
   const [cycle, setCycle] = useState<TSalaryTransaction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  /* ---------- edit state ---------- */
   const [isEditing, setIsEditing] = useState(false);
-
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [empLoading, setEmpLoading] = useState(false);
   const [empError, setEmpError] = useState<string | null>(null);
-
   const [accountOptions, setAccountOptions] = useState<
     InputSelectComboOption[]
   >([]);
   const [accLoading, setAccLoading] = useState(false);
   const [accError, setAccError] = useState<string | null>(null);
-
   const [salaryMonthInput, setSalaryMonthInput] = useState<string>("");
 
   /* --- company config: who pays commission --- */
@@ -119,24 +103,15 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     return perms.includes("canPostSalaryCycle");
   }, []);
 
-  /* --- confirm modal state --- */
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmModalState | null>(
     null
   );
-
-  /* Recipients for confirm modal (NOW INCLUDES salary) */
   const [recipients, setRecipients] = useState<
     Array<{ accountNumber: string; name?: string; salary?: number }>
   >([]);
-
-  /* --- post button availability --- */
   const [canPost, setCanPost] = useState<boolean>(true);
-
-  /* --- posting in progress --- */
   const [posting, setPosting] = useState<boolean>(false);
-
-  /* --- result modal (success/error) --- */
   const [resultOpen, setResultOpen] = useState<boolean>(false);
   const [resultSuccess, setResultSuccess] = useState<boolean>(false);
   const [resultTitle, setResultTitle] = useState<string>("");
@@ -147,6 +122,8 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     const fresh = await getSalaryCycleById(id);
     setCycle(fresh);
   }, []);
+
+  
 
   useEffect(() => {
     const fetchCycle = async (): Promise<void> => {
@@ -226,9 +203,16 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   useEffect(() => {
     if (!isEditing || !cycle) return;
 
-    setSalaryMonthInput(
-      new Date(cycle.salaryMonth).toISOString().split("T")[0]
-    );
+    // salaryMonth is now a string (e.g., Arabic month). Only convert if it's a valid date.
+    const raw = (cycle.salaryMonth as unknown) as string | null | undefined;
+    let iso = "";
+    if (typeof raw === "string" && raw.trim().length > 0) {
+      const ms = Date.parse(raw);
+      if (!Number.isNaN(ms)) {
+        iso = new Date(ms).toISOString().split("T")[0];
+      }
+    }
+    setSalaryMonthInput(iso);
 
     if (employees.length === 0 && !empLoading) loadEmployees();
     if (accountOptions.length === 0 && !accLoading) loadAccounts();
@@ -242,6 +226,17 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     accLoading,
     loadAccounts,
   ]);
+
+  // Refresh data after a partial repost from NotTransferredHeader
+  const handleRepostApplied = useCallback(async () => {
+    if (!cycle) return;
+    try {
+      await refetchCycle(cycle.id);
+      await loadEmployees();
+    } catch {
+      // ignore refresh errors
+    }
+  }, [cycle, refetchCycle, loadEmployees]);
 
   /* ───────── set selectedRows once employees & cycle ready ───────── */
   useEffect(() => {
@@ -287,6 +282,17 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     () => (cycle ? (cycle.entries as unknown as SalaryEntryRow[]) : []),
     [cycle]
   );
+
+  const notTransferred = useMemo(
+    () => viewRows.filter((r) => !r.isTransferred),
+    [viewRows]
+  );
+
+  const showNotTransferredHeader = useMemo(() => {
+    if (!cycle) return false;
+    const bothNull = (cycle.postedAt == null) && (cycle.postedByUserId == null);
+    return !bothNull;
+  }, [cycle]);
 
   /* ───────── columns ───────── */
   const columnsView: DataGridColumn[] = [
@@ -413,17 +419,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         setRecipients(detailed); // <-- includes salary for the modal table
 
         const totalAmount = isEditing ? computedTotalEdit : computedTotalView;
-
-        // currency lookup (last 3 chars)
-        const currencyCode = fromAccount.slice(-3);
-        const currencyResp = (await getCurrencies(
-          1,
-          1,
-          currencyCode,
-          "code"
-        )) as CurrencyLookup;
-        const commissionCurrency =
-          currencyResp.data?.[0]?.description ?? currencyCode;
+        const commissionCurrency = cycle.currency;
 
         // transfer type via checkAccount(to)
         let transferType: "B2B" | "B2C" = "B2C";
@@ -443,7 +439,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         const servicePackageId = Number(Cookies.get("servicePackageId") ?? 0);
         const comm = (await getTransfersCommision(
           servicePackageId,
-          2
+          17
         )) as CommissionConfig;
 
         const pct =
@@ -456,13 +452,12 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         const commissionAmount =
           totalAmount > 0 ? Math.max((pct * totalAmount) / 100, fixed) : 0;
 
-        const displayAmount = commissionOnReceiver
-          ? totalAmount
-          : totalAmount + commissionAmount;
+        // const displayAmount = commissionOnReceiver
+        //   ? totalAmount
+        //   : totalAmount + commissionAmount;
+        const displayAmount = totalAmount;
 
-        const desc = `${t("cycle")} #${cycle.id} – ${new Date(
-          cycle.salaryMonth
-        ).toLocaleDateString(locale)}`;
+        const desc = `${t("cycle")} #${cycle.id} – ${cycle.salaryMonth}`;
 
         setConfirmState({
           formData: {
@@ -485,17 +480,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         );
       }
     },
-    [
-      cycle,
-      isEditing,
-      employees,
-      selectedRows,
-      computedTotalEdit,
-      computedTotalView,
-      commissionOnReceiver,
-      t,
-      locale,
-    ]
+    [cycle, isEditing, employees, selectedRows, computedTotalEdit, computedTotalView, commissionOnReceiver, t]
   );
 
   /* ───────── save handler ───────── */
@@ -510,7 +495,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       await editSalaryCycle(
         cycle.id,
         debitAccount,
-        new Date(salaryMonthInput).toISOString(),
+        salaryMonthInput,
         entries
       );
       await refetchCycle(cycle.id);
@@ -549,8 +534,8 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         e instanceof Error
           ? e.message
           : t("genericError", {
-              defaultValue: "Something went wrong while posting the cycle.",
-            });
+            defaultValue: "Something went wrong while posting the cycle.",
+          });
 
       // Keep confirm modal open so user can retry, but also show error modal
       setResultSuccess(false);
@@ -588,7 +573,6 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   if (!isEditing) {
     const cycleForSummary: TSalaryTransaction = {
       ...cycle,
-      totalAmount: computedTotalView,
     };
 
     return (
@@ -607,7 +591,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
           noPagination
           currentPage={1}
           totalPages={1}
-          onPageChange={() => {}}
+          onPageChange={() => { }}
           childrens={
             !isPosted ? (
               <Formik
@@ -618,7 +602,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                 }}
               >
                 {() => (
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     <SubmitButton
                       title={t("edit")}
                       color="info-dark"
@@ -631,18 +615,17 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                           openCommissionPreview(cycle.debitAccount)
                         }
                         disabled={!canPost || posting}
-                        className={`rounded px-4 py-2 border ${
-                          !canPost || posting
-                            ? "bg-slate-300 text-slate-600 cursor-not-allowed border-slate-300"
-                            : "bg-info-dark text-white hover:opacity-90 border-white hover:border-transparent hover:bg-warning-light hover:text-info-dark"
-                        }`}
+                        className={`rounded px-4 py-2 border ${!canPost || posting
+                          ? "bg-slate-300 text-slate-600 cursor-not-allowed border-slate-300"
+                          : "bg-info-dark text-white hover:opacity-90 border-white hover:border-transparent hover:bg-warning-light hover:text-info-dark"
+                          }`}
                         title={
                           canPost
                             ? undefined
                             : t("saveToEnablePost", {
-                                defaultValue:
-                                  "You must save your changes before posting.",
-                              })
+                              defaultValue:
+                                "You must save your changes before posting.",
+                            })
                         }
                       >
                         {posting
@@ -650,10 +633,25 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                           : t("post", { defaultValue: "Post" })}
                       </button>
                     )}
+                    {showNotTransferredHeader && cycle && (
+                      <NotTransferredHeader
+                        entries={notTransferred}
+                        cycleId={cycle.id}
+                        onApply={(_updates) => handleRepostApplied()}
+                      />
+                    )}
                   </div>
                 )}
               </Formik>
-            ) : undefined
+            ) : (
+              showNotTransferredHeader && cycle ? (
+                <NotTransferredHeader
+                  entries={notTransferred}
+                  cycleId={cycle.id}
+                  onApply={(_updates) => handleRepostApplied()}
+                />
+              ) : undefined
+            )
           }
           canEdit={false}
           loading={false}
@@ -725,9 +723,9 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
               noPagination
               currentPage={1}
               totalPages={1}
-              onPageChange={() => {}}
+              onPageChange={() => { }}
               childrens={
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <SubmitButton
                     title={t("save")}
                     color="info-dark"
@@ -745,6 +743,13 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                     >
                       {t("post", { defaultValue: "Post" })}
                     </button>
+                  )}
+                  {showNotTransferredHeader && cycle && (
+                    <NotTransferredHeader
+                      entries={notTransferred}
+                      cycleId={cycle.id}
+                      onApply={(_updates) => handleRepostApplied()}
+                    />
                   )}
                 </div>
               }

@@ -1,9 +1,4 @@
-/* --------------------------------------------------------------------------
-   app/[locale]/salaries/[cycleId]/components/SalaryCycleSummaryCard.tsx
-   – Compact summary bar for salary cycle (view + edit).
-   – No horizontal scrolling. Salary month is shown in the top bg-info-dark bar.
-   – Dates show ONLY the date (no time). Strict TypeScript.
--------------------------------------------------------------------------- */
+
 "use client";
 
 import React, { JSX, useMemo } from "react";
@@ -68,10 +63,6 @@ export default function SalaryCycleSummaryCard({
 }: Props): JSX.Element {
   const t = useTranslations("salaries");
 
-  const salaryMonthDateOnly = useMemo(
-    () => new Date(cycle.salaryMonth).toLocaleDateString(locale),
-    [cycle.salaryMonth, locale]
-  );
   const createdAtDateOnly = useMemo(
     () => new Date(cycle.createdAt).toLocaleDateString(locale),
     [cycle.createdAt, locale]
@@ -88,16 +79,27 @@ export default function SalaryCycleSummaryCard({
     [cycle.totalAmount, cycle.currency]
   );
 
+  console.log("total amount ", cycle.totalAmount);
+
   if (mode === "view") {
     return (
       <div className="mb-2 rounded-xl bg-white ring-1 ring-slate-200">
         {/* Top bar with Back + Salary Month (date only) */}
         <div className="flex items-center justify-between gap-3 rounded-t-xl bg-info-dark px-3 py-2">
           <BackButton isEditing fallbackPath={`/${locale}/salaries`} />
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-white">
-            <FiCalendar className="h-4 w-4" />
-            <span className="text-sm font-medium">{t("salaryMonth")}</span>
-            <span className="text-sm font-semibold">{salaryMonthDateOnly}</span>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-white">
+              <FiCalendar className="h-4 w-4" />
+              <span className="text-sm font-medium">{t("salaryMonth")}</span>
+              <span className="text-sm font-semibold">{cycle.salaryMonth}</span>
+            </div>
+            {cycle.additionalMonth && String(cycle.additionalMonth).trim().length > 0 && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-white">
+                <FiCalendar className="h-4 w-4" />
+                <span className="text-sm font-medium">{t("additionalMonth")}</span>
+                <span className="text-sm font-semibold">{String(cycle.additionalMonth)}</span>
+              </div>
+            )}
           </div>
         </div>
 

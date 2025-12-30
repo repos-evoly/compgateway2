@@ -89,6 +89,44 @@ export async function getTransferById(
   );
 }
 
+// Confirm (post) an existing transfer
+// Post directly to external API with Bearer token from cookies
+export async function postTransfer(id: number): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch(
+    buildUrl(`transfers/${id}/post`),
+    withCredentials({ method: "POST" })
+  );
+
+  const text = await res.text();
+  if (!res.ok) {
+    // Try to extract message from body, otherwise throw generic
+    try {
+      const errJson = text ? (JSON.parse(text) as { message?: string }) : undefined;
+      throw new Error(errJson?.message || "Failed to confirm transfer.");
+    } catch {
+      throw new Error(text || "Failed to confirm transfer.");
+    }
+  }
+
+  if (!text) {
+    return { success: true };
+  }
+
+  try {
+    const data = JSON.parse(text) as unknown as { success?: boolean; message?: string; transfer?: unknown };
+    if (data && typeof data === "object") {
+      if (data.success === false) {
+        return { success: false, message: data.message };
+      }
+      // Successful payloads may not include success=true; treat presence as success
+      return { success: true, message: data.message };
+    }
+  } catch {
+    // Non-JSON successful body; treat as success
+  }
+  return { success: true };
+}
+
 export async function getTransfersCommision(
   servicePackageId: number,
   transactionCategoryId: number

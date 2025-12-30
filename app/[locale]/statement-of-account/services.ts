@@ -5,6 +5,7 @@ export type StatementLine = {
   amount: number;
   debit?: string | number;
   credit?: string | number;
+  trxCode?: string;
   nr1?: string;
   nr2?: string;
   nr3?: string;
@@ -26,6 +27,7 @@ type StatementApiResponseItem = {
   debit: number | string;
   credit: number | string;
   balance?: number;
+  trxCode?: string; // optional; some APIs may provide transaction code
 };
 
 import { handleApiResponse } from "@/app/helpers/apiResponse";
@@ -67,6 +69,8 @@ export async function getStatement({
       debit: item.debit,
       credit: item.credit,
       balance: item.balance,
+      // prefer explicit trxCode field; fall back to common variants if present
+      trxCode: item.trxCode ?? (item as unknown as { TrxCode?: string }).TrxCode,
     };
   });
 }

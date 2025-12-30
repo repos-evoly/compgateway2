@@ -1221,13 +1221,13 @@ export async function printCertifiedStatement(
     const isFirst = pageIndex === 0;
     const cols: Col[] = isFirst
       ? [
-          { w: 30, ar: "الرصيد", en: "Balance" },
-          { w: 24, ar: "دائن", en: "Credit" },
-          { w: 24, ar: "مدين", en: "Debit" },
-          { w: 60, ar: "البيان", en: "Ref.Desc" },
-          { w: 32, ar: "الرمز", en: "Ref." },
-          { w: 26, ar: "التاريخ", en: "Date" },
-        ]
+        { w: 30, ar: "الرصيد", en: "Balance" },
+        { w: 24, ar: "دائن", en: "Credit" },
+        { w: 24, ar: "مدين", en: "Debit" },
+        { w: 60, ar: "البيان", en: "Ref.Desc" },
+        { w: 32, ar: "الرمز", en: "Ref." },
+        { w: 26, ar: "التاريخ", en: "Date" },
+      ]
       : BASE_COLS;
 
     const tableLeft = (pageW - colsWidthSum(cols)) / 2;
@@ -1273,7 +1273,7 @@ export async function printCertifiedStatement(
       const creditText = amount > 0 ? String(amount) : "";
       const debitText = amount < 0 ? String(amount) : "";
       const desc = [L.nr1, L.nr2, L.nr3].filter((s): s is string => !!s).join(" ");
-      const ref = L.reference ?? "";
+      const ref = L.trxCode ?? "";
       const dateStr = L.postingDate ? new Date(L.postingDate).toISOString().slice(0, 10) : "";
 
       drawBodyRow(doc, cols, tableLeft, y, rowH, {

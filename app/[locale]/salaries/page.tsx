@@ -61,8 +61,18 @@ export default function SalariesPage() {
     {
       key: "salaryMonth",
       label: "Salary Month",
-      renderCell: (row: TSalaryTransaction) =>
-        new Date(row.salaryMonth).toLocaleDateString(locale),
+      renderCell: (row: TSalaryTransaction) => {
+        const v = row.salaryMonth as unknown as string | null | undefined;
+        return typeof v === "string" && v.trim().length > 0 ? v : "";
+      },
+    },
+    {
+      key: "additionalMonth",
+      label: "Additional Month",
+      renderCell: (row: TSalaryTransaction) => {
+        const v = row.additionalMonth;
+        return v && String(v).trim().length > 0 ? String(v) : "";
+      },
     },
     { key: "totalAmount", label: "Total Amount" },
     { key: "currency", label: "Currency" },

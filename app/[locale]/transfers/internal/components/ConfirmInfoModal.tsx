@@ -68,6 +68,9 @@ export default function ConfirmInfoModal({
       : "ltr";
 
   const { from, to, description, commissionOnRecipient } = formData;
+  // Show USD label if currency is not LYD
+  const normalizedCurrency = (commissionCurrency || "").trim().toUpperCase();
+  const modalCurrency = normalizedCurrency === "LYD" ? "LYD" : "USD";
   const payer = commissionOnRecipient
     ? t("feePayerRecipient")
     : t("feePayerSender");
@@ -110,7 +113,7 @@ export default function ConfirmInfoModal({
           {/* Summary */}
           <div className="bg-gradient-to-br from-info-main/20 to-info-dark/10 rounded-xl p-6 mb-6 border border-info-main/30 text-center">
             <div className="text-3xl font-bold text-slate-900 mb-1">
-              {displayAmount.toLocaleString()} {commissionCurrency}
+              {displayAmount.toLocaleString()} {modalCurrency}
             </div>
             <div className="text-sm text-slate-600">
               {commissionOnRecipient ? t("amount") : t("amountPlusFee")}
@@ -197,7 +200,7 @@ export default function ConfirmInfoModal({
                 <div className="text-sm text-amber-700">
                   {t("feeMessage", {
                     amount: commissionAmount,
-                    currency: commissionCurrency,
+                    currency: modalCurrency,
                     payer,
                   })}
                 </div>

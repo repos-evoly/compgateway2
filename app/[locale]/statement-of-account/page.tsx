@@ -48,9 +48,9 @@ const toNumber = (
 const fmt = (n: number | undefined): string =>
   n !== undefined
     ? n.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
     : "";
 
 /* ------------------------------------------------------------------ */
@@ -229,6 +229,8 @@ const Page: React.FC = () => {
       label: t("balance"),
       renderCell: (row: StatementLine) => fmt(toNumber(row.balance)),
     },
+    { key: "trxCode", label: t("trxCode") },
+
   ] as Array<{
     key: string;
     label: string;
@@ -243,7 +245,7 @@ const Page: React.FC = () => {
     currentPage * pageSize
   ).map(line => ({
     ...line,
-    [Symbol.toPrimitive]: function() { return JSON.stringify(this); }
+    [Symbol.toPrimitive]: function () { return JSON.stringify(this); }
   }));
 
   /* ---------------- Render ---------------- */
@@ -323,20 +325,18 @@ const Page: React.FC = () => {
                           isSubmitting={isFetching}
                         />
                         <div
-                          className={`relative inline-flex ${
-                            printDisabled ? "group" : ""
-                          } ${isRtl ? "rtl" : "ltr"}`}
+                          className={`relative inline-flex ${printDisabled ? "group" : ""
+                            } ${isRtl ? "rtl" : "ltr"}`}
                           aria-disabled={printDisabled}
                         >
                           <button
                             type="button"
                             onClick={handleDownloadExcel}
                             disabled={printDisabled}
-                            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${
-                              printDisabled
+                            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-semibold transition duration-300 ${printDisabled
                                 ? "bg-gray-300 text-gray-500 cursor-not-allowed border border-white"
                                 : "border border-white bg-info-dark text-white hover:bg-warning-light hover:text-info-dark"
-                            }`}
+                              }`}
                             title={!printDisabled ? downloadNote : undefined}
                           >
                             <FaDownload className="h-5 w-5" />
@@ -348,11 +348,10 @@ const Page: React.FC = () => {
                                 style={{ pointerEvents: "auto" }}
                               />
                               <div
-                                className={`pointer-events-none absolute top-full mt-1 w-[180px] whitespace-normal break-words rounded border border-gray-300 bg-white px-2 py-0.5 text-[10px] leading-tight text-gray-800 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-75 ${
-                                  isRtl
+                                className={`pointer-events-none absolute top-full mt-1 w-[180px] whitespace-normal break-words rounded border border-gray-300 bg-white px-2 py-0.5 text-[10px] leading-tight text-gray-800 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-75 ${isRtl
                                     ? "left-0 text-right"
                                     : "left-1/2 -translate-x-1/2"
-                                }`}
+                                  }`}
                                 role="tooltip"
                               >
                                 {t("toDateTodayPrintNote")}

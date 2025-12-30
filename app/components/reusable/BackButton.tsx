@@ -7,7 +7,7 @@
 "use client";
 
 import React, { JSX } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft } from "react-icons/fa";
 
@@ -33,6 +33,21 @@ const BackButton = ({
 }: BackButtonProps): JSX.Element => {
   const t = useTranslations("backButton");
   const router = useRouter();
+  const locale = useLocale();
+
+  const localizePath = (path: string): string => {
+    if (!path) return path;
+    // Leave absolute URLs untouched
+    if (/^https?:\/\//i.test(path)) return path;
+    // Only adjust absolute app paths
+    if (path.startsWith("/")) {
+      // If already starts with /{locale} or equals /{locale}, keep as is
+      if (path === `/${locale}` || path.startsWith(`/${locale}/`)) return path;
+      return `/${locale}${path}`;
+    }
+    // Non-absolute paths: leave unchanged (callers shouldn't use these)
+    return path;
+  };
 
   const handleBack = (): void => {
     /* 1️⃣ Caller-supplied handler wins */
@@ -43,7 +58,7 @@ const BackButton = ({
 
     /* 2️⃣ If we’re editing AND a fallback is provided → go there */
     if (isEditing && fallbackPath) {
-      router.push(fallbackPath);
+      router.push(localizePath(fallbackPath));
       return;
     }
 

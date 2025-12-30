@@ -1,33 +1,21 @@
-/* --------------------------------------------------------------------------
-   app/[locale]/salaries/setSalaries/page.tsx
-   – Select employees for a new salary cycle:
-       • Editable salary column.
-       • Checkbox column with select-all header.
-       • “Submit” opens SalariesModal → choose debitAccount **and salaryMonth**.
-       • On confirm, calls submitSalaryCycle() with live salaries.
-       • Always sends currency "LYD".
-       • Shows ErrorOrSuccessModal after API call.
-       • On success -> Confirm button navigates back to /[locale]/salaries.
-   -------------------------------------------------------------------------- */
+
 "use client";
 
 import React, { useMemo, useState, useEffect, JSX } from "react";
 import { Formik } from "formik";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import BackButton from "@/app/components/reusable/BackButton";
-
 import type { DataGridColumn } from "@/types";
 import { getEmployees } from "../../employees/services";
 import type { EmployeeResponse } from "../../employees/types";
-
-import SalariesModal from "../components/SalariesModal"; // returns { debitAccount, salaryMonthISO }
+import SalariesModal from "../components/SalariesModal"; // returns { debitAccount, salaryMonthArabic, additionalMonth }
 import { submitSalaryCycle, type NewCycleEntry } from "../services";
 import LoadingPage from "@/app/components/reusable/Loading";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import Hint from "@/app/components/reusable/Hint";
 
 /* A safe, minimal shape of the API response without using `any` */
 type PostResult = {
@@ -70,8 +58,8 @@ export default function SetSalariesPage(): JSX.Element {
           err instanceof Error
             ? err.message
             : t("fetchEmployeesError", {
-                defaultValue: "Failed to fetch employees",
-              });
+              defaultValue: "Failed to fetch employees",
+            });
         setError(message);
         setResultSuccess(false);
         setResultTitle(
@@ -182,23 +170,28 @@ export default function SetSalariesPage(): JSX.Element {
 
   /* ---------- header controls ---------- */
   const headerControls = (
-    <div className="flex w-full items-center justify-between">
-      <div className="flex items-center gap-2">
-        <BackButton isEditing fallbackPath={`/${locale}/salaries`} />
-        <Formik initialValues={{}} onSubmit={handleSubmitSelected}>
-          {() => (
-            <SubmitButton
-              title={t("submit")}
-              color="info-dark"
-              fullWidth={false}
-              disabled={loading}
-            />
-          )}
-        </Formik>
-      </div>
-      <div className="flex items-baseline gap-2 font-semibold text-white">
-        <span>{t("totalAmount")}:</span>
-        <span>{totalSelectedSalary.toLocaleString()}</span>
+    <div className="flex w-full justify-between items-center gap-6">
+      <div className="flex w-full items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <BackButton isEditing fallbackPath={`/${locale}/salaries`} />
+          <Formik initialValues={{}} onSubmit={handleSubmitSelected}>
+            {() => (
+              <SubmitButton
+                title={t("submit")}
+                color="info-dark"
+                fullWidth={false}
+                disabled={loading}
+              />
+            )}
+          </Formik>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="flex items-baseline gap-2 font-semibold text-white">
+            <span>{t("totalAmount")}:</span>
+            <span>{totalSelectedSalary.toLocaleString()}</span>
+          </div>
+          <Hint hint={t("hint")} />
+        </div>
       </div>
     </div>
   );
@@ -218,7 +211,7 @@ export default function SetSalariesPage(): JSX.Element {
         noPagination
         currentPage={1}
         totalPages={1}
-        onPageChange={() => {}}
+        onPageChange={() => { }}
         childrens={headerControls}
         canEdit={false}
         loading={false}
@@ -230,7 +223,8 @@ export default function SetSalariesPage(): JSX.Element {
         onClose={() => setShowPickerModal(false)}
         onConfirm={async (
           debitAccount: string,
-          salaryMonthISO: string
+          salaryMonthArabic: string,
+          additionalMonth: string | null
         ): Promise<void> => {
           const entries: NewCycleEntry[] = data
             .filter((e) => selectedRows.includes(e.id))
@@ -239,8 +233,9 @@ export default function SetSalariesPage(): JSX.Element {
           try {
             const res: PostResult = await submitSalaryCycle(
               debitAccount,
-              salaryMonthISO,
-              entries
+              salaryMonthArabic,
+              entries,
+              additionalMonth
             );
 
             // Treat undefined `success` as success; only explicit false is failure.
@@ -259,11 +254,11 @@ export default function SetSalariesPage(): JSX.Element {
               res.message ??
               (ok
                 ? t("createdMsg", {
-                    defaultValue: "The salary cycle was created successfully.",
-                  })
+                  defaultValue: "The salary cycle was created successfully.",
+                })
                 : t("failedMsg", {
-                    defaultValue: "Could not create the salary cycle.",
-                  }));
+                  defaultValue: "Could not create the salary cycle.",
+                }));
 
             setResultMessage(apiMsg);
             setResultOpen(true);
@@ -278,8 +273,8 @@ export default function SetSalariesPage(): JSX.Element {
               err instanceof Error
                 ? err.message
                 : t("genericError", {
-                    defaultValue: "Failed to create salary cycle.",
-                  })
+                  defaultValue: "Failed to create salary cycle.",
+                })
             );
             setResultOpen(true);
           }

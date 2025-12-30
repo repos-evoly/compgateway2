@@ -59,15 +59,22 @@ export async function getEmployeeSalaryCycles(
 
 export async function submitSalaryCycle(
   debitAccount: string,
-  salaryMonthISO: string,
-  entries: NewCycleEntry[]
+  salaryMonthArabic: string,
+  entries: NewCycleEntry[],
+  additionalMonth?: string | null
 ): Promise<SubmitCycleResponse> {
-  const payload = {
-    salaryMonth: salaryMonthISO,
+  const payload: Record<string, unknown> = {
+    salaryMonth: salaryMonthArabic,
     debitAccount,
     currency: "LYD",
     entries,
   };
+  if (additionalMonth !== "0" && additionalMonth !== null) {
+    const trimmed = String(additionalMonth).trim();
+    if (trimmed.length > 0) {
+      payload.additionalMonth = additionalMonth;
+    }
+  }
 
   const response = await fetch(
     buildUrl("employees/salarycycles"),
@@ -149,5 +156,40 @@ export async function postSalaryCycleById(
   return handleApiResponse<PostSalaryCycleResponse>(
     response,
     "Failed to post salary cycle."
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Repost helpers (edit entry, then update cycle)                      */
+/* ------------------------------------------------------------------ */
+
+export async function editSalaryCycleEntry(
+  cycleId: number,
+  entryId: number,
+  payload: { amount: number; accountNumber: string }
+): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(
+    buildUrl(`employees/salarycycles/${cycleId}/entries/${entryId}/edit`),
+    jsonRequest("POST", payload)
+  );
+
+  return handleApiResponse<{ success: boolean; message: string }>(
+    response,
+    "Failed to edit salary cycle entry."
+  );
+}
+
+export async function updateSalaryCycle(
+  cycleId: number,
+  employeeIds: number[]
+): Promise<{ success: boolean; message: string }> {
+  const response = await fetch(
+    buildUrl(`employees/salarycycles/${cycleId}/repost`),
+    jsonRequest("POST", { employeeIds })
+  );
+
+  return handleApiResponse<{ success: boolean; message: string }>(
+    response,
+    "Failed to update salary cycle."
   );
 }

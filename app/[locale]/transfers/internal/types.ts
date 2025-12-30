@@ -21,6 +21,10 @@ export type InternalFormValues = {
 export type InternalFormProps = {
   initialData?: Partial<InternalFormValues>;
   onSubmit?: (values: InternalFormValues) => void;
+  /** When provided (details page), show a Confirm button that posts the transfer */
+  transferId?: number;
+  /** Allow showing the Confirm button even if viewOnly is true */
+  canPostTransfer?: boolean;
 };
 
 // For the confirmation modal data
@@ -110,6 +114,8 @@ export type TransfersCommision = {
   b2CFixedFee: number;
   b2CMinPercentage: number;
   b2CTransactionLimit: number;
+  b2BFixedFeeForeign: number;
+  b2CFixedFeeForeign: number;
 };
 
 export type EconomicSector = {

@@ -97,7 +97,7 @@ export default function SalaryConfirmInfoModal({
   /* ------------------------ Direction-aware alignment ------------------------ */
   const dir: "rtl" | "ltr" =
     typeof document !== "undefined" &&
-    document.documentElement.dir.toLowerCase() === "rtl"
+      document.documentElement.dir.toLowerCase() === "rtl"
       ? "rtl"
       : "ltr";
   const alignStart = dir === "rtl" ? "text-right" : "text-left";
@@ -183,9 +183,8 @@ export default function SalaryConfirmInfoModal({
               {/* Arrow */}
               <div className="flex justify-center my-4">
                 <FiArrowRight
-                  className={`w-8 h-8 text-info-dark ${
-                    dir === "rtl" ? "rotate-180" : ""
-                  }`}
+                  className={`w-8 h-8 text-info-dark ${dir === "rtl" ? "rotate-180" : ""
+                    }`}
                 />
               </div>
 

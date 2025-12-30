@@ -43,23 +43,20 @@
     "currencies": "Currencies",
     "employees": "Employees",
     "companies": "Companies",
-      "representatives": "Representatives",
-  "beneficiaries": "Beneficiaries",
-  "profile": "Profile",
-  "representativesDescription": "Manage company representatives and their permissions",
-  "beneficiariesDescription": "Manage beneficiaries and their account information",
-  "users": "Users",
-  "salaries": "Salaries"
+    "representatives": "Representatives",
+    "beneficiaries": "Beneficiaries",
+    "profile": "Profile",
+    "representativesDescription": "Manage company representatives and their permissions",
+    "beneficiariesDescription": "Manage beneficiaries and their account information",
+    "users": "Users",
+    "salaries": "Salaries"
   },
-
   "mainHeader": {
     "title": "Corporate Gateway System"
   },
-
   "inputSelectCombo": {
     "typeOrSelect": "Type or select"
   },
-
   "cblForm": {
     "partyName": "Party Name",
     "capital": "Capital",
@@ -69,11 +66,9 @@
     "sub": "No.",
     "currentAccount": "Current Account Number",
     "accountOpening": "Account‑Opening Date",
-
     "generalInformation": "General Information",
     "financialInformation": "Financial Information",
     "representativeInformation": "Legal‑Representative Information",
-
     "commercialLicense": "Commercial‑Licence Number",
     "validatyLicense": "Commercial‑Licence Validity",
     "commercialRegistration": "Commercial‑Registration Number",
@@ -82,7 +77,6 @@
     "validatyCode": "Statistical‑Code Validity",
     "chamberNumber": "Chamber‑of‑Commerce Number",
     "validatyChamber": "Chamber‑of‑Commerce Validity",
-
     "taxNumber": "Tax Number",
     "taxAdmin": "Tax Administration",
     "office": "Office",
@@ -95,7 +89,6 @@
     "passportExpiry": "Passport Expiry Date",
     "mobile": "Mobile Phone",
     "address": "Permanent Address",
-
     "table1": {
       "title": "Board‑Members",
       "columns": {
@@ -103,7 +96,6 @@
         "position": "Position"
       }
     },
-
     "table2": {
       "title": "Authorized Signatories",
       "columns": {
@@ -111,7 +103,6 @@
         "signature": "Signature"
       }
     },
-
     "infoBox": {
       "1": "Attachments",
       "2": "Coloured copy of valid passport for the authorised person and members",
@@ -129,7 +120,6 @@
       "n3": "Documents are only accepted if sent by mail and stamped.",
       "n4": "Ensure all data are filled in correctly by the customer."
     },
-
     "additionalInformation": "Additional Information",
     "packingDate": "Filling Date",
     "specialistName": "Specialist‑Employee Name",
@@ -159,7 +149,6 @@
     "actions": "Actions",
     "downloadPdf": "Download PDF"
   },
-
   "edfaaliForm": {
     "title": "Edfaali Supplier Subscription",
     "subtitle": "Share the supplier's information so we can enable the Edfaali service for them.",
@@ -207,8 +196,8 @@
       "documents": "Supporting Documents",
       "documentsDescription": "Upload the identification documents required to activate the supplier."
     },
-  "documents": {
-    "helper": "Attach clear PDF or image files so the bank can verify each document.",
+    "documents": {
+      "helper": "Attach clear PDF or image files so the bank can verify each document.",
       "uploadButton": "Select image",
       "noFile": "No file selected",
       "passport": "Passport",
@@ -226,15 +215,12 @@
       "commercialLicense": "Commercial License"
     }
   },
-
   "signaturePad": {
     "open": "Open Signature Pad",
     "done": "Done",
     "clear": "Clear"
   },
-
   "actions": "Actions",
-
   "RTGSForm": {
     "accountNb": "Sender‑Account Number",
     "name": "Sender‑Account Number",
@@ -271,13 +257,12 @@
     "createSuccessMsg": "RTGS request created successfully.",
     "fetchError": "Failed to fetch RTGS requests",
     "unknownError": "An unexpected error occurred",
-    "status":"Status",
+    "status": "Status",
     "actions": "Actions",
     "downloadPdf": "Download PDF",
     "commissionLabel": "Commission",
     "totalToPayLabel": "Total to Pay"
   },
-
   "checkForm": {
     "name": "Full Name",
     "address": "Address",
@@ -318,7 +303,6 @@
     "downloadPdf": "Download PDF",
     "phoneNumber": "Phone Number"
   },
-
   "CheckRequest": {
     "title": "Certified‑Check Request",
     "branch": "Branch",
@@ -363,12 +347,10 @@
     "updateSuccessMessage": "Check request updated successfully!",
     "downloadPdf": "Download PDF"
   },
-
   "notFound": {
     "title": "Page Unavailable",
     "des": "Sorry, this page is not available right now. Please check back later."
   },
-
   "crudDataGrid": {
     "title": "Data Grid",
     "searchPlaceholder": "Search by",
@@ -388,10 +370,8 @@
     "goLast": "Go to last page",
     "doubleClickToCollapse": "Double‑click to collapse"
   },
-
   "edit": "Edit",
   "delete": "Delete",
-
   "internalTransferForm": {
     "title": "Internal Bank Transfer",
     "id": "ID",
@@ -453,10 +433,13 @@
       "feePayerRecipient": "recipient",
       "cancel": "Cancel",
       "confirm": "Confirm Transfer"
-    }
-
+    },
+    "createSuccessTitle": "Success",
+    "createSuccessMsg": "The internal transfer request was successfully created.",
+    "confirm": "Confirm Transfer",
+    "postSuccessTitle": "Success",
+    "postSuccessMsg": "The internal transfer has been successfully confirmed."
   },
-
   "statementOfAccount": {
     "title": "Generate Account Statement",
     "account": "Account Number",
@@ -472,24 +455,21 @@
     "required": "Required",
     "selectAccount": "Please select an account",
     "toDateCannotBeToday": "To Date cannot be today. Please select a date at least one day earlier.",
-    "toDateTodayPrintNote": "Note: To download the statments the to date should be at least one day before today."
+    "toDateTodayPrintNote": "Note: To download the statments the to date should be at least one day before today.",
+    "trxCode": "Transaction Code"
   },
-
   "formTypeSelect": {
     "internal": "Internal Bank Transfer",
     "between": "Inter‑bank Transfer"
   },
-
   "confirmationModal": {
     "title": "Confirmation",
     "print": "Print",
     "submit": "Confirm"
   },
-
   "continueButton": {
     "continue": "Continue"
   },
-
   "salaries": {
     "name": "Name",
     "email": "Email",
@@ -511,14 +491,21 @@
     "postedBy": "Posted By",
     "postedAt": "Posted At",
     "cycleDetails": "Cycle Details",
-    "edit":"Edit",
+    "edit": "Edit",
     "save": "Save",
-    "post":"Send salaries",
+    "post": "Send salaries",
     "isTransferred": "Transferred",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "hint": "Salaries may be generated for more than 12 months to accommodate cases where the company chooses to pay additional month(s), for example a 13th or 14th salary. The user selects the relevant month and then specifies the salary sequence number, which can range from 13 to 24. For example, if the company decides in March to pay an additional salary, March is selected as the month and 13 is selected as the salary number, representing the 13th salary. The same logic applies for any further additional salaries.",
+    "additionalMonth": "Additional Month",
+    "repost": "Repost",
+    "modalTitle": "Edit Employee's Information",
+    "saveAndRepost": "Save and Repost",
+    "cycle": "Cycle",
+    "saveSuccessMessage": "Successfully Reposted Salary",
+    "saveSuccessTitle": "Success"
   },
-
   "customizations": {
     "banks": {
       "title": "Banks",
@@ -544,7 +531,6 @@
       "checker": "Checker"
     }
   },
-
   "global": {
     "dialogTitle": "Note",
     "delmessage": "Are you sure you want to proceed?",
@@ -553,18 +539,15 @@
     "close": "Close",
     "ok": "OK"
   },
-
   "descriptions": {
     "dashboardDescription": "View overall dashboard metrics",
     "statementOfAccountDescription": "Display and download account statements",
     "employeesDescription": "Manage employee records and details",
     "representativesDescription": "Manage company representatives",
     "beneficiariesDescription": "Manage beneficiaries and their account information",
-
     "transferDescription": "Handle all money transfers",
     "transferInDescription": "Move funds into your own account",
     "transferOutDescription": "Send funds to other accounts",
-
     "requestsDescription": "Request banking services",
     "checkBookDescription": "Order a new cheque book",
     "certifiedCheckDescription": "Apply for a certified cheque",
@@ -576,37 +559,29 @@
     "foreignRequestsDescription": "Request foreign-currency transfers",
     "cblDescription": "View Central Bank of Libya related details",
     "edfaaliDescription": "Subscribe suppliers to the Edfaali service",
-
     "currenciesDescription": "Manage currencies and exchange rates",
-
     "salaryLocalizationDescription": "Configure salary localization settings",
     "salariesDescription": "Process and transfer employee salaries",
     "uploadFilesDescription": "Upload files for localization",
     "salariesTransferDescription": "Transfer salaries to employees",
-
     "documentaryDescription": "Access and manage documentary details",
     "followUpDescription": "Follow up on operations and requests",
     "settingsDescription": "Configure application settings",
-
     "customizationsDescription": "Customize your banking preferences",
     "banksDescription": "Manage and view bank information",
     "commissionsDescription": "Manage commission data",
     "limitsDescription": "Set and manage operational limits",
-
     "changeLanguageDescription": "Switch application language",
     "logoutDescription": "Sign out of the application",
-
     "defaultDescription": "",
     "usersDescription": "Manage user accounts and permissions",
     "profileDescription": "View and edit your profile information"
   },
-
   "login": {
     "email": "Email",
     "pass": "Password",
     "button": "Login"
   },
-
   "foreignTransfers": {
     "id": "ID",
     "toBank": "To Bank",
@@ -647,7 +622,6 @@
     "actions": "Actions",
     "downloadPdf": "Download PDF"
   },
-
   "tabsWizard": {
     "review": "Review & Submit",
     "next": "Next",
@@ -656,26 +630,22 @@
     "backToPage": "Back to Page",
     "submitting:": "Submitting..."
   },
-
   "visaRequest": {
     "step1Title": "Step 1",
     "step2Title": "Step 2",
     "reviewStepTitle": "Review & Submit",
-
     "branch": "Branch / Agency",
     "date": "Date",
     "accountHolderName": "Account‑Holder Name",
     "accountNumber": "Account Number",
     "nationalId": "National ID",
     "phoneNumberLinkedToNationalId": "Phone linked to National ID",
-
     "cbl": "CBL Number",
     "cardMovementApproval": "Card‑movement approval",
     "cardUsingAcknowledgment": "Card‑use acknowledgment (per CBL)",
     "foreignAmount": "Foreign Amount",
     "localAmount": "Local Amount",
     "pldedge": "Pledge not to claim CBL fees",
-
     "isRequired": "Required",
     "status": "Status",
     "documents": "Documents",
@@ -690,28 +660,23 @@
     "downloadPdf": "Download PDF",
     "visaType": "Visa Type"
   },
-
   "bankStatement": {
     "step1Title": "Step 1",
     "step2Title": "Step 2",
     "reviewStepTitle": "Review & Submit",
     "totalAmountLyd": "Total Amount (LYD)",
-
     "accountHolderName": "Account‑Holder Name",
     "authorizedOnTheAccountName": "Authorised on the Account",
     "accountNumber": "Account Number",
     "serviceRequests": "Service Requests",
-
     "reactivateIdfaali": "Reactivate Idfaali",
     "deactivateIdfaali": "Deactivate Idfaali",
     "resetDigitalBankPassword": "Reset Digital‑Bank Password",
     "resendMobileBankingPin": "Resend Mobile‑Banking PIN",
     "changePhoneNumber": "Change Phone Number",
-
     "oldAccountNumber": "Old Account Number",
     "newAccountNumber": "New Account Number",
     "statementRequest": "Statement Requests",
-
     "currentAccountStatement": "Current‑Account Statement",
     "arabic": "Arabic",
     "english": "English",
@@ -721,7 +686,6 @@
     "accountStatement": "Account Statement",
     "journalMovement": "Journal Movement",
     "nonFinancialCommitment": "Non‑Financial Commitment",
-
     "isRequired": "Required",
     "mustBeNumber": "Must be a number",
     "createSuccessTitle": "Success",
@@ -732,9 +696,9 @@
     "status": "Status",
     "id": "ID",
     "actions": "Actions",
-    "downloadPdf": "Download PDF"
+    "downloadPdf": "Download PDF",
+    "submit": "Submit"
   },
-
   "dashboard": {
     "accountNb": "Account Number",
     "debitBalance": "Debit Balance",
@@ -749,10 +713,9 @@
     "showMore": "Show more",
     "showLess": "Show less"
   },
-
   "employees": {
-    "firstName":"First Name",
-    "lastName":"Last Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
     "id": "ID",
     "name": "Name",
     "email": "Email",
@@ -890,16 +853,13 @@
       "EmployeeCanCompanies": "Can manage companies"
     }
   },
-
   "backButton": {
     "back": "Back"
   },
-
   "reviewStep": {
     "title": "Review Information",
     "description": "Please ensure all details are correct before submission"
   },
-
   "currencies": {
     "code": "Code",
     "rate": "Exchange Rate",
@@ -961,7 +921,6 @@
         "submitErrorGeneric": "An error occurred while creating the letter."
       }
     }
-  
   },
   "creditFacility": {
     "form": {
@@ -987,7 +946,7 @@
         "errorTitle": "Error",
         "currencyFetchError": "Failed to fetch currencies.",
         "submitErrorGeneric": "An error occurred during submission.",
-        "commissionLabel":"Commission",
+        "commissionLabel": "Commission",
         "totalToPayLabel": "Total to Pay"
       }
     },
@@ -1017,7 +976,6 @@
       }
     }
   },
-
   "representatives": {
     "title": "Company Representatives",
     "description": "Manage company representatives who can be enabled or disabled",
@@ -1060,7 +1018,7 @@
       "createSuccess": "Representative created successfully",
       "updateSuccess": "Representative updated successfully",
       "unexpectedError": "An unexpected error occurred",
-      "validation":{
+      "validation": {
         "required": "This field is required",
         "photoRequired": "Representative photo is required",
         "invalidPhone": "Phone number must be between 9 and 10 digits"
@@ -1080,7 +1038,6 @@
   },
   "profile": {
     "fetchError": "Fetch Error",
-    
     "noCompanyCode": "No company code found in cookies.",
     "active": "Active",
     "inactive": "Inactive",
@@ -1095,28 +1052,22 @@
       "subtitle": "We could not find the requested company record in the database.",
       "returnButton": "Return to Company Records"
     },
-
-
-
     "contactLocationSection": {
       "title": "Contact & Location Information",
       "primaryContactNumber": "Primary Contact Number",
       "cityOfOperations": "City of Operations",
       "nationalityJurisdiction": "Nationality / Jurisdiction",
-      "missingKyc":"Missing info from kyc"
+      "missingKyc": "Missing info from kyc"
     },
-
     "currentStatusSection": {
       "title": "Current Status",
       "subtitle1": "The company's KYC verification status is",
       "additionalInfo": "Additional Information"
     },
-
     "headerSection": {
       "backButton": "Company Records",
       "code": "Code:"
     },
-
     "kycTimelineSection": {
       "title": "KYC Verification Timeline",
       "requestSubmitted": "KYC Request Submitted",
@@ -1124,7 +1075,6 @@
       "at": "at",
       "servicePackage": "Service Package"
     },
-
     "mainInformationSection": {
       "title": "Company Information",
       "legalCompanyName": "Legal Company Name",
@@ -1132,7 +1082,6 @@
       "branchIdentifier": "Branch Identifier",
       "operationalStatus": "Operational Status"
     },
-
     "reviewDecisionSection": {
       "title": "Review Decision",
       "subtitle": "Please review the company information and decide the KYC status.",
@@ -1147,7 +1096,6 @@
     },
     "code": "Company Code",
     "name": "Company Name",
-  
     "kycStatus": "KYC Status",
     "requestedAt": "Request Date",
     "reviewedAt": "Review Date",
@@ -1157,41 +1105,39 @@
       "selectServicePackage": "Select Service Package",
       "changeServicePackageButton": "Change Service Package"
     },
-    "updateStatus":{
+    "updateStatus": {
       "title": "Update Status",
       "selectStatus": "Select Status",
       "messageReason": "Please enter the reason for the update",
       "updateButton": "Update Status"
     },
-    "documentsSection":{
-      "title":"Documents",
-      "numberOfDocuments":"Number of Uploaded Documents",
-      "noDocs":"No Documents Uploaded",
-      "download":"Download",
-      "preview":"Preview",
-      "noDescription":"No description available"
+    "documentsSection": {
+      "title": "Documents",
+      "numberOfDocuments": "Number of Uploaded Documents",
+      "noDocs": "No Documents Uploaded",
+      "download": "Download",
+      "preview": "Preview",
+      "noDescription": "No description available"
     },
-      "confirmationModal": {
-    "title": "Confirm update",
-    "youAreAboutToSet": "You are about to set {company} to {status}.",
-    "messageLabel": "Message",
-    "areYouSure": "Are you sure you want to continue?",
-    "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirmationModal": {
+      "title": "Confirm update",
+      "youAreAboutToSet": "You are about to set {company} to {status}.",
+      "messageLabel": "Message",
+      "areYouSure": "Are you sure you want to continue?",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "contactSupportSection": {
+      "title": "Contact Support",
+      "phone": "Phone",
+      "email": "Email",
+      "availability": "Available Sunday to Thursday, 9:00 AM to 5:00 PM"
+    }
   },
-  "contactSupportSection":{
-          "title": "Contact Support",
-          "phone": "Phone",
-          "email": "Email",
-          "availability": "Available Sunday to Thursday, 9:00 AM to 5:00 PM"
-        }
-  },
-
   "requests": {
     "downloadPdf": "Download PDF",
     "uploadLogo": "Upload Logo"
   },
-
   "notifications": {
     "title": "Notifications",
     "all": "All",
@@ -1200,7 +1146,6 @@
     "viewDetails": "View Details",
     "markAsRead": "Mark as Read"
   },
-
   "beneficiaries": {
     "id": "ID",
     "name": "Name",
@@ -1257,7 +1202,6 @@
     "deleteErrorTitle": "Error",
     "confirmDelete": "Are you sure you want to delete this beneficiary?"
   },
-
   "groupTransferForm": {
     "id": "ID",
     "category": "Category",
@@ -1306,7 +1250,7 @@
       "confirm": "Confirm"
     }
   },
-  "common":{
-    "rejectReason":"Reason for Rejection"
+  "common": {
+    "rejectReason": "Reason for Rejection"
   }
 }

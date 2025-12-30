@@ -5,17 +5,17 @@ import type { StatementLine } from './services';
 registerAmiriFont();
 
 type Rgb = { r: number; g: number; b: number };
-const textCol: Rgb   = { r: 0x1f, g: 0x29, b: 0x37 }; // #1F2937
+const textCol: Rgb = { r: 0x1f, g: 0x29, b: 0x37 }; // #1F2937
 
 export function generateStatementPdf(
   lines: StatementLine[],
   accountInfo: {
-  accountNumber: string;
-  customerName: string;
-  accountType: string;
-  currency: string;
-  branchAgency: string;
-  timePeriod: string;
+    accountNumber: string;
+    customerName: string;
+    accountType: string;
+    currency: string;
+    branchAgency: string;
+    timePeriod: string;
   },
   bgImageBase64: string,
   topImageBase64?: string,
@@ -90,7 +90,7 @@ export function generateStatementPdf(
     x = leftBoxLeft + cellWidth;
     doc.setFont('Amiri', 'normal').setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
     doc.text(leftBoxLabels[row].ar, x + cellWidth / 2, y + 4, { align: 'center', baseline: 'top' });
-    doc.setFont('Amiri', 'bold' ).setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
+    doc.setFont('Amiri', 'bold').setFontSize(8).setTextColor(textCol.r, textCol.g, textCol.b);
     doc.text(leftBoxLabels[row].en, x + cellWidth / 2, y + cellHeight - 2, { align: 'center', baseline: 'bottom' });
   }
   // Draw right box cells (labels right col, value left col)
@@ -175,7 +175,7 @@ export function generateStatementPdf(
             cellText = [lines[rowIdx].nr1, lines[rowIdx].nr2, lines[rowIdx].nr3].filter(Boolean).join(' ');
             break;
           case 4:
-            cellText = lines[rowIdx].reference ?? '';
+            cellText = lines[rowIdx].trxCode ?? '';
             break;
           case 5:
             cellText = lines[rowIdx].postingDate ? new Date(lines[rowIdx].postingDate).toISOString().slice(0, 10).replace(/-/g, '') : '';

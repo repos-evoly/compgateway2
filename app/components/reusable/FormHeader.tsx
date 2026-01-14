@@ -3,6 +3,8 @@
 import React from "react";
 import BackButton, { type BackButtonProps } from "./BackButton";
 import StatusBanner from "./StatusBanner";
+import Hint from "./Hint";
+import { useTranslations } from "next-intl";
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
@@ -40,6 +42,7 @@ const FormHeader: React.FC<FormHeaderProps> = ({
   onBack,
   isEditing = false,
 }) => {
+  const t = useTranslations("internalTransferForm")
   /* ---------------- logic ---------------- */
   const displayBackButton =
     showBackButton ?? (Boolean(fallbackPath));
@@ -71,6 +74,10 @@ const FormHeader: React.FC<FormHeaderProps> = ({
       {children}
 
       {/* ---------- Status badge (always row-end) ---------- */}
+
+      <div className="ltr:ml-auto rtl:mr-auto">
+        <Hint hint={t("hint")} />
+      </div>
       {status && (
         <StatusBanner status={status} className="ltr:ml-auto rtl:mr-auto" />
       )}

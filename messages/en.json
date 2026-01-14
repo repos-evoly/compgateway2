@@ -419,6 +419,7 @@
     "fetchErrorTitle": "Error",
     "createTransfer": "Create Transfer",
     "confirmTransfer": "Confrim Transfer",
+    "hint": "Maker–Checker Process: The transfer will first be created by the Maker and saved as Pending. It must then be reviewed and approved by a Checker before it is posted and executed.",
     "modal": {
       "title": "Transfer Confirmation",
       "subtitle": "Please review the details carefully",

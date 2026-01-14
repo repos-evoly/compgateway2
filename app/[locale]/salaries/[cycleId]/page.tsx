@@ -637,7 +637,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                       <NotTransferredHeader
                         entries={notTransferred}
                         cycleId={cycle.id}
-                        onApply={(_updates) => handleRepostApplied()}
+                        onApply={handleRepostApplied}
                       />
                     )}
                   </div>
@@ -648,7 +648,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                 <NotTransferredHeader
                   entries={notTransferred}
                   cycleId={cycle.id}
-                  onApply={(_updates) => handleRepostApplied()}
+                  onApply={handleRepostApplied}
                 />
               ) : undefined
             )
@@ -748,7 +748,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                     <NotTransferredHeader
                       entries={notTransferred}
                       cycleId={cycle.id}
-                      onApply={(_updates) => handleRepostApplied()}
+                      onApply={handleRepostApplied}
                     />
                   )}
                 </div>

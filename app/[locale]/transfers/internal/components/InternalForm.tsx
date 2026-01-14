@@ -36,6 +36,8 @@ import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import { postTransfer } from "../services";
 
+
+
 /* -------------------------------------------------------------------------- */
 /*                               Helper                                       */
 /* -------------------------------------------------------------------------- */
@@ -201,6 +203,11 @@ function InternalForm({
   const [commissionOnReceiver, setCommissionOnReceiver] = useState(false);
 
   const accountInfoCache = useRef(new Map<string, AccountLookup | null>());
+
+  const actionLabel = isNew
+    ? t("createTransfer", { defaultValue: "Create transfer" })
+    : canPostTransfer
+      ? t("confirmTransfer", { defaultValue: "Confirm transfer" }) : '';
 
   const resolveAccountInfo = useCallback(
     async (accountNumber: string): Promise<AccountLookup | null> => {
@@ -388,8 +395,8 @@ function InternalForm({
             console.error("Account check failed:", err);
             const message =
               err instanceof Error &&
-              typeof err.message === "string" &&
-              err.message
+                typeof err.message === "string" &&
+                err.message
                 ? err.message
                 : tRef.current("accountNotFound");
             setToError(message);
@@ -433,8 +440,8 @@ function InternalForm({
             console.error("From account check failed:", err);
             const message =
               err instanceof Error &&
-              typeof err.message === "string" &&
-              err.message
+                typeof err.message === "string" &&
+                err.message
                 ? err.message
                 : tRef.current("accountNotFound");
             setFromAccountInfo(null);
@@ -551,17 +558,17 @@ function InternalForm({
         if (!result.success) {
           throw new Error(
             (result.message as string) ||
-              (t("postErrorMsg", {
-                defaultValue: "The transfer could not be confirmed.",
-              }) as string)
+            (t("postErrorMsg", {
+              defaultValue: "The transfer could not be confirmed.",
+            }) as string)
           );
         }
         setAlertTitle(t("postSuccessTitle", { defaultValue: "Transfer confirmed" }));
         setAlertMessage(
           result.message ||
-            (t("postSuccessMsg", {
-              defaultValue: "The transfer was confirmed successfully.",
-            }) as string)
+          (t("postSuccessMsg", {
+            defaultValue: "The transfer was confirmed successfully.",
+          }) as string)
         );
         setAlertSuccess(true);
         setAlertOpen(true);
@@ -611,7 +618,7 @@ function InternalForm({
       <Formik<ExtendedValues>
         initialValues={initialValues}
         validationSchema={schema}
-        onSubmit={() => {}}
+        onSubmit={() => { }}
         enableReinitialize
       >
         {({ values }) => {
@@ -655,9 +662,9 @@ function InternalForm({
                     options={toAccountOptions}
                     disabled={fieldsDisabled}
                     maskingFormat="0000-000000-000"
-                    // placeholder={t("selectOrTypeToAccount", {
-                    //   defaultValue: "Select beneficiary or type account",
-                    // })}
+                  // placeholder={t("selectOrTypeToAccount", {
+                  //   defaultValue: "Select beneficiary or type account",
+                  // })}
                   />
 
                   <FormInputIcon
@@ -710,6 +717,7 @@ function InternalForm({
                         transactionCategoryId: true,
                       }}
                       disabled={!!toError || currencyMismatch}
+                      label={actionLabel}
                     />
                   </div>
                 )}
@@ -731,6 +739,7 @@ function InternalForm({
           toAccountName={modalData.toCompanyName}
           onClose={() => setModalOpen(false)}
           onConfirm={confirmModal}
+          isNew={isNew}
         />
       )}
 
@@ -753,4 +762,6 @@ function InternalForm({
 
 export default InternalForm;
 
+
+// Choose action label based on mode
 

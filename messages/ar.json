@@ -425,6 +425,8 @@
     "actions": "الإجراءات",
     "unknownError": "حدث خطأ غير معروف",
     "fetchErrorTitle": "خطأ",
+    "createTransfer": "انشاء التحويل",
+    "confirmTransfer": "الموافقة على التحويل",
     "modal": {
       "title": "تأكيد تفاصيل التحويل",
       "subtitle": "يرجى مراجعة التفاصيل بعناية",

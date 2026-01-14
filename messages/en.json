@@ -417,6 +417,8 @@
     "actions": "Actions",
     "unknownError": "An unknown error occurred",
     "fetchErrorTitle": "Error",
+    "createTransfer": "Create Transfer",
+    "confirmTransfer": "Confrim Transfer",
     "modal": {
       "title": "Transfer Confirmation",
       "subtitle": "Please review the details carefully",

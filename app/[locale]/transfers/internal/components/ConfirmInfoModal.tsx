@@ -33,6 +33,8 @@ export type ConfirmInfoModalProps = {
   toAccountName?: string;
   onClose: () => void;
   onConfirm: () => void;
+  /** Whether this modal is for creating a new transfer (true) or editing (false) */
+  isNew?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -48,8 +50,10 @@ export default function ConfirmInfoModal({
   toAccountName,
   onClose,
   onConfirm,
+  isNew = false,
 }: ConfirmInfoModalProps) {
   const t = useTranslations("internalTransferForm.modal");
+  const u = useTranslations("internalTransferForm");
 
   /* ---------- ESC key to close ---------- */
   useEffect(() => {
@@ -63,7 +67,7 @@ export default function ConfirmInfoModal({
   /* ---------- RTL or LTR? --------------- */
   const dir =
     typeof document !== "undefined" &&
-    document.documentElement.dir.toLowerCase() === "rtl"
+      document.documentElement.dir.toLowerCase() === "rtl"
       ? "rtl"
       : "ltr";
 
@@ -74,6 +78,11 @@ export default function ConfirmInfoModal({
   const payer = commissionOnRecipient
     ? t("feePayerRecipient")
     : t("feePayerSender");
+
+  // Pick primary action label based on mode
+  const primaryLabel = isNew
+    ? u("createTransfer", { defaultValue: "Create transfer" })
+    : u("confirmTransfer", { defaultValue: "Confirm transfer" });
 
   /* ------------------------------------------------------------------ */
   /* UI                                                                  */
@@ -143,9 +152,8 @@ export default function ConfirmInfoModal({
               {/* Arrow */}
               <div className="flex-shrink-0">
                 <FiArrowRight
-                  className={`w-8 h-8 text-info-dark ${
-                    dir === "rtl" ? "rotate-180" : ""
-                  }`}
+                  className={`w-8 h-8 text-info-dark ${dir === "rtl" ? "rotate-180" : ""
+                    }`}
                 />
               </div>
 
@@ -224,7 +232,7 @@ export default function ConfirmInfoModal({
               onClick={onConfirm}
               className="px-8 py-2.5 bg-info-dark text-white font-semibold rounded-lg hover:bg-warning-light hover:text-info-dark transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              {t("confirm")}
+              {primaryLabel}
             </button>
           </div>
         </div>

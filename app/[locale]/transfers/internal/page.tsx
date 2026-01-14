@@ -10,6 +10,7 @@ import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 
 import { checkAccount, getTransfers } from "./services";
 import { generateTransferPdf } from "@/app/lib/generateTransferPdf";
+import { hasPermission } from "@/app/helpers/authentication/cookies";
 
 /* ---------- API shapes (exact) ---------- */
 type ApiTransferRow = {
@@ -80,6 +81,7 @@ const Page = () => {
   const t = useTranslations("internalTransferForm");
   const router = useRouter();
   const locale = useLocale();
+  const canCreate = hasPermission("canCreateTransfer");
 
   const [data, setData] = useState<TransfersApiRow[]>([]);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -92,6 +94,7 @@ const Page = () => {
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+
 
   const fetchTransfers = useCallback(async () => {
     setLoading(true);
@@ -201,8 +204,8 @@ const Page = () => {
           onSearch={handleSearch}
           showDropdown
           dropdownOptions={[{ label: "Category", value: "categoryName" }]}
-          onDropdownSelect={() => {}}
-          showAddButton
+          onDropdownSelect={() => { }}
+          showAddButton={canCreate}
           onAddClick={handleAddClick}
           loading={loading}
         />

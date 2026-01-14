@@ -13,6 +13,8 @@ import type { InternalFormValues } from "../types";
 type Props = ContinueButtonProps & {
   /** Disable the button regardless of Formik validity */
   disabled?: boolean;
+  /** Optional label override for the button text */
+  label?: string;
 };
 
 /**
@@ -26,6 +28,7 @@ const ContinueButton = ({
   onClick,
   touchedFields,
   disabled = false,
+  label,
 }: Props) => {
   const { values, setTouched, validateForm, isValid } =
     useFormikContext<InternalFormValues>();
@@ -61,7 +64,7 @@ const ContinueButton = ({
           : "bg-info-dark text-white hover:bg-info-light"
       }`}
     >
-      {t("continue")}
+      {label ?? t("continue")}
     </button>
   );
 };

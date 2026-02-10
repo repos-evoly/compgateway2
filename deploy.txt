@@ -16,13 +16,14 @@ COPYFILE_DISABLE=1 tar czf ~/compgateway_docker.tar.gz \
   --exclude=node_modules --exclude='.next' --exclude='.git' .
 ```
 
-2. Upload the artifact to the server
+2. Upload the artifact to the server ( do it on .11 )
+pass: P@ssword2024!
 ------------------------------------
 ```bash
 scp ~/compgateway_docker.tar.gz administrator@192.168.113.10:~
 ```
 
-3. SSH into the server
+3. SSH into the server (do it on .11)
 ----------------------
 ```bash
 ssh administrator@192.168.113.10

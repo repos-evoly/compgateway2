@@ -72,52 +72,90 @@ export const generateSalaryTransactionPdf = (
   );
   const totalAmount =
     typeof transaction.totalAmount === "number" &&
-    !Number.isNaN(transaction.totalAmount)
+      !Number.isNaN(transaction.totalAmount)
       ? transaction.totalAmount
       : computedTotalFromEntries;
 
   const statusText = transaction.postedAt ? "مكتمل" : "قيد المعالجة";
 
   // Right table: ID / Salary Month
-  const rightTable: Array<[string, string]> = [
-    ["رمز العملية", String(transaction.id)],
-    [
-      "شهر الرواتب",
-      new Date(transaction.salaryMonth).toLocaleDateString("en-US"),
-    ],
+  const salaryMonthValue = String(transaction.salaryMonth ?? "");
+  const additionalMonthValue = String(transaction.additionalMonth ?? "").trim();
+
+  const rightTable = [
+    { label: "رمز العملية", lines: [String(transaction.id)] },
+    { label: "شهر الرواتب", lines: [salaryMonthValue] },
   ];
 
+  if (additionalMonthValue.length > 0) {
+    rightTable.push({ label: "الشهر الاضافي", lines: [additionalMonthValue] });
+  }
+
   // Left table: Status / Total
-  const leftTable: Array<[string, string]> = [
-    ["الحالة", statusText],
-    ["الإجمالي", `${totalAmount.toLocaleString()} ${transaction.currency}`],
+  const leftTable = [
+    { label: "الحالة", lines: [statusText] },
+    {
+      label: "الإجمالي",
+      lines: [`${totalAmount.toLocaleString()} ${transaction.currency}`],
+    },
   ];
+
+  if (rightTable.length > leftTable.length) {
+    leftTable.push({ label: "", lines: [""] });
+  }
 
   // Y-coordinate for the top info tables, creating a 20px margin after the 40px header.
   const topTablesY = 60;
 
+  const topRowHeights = rightTable.map((row, i) =>
+    Math.max(
+      row.lines.length * rowHeight,
+      leftTable[i]?.lines.length * rowHeight || rowHeight
+    )
+  );
+
+  let currentTopY = topTablesY;
+
   // Draw right table
-  rightTable.forEach(([label, value], i) => {
-    const y = topTablesY + i * rowHeight;
+  rightTable.forEach((row, i) => {
+    const rowHeightPx = topRowHeights[i];
     const x = pageWidth - margin - boxWidth;
+    const y = currentTopY;
     doc.setFontSize(10);
-    doc.text(String(label), x + boxWidth - 5, y + 7, { align: "right" });
-    doc.text(String(value), x + 5, y + 7, { align: "left" });
-    doc.rect(x, y, boxWidth, rowHeight);
+    const labelY =
+      rowHeightPx === rowHeight ? y + 7 : y + rowHeightPx / 2 + 2;
+    doc.text(String(row.label), x + boxWidth - 5, labelY, { align: "right" });
+    row.lines.forEach((line, lineIndex) => {
+      doc.text(String(line), x + 5, y + 7 + lineIndex * rowHeight, {
+        align: "left",
+      });
+    });
+    doc.rect(x, y, boxWidth, rowHeightPx);
+    currentTopY += rowHeightPx;
   });
 
+  currentTopY = topTablesY;
+
   // Draw left table
-  leftTable.forEach(([label, value], i) => {
-    const y = topTablesY + i * rowHeight;
+  leftTable.forEach((row, i) => {
+    const rowHeightPx = topRowHeights[i];
     const x = margin;
+    const y = currentTopY;
     doc.setFontSize(10);
-    doc.text(String(label), x + boxWidth - 5, y + 7, { align: "right" });
-    doc.text(String(value), x + 5, y + 7, { align: "left" });
-    doc.rect(x, y, boxWidth, rowHeight);
+    const labelY =
+      rowHeightPx === rowHeight ? y + 7 : y + rowHeightPx / 2 + 2;
+    doc.text(String(row.label), x + boxWidth - 5, labelY, { align: "right" });
+    row.lines.forEach((line, lineIndex) => {
+      doc.text(String(line), x + 5, y + 7 + lineIndex * rowHeight, {
+        align: "left",
+      });
+    });
+    doc.rect(x, y, boxWidth, rowHeightPx);
+    currentTopY += rowHeightPx;
   });
 
   // Move Y after the two top tables.
-  let startY = topTablesY + rowHeight * 2 + 20;
+  let startY = topTablesY + topRowHeights.reduce((sum, h) => sum + h, 0) + 20;
 
   // Table title
   doc.setFontSize(14);

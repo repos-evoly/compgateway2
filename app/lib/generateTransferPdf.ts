@@ -5,6 +5,7 @@ import stampStatic from "@/public/Companygw/stamp.png";
 import noteStatic from "@/public/Companygw/note.png";
 import footerStatic from "@/public/Companygw/footer.png";
 import { registerAmiriFont } from "./pdfFonts";
+import { amountToArabicWords } from "./numberToArabicWords";
 
 /* Optional: if you pass these in from the page, keep the type here for clarity */
 export type CheckAccountResponse = {
@@ -476,6 +477,13 @@ export const generateTransferPdf = async (
   box(doc, xDirhams, bodyTop, colDirhams, bodyH);
   tCenter(doc, Intl.NumberFormat("en-US").format(dinars),  xDinar   + colDinar   / 2, bodyTop + bodyH / 2, "Helvetica", 11);
   tCenter(doc, Intl.NumberFormat("en-US").format(dirhams), xDirhams + colDirhams / 2, bodyTop + bodyH / 2, "Helvetica", 11);
+  const amountWords = amountToArabicWords(amt);
+  if (amountWords) {
+    const amountBoxX = xDinar;
+    const amountBoxW = colDinar;
+    const amountTextY = bodyTop + bodyH / 2 + 6;
+    tCenterWrapped(doc, amountWords, amountBoxX + amountBoxW / 2, amountTextY, amountBoxW - 8, "Amiri", 6.5, 1.4);
+  }
 
   /* Yellow totals bar */
   const yellowH = 10;

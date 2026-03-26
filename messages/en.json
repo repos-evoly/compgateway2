@@ -482,6 +482,7 @@
     "accountNumber": "Account Number",
     "submit": "Submit",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "add": "Add",
     "setSalaries": "Set Salaries",
     "selectAll": "Select All",
@@ -507,7 +508,35 @@
     "saveAndRepost": "Save and Repost",
     "cycle": "Cycle",
     "saveSuccessMessage": "Successfully Reposted Salary",
-    "saveSuccessTitle": "Success"
+    "saveSuccessTitle": "Success",
+    "pickerModal": {
+      "title": "Select Debit Account and Salary Month",
+      "loadingAccounts": "Loading accounts...",
+      "chooseAccount": "Choose account...",
+      "chooseMonth": "Choose month...",
+      "required": "Required",
+      "additionalMonthRangeLabel": "Additional Month (13-24)",
+      "additionalMonthPlaceholder": "13 - 24",
+      "additionalMonthRangeError": "Enter a number between 13 and 24",
+      "duplicateSalaryMonthError": "A cycle for this salary month already exists for the current year.",
+      "duplicateAdditionalMonthError": "Additional month {month} already exists for the current year.",
+      "companyCodeNotFound": "Company code not found.",
+      "fetchAccountsError": "Failed to fetch accounts.",
+      "months": {
+        "january": "January",
+        "february": "February",
+        "march": "March",
+        "april": "April",
+        "may": "May",
+        "june": "June",
+        "july": "July",
+        "august": "August",
+        "september": "September",
+        "october": "October",
+        "november": "November",
+        "december": "December"
+      }
+    }
   },
   "customizations": {
     "banks": {

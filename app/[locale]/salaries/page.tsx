@@ -20,6 +20,26 @@ import LoadingPage from "@/app/components/reusable/Loading";
 /* ------------------------------------------------------------------ */
 const PAGE_SIZE = 10;
 
+const formatAmountWithCommas = (value: unknown): string => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toLocaleString("en-US");
+  }
+
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return raw;
+
+    const parsed = Number(raw.replace(/,/g, ""));
+    if (Number.isFinite(parsed)) {
+      return parsed.toLocaleString("en-US");
+    }
+
+    return raw;
+  }
+
+  return "";
+};
+
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
 /* ------------------------------------------------------------------ */
@@ -74,7 +94,12 @@ export default function SalariesPage() {
         return v && String(v).trim().length > 0 ? String(v) : "";
       },
     },
-    { key: "totalAmount", label: "Total Amount" },
+    {
+      key: "totalAmount",
+      label: "Total Amount",
+      renderCell: (row: TSalaryTransaction) =>
+        formatAmountWithCommas(row.totalAmount),
+    },
     { key: "currency", label: "Currency" },
     {
       key: "entries",
@@ -104,9 +129,12 @@ export default function SalariesPage() {
     {
       key: "actions",
       label: "Actions",
-      renderCell: (row: TSalaryTransaction) => (
-        <SalariesDownloadPdf transaction={row} />
-      ),
+      renderCell: (row: TSalaryTransaction) => {
+        const isPosted = Boolean(row.postedAt);
+        if (!isPosted) return null;
+
+        return <SalariesDownloadPdf transaction={row} />;
+      },
     },
   ];
 

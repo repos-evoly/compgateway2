@@ -15,7 +15,7 @@ import SalariesModal from "../components/SalariesModal"; // returns { debitAccou
 import { submitSalaryCycle, type NewCycleEntry } from "../services";
 import LoadingPage from "@/app/components/reusable/Loading";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import Hint from "@/app/components/reusable/Hint";
+import Disclaimer from "@/app/components/reusable/Disclaimer";
 
 /* A safe, minimal shape of the API response without using `any` */
 type PostResult = {
@@ -190,7 +190,6 @@ export default function SetSalariesPage(): JSX.Element {
             <span>{t("totalAmount")}:</span>
             <span>{totalSelectedSalary.toLocaleString()}</span>
           </div>
-          <Hint hint={t("hint")} />
         </div>
       </div>
     </div>
@@ -202,6 +201,8 @@ export default function SetSalariesPage(): JSX.Element {
   /* ---------- main render ---------- */
   return (
     <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
+      <Disclaimer message={t("hint")} className="mb-4" />
+
       <CrudDataGrid
         data={data}
         columns={columns}

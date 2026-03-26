@@ -525,7 +525,35 @@
     "saveAndRepost": "حفظ وإعادة ايداع",
     "cycle": "دورة",
     "saveSuccessMessage": "تمت إعادة نشر الراتب بنجاح",
-    "saveSuccessTitle": "نجاح"
+    "saveSuccessTitle": "نجاح",
+    "pickerModal": {
+      "title": "اختر حساب المدين وشهر الراتب",
+      "loadingAccounts": "جاري تحميل الحسابات...",
+      "chooseAccount": "اختر الحساب...",
+      "chooseMonth": "اختر الشهر...",
+      "required": "مطلوب",
+      "additionalMonthRangeLabel": "الشهر الإضافي (13-24)",
+      "additionalMonthPlaceholder": "13 - 24",
+      "additionalMonthRangeError": "أدخل رقمًا بين 13 و24",
+      "duplicateSalaryMonthError": "توجد دورة لهذا الشهر في السنة الحالية.",
+      "duplicateAdditionalMonthError": "الشهر الإضافي {month} موجود بالفعل في السنة الحالية.",
+      "companyCodeNotFound": "لم يتم العثور على رمز الشركة.",
+      "fetchAccountsError": "فشل في جلب الحسابات.",
+      "months": {
+        "january": "يناير",
+        "february": "فبراير",
+        "march": "مارس",
+        "april": "أبريل",
+        "may": "مايو",
+        "june": "يونيو",
+        "july": "يوليو",
+        "august": "أغسطس",
+        "september": "سبتمبر",
+        "october": "أكتوبر",
+        "november": "نوفمبر",
+        "december": "ديسمبر"
+      }
+    }
   },
   "customizations": {
     "banks": {

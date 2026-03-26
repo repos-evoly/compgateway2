@@ -3,7 +3,7 @@
 import React from "react";
 import BackButton, { type BackButtonProps } from "./BackButton";
 import StatusBanner from "./StatusBanner";
-import Hint from "./Hint";
+import Disclaimer from "./Disclaimer";
 import { useTranslations } from "next-intl";
 
 /* ------------------------------------------------------------------ */
@@ -42,45 +42,46 @@ const FormHeader: React.FC<FormHeaderProps> = ({
   onBack,
   isEditing = false,
 }) => {
-  const t = useTranslations("internalTransferForm")
+  const t = useTranslations("internalTransferForm");
   /* ---------------- logic ---------------- */
-  const displayBackButton =
-    showBackButton ?? (Boolean(fallbackPath));
+  const displayBackButton = showBackButton ?? Boolean(fallbackPath);
 
   const hasLeftContent = displayBackButton || Boolean(text);
 
   /* ---------------- render ---------------- */
   return (
     <div
-      className={`flex items-center bg-info-dark text-white p-4 rounded-md
-        ${isFixedOnScroll ? "sticky top-0 z-50" : ""}
+      className={`${isFixedOnScroll ? "sticky top-0 z-50" : ""}
         ${className}`}
     >
-      {/* ---------- Left side (Back + title) ---------- */}
-      {hasLeftContent && (
-        <div className="flex items-center gap-2">
-          {displayBackButton && (
-            <BackButton
-              fallbackPath={fallbackPath}
-              onBack={onBack}
-              isEditing={isEditing}
-            />
-          )}
-          {text && <h2 className="text-lg font-semibold">{text}</h2>}
-        </div>
-      )}
+      <div
+        className={`flex items-center bg-info-dark text-white p-4 rounded-md
+        `}
+      >
+        {/* ---------- Left side (Back + title) ---------- */}
+        {hasLeftContent && (
+          <div className="flex items-center gap-2">
+            {displayBackButton && (
+              <BackButton
+                fallbackPath={fallbackPath}
+                onBack={onBack}
+                isEditing={isEditing}
+              />
+            )}
+            {text && <h2 className="text-lg font-semibold">{text}</h2>}
+          </div>
+        )}
 
-      {/* ---------- Middle controls ---------- */}
-      {children}
+        {/* ---------- Middle controls ---------- */}
+        {children}
 
-      {/* ---------- Status badge (always row-end) ---------- */}
-
-      <div className="ltr:ml-auto rtl:mr-auto">
-        <Hint hint={t("hint")} />
+        {/* ---------- Status badge (always row-end) ---------- */}
+        {status && (
+          <StatusBanner status={status} className="ltr:ml-auto rtl:mr-auto" />
+        )}
       </div>
-      {status && (
-        <StatusBanner status={status} className="ltr:ml-auto rtl:mr-auto" />
-      )}
+
+      <Disclaimer message={t("hint")} className="mt-2" />
     </div>
   );
 };

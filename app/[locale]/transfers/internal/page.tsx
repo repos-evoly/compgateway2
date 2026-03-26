@@ -175,17 +175,22 @@ const Page = () => {
     {
       key: "actions",
       label: t("actions"),
-      renderCell: (row: TransfersApiRow) => (
-        <button
-          type="button"
-          onClick={() => handleDownload(row)}
-          aria-label={t("downloadPdf", { defaultValue: "Download PDF" })}
-          title={t("downloadPdf", { defaultValue: "Download PDF" })}
-          className="p-1 text-black"
-        >
-          <FaFilePdf size={18} />
-        </button>
-      ),
+      renderCell: (row: TransfersApiRow) => {
+        const isPending = row.status?.trim().toLowerCase() === "pending";
+        if (isPending) return null;
+
+        return (
+          <button
+            type="button"
+            onClick={() => handleDownload(row)}
+            aria-label={t("downloadPdf", { defaultValue: "Download PDF" })}
+            title={t("downloadPdf", { defaultValue: "Download PDF" })}
+            className="p-1 text-black"
+          >
+            <FaFilePdf size={18} />
+          </button>
+        );
+      },
       width: 40,
     },
   ];

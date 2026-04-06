@@ -5,7 +5,7 @@ import stampStatic from "@/public/Companygw/stamp.png";
 import noteStatic from "@/public/Companygw/note.png";
 import footerStatic from "@/public/Companygw/footer.png";
 import { registerAmiriFont } from "./pdfFonts";
-import { amountToArabicWords } from "./numberToArabicWords";
+import { amountToArabicWords, splitAmountByScale } from "./numberToArabicWords";
 
 /* Optional: if you pass these in from the page, keep the type here for clarity */
 export type CheckAccountResponse = {
@@ -40,6 +40,16 @@ export type TransferData = {
 export type TransferExtra = {
   from: CheckAccountResponse | null;
   to: CheckAccountResponse | null;
+};
+
+type CurrencyPdfLabels = {
+  majorHeaderEn: string;
+  majorHeaderAr: string;
+  minorHeaderEn: string;
+  minorHeaderAr: string;
+  majorWordAr: string;
+  minorWordAr: string;
+  minorScale: number;
 };
 
 /* ---------- helpers ---------- */
@@ -184,6 +194,32 @@ const resolveStamp = (): Promise<string | null> =>
     )
   );
 
+const getCurrencyPdfLabels = (currency: string | null | undefined): CurrencyPdfLabels => {
+  const normalized = (currency ?? "").trim().toUpperCase();
+
+  if (normalized === "USD") {
+    return {
+      majorHeaderEn: "Dollar",
+      majorHeaderAr: "دولار",
+      minorHeaderEn: "Cents",
+      minorHeaderAr: "سنتات",
+      majorWordAr: "دولار",
+      minorWordAr: "سنت",
+      minorScale: 100,
+    };
+  }
+
+  return {
+    majorHeaderEn: "Dinar",
+    majorHeaderAr: "دينار",
+    minorHeaderEn: "Dirhams",
+    minorHeaderAr: "دراهم",
+    majorWordAr: "دينار",
+    minorWordAr: "درهم",
+    minorScale: 1000,
+  };
+};
+
 /* ---------- text + shape helpers ---------- */
 const tCenter = (
   doc: jsPDF,
@@ -269,6 +305,12 @@ export const generateTransferPdf = async (
 ): Promise<void> => {
   const doc = new jsPDF({ putOnlyUsedFonts: true, hotfixes: ["px_scaling"] });
   doc.setLanguage("ar");
+  const currencyCode =
+    extra?.from?.currency ??
+    transfer.currencyId ??
+    extra?.to?.currency ??
+    null;
+  const currencyLabels = getCurrencyPdfLabels(currencyCode);
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -398,10 +440,10 @@ export const generateTransferPdf = async (
   hline(doc, margin, xNO, tableTop + headerH);
 
   const hdrCy = tableTop + headerH / 2;
-  tCenter(doc, "Dinar", xDinar + colDinar / 2, hdrCy - 2, "Helvetica", 7);
-  tCenter(doc, "دينار", xDinar + colDinar / 2, hdrCy + 3, "Amiri", 7);
-  tCenter(doc, "Dirhams", xDirhams + colDirhams / 2, hdrCy - 2, "Helvetica", 7);
-  tCenter(doc, "دراهم", xDirhams + colDirhams / 2, hdrCy + 3, "Amiri", 7);
+  tCenter(doc, currencyLabels.majorHeaderEn, xDinar + colDinar / 2, hdrCy - 2, "Helvetica", 7);
+  tCenter(doc, currencyLabels.majorHeaderAr, xDinar + colDinar / 2, hdrCy + 3, "Amiri", 7);
+  tCenter(doc, currencyLabels.minorHeaderEn, xDirhams + colDirhams / 2, hdrCy - 2, "Helvetica", 7);
+  tCenter(doc, currencyLabels.minorHeaderAr, xDirhams + colDirhams / 2, hdrCy + 3, "Amiri", 7);
   tCenter(doc, "Clarifications", xClar + colClar / 2, hdrCy - 2, "Helvetica", 7);
   tCenter(doc, "التوضيحات", xClar + colClar / 2, hdrCy + 3, "Amiri", 7);
 
@@ -468,16 +510,22 @@ export const generateTransferPdf = async (
     } catch { /* noop */ }
   }
 
-  /* Dinar & Dirhams */
+  /* Major & minor currency units */
   const amt = Number(transfer.amount ?? 0);
-  const dinars = Math.trunc(Math.floor(amt + 1e-9));
-  const dirhams = Math.round((amt - dinars) * 1000);
+  const { major: majorUnits, minor: minorUnits } = splitAmountByScale(
+    amt,
+    currencyLabels.minorScale
+  );
 
   box(doc, xDinar,   bodyTop, colDinar,   bodyH);
   box(doc, xDirhams, bodyTop, colDirhams, bodyH);
-  tCenter(doc, Intl.NumberFormat("en-US").format(dinars),  xDinar   + colDinar   / 2, bodyTop + bodyH / 2, "Helvetica", 11);
-  tCenter(doc, Intl.NumberFormat("en-US").format(dirhams), xDirhams + colDirhams / 2, bodyTop + bodyH / 2, "Helvetica", 11);
-  const amountWords = amountToArabicWords(amt);
+  tCenter(doc, Intl.NumberFormat("en-US").format(majorUnits), xDinar + colDinar / 2, bodyTop + bodyH / 2, "Helvetica", 11);
+  tCenter(doc, Intl.NumberFormat("en-US").format(minorUnits), xDirhams + colDirhams / 2, bodyTop + bodyH / 2, "Helvetica", 11);
+  const amountWords = amountToArabicWords(amt, {
+    majorUnitLabel: currencyLabels.majorWordAr,
+    minorUnitLabel: currencyLabels.minorWordAr,
+    minorScale: currencyLabels.minorScale,
+  });
   if (amountWords) {
     const amountBoxX = xDinar;
     const amountBoxW = colDinar;
@@ -499,8 +547,8 @@ export const generateTransferPdf = async (
   vline(doc, xNO,                tableTop, tableBottomWithFooter);
   vline(doc, margin + fullWidth, tableTop, tableBottomWithFooter);
 
-  tCenter(doc, Intl.NumberFormat("en-US").format(dinars),  xDinar   + colDinar   / 2, yellowY + 6.6, "Helvetica", 8.5);
-  tCenter(doc, Intl.NumberFormat("en-US").format(dirhams), xDirhams + colDirhams / 2, yellowY + 6.6, "Helvetica", 8.5);
+  tCenter(doc, Intl.NumberFormat("en-US").format(majorUnits), xDinar + colDinar / 2, yellowY + 6.6, "Helvetica", 8.5);
+  tCenter(doc, Intl.NumberFormat("en-US").format(minorUnits), xDirhams + colDirhams / 2, yellowY + 6.6, "Helvetica", 8.5);
 
   /* Signatures (2×2) */
   const signGap = 6;

@@ -16,6 +16,7 @@ import InputSelectCombo, {
 import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 
+import { formatStatementMoney } from "./formatMoney";
 import { getStatement, StatementLine } from "./services";
 import PdfDownloadButton from "./PdfDownloadButton";
 
@@ -44,14 +45,7 @@ const toNumber = (
   return Number.isNaN(parsed) ? undefined : parsed;
 };
 
-/** Format numbers with 2-decimal precision + thousand-separators */
-const fmt = (n: number | undefined): string =>
-  n !== undefined
-    ? n.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-    : "";
+const fmt = (n: number | undefined): string => formatStatementMoney(n);
 
 /* ------------------------------------------------------------------ */
 /* Component                                                            */

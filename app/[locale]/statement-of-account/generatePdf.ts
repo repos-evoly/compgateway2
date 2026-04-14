@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { registerAmiriFont } from '@/app/lib/pdfFonts';
+import { formatStatementMoney } from './formatMoney';
 import type { StatementLine } from './services';
 
 registerAmiriFont();
@@ -163,13 +164,22 @@ export function generateStatementPdf(
         let cellText = '';
         switch (i) {
           case 0:
-            cellText = lines[rowIdx].balance !== undefined ? String(lines[rowIdx].balance) : '';
+            cellText =
+              lines[rowIdx].balance !== undefined
+                ? formatStatementMoney(lines[rowIdx].balance)
+                : '';
             break;
           case 1:
-            cellText = lines[rowIdx].amount > 0 ? String(lines[rowIdx].amount) : '';
+            cellText =
+              lines[rowIdx].amount > 0
+                ? formatStatementMoney(lines[rowIdx].amount)
+                : '';
             break;
           case 2:
-            cellText = lines[rowIdx].amount < 0 ? String(Math.abs(lines[rowIdx].amount)) : '';
+            cellText =
+              lines[rowIdx].amount < 0
+                ? formatStatementMoney(Math.abs(lines[rowIdx].amount))
+                : '';
             break;
           case 3:
             cellText = [lines[rowIdx].nr1, lines[rowIdx].nr2, lines[rowIdx].nr3].filter(Boolean).join(' ');

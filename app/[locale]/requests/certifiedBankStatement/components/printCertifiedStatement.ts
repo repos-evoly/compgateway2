@@ -694,6 +694,7 @@
 
 import { jsPDF } from "jspdf";
 import { registerAmiriFont } from "@/app/lib/pdfFonts";
+import { formatStatementMoney } from "@/app/[locale]/statement-of-account/formatMoney";
 import type { StatementLine } from "@/app/[locale]/statement-of-account/services";
 import type {
   PDFDocumentProxy,
@@ -1270,14 +1271,14 @@ export async function printCertifiedStatement(
       if (!hasBalance) runningBalance += amount;
       const balanceVal = typeof L.balance === "number" ? L.balance : runningBalance;
 
-      const creditText = amount > 0 ? String(amount) : "";
-      const debitText = amount < 0 ? String(amount) : "";
+      const creditText = amount > 0 ? formatStatementMoney(amount) : "";
+      const debitText = amount < 0 ? formatStatementMoney(Math.abs(amount)) : "";
       const desc = [L.nr1, L.nr2, L.nr3].filter((s): s is string => !!s).join(" ");
       const ref = L.trxCode ?? "";
       const dateStr = L.postingDate ? new Date(L.postingDate).toISOString().slice(0, 10) : "";
 
       drawBodyRow(doc, cols, tableLeft, y, rowH, {
-        balance: String(balanceVal),
+        balance: formatStatementMoney(balanceVal),
         credit: creditText,
         debit: debitText,
         desc,
@@ -1317,7 +1318,7 @@ export async function printCertifiedStatement(
   } else {
     finalBalanceNum = runningBalance;
   }
-  const finalBalance = String(finalBalanceNum);
+  const finalBalance = formatStatementMoney(finalBalanceNum);
 
   const summaryValues = {
     bookValue: finalBalance || "-----",

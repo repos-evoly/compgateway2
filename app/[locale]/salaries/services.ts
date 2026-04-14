@@ -135,8 +135,8 @@ export async function editSalaryCycle(
   };
 
   const response = await fetch(
-    buildUrl(`employees/salarycycles/${cycleId}`),
-    jsonRequest("PUT", payload)
+    buildUrl(`employees/salarycycles/${cycleId}/update`),
+    jsonRequest("POST", payload)
   );
 
   return handleApiResponse<SubmitCycleResponse>(

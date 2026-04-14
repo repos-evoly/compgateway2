@@ -4,6 +4,12 @@ type ScaleName = {
   plural: string;
 };
 
+export type AmountWordsOptions = {
+  majorUnitLabel?: string;
+  minorUnitLabel?: string;
+  minorScale?: number;
+};
+
 const ONES = [
   "صفر",
   "واحد",
@@ -127,20 +133,41 @@ const integerToArabicWords = (n: number): string => {
   return joinWithAnd(parts.reverse());
 };
 
-export const amountToArabicWords = (amount: number): string => {
+export const splitAmountByScale = (
+  amount: number,
+  minorScale = 1000
+): { major: number; minor: number } => {
+  if (!Number.isFinite(amount) || !Number.isFinite(minorScale) || minorScale <= 0) {
+    return { major: 0, minor: 0 };
+  }
+
+  const absoluteMinorUnits = Math.round(Math.abs(amount) * minorScale);
+  const major = Math.floor(absoluteMinorUnits / minorScale);
+  const minor = absoluteMinorUnits % minorScale;
+
+  return { major, minor };
+};
+
+export const amountToArabicWords = (
+  amount: number,
+  options: AmountWordsOptions = {}
+): string => {
   if (!Number.isFinite(amount)) return "";
 
-  const dinars = Math.trunc(Math.floor(amount + 1e-9));
-  const dirhams = Math.round((amount - dinars) * 1000);
+  const majorUnitLabel = options.majorUnitLabel ?? "دينار";
+  const minorUnitLabel = options.minorUnitLabel ?? "درهم";
+  const minorScale = options.minorScale ?? 1000;
 
-  const dinarWords = integerToArabicWords(Math.abs(dinars));
-  const dirhamWords = integerToArabicWords(Math.abs(dirhams));
+  const { major, minor } = splitAmountByScale(amount, minorScale);
+
+  const majorWords = integerToArabicWords(Math.abs(major));
+  const minorWords = integerToArabicWords(Math.abs(minor));
 
   const parts: string[] = [];
-  parts.push(`${dinarWords} دينار`);
+  parts.push(`${majorWords} ${majorUnitLabel}`);
 
-  if (dirhams > 0) {
-    parts.push(`${dirhamWords} درهم`);
+  if (minor > 0) {
+    parts.push(`${minorWords} ${minorUnitLabel}`);
   }
 
   return `${joinWithAnd(parts)} فقط لا غير`;

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { registerAmiriFont } from '@/app/lib/pdfFonts';
 import { formatStatementMoney } from './formatMoney';
+import { formatPdfDate } from './formatPdfDate';
 import type { StatementLine } from './services';
 
 registerAmiriFont();
@@ -188,7 +189,7 @@ export function generateStatementPdf(
             cellText = lines[rowIdx].trxCode ?? '';
             break;
           case 5:
-            cellText = lines[rowIdx].postingDate ? new Date(lines[rowIdx].postingDate).toISOString().slice(0, 10).replace(/-/g, '') : '';
+            cellText = formatPdfDate(lines[rowIdx].postingDate);
             break;
         }
         cellContents[i] = doc.splitTextToSize(cellText, colWidths[i] - 2);

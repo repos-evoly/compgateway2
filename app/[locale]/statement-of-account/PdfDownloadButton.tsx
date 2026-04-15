@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { FaFilePdf } from 'react-icons/fa';
 import { StatementLine } from './services';
 import { generateStatementPdf } from './generatePdf';
+import { formatPdfDate } from './formatPdfDate';
 import { loadImageAsBase64 } from './loadImageAsBase64';
 import { useLocale } from 'next-intl';
 
@@ -31,8 +32,8 @@ const PdfDownloadButton: React.FC<PdfDownloadButtonProps> = ({
     if (!lines.length) return;
     setIsLoading(true);
     try {
-      const fromDateFormatted = new Date(values.fromDate).toLocaleDateString('en-GB');
-      const toDateFormatted = new Date(values.toDate).toLocaleDateString('en-GB');
+      const fromDateFormatted = formatPdfDate(values.fromDate);
+      const toDateFormatted = formatPdfDate(values.toDate);
       // Load the image from public/images/pdfbg.jpg
       const bgImageBase64 = await loadImageAsBase64('/Companygw/images/pdfbg.jpg');
       generateStatementPdf(lines, {

@@ -449,7 +449,8 @@
     "createSuccessMsg": "تم إنشاء طلب التحويل الداخلي بنجاح.",
     "confirm": "تأكيد التحويل",
     "postSuccessTitle": "نجاح",
-    "postSuccessMsg": "تم تأكيد التحويل الداخلي بنجاح."
+    "postSuccessMsg": "تم تأكيد التحويل الداخلي بنجاح.",
+    "postErrorTitle": "خطأ"
   },
   "statementOfAccount": {
     "title": "توليد كشف الحساب",

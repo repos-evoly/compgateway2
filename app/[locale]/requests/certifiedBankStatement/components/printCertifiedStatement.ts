@@ -696,6 +696,7 @@ import { jsPDF } from "jspdf";
 import { registerAmiriFont } from "@/app/lib/pdfFonts";
 import { formatStatementMoney } from "@/app/[locale]/statement-of-account/formatMoney";
 import type { StatementLine } from "@/app/[locale]/statement-of-account/services";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
 import type {
   PDFDocumentProxy,
   PDFPageProxy,
@@ -748,8 +749,7 @@ async function renderPdfPageToPngDataURL(
   scale: number = 2
 ): Promise<string> {
   const pdfjs = await loadPdfJs();
-  pdfjs.GlobalWorkerOptions.workerSrc =
-    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker as string;
 
   const doc: PDFDocumentProxy = await pdfjs.getDocument({ data: pdfBytes }).promise;
   const page: PDFPageProxy = await doc.getPage(pageIndex);
@@ -1073,6 +1073,17 @@ type SummaryValues = {
   issueTime: string;
 };
 
+function getSummaryWithStampHeight(stampImg: HTMLImageElement): number {
+  const stampW = 56;
+  const stampH = (stampImg.naturalHeight / stampImg.naturalWidth) * stampW;
+  const rows = 5;
+  const rowH = 11.2;
+  const tableH = rows * rowH;
+  const dateGapY = 8;
+  const dateH = 12;
+  return Math.max(stampH, tableH) + dateGapY + dateH;
+}
+
 function drawSummaryWithStamp(
   doc: jsPDF,
   stampImg: HTMLImageElement,
@@ -1217,6 +1228,8 @@ export async function printCertifiedStatement(
 
   let idx = 0;
   let pageIndex = 0;
+  let lastRowsBottomY = 0;
+  let lastNoteTopY = 0;
 
   while (idx < lines.length || pageIndex === 0) {
     const isFirst = pageIndex === 0;
@@ -1289,6 +1302,9 @@ export async function printCertifiedStatement(
       y += rowH;
     }
 
+    lastRowsBottomY = y;
+    lastNoteTopY = noteTopY;
+
     pageIndex++;
     if (idx < lines.length) {
       doc.addPage();
@@ -1296,13 +1312,6 @@ export async function printCertifiedStatement(
       break;
     }
   }
-
-  // --------- ALWAYS put SUMMARY + STAMP on a NEW PAGE ----------
-  doc.addPage();
-  // Background (no header on summary page)
-  drawBackgroundAndHeader(doc, { watermarkDataUrl }, false);
-  // Footer for the summary page
-  const { noteTopY: summaryNoteTop } = drawFooterStackGetTop(doc, { note, footer });
 
   // Prepare summary values
   const now = new Date();
@@ -1330,15 +1339,26 @@ export async function printCertifiedStatement(
     issueTime,
   };
 
-  // Pick a Y that keeps summary inside note/footer
-  const rowsSum = 5;
-  const rowHsum = 11.2;
-  const tableHsum = rowsSum * rowHsum;
-  const dateH = 12;
-  const requiredH = Math.max(56, tableHsum) + 8 + dateH; // approximate height
-  const yStart = Math.max(24, summaryNoteTop - requiredH - 12);
+  const summaryHeight = getSummaryWithStampHeight(stamp);
+  const summaryGapTop = 8;
+  const summaryGapBottom = 12;
+  const samePageStartY = lastRowsBottomY + summaryGapTop;
+  const fitsCurrentPage =
+    lastNoteTopY > 0 &&
+    samePageStartY + summaryHeight + summaryGapBottom <= lastNoteTopY;
 
-  drawSummaryWithStamp(doc, stamp, yStart, summaryValues);
+  if (fitsCurrentPage) {
+    drawSummaryWithStamp(doc, stamp, samePageStartY, summaryValues);
+  } else {
+    doc.addPage();
+    drawBackgroundAndHeader(doc, { watermarkDataUrl }, false);
+    const { noteTopY: summaryNoteTop } = drawFooterStackGetTop(doc, {
+      note,
+      footer,
+    });
+    const yStart = Math.max(24, summaryNoteTop - summaryHeight - summaryGapBottom);
+    drawSummaryWithStamp(doc, stamp, yStart, summaryValues);
+  }
 
   // Save
   doc.save(

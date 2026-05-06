@@ -3,6 +3,7 @@
 import { handleApiResponse, ensureApiSuccess } from "@/app/helpers/apiResponse";
 import type {
   EmployeeFormValues,
+  EmployeeExcelImportResult,
   EmployeePayload,
   EmployeeResponse,
   EmployeesApiResponse,
@@ -22,6 +23,9 @@ const jsonRequest = (method: string, body?: unknown): RequestInit =>
     headers: { "Content-Type": "application/json" },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+const activeEmployeesOnly = (employees: EmployeeResponse[]): EmployeeResponse[] =>
+  employees.filter((employee) => employee.isDeleted !== true);
 
 export const getEmployees = async (
   page = 1,
@@ -44,16 +48,44 @@ export const getEmployees = async (
   >(response, "Failed to fetch employees");
 
   if (Array.isArray(data)) {
+    const activeEmployees = activeEmployeesOnly(data);
     return {
-      data,
+      data: activeEmployees,
       page: 1,
-      limit: data.length,
+      limit: activeEmployees.length,
       totalPages: 1,
-      totalRecords: data.length,
+      totalRecords: activeEmployees.length,
     } as EmployeesApiResponse;
   }
 
-  return data as EmployeesApiResponse;
+  const paged = data as EmployeesApiResponse;
+  return {
+    ...paged,
+    data: activeEmployeesOnly(paged.data),
+  };
+};
+
+export const getAllEmployees = async (
+  searchTerm = "",
+  pageSize = 100
+): Promise<EmployeeResponse[]> => {
+  const firstPage = await getEmployees(1, pageSize, searchTerm);
+  const employeesById = new Map<number, EmployeeResponse>();
+
+  firstPage.data.forEach((employee) => {
+    employeesById.set(employee.id, employee);
+  });
+
+  const totalPages = Math.max(1, firstPage.totalPages || 1);
+
+  for (let page = 2; page <= totalPages; page++) {
+    const nextPage = await getEmployees(page, pageSize, searchTerm);
+    nextPage.data.forEach((employee) => {
+      employeesById.set(employee.id, employee);
+    });
+  }
+
+  return Array.from(employeesById.values());
 };
 
 export const getEmployeeById = async (
@@ -117,4 +149,24 @@ export const updateBatchEmployees = async (
   );
 
   await ensureApiSuccess(response, "Failed to update batch employees");
+};
+
+export const uploadEmployeesExcel = async (
+  file: File
+): Promise<EmployeeExcelImportResult> => {
+  const formData = new FormData();
+  formData.append("files", file);
+
+  const response = await fetch(
+    `${API_BASE}/upload`,
+    withCredentials({
+      method: "POST",
+      body: formData,
+    })
+  );
+
+  return handleApiResponse<EmployeeExcelImportResult>(
+    response,
+    "Failed to upload employees Excel file"
+  );
 };

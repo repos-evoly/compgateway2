@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { JSX, useEffect, useMemo, useState, useCallback } from "react";
+import React, { JSX, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Formik, Form } from "formik";
 import Cookies from "js-cookie";
 import { useLocale, useTranslations } from "next-intl";
@@ -22,7 +22,7 @@ import {
   SalaryEntryRow,
   TSalaryTransaction,
 } from "../types";
-import { getEmployees } from "../../employees/services";
+import { getAllEmployees } from "../../employees/services";
 import type { EmployeeResponse } from "../../employees/types";
 import { CheckAccount, type AccountInfo } from "@/app/helpers/checkAccount";
 import { type InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
@@ -112,6 +112,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   >([]);
   const [canPost, setCanPost] = useState<boolean>(true);
   const [posting, setPosting] = useState<boolean>(false);
+  const postingRef = useRef(false);
   const [resultOpen, setResultOpen] = useState<boolean>(false);
   const [resultSuccess, setResultSuccess] = useState<boolean>(false);
   const [resultTitle, setResultTitle] = useState<string>("");
@@ -147,8 +148,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       setEmpLoading(true);
       setEmpError(null);
 
-      const res = await getEmployees(1, 100);
-      const baseEmployees = res.data;
+      const baseEmployees = await getAllEmployees();
 
       let merged: EmployeeResponse[] = baseEmployees;
       if (cycle) {
@@ -511,7 +511,8 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
 
   /* ───────── confirm modal action: POST cycle then show result modal ───────── */
   const handleConfirmPost = useCallback(async () => {
-    if (!cycle) return;
+    if (!cycle || postingRef.current) return;
+    postingRef.current = true;
     try {
       setPosting(true);
       await postSalaryCycleById(cycle.id);
@@ -543,6 +544,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       setResultMessage(msg);
       setResultOpen(true);
     } finally {
+      postingRef.current = false;
       setPosting(false);
     }
   }, [cycle, refetchCycle, t]);
@@ -665,6 +667,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
             commissionCurrency={confirmState.commissionCurrency}
             displayAmount={confirmState.displayAmount}
             recipients={recipients} // <-- includes salary per employee
+            isSubmitting={posting}
             onClose={() => setConfirmOpen(false)}
             onConfirm={handleConfirmPost}
           />
@@ -765,6 +768,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
                 commissionCurrency={confirmState.commissionCurrency}
                 displayAmount={confirmState.displayAmount}
                 recipients={recipients} // <-- includes salary per employee
+                isSubmitting={posting}
                 onClose={() => setConfirmOpen(false)}
                 onConfirm={handleConfirmPost}
               />

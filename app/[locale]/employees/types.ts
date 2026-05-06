@@ -1,8 +1,8 @@
 export type EmployeeFormValues = {
   id?: number;
   name?: string;
-  email?: string;
-  phone?: string;
+  email?: string | null;
+  phone?: string | null;
   salary?: number;
   date?: string;
   accountNumber?: string;
@@ -24,14 +24,15 @@ export type EmployeePayload = EmployeeFormValues;
 export type EmployeeResponse = {
   id: number;
   name: string;
-  email: string;
-  phone: string;
+  email: string | null;
+  phone: string | null;
   salary: number;
   date: string;
   accountNumber: string;
   accountType: string;
   sendSalary: boolean;
   canPost: boolean;
+  isDeleted?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -44,3 +45,16 @@ export type EmployeesApiResponse = {
   totalRecords: number;
 }
 
+export type EmployeeExcelImportRowError = {
+  rowNumber: number;
+  message: string;
+};
+
+export type EmployeeExcelImportResult = {
+  totalRows: number;
+  createdCount: number;
+  updatedCount: number;
+  deletedCount: number;
+  skippedCount: number;
+  errors: EmployeeExcelImportRowError[];
+};

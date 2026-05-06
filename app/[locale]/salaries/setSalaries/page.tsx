@@ -9,7 +9,7 @@ import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import BackButton from "@/app/components/reusable/BackButton";
 import type { DataGridColumn } from "@/types";
-import { getEmployees } from "../../employees/services";
+import { getAllEmployees } from "../../employees/services";
 import type { EmployeeResponse } from "../../employees/types";
 import SalariesModal from "../components/SalariesModal"; // returns { debitAccount, salaryMonthArabic, additionalMonth }
 import { submitSalaryCycle, type NewCycleEntry } from "../services";
@@ -23,6 +23,8 @@ type PostResult = {
   message?: string;
 };
 
+type SalarySearchBy = "name" | "accountNumber";
+
 /* ------------------------------------------------------------------ */
 export default function SetSalariesPage(): JSX.Element {
   const locale = useLocale();
@@ -34,6 +36,8 @@ export default function SetSalariesPage(): JSX.Element {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchBy, setSearchBy] = useState<SalarySearchBy>("name");
+  const [searchTerm, setSearchTerm] = useState("");
   console.log("SetSalariesPage render, error:", error);
 
   /* ---------- flow modals ---------- */
@@ -48,8 +52,7 @@ export default function SetSalariesPage(): JSX.Element {
     const fetchEmployees = async (): Promise<void> => {
       try {
         setLoading(true);
-        const res = await getEmployees(1, 100);
-        const employees = res.data;
+        const employees = await getAllEmployees();
         setData(employees);
         // Preselect those flagged to receive salaries
         setSelectedRows(employees.filter((e) => e.sendSalary).map((e) => e.id));
@@ -76,6 +79,17 @@ export default function SetSalariesPage(): JSX.Element {
     fetchEmployees();
   }, [t]);
 
+  const filteredData = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return data;
+
+    return data.filter((employee) => {
+      const value =
+        searchBy === "name" ? employee.name : employee.accountNumber;
+      return String(value ?? "").toLowerCase().includes(term);
+    });
+  }, [data, searchBy, searchTerm]);
+
   /* ---------- handlers ---------- */
   const handleRowSelect = (id: number): void => {
     setSelectedRows((prev) =>
@@ -84,8 +98,18 @@ export default function SetSalariesPage(): JSX.Element {
   };
 
   const handleSelectAll = (): void => {
-    const all = data.every((r) => selectedRows.includes(r.id));
-    setSelectedRows(all ? [] : data.map((r) => r.id));
+    const visibleIds = filteredData.map((r) => r.id);
+    if (visibleIds.length === 0) return;
+
+    const allVisibleSelected = visibleIds.every((id) =>
+      selectedRows.includes(id)
+    );
+
+    setSelectedRows((prev) =>
+      allVisibleSelected
+        ? prev.filter((id) => !visibleIds.includes(id))
+        : Array.from(new Set([...prev, ...visibleIds]))
+    );
   };
 
   const handleSalaryChange = (id: number, newSalary: number): void => {
@@ -131,7 +155,8 @@ export default function SetSalariesPage(): JSX.Element {
         <input
           type="checkbox"
           checked={
-            data.length > 0 && data.every((r) => selectedRows.includes(r.id))
+            filteredData.length > 0 &&
+            filteredData.every((r) => selectedRows.includes(r.id))
           }
           onChange={handleSelectAll}
           className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500"
@@ -170,8 +195,8 @@ export default function SetSalariesPage(): JSX.Element {
 
   /* ---------- header controls ---------- */
   const headerControls = (
-    <div className="flex w-full justify-between items-center gap-6">
-      <div className="flex w-full items-center justify-between gap-4">
+    <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:gap-4">
         <div className="flex items-center gap-2">
           <BackButton isEditing fallbackPath={`/${locale}/salaries`} />
           <Formik initialValues={{}} onSubmit={handleSubmitSelected}>
@@ -185,11 +210,48 @@ export default function SetSalariesPage(): JSX.Element {
             )}
           </Formik>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-baseline gap-2 font-semibold text-white">
-            <span>{t("totalAmount")}:</span>
-            <span>{totalSelectedSalary.toLocaleString()}</span>
-          </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="sr-only" htmlFor="salary-search-by">
+            {t("searchBy", { defaultValue: "Search by" })}
+          </label>
+          <select
+            id="salary-search-by"
+            value={searchBy}
+            onChange={(event) =>
+              setSearchBy(event.target.value as SalarySearchBy)
+            }
+            className="h-10 rounded border border-white/30 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm focus:border-warning-light focus:outline-none focus:ring-2 focus:ring-warning-light/40"
+          >
+            <option value="name">
+              {t("searchByName", { defaultValue: "Name" })}
+            </option>
+            <option value="accountNumber">
+              {t("searchByAccountNumber", {
+                defaultValue: "Account Number",
+              })}
+            </option>
+          </select>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder={t("searchEmployeesPlaceholder", {
+              defaultValue: "Search employees",
+            })}
+            className="h-10 w-full rounded border border-white/30 bg-white px-3 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-warning-light focus:outline-none focus:ring-2 focus:ring-warning-light/40 sm:w-72"
+          />
+        </div>
+      </div>
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-white">
+        <div className="flex items-baseline gap-2 text-sm font-medium">
+          <span>{t("filteredEmployees", { defaultValue: "Shown" })}:</span>
+          <span>
+            {filteredData.length.toLocaleString()} / {data.length.toLocaleString()}
+          </span>
+        </div>
+        <div className="flex items-baseline gap-2 font-semibold">
+          <span>{t("totalAmount")}:</span>
+          <span>{totalSelectedSalary.toLocaleString()}</span>
         </div>
       </div>
     </div>
@@ -204,7 +266,7 @@ export default function SetSalariesPage(): JSX.Element {
       <Disclaimer message={t("hint")} className="mb-4" />
 
       <CrudDataGrid
-        data={data}
+        data={filteredData}
         columns={columns}
         showActions={false}
         showSearchBar={false}

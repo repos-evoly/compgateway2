@@ -92,10 +92,19 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       .required(t("nameRequired"))
       .min(2, t("nameMinLength"))
       .max(100, t("nameMaxLength")),
-    email: Yup.string(),
+    email: Yup.string()
+      .trim()
+      .email(
+        t("emailFormat", {
+          defaultValue: "Please enter a valid email address",
+        })
+      ),
     phone: Yup.string()
-      .required(t("phoneRequired"))
-      .matches(/^[0-9+\-\s()]+$/, t("phoneFormat")),
+      .trim()
+      .matches(/^[0-9+\-\s()]+$/, {
+        message: t("phoneFormat"),
+        excludeEmptyString: true,
+      }),
     salary: Yup.number()
       .typeError(t("salaryFormat"))
       .min(0, t("salaryMin"))
@@ -110,7 +119,16 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
   const handleSubmit = async (values: EmployeeFormValues) => {
     setIsSubmitting(true);
-    const payload: EmployeeFormValues = { ...values, canPost: true };
+    const normalizeOptionalText = (value?: string | null): string | null => {
+      const trimmed = value?.trim();
+      return trimmed ? trimmed : null;
+    };
+    const payload: EmployeeFormValues = {
+      ...values,
+      email: normalizeOptionalText(values.email),
+      phone: normalizeOptionalText(values.phone),
+      canPost: true,
+    };
 
     try {
       if (isEditMode && initialData?.id) {

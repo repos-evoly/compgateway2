@@ -26,6 +26,7 @@ export type TSalaryTransaction = {
   createdByUserId: number;
   postedByUserId: number | null;
   additionalMonth?: string | null;
+  entryCount?: number;
   entries: TSalaryEntry[];        // detailed per-employee lines
 };
 

@@ -50,29 +50,58 @@ export default function SalariesPage() {
   /* ------------------- state -------------------------------------- */
   const [transactions, setTransactions] = useState<TSalaryTransaction[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   /* ------------------- fetch cycles ------------------------------- */
   useEffect(() => {
+    let isActive = true;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 30000);
+
     const fetchCycles = async () => {
       try {
-        const res: SalaryCyclesResponse = await getEmployeeSalaryCycles();
+        setLoading(true);
+        setError(null);
+
+        const res: SalaryCyclesResponse = await getEmployeeSalaryCycles(
+          currentPage,
+          PAGE_SIZE,
+          { signal: controller.signal }
+        );
+
+        if (!isActive) return;
+
         setTransactions(res.data);
+        setTotalPages(Math.max(1, res.totalPages || 1));
       } catch (err: unknown) {
+        if (!isActive) return;
+
         const message =
-          err instanceof Error ? err.message : "Failed to load salary cycles.";
+          err instanceof DOMException && err.name === "AbortError"
+            ? "Salary cycles request timed out. Please try again."
+            : err instanceof Error
+              ? err.message
+              : "Failed to load salary cycles.";
         setError(message);
       } finally {
+        if (!isActive) return;
+
         setLoading(false);
+        window.clearTimeout(timeoutId);
       }
     };
 
     fetchCycles();
-  }, []);
+    return () => {
+      isActive = false;
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [currentPage]);
 
   /* ------------------- paging helpers ----------------------------- */
-  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
   const handlePageChange = (p: number) => setCurrentPage(p);
 
   /* ------------------- grid columns ------------------------------- */
@@ -105,7 +134,7 @@ export default function SalariesPage() {
       key: "entries",
       label: "Employees",
       renderCell: (row: TSalaryTransaction) => (
-        <span>{row.entries.length}</span>
+        <span>{row.entryCount ?? row.entries.length}</span>
       ),
     },
     {
@@ -149,13 +178,10 @@ export default function SalariesPage() {
   );
 
   /* ------------------- data slice --------------------------------- */
-  const pagedData = transactions.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const pagedData = transactions;
 
   /* ------------------- render ------------------------------------- */
-  if (loading) return <LoadingPage />;
+  if (loading && transactions.length === 0) return <LoadingPage />;
   if (error) return <p className="p-4 text-red-600">{error}</p>;
 
   return (
@@ -169,6 +195,7 @@ export default function SalariesPage() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+        loading={loading}
         childrens={setSalariesButton}
       />
     </div>

@@ -44,11 +44,12 @@ const jsonRequest = (method: string, body?: unknown): RequestInit =>
 
 export async function getEmployeeSalaryCycles(
   page = 1,
-  limit = 50
+  limit = 50,
+  init: RequestInit = {}
 ): Promise<SalaryCyclesResponse> {
   const response = await fetch(
     buildUrl("employees/salarycycles", { page, limit }),
-    withCredentials()
+    withCredentials(init)
   );
 
   return handleApiResponse<SalaryCyclesResponse>(

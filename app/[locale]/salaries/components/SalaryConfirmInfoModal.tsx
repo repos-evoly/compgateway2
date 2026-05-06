@@ -36,6 +36,7 @@ export type SalaryConfirmInfoModalProps = {
   /** Detailed rows so we can show names and amounts with accounts */
   recipients?: RecipientRow[];
 
+  isSubmitting?: boolean;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -58,6 +59,7 @@ export default function SalaryConfirmInfoModal({
   commissionCurrency,
   displayAmount,
   recipients = [],
+  isSubmitting = false,
   onClose,
   onConfirm,
 }: SalaryConfirmInfoModalProps) {
@@ -68,11 +70,11 @@ export default function SalaryConfirmInfoModal({
   // ESC to close
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !isSubmitting) onClose();
     };
     if (isOpen) window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
-  }, [isOpen, onClose]);
+  }, [isOpen, isSubmitting, onClose]);
 
   // Build rows (prefer detailed `recipients`; fallback to `formData.to`)
   const rows: RecipientRow[] = useMemo<RecipientRow[]>(() => {
@@ -305,16 +307,21 @@ export default function SalaryConfirmInfoModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 hover:border-slate-400 transition-all duration-200"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 hover:border-slate-400 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {t("cancel")}
             </button>
             <button
               type="button"
               onClick={onConfirm}
-              className="px-8 py-2.5 bg-info-dark text-white font-semibold rounded-lg hover:bg-warning-light hover:text-info-dark transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className="px-8 py-2.5 bg-info-dark text-white font-semibold rounded-lg hover:bg-warning-light hover:text-info-dark transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none disabled:hover:scale-100"
             >
-              {t("confirm")}
+              {isSubmitting
+                ? t("submitting", { defaultValue: "Submitting..." })
+                : t("confirm")}
             </button>
           </div>
         </div>

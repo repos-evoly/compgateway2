@@ -3,13 +3,38 @@
 
 import { EmployeeResponse } from "../employees/types";
 
+export type SalaryPaymentChannel = "account" | "bcd" | "evo";
+
+export type SalaryEntryAllocation = {
+  id: number;
+  salaryEntryId: number;
+  paymentChannel: SalaryPaymentChannel;
+  amount: number;
+  destination: string;
+  clientReference: string;
+  status: string;
+  transferResultCode?: string | null;
+  transferResultReason?: string | null;
+  providerTransactionId?: string | null;
+  commissionAmount: number;
+  isTransferred: boolean;
+  transferredAt?: string | null;
+};
+
 /* ------------------------------------------------------------------ */
 export type TSalaryEntry = {
   id: number;
   employeeId: number;
   employeeName: string;
+  name?: string;
+  email?: string | null;
+  phone?: string | null;
   amount: number;
+  salary?: number;
   isTransferred: boolean;
+  transferResultCode?: string | null;
+  transferResultReason?: string | null;
+  allocations?: SalaryEntryAllocation[];
 };
 
 /* ------------------------------------------------------------------ */
@@ -28,6 +53,8 @@ export type TSalaryTransaction = {
   additionalMonth?: string | null;
   entryCount?: number;
   entries: TSalaryEntry[];        // detailed per-employee lines
+  bankReference?: string | null;
+  walletBatches?: SalaryWalletBatch[];
 };
 
 export type SalaryCyclesResponse = {
@@ -134,9 +161,27 @@ export type BankResponse = {
   Details: BankDetails;
 };
 
+export type SalaryWalletBatch = {
+  id: number;
+  salaryCycleId: number;
+  walletChannel: "evo" | "bcd";
+  shadowAccount: string;
+  batchReference: string;
+  coreReferenceId: string;
+  requestedTotalAmount: number;
+  successfulTotalAmount: number;
+  failedTotalAmount: number;
+  totalCommission: number;
+  overallStatus: string;
+  reversalStatus: string;
+  reversalAmount: number;
+  reversalBankReference?: string | null;
+  processedAt?: string | null;
+  reversedAt?: string | null;
+};
+
 export type PostSalaryCycleResponse = {
   cycle: TSalaryTransaction;
-  bank: BankResponse;
 };
 
 
@@ -145,6 +190,7 @@ export type PostSalaryCycleResponse = {
 export type SalaryEntryRow = {
   id: number;
   employeeId: number;
+  employeeName?: string;
   name: string;
   email: string;
   phone: string;
@@ -152,9 +198,17 @@ export type SalaryEntryRow = {
   date: string;
   accountNumber: string;
   accountType: "account" | "wallet";
+  evoWallet?: string | null;
+  bcdWallet?: string | null;
+  accountAllocationAmount?: number;
+  bcdAllocationAmount?: number;
+  evoAllocationAmount?: number;
   sendSalary: boolean;
   canPost: boolean;
   isTransferred: boolean;
+  transferResultCode?: string | null;
+  transferResultReason?: string | null;
+  allocations?: SalaryEntryAllocation[];
 };
 export type EmployeeRow = EmployeeResponse;
 

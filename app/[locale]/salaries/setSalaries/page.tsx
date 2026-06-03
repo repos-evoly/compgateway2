@@ -16,6 +16,17 @@ import { submitSalaryCycle, type NewCycleEntry } from "../services";
 import LoadingPage from "@/app/components/reusable/Loading";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import Disclaimer from "@/app/components/reusable/Disclaimer";
+import { ApiError } from "@/app/helpers/apiResponse";
+import {
+  allocationTotal,
+  buildAllocationInputs,
+  channelHasDestination,
+  hasBankDestination,
+  roundAmount,
+  toAmount,
+  validateAllocations,
+  type SalaryPaymentChannel,
+} from "../../employees/salaryAllocationHelpers";
 
 /* A safe, minimal shape of the API response without using `any` */
 type PostResult = {
@@ -24,6 +35,15 @@ type PostResult = {
 };
 
 type SalarySearchBy = "name" | "accountNumber";
+
+const localizedApiErrorMessage = (error: unknown, locale: string): string | null => {
+  if (error instanceof ApiError) {
+    return locale === "ar"
+      ? error.messageAr || error.messageEn || error.message
+      : error.messageEn || error.message;
+  }
+  return error instanceof Error ? error.message : null;
+};
 
 /* ------------------------------------------------------------------ */
 export default function SetSalariesPage(): JSX.Element {
@@ -112,10 +132,46 @@ export default function SetSalariesPage(): JSX.Element {
     );
   };
 
-  const handleSalaryChange = (id: number, newSalary: number): void => {
+  const handleSplitChange = (
+    id: number,
+    field:
+      | "accountAllocationAmount"
+      | "bcdAllocationAmount"
+      | "evoAllocationAmount",
+    value: number
+  ): void => {
     setData((prev) =>
-      prev.map((emp) => (emp.id === id ? { ...emp, salary: newSalary } : emp))
+      prev.map((emp) =>
+        emp.id === id ? { ...emp, [field]: roundAmount(value) } : emp
+      )
     );
+  };
+
+  const allocationErrorMessage = (
+    row: EmployeeResponse,
+    reason?: ReturnType<typeof validateAllocations>["reason"]
+  ): string => {
+    const name = row.name || t("employee", { defaultValue: "Employee" });
+    switch (reason) {
+      case "missing_destination":
+        return `${name}: ${t("salaryDestinationRequired", {
+          defaultValue:
+            "enter at least one salary destination: bank account, Evo wallet, or BCD wallet.",
+        })}`;
+      case "missing_allocation":
+        return `${name}: ${t("salaryAllocationRequired", {
+          defaultValue: "enter at least one salary allocation amount.",
+        })}`;
+      case "disabled_channel_amount":
+        return `${name}: ${t("salaryAllocationDestinationMissing", {
+          defaultValue:
+            "allocation amount cannot be entered for a missing destination.",
+        })}`;
+      default:
+        return `${name}: ${t("salaryAllocationTotalMismatch", {
+          defaultValue: "allocation total must equal the employee salary.",
+        })}`;
+    }
   };
 
   const handleSubmitSelected = (): void => {
@@ -134,6 +190,26 @@ export default function SetSalariesPage(): JSX.Element {
       setResultOpen(true);
       return;
     }
+
+    const invalidRow = data
+      .filter((row) => selectedRows.includes(row.id))
+      .map((row) => ({ row, validation: validateAllocations(row) }))
+      .find(({ validation }) => !validation.valid);
+
+    if (invalidRow) {
+      setResultSuccess(false);
+      setResultTitle(
+        t("invalidAllocationsTitle", {
+          defaultValue: "Invalid salary allocations",
+        })
+      );
+      setResultMessage(
+        allocationErrorMessage(invalidRow.row, invalidRow.validation.reason)
+      );
+      setResultOpen(true);
+      return;
+    }
+
     setShowPickerModal(true);
   };
 
@@ -145,6 +221,44 @@ export default function SetSalariesPage(): JSX.Element {
         .reduce((sum, e) => sum + (Number(e.salary) || 0), 0),
     [data, selectedRows]
   );
+
+  const splitInput = (
+    row: EmployeeResponse,
+    field:
+      | "accountAllocationAmount"
+      | "bcdAllocationAmount"
+      | "evoAllocationAmount",
+    channel: SalaryPaymentChannel
+  ) => {
+    const selected = selectedRows.includes(row.id);
+    const enabled = channelHasDestination(row, channel);
+    const invalid = selected && !validateAllocations(row).valid;
+    return (
+      <input
+        type="number"
+        value={toAmount(row[field])}
+        min={0}
+        disabled={!enabled}
+        title={
+          enabled
+            ? undefined
+            : t("splitDestinationMissing", {
+                defaultValue: "This employee does not have this destination.",
+              })
+        }
+        onChange={(event) =>
+          handleSplitChange(row.id, field, Number(event.target.value) || 0)
+        }
+        className={`w-24 rounded border px-2 py-1 text-sm text-slate-700 ${
+          !enabled
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            : invalid
+            ? "border-red-500 bg-red-50"
+            : "border-gray-300"
+        }`}
+      />
+    );
+  };
 
   /* ---------- columns ---------- */
   const columns: DataGridColumn[] = [
@@ -177,20 +291,51 @@ export default function SetSalariesPage(): JSX.Element {
     {
       key: "salary",
       label: t("salary"),
-      renderCell: (r) => (
-        <input
-          type="number"
-          value={r.salary}
-          min={0}
-          onChange={(e) =>
-            handleSalaryChange(r.id, Number(e.target.value) || 0)
-          }
-          className="w-24 rounded border border-gray-300 px-1 py-0.5 text-sm text-slate-700"
-        />
+      renderCell: (r: EmployeeResponse) => (
+        <span className="font-medium text-slate-800">
+          {toAmount(r.salary).toLocaleString()}
+        </span>
       ),
     },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType", { defaultValue: "Type" }) },
+    {
+      key: "accountAllocationAmount",
+      label: t("bankSplit", { defaultValue: "Bank Split" }),
+      renderCell: (r: EmployeeResponse) =>
+        splitInput(r, "accountAllocationAmount", "account"),
+    },
+    {
+      key: "bcdAllocationAmount",
+      label: t("bcdSplit", { defaultValue: "BCD Split" }),
+      renderCell: (r: EmployeeResponse) =>
+        splitInput(r, "bcdAllocationAmount", "bcd"),
+    },
+    {
+      key: "evoAllocationAmount",
+      label: t("evoSplit", { defaultValue: "Evo Split" }),
+      renderCell: (r: EmployeeResponse) =>
+        splitInput(r, "evoAllocationAmount", "evo"),
+    },
+    {
+      key: "allocationTotal",
+      label: t("allocationTotal", { defaultValue: "Split Total" }),
+      renderCell: (r: EmployeeResponse) => {
+        const total = allocationTotal(r);
+        const salary = roundAmount(toAmount(r.salary));
+        const selected = selectedRows.includes(r.id);
+        const invalid = selected && total !== salary;
+        return (
+          <span className={invalid ? "font-semibold text-red-600" : ""}>
+            {total.toLocaleString()}
+          </span>
+        );
+      },
+    },
+    {
+      key: "accountNumber",
+      label: t("accountNumber"),
+      renderCell: (r: EmployeeResponse) =>
+        hasBankDestination(r) ? r.accountNumber : "",
+    },
   ];
 
   /* ---------- header controls ---------- */
@@ -291,7 +436,11 @@ export default function SetSalariesPage(): JSX.Element {
         ): Promise<void> => {
           const entries: NewCycleEntry[] = data
             .filter((e) => selectedRows.includes(e.id))
-            .map(({ id, salary }) => ({ employeeId: id, salary }));
+            .map((employee) => ({
+              employeeId: employee.id,
+              salary: roundAmount(toAmount(employee.salary)),
+              allocations: buildAllocationInputs(employee),
+            }));
 
           try {
             const res: PostResult = await submitSalaryCycle(
@@ -333,9 +482,8 @@ export default function SetSalariesPage(): JSX.Element {
               t("failedTitle", { defaultValue: "Creation Failed" })
             );
             setResultMessage(
-              err instanceof Error
-                ? err.message
-                : t("genericError", {
+              localizedApiErrorMessage(err, locale) ??
+                t("genericError", {
                   defaultValue: "Failed to create salary cycle.",
                 })
             );

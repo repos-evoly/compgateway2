@@ -25,7 +25,10 @@ const SearchWithDropdown: React.FC<SearchWithDropdownProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDropdown]);
 
-  const handleClear = () => setSearchValue("");
+  const handleClear = () => {
+    setSearchValue("");
+    onSearch("");
+  };
 
   const handleSearch = () => {
     onSearch(searchValue);

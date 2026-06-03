@@ -39,6 +39,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   loading = false,
   canEdit,
   noPagination = false,
+  getRowClassName,
 }) => {
   const t = useTranslations("crudDataGrid");
 
@@ -148,6 +149,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
           onModalOpen={onModalOpen}
           canEdit={canEdit}
           noPagination={noPagination}
+          getRowClassName={getRowClassName}
         />
       )}
 

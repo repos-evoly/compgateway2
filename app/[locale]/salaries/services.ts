@@ -3,11 +3,20 @@
 import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type {
   PostSalaryCycleResponse,
+  SalaryPaymentChannel,
   SalaryCyclesResponse,
   TSalaryTransaction,
 } from "./types";
 
-export type NewCycleEntry = { employeeId: number; salary: number };
+export type NewCycleEntry = {
+  employeeId: number;
+  salary: number;
+  allocations?: Array<{
+    paymentChannel: SalaryPaymentChannel;
+    amount: number;
+    destination?: string;
+  }>;
+};
 export type SubmitCycleResponse = { success: boolean; message: string };
 
 const API_ROOT = "/Companygw/api" as const;

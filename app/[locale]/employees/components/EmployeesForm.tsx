@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import * as Yup from "yup";
 
 import Form from "@/app/components/FormUI/Form";
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
-import InputSelectCombo, {
-  InputSelectComboOption,
-} from "@/app/components/FormUI/InputSelectCombo";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import FormHeader from "@/app/components/reusable/FormHeader";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
@@ -16,6 +13,16 @@ import DatePickerValue from "@/app/components/FormUI/DatePickerValue";
 
 import { createEmployee, updateEmployee } from "../services";
 import type { EmployeeFormProps, EmployeeFormValues } from "../types";
+import {
+  EMPTY_BANK_ACCOUNT,
+  allocationTotal,
+  hasBankDestination,
+  hasBcdDestination,
+  hasEvoDestination,
+  roundAmount,
+  toAmount,
+  validateAllocations,
+} from "../salaryAllocationHelpers";
 
 import {
   FaUser,
@@ -29,30 +36,113 @@ import {
 import { Field, FormikConfig, useFormikContext } from "formik";
 import BackButton from "@/app/components/reusable/BackButton";
 
-/* Guard that prevents choosing the unavailable "wallet" option */
-type AccountTypeGuardProps = {
-  onChooseWallet: () => void;
-  initialAccountType: string;
+const normalizeOptionalText = (value?: string | null): string | null => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 };
-function AccountTypeGuard({
-  onChooseWallet,
-  initialAccountType,
-}: AccountTypeGuardProps) {
+
+const normalizeVisibleAccount = (value?: string | null): string => {
+  const trimmed = value?.trim() ?? "";
+  return trimmed === EMPTY_BANK_ACCOUNT ? "" : trimmed;
+};
+
+function SalaryAllocationFields({ disabled }: { disabled: boolean }) {
+  const t = useTranslations("employees");
   const { values, setFieldValue } = useFormikContext<EmployeeFormValues>();
-  const prevRef = useRef<string>(initialAccountType);
+
+  const bankEnabled = hasBankDestination(values);
+  const bcdEnabled = hasBcdDestination(values);
+  const evoEnabled = hasEvoDestination(values);
+  const total = allocationTotal(values);
+  const salary = roundAmount(toAmount(values.salary));
 
   useEffect(() => {
-    if (values.accountType === "wallet") {
-      onChooseWallet();
-      const fallback = prevRef.current || "";
-      setFieldValue("accountType", fallback, false);
-    } else {
-      prevRef.current = values.accountType ?? "";
+    if (!bankEnabled && toAmount(values.accountAllocationAmount) !== 0) {
+      setFieldValue("accountAllocationAmount", 0, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.accountType]);
+    if (!bcdEnabled && toAmount(values.bcdAllocationAmount) !== 0) {
+      setFieldValue("bcdAllocationAmount", 0, false);
+    }
+    if (!evoEnabled && toAmount(values.evoAllocationAmount) !== 0) {
+      setFieldValue("evoAllocationAmount", 0, false);
+    }
+  }, [
+    bankEnabled,
+    bcdEnabled,
+    evoEnabled,
+    values.accountAllocationAmount,
+    values.bcdAllocationAmount,
+    values.evoAllocationAmount,
+    setFieldValue,
+  ]);
 
-  return null;
+  return (
+    <div className="md:col-span-2 rounded border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-800">
+          {t("salaryAllocations", { defaultValue: "Salary allocations" })}
+        </h3>
+        <span
+          className={`text-sm font-medium ${
+            total === salary ? "text-slate-700" : "text-red-600"
+          }`}
+        >
+          {t("allocationTotal", { defaultValue: "Allocation total" })}:{" "}
+          {total.toLocaleString()} / {salary.toLocaleString()}
+        </span>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <FormInputIcon
+          name="accountAllocationAmount"
+          label={t("bankAllocation", { defaultValue: "Bank allocation" })}
+          type="number"
+          startIcon={<FaMoneyBill />}
+          disabled={disabled || !bankEnabled}
+          helpertext={
+            bankEnabled
+              ? t("bankAllocationHelp", {
+                  defaultValue: "Amount sent to the bank account.",
+                })
+              : t("bankAllocationDisabled", {
+                  defaultValue: "Enter a bank account to enable this split.",
+                })
+          }
+        />
+        <FormInputIcon
+          name="bcdAllocationAmount"
+          label={t("bcdAllocation", { defaultValue: "BCD allocation" })}
+          type="number"
+          startIcon={<FaMoneyBill />}
+          disabled={disabled || !bcdEnabled}
+          helpertext={
+            bcdEnabled
+              ? t("bcdAllocationHelp", {
+                  defaultValue: "Amount sent to the BCD wallet.",
+                })
+              : t("bcdAllocationDisabled", {
+                  defaultValue: "Enter a BCD wallet to enable this split.",
+                })
+          }
+        />
+        <FormInputIcon
+          name="evoAllocationAmount"
+          label={t("evoAllocation", { defaultValue: "Evo allocation" })}
+          type="number"
+          startIcon={<FaMoneyBill />}
+          disabled={disabled || !evoEnabled}
+          helpertext={
+            evoEnabled
+              ? t("evoAllocationHelp", {
+                  defaultValue: "Amount sent to the Evo wallet.",
+                })
+              : t("evoAllocationDisabled", {
+                  defaultValue: "Enter an Evo wallet to enable this split.",
+                })
+          }
+        />
+      </div>
+    </div>
+  );
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
@@ -66,13 +156,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-  const [walletModalOpen, setWalletModalOpen] = useState(false);
 
   const isEditMode = Boolean(initialData?.id);
-
-  /* Ensure wallet is never preselected: sanitize initial value */
-  const sanitizedAccountType: string =
-    initialData?.accountType === "wallet" ? "" : initialData?.accountType ?? "";
 
   const initialValues: EmployeeFormValues = {
     id: initialData?.id,
@@ -81,52 +166,138 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     phone: initialData?.phone || "",
     salary: initialData?.salary || 0,
     date: initialData?.date || new Date().toISOString(),
-    accountNumber: initialData?.accountNumber || "",
-    accountType: sanitizedAccountType, // empty if it was "wallet"
+    accountNumber: normalizeVisibleAccount(initialData?.accountNumber),
+    accountType: initialData?.accountType ?? "account",
+    evoWallet: initialData?.evoWallet || "",
+    bcdWallet: initialData?.bcdWallet || "",
+    accountAllocationAmount: initialData?.accountAllocationAmount ?? 0,
+    evoAllocationAmount: initialData?.evoAllocationAmount ?? 0,
+    bcdAllocationAmount: initialData?.bcdAllocationAmount ?? 0,
     sendSalary: initialData?.sendSalary ?? true,
     canPost: true,
   };
 
-  const validationSchema = Yup.object().shape({
-    name: Yup.string()
-      .required(t("nameRequired"))
-      .min(2, t("nameMinLength"))
-      .max(100, t("nameMaxLength")),
-    email: Yup.string()
-      .trim()
-      .email(
-        t("emailFormat", {
-          defaultValue: "Please enter a valid email address",
+  const validationSchema = Yup.object()
+    .shape({
+      name: Yup.string()
+        .required(t("nameRequired"))
+        .min(2, t("nameMinLength"))
+        .max(100, t("nameMaxLength")),
+      email: Yup.string()
+        .trim()
+        .email(
+          t("emailFormat", {
+            defaultValue: "Please enter a valid email address",
+          })
+        ),
+      phone: Yup.string()
+        .trim()
+        .matches(/^[0-9+\-\s()]+$/, {
+          message: t("phoneFormat"),
+          excludeEmptyString: true,
+        }),
+      salary: Yup.number()
+        .typeError(t("salaryFormat"))
+        .moreThan(0, t("salaryMin", { defaultValue: "Salary must be greater than zero." }))
+        .required(t("salaryRequired")),
+      date: Yup.string().required(t("dateRequired")),
+      accountNumber: Yup.string()
+        .trim()
+        .matches(/^\d{13}$/, {
+          message: t("accountNumberFormat", {
+            defaultValue: "Bank account must be 13 digits.",
+          }),
+          excludeEmptyString: true,
         })
-      ),
-    phone: Yup.string()
-      .trim()
-      .matches(/^[0-9+\-\s()]+$/, {
-        message: t("phoneFormat"),
-        excludeEmptyString: true,
-      }),
-    salary: Yup.number()
-      .typeError(t("salaryFormat"))
-      .min(0, t("salaryMin"))
-      .required(t("salaryRequired")),
-    date: Yup.string().required(t("dateRequired")),
-    accountNumber: Yup.string()
-      .required(t("accountNumberRequired"))
-      .matches(/^[0-9A-Za-z\-]+$/, t("accountNumberFormat")),
-    accountType: Yup.string().required(t("accountTypeRequired")),
-    sendSalary: Yup.boolean().required(),
-  });
+        .test(
+          "not-empty-placeholder",
+          t("accountNumberFormat", {
+            defaultValue: "Bank account must be 13 digits.",
+          }),
+          (value) => !value || value.trim() !== EMPTY_BANK_ACCOUNT
+        ),
+      evoWallet: Yup.string()
+        .trim()
+        .matches(/^\d{10}$/, {
+          message: t("walletFormat", {
+            defaultValue: "Wallet number must be 10 digits.",
+          }),
+          excludeEmptyString: true,
+        }),
+      bcdWallet: Yup.string()
+        .trim()
+        .matches(/^\d{10}$/, {
+          message: t("walletFormat", {
+            defaultValue: "Wallet number must be 10 digits.",
+          }),
+          excludeEmptyString: true,
+        }),
+      accountAllocationAmount: Yup.number()
+        .typeError(t("salaryFormat"))
+        .min(0, t("salaryMin")),
+      evoAllocationAmount: Yup.number()
+        .typeError(t("salaryFormat"))
+        .min(0, t("salaryMin")),
+      bcdAllocationAmount: Yup.number()
+        .typeError(t("salaryFormat"))
+        .min(0, t("salaryMin")),
+      sendSalary: Yup.boolean().required(),
+    })
+    .test("valid-salary-allocations", function (values) {
+      const result = validateAllocations(values as EmployeeFormValues);
+      if (result.valid) return true;
+
+      const messages = {
+        missing_destination: t("salaryDestinationRequired", {
+          defaultValue:
+            "Enter at least one salary destination: bank account, Evo wallet, or BCD wallet.",
+        }),
+        missing_allocation: t("salaryAllocationRequired", {
+          defaultValue: "Enter at least one salary allocation amount.",
+        }),
+        disabled_channel_amount: t("salaryAllocationDestinationMissing", {
+          defaultValue:
+            "Allocation amount cannot be entered for a missing destination.",
+        }),
+        total_mismatch: t("salaryAllocationTotalMismatch", {
+          defaultValue: "Allocation total must equal the employee salary.",
+        }),
+      };
+
+      const path =
+        result.reason === "missing_destination"
+          ? "accountNumber"
+          : "accountAllocationAmount";
+
+      return this.createError({
+        path,
+        message: messages[result.reason ?? "total_mismatch"],
+      });
+    });
 
   const handleSubmit = async (values: EmployeeFormValues) => {
     setIsSubmitting(true);
-    const normalizeOptionalText = (value?: string | null): string | null => {
-      const trimmed = value?.trim();
-      return trimmed ? trimmed : null;
-    };
+    const bankAccount = normalizeVisibleAccount(values.accountNumber);
+    const hasBank = hasBankDestination({ ...values, accountNumber: bankAccount });
+
     const payload: EmployeeFormValues = {
       ...values,
+      salary: roundAmount(toAmount(values.salary)),
       email: normalizeOptionalText(values.email),
       phone: normalizeOptionalText(values.phone),
+      accountNumber: hasBank ? bankAccount : EMPTY_BANK_ACCOUNT,
+      accountType: hasBank ? "account" : "wallet",
+      evoWallet: normalizeOptionalText(values.evoWallet),
+      bcdWallet: normalizeOptionalText(values.bcdWallet),
+      accountAllocationAmount: hasBank
+        ? roundAmount(toAmount(values.accountAllocationAmount))
+        : 0,
+      bcdAllocationAmount: hasBcdDestination(values)
+        ? roundAmount(toAmount(values.bcdAllocationAmount))
+        : 0,
+      evoAllocationAmount: hasEvoDestination(values)
+        ? roundAmount(toAmount(values.evoAllocationAmount))
+        : 0,
       canPost: true,
     };
 
@@ -157,11 +328,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
   const handleModalClose = () => setModalOpen(false);
 
-  const accountTypeOptions: readonly InputSelectComboOption[] = [
-    { value: "account", label: "account" },
-    { value: "wallet", label: "wallet", disabled: true }, // ⬅️ disabled
-  ];
-
   return (
     <div className="p-2">
       <Form
@@ -172,11 +338,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        <AccountTypeGuard
-          initialAccountType={sanitizedAccountType}
-          onChooseWallet={() => setWalletModalOpen(true)}
-        />
-
         <FormHeader>
           <BackButton isEditing={isEditMode} fallbackPath="/employees" />
         </FormHeader>
@@ -233,17 +394,29 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             helpertext={t("accountNumberPlaceholder")}
           />
 
-          <InputSelectCombo
-            name="accountType"
-            label={t("accountType")}
-            options={accountTypeOptions as InputSelectComboOption[]}
-            placeholder=""
+          <FormInputIcon
+            name="bcdWallet"
+            label={t("bcdWallet", { defaultValue: "BCD Wallet" })}
+            type="text"
+            startIcon={<FaPhone />}
             disabled={isSubmitting}
-            onDisabledOptionAttempt={(opt) => {
-              if (opt.value === "wallet") setWalletModalOpen(true);
-            }}
-            clearIfDisabledSelected
+            helpertext={t("bcdWalletPlaceholder", {
+              defaultValue: "Enter BCD wallet number",
+            })}
           />
+
+          <FormInputIcon
+            name="evoWallet"
+            label={t("evoWallet", { defaultValue: "Evo Wallet" })}
+            type="text"
+            startIcon={<FaPhone />}
+            disabled={isSubmitting}
+            helpertext={t("evoWalletPlaceholder", {
+              defaultValue: "Enter Evo wallet number",
+            })}
+          />
+
+          <SalaryAllocationFields disabled={isSubmitting} />
 
           <div className="flex items-center">
             <Field
@@ -275,15 +448,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         message={modalMessage}
         onClose={handleModalClose}
         onConfirm={handleModalClose}
-      />
-
-      <ErrorOrSuccessModal
-        isOpen={walletModalOpen}
-        isSuccess={false}
-        title="Wallet not available"
-        message="The wallet account type is currently not available. You can't choose it right now. It will be available soon."
-        onClose={() => setWalletModalOpen(false)}
-        onConfirm={() => setWalletModalOpen(false)}
       />
     </div>
   );

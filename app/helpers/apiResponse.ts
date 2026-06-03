@@ -10,7 +10,10 @@ export type ApiErrorDetails =
 export type ApiErrorEnvelope = {
   success?: boolean | string | number;
   status?: number | string;
+  code?: string | null;
   message?: string | null;
+  messageEn?: string | null;
+  messageAr?: string | null;
   details?: ApiErrorDetails;
   [key: string]: unknown;
 };
@@ -123,12 +126,23 @@ const extractMessage = (
 
 export class ApiError extends Error {
   status?: number;
+  code?: string;
+  messageEn?: string;
+  messageAr?: string;
   details?: ApiErrorDetails;
 
-  constructor(message: string, status?: number, details?: ApiErrorDetails) {
+  constructor(
+    message: string,
+    status?: number,
+    details?: ApiErrorDetails,
+    envelope?: ApiErrorEnvelope
+  ) {
     super(message);
     this.name = "ApiError";
     if (status !== undefined) this.status = status;
+    if (typeof envelope?.code === "string") this.code = envelope.code;
+    if (typeof envelope?.messageEn === "string") this.messageEn = envelope.messageEn;
+    if (typeof envelope?.messageAr === "string") this.messageAr = envelope.messageAr;
     if (details !== undefined) this.details = details;
   }
 }
@@ -161,7 +175,7 @@ export async function handleApiResponse<T = unknown>(
         ? undefined
         : response.status;
     const details = envelope?.details;
-    throw new ApiError(message, status, details);
+    throw new ApiError(message, status, details, envelope);
   }
 
   if (!trimmed) {

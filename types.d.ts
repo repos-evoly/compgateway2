@@ -149,6 +149,7 @@ export type CrudDataGridBodyProps = {
   actionsPosition?:string;
   canEdit?: boolean;
   noPagination?: boolean; 
+  getRowClassName?: (row: T, rowIndex: number) => string;
 };
 
 export type Action = {
@@ -249,6 +250,7 @@ export type AddButtonProps =
       pageSize?: number;
       actionsPosition?: string; // New prop to choose where "actions" go
       addButtonLabel?: string; // Optional label for the add button
+      getRowClassName?: (row: T, rowIndex: number) => string;
     };
 
   export type SearchWithDropdownProps = {

@@ -18,6 +18,7 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
   onModalOpen,
   canEdit = true,
   noPagination = false,
+  getRowClassName,
 }) => {
   const t = useTranslations("crudDataGrid");
   const router = useRouter();
@@ -287,7 +288,9 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
             {data.map((row, rowIndex) => (
               <div
                 key={rowIndex}
-                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ${
+                  getRowClassName?.(row, rowIndex) ?? ""
+                }`}
                 onClick={() => handleRowTap(rowIndex)}
               >
                 <div className="space-y-3 p-4">
@@ -477,11 +480,12 @@ const CrudDataGridBody: React.FC<CrudDataGridBodyProps> = ({
           {data.length > 0 ? (
             data.map((row, rowIndex) => {
               const handleRowClick = () => handleRowTap(rowIndex);
+              const rowClassName = getRowClassName?.(row, rowIndex) ?? "";
 
               return (
                 <div
                   key={rowIndex}
-                  className="table-row border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  className={`table-row border-b border-gray-200 hover:bg-gray-50 cursor-pointer ${rowClassName}`}
                   onDoubleClick={() => handleRowDoubleClick(rowIndex)}
                   onClick={handleRowClick}
                 >

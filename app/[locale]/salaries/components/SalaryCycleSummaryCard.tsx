@@ -78,6 +78,7 @@ export default function SalaryCycleSummaryCard({
     () => `${cycle.totalAmount.toLocaleString()} ${cycle.currency}`,
     [cycle.totalAmount, cycle.currency]
   );
+  const walletBatches = cycle.walletBatches ?? [];
 
   console.log("total amount ", cycle.totalAmount);
 
@@ -131,6 +132,58 @@ export default function SalaryCycleSummaryCard({
               title={t("postedAt")}
             />
           </div>
+          {walletBatches.length > 0 && (
+            <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800">
+                {t("walletBatches")}
+              </div>
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th className="px-3 py-2 text-start">{t("channel")}</th>
+                    <th className="px-3 py-2 text-start">
+                      {t("shadowAccount")}
+                    </th>
+                    <th className="px-3 py-2 text-start">{t("requested")}</th>
+                    <th className="px-3 py-2 text-start">{t("successful")}</th>
+                    <th className="px-3 py-2 text-start">{t("failed")}</th>
+                    <th className="px-3 py-2 text-start">{t("reversal")}</th>
+                    <th className="px-3 py-2 text-start">{t("status")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {walletBatches.map((batch) => (
+                    <tr key={batch.id} className="border-t border-slate-100">
+                      <td className="px-3 py-2 font-medium">
+                        {batch.walletChannel === "evo"
+                          ? t("paymentChannelEvo")
+                          : t("paymentChannelBcd")}
+                      </td>
+                      <td className="px-3 py-2 font-mono">
+                        {batch.shadowAccount}
+                      </td>
+                      <td className="px-3 py-2">
+                        {batch.requestedTotalAmount.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2">
+                        {batch.successfulTotalAmount.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2">
+                        {batch.failedTotalAmount.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2">
+                        {batch.reversalStatus}
+                        {batch.reversalAmount > 0
+                          ? ` (${batch.reversalAmount.toLocaleString()})`
+                          : ""}
+                      </td>
+                      <td className="px-3 py-2">{batch.overallStatus}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     );

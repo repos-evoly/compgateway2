@@ -13,6 +13,10 @@ import { EmployeeResponse } from "./types";
 import { FaEdit, FaSpinner, FaTrash, FaUpload } from "react-icons/fa";
 import type { Action } from "@/types";
 import EmployeeForm from "./components/EmployeesForm";
+import {
+  EMPTY_BANK_ACCOUNT,
+  allocationTotal,
+} from "./salaryAllocationHelpers";
 
 const Page = () => {
   const t = useTranslations("employees");
@@ -154,8 +158,52 @@ const Page = () => {
         </span>
       ),
     },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType") },
+    {
+      key: "accountNumber",
+      label: t("accountNumber"),
+      renderCell: (row: EmployeeResponse) =>
+        row.accountNumber === EMPTY_BANK_ACCOUNT ? "" : row.accountNumber,
+    },
+    {
+      key: "bcdWallet",
+      label: t("bcdWallet", { defaultValue: "BCD Wallet" }),
+      renderCell: (row: EmployeeResponse) => row.bcdWallet ?? "",
+    },
+    {
+      key: "evoWallet",
+      label: t("evoWallet", { defaultValue: "Evo Wallet" }),
+      renderCell: (row: EmployeeResponse) => row.evoWallet ?? "",
+    },
+    {
+      key: "allocations",
+      label: t("salaryAllocations", { defaultValue: "Allocations" }),
+      renderCell: (row: EmployeeResponse) => (
+        <span className="text-sm text-slate-700">
+          {[
+            row.accountAllocationAmount
+              ? `${t("bankAllocationShort", { defaultValue: "Bank" })}: ${
+                  row.accountAllocationAmount
+                }`
+              : "",
+            row.bcdAllocationAmount
+              ? `${t("bcdAllocationShort", { defaultValue: "BCD" })}: ${
+                  row.bcdAllocationAmount
+                }`
+              : "",
+            row.evoAllocationAmount
+              ? `${t("evoAllocationShort", { defaultValue: "Evo" })}: ${
+                  row.evoAllocationAmount
+                }`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" | ") ||
+            `${t("allocationTotal", { defaultValue: "Total" })}: ${allocationTotal(
+              row
+            )}`}
+        </span>
+      ),
+    },
     {
       key: "sendSalary",
       label: t("sendSalary"),

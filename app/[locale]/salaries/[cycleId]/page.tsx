@@ -15,10 +15,10 @@ import {
   postSalaryCycleById,
 } from "../services";
 import {
-  CommissionConfig,
   ConfirmModalState,
   // CurrencyLookup,
   EmployeeRow,
+  SalaryEntryAllocation,
   SalaryEntryRow,
   TSalaryTransaction,
 } from "../types";
@@ -28,14 +28,21 @@ import { CheckAccount, type AccountInfo } from "@/app/helpers/checkAccount";
 import { type InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
 import SalaryCycleSummaryCard from "../components/SalaryCycleSummaryCard";
 import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
-import {
-  checkAccount,
-  getTransfersCommision,
-} from "../../transfers/internal/services";
 import SalaryConfirmInfoModal from "../components/SalaryConfirmInfoModal";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import LoadingPage from "@/app/components/reusable/Loading";
 import NotTransferredHeader from "../components/NotTransferredHeader";
+import { ApiError } from "@/app/helpers/apiResponse";
+import {
+  allocationTotal,
+  buildAllocationInputs,
+  channelHasDestination,
+  hasBankDestination,
+  roundAmount,
+  toAmount,
+  validateAllocations,
+  type SalaryPaymentChannel,
+} from "../../employees/salaryAllocationHelpers";
 
 const getCompanyCode = (): string | undefined => {
   const raw = Cookies.get("companyCode");
@@ -59,11 +66,66 @@ const getPermissionsFromCookies = (): string[] => {
   }
 };
 
+const allocationAmountFromEntry = (
+  allocations: SalaryEntryAllocation[] | undefined,
+  channel: SalaryPaymentChannel
+): number =>
+  roundAmount(
+    allocations?.find((allocation) => allocation.paymentChannel === channel)
+      ?.amount ?? 0
+  );
+
+const localizedApiErrorMessage = (error: unknown, locale: string): string | null => {
+  if (error instanceof ApiError) {
+    return locale === "ar"
+      ? error.messageAr || error.messageEn || error.message
+      : error.messageEn || error.message;
+  }
+  return error instanceof Error ? error.message : null;
+};
+
+type SalaryAllocationResultRow = {
+  id: string;
+  employeeGroupIndex: number;
+  salaryEntryId: number;
+  employeeId: number;
+  employeeName: string;
+  employeeSalary: number;
+  channel: SalaryPaymentChannel | null;
+  destination: string;
+  amount: number;
+  status: string;
+  isTransferred: boolean;
+  transferResultCode: string;
+  transferResultReason: string;
+  commissionAmount: number;
+  providerTransactionId: string;
+  clientReference: string;
+  transferredAt: string | null;
+};
+
+type AllocationSearchBy = "employeeName" | "destination";
+type AllocationChannelFilter = "all" | SalaryPaymentChannel;
+type AllocationTransferredFilter = "all" | "yes" | "no";
+
 /* ------------------------------------------------------------------ */
 export default function SalaryCycleDetailsPage(): JSX.Element {
   const locale = useLocale();
   const t = useTranslations("salaries");
   const { cycleId } = useParams<{ cycleId: string }>();
+  const channelLabel = useCallback(
+    (channel: SalaryPaymentChannel): string => {
+      switch (channel) {
+        case "account":
+          return t("paymentChannelAccount");
+        case "bcd":
+          return t("paymentChannelBcd");
+        case "evo":
+          return t("paymentChannelEvo");
+      }
+    },
+    [t]
+  );
   const [cycle, setCycle] = useState<TSalaryTransaction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +179,15 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
   const [resultSuccess, setResultSuccess] = useState<boolean>(false);
   const [resultTitle, setResultTitle] = useState<string>("");
   const [resultMessage, setResultMessage] = useState<string>("");
+  const [allocationSearchBy, setAllocationSearchBy] =
+    useState<AllocationSearchBy>("employeeName");
+  const [allocationSearchTerm, setAllocationSearchTerm] = useState<string>("");
+  const [allocationChannelFilter, setAllocationChannelFilter] =
+    useState<AllocationChannelFilter>("all");
+  const [allocationStatusFilter, setAllocationStatusFilter] =
+    useState<string>("all");
+  const [allocationTransferredFilter, setAllocationTransferredFilter] =
+    useState<AllocationTransferredFilter>("all");
 
   /* ───────────────── fetch salary cycle ───────────────── */
   const refetchCycle = useCallback(async (id: number) => {
@@ -152,14 +223,30 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
 
       let merged: EmployeeResponse[] = baseEmployees;
       if (cycle) {
-        const salaryMap = new Map<number, number>(
-          (
-            cycle.entries as unknown as { employeeId: number; salary: number }[]
-          ).map((e) => [e.employeeId, e.salary])
+        const entryMap = new Map<number, SalaryEntryRow>(
+          (cycle.entries as unknown as SalaryEntryRow[]).map((entry) => [
+            entry.employeeId,
+            entry,
+          ])
         );
         merged = baseEmployees.map((emp) =>
-          salaryMap.has(emp.id)
-            ? { ...emp, salary: salaryMap.get(emp.id)! }
+          entryMap.has(emp.id)
+            ? {
+                ...emp,
+                salary: entryMap.get(emp.id)!.salary,
+                accountAllocationAmount: allocationAmountFromEntry(
+                  entryMap.get(emp.id)!.allocations,
+                  "account"
+                ),
+                bcdAllocationAmount: allocationAmountFromEntry(
+                  entryMap.get(emp.id)!.allocations,
+                  "bcd"
+                ),
+                evoAllocationAmount: allocationAmountFromEntry(
+                  entryMap.get(emp.id)!.allocations,
+                  "evo"
+                ),
+              }
             : emp
         );
       }
@@ -259,10 +346,44 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     const all = employees.every((e) => selectedRows.includes(e.id));
     setSelectedRows(all ? [] : employees.map((e) => e.id));
   };
-  const handleSalaryChange = (id: number, val: number): void => {
+  const handleSplitChange = (
+    id: number,
+    field:
+      | "accountAllocationAmount"
+      | "bcdAllocationAmount"
+      | "evoAllocationAmount",
+    val: number
+  ): void => {
     setEmployees((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, salary: val } : e))
+      prev.map((e) => (e.id === id ? { ...e, [field]: roundAmount(val) } : e))
     );
+  };
+
+  const allocationErrorMessage = (
+    row: EmployeeResponse,
+    reason?: ReturnType<typeof validateAllocations>["reason"]
+  ): string => {
+    const name = row.name || t("employee", { defaultValue: "Employee" });
+    switch (reason) {
+      case "missing_destination":
+        return `${name}: ${t("salaryDestinationRequired", {
+          defaultValue:
+            "enter at least one salary destination: bank account, Evo wallet, or BCD wallet.",
+        })}`;
+      case "missing_allocation":
+        return `${name}: ${t("salaryAllocationRequired", {
+          defaultValue: "enter at least one salary allocation amount.",
+        })}`;
+      case "disabled_channel_amount":
+        return `${name}: ${t("salaryAllocationDestinationMissing", {
+          defaultValue:
+            "allocation amount cannot be entered for a missing destination.",
+        })}`;
+      default:
+        return `${name}: ${t("salaryAllocationTotalMismatch", {
+          defaultValue: "allocation total must equal the employee salary.",
+        })}`;
+    }
   };
 
   /* ───────── totals & rows ───────── */
@@ -283,6 +404,129 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     [cycle]
   );
 
+  const allocationRows: SalaryAllocationResultRow[] = useMemo(
+    () =>
+      viewRows.flatMap<SalaryAllocationResultRow>((entry, employeeGroupIndex) => {
+        const employeeName = entry.name ?? entry.employeeName ?? "";
+        const allocations = entry.allocations ?? [];
+
+        if (allocations.length === 0) {
+          return [
+            {
+              id: `${entry.id}-entry`,
+              employeeGroupIndex,
+              salaryEntryId: entry.id,
+              employeeId: entry.employeeId,
+              employeeName,
+              employeeSalary: roundAmount(toAmount(entry.salary)),
+              channel: null,
+              destination: entry.accountNumber ?? "",
+              amount: roundAmount(toAmount(entry.salary)),
+              status:
+                entry.transferResultCode ??
+                (entry.isTransferred ? "success" : "pending"),
+              isTransferred: entry.isTransferred,
+              transferResultCode: entry.transferResultCode ?? "",
+              transferResultReason: entry.transferResultReason ?? "",
+              commissionAmount: 0,
+              providerTransactionId: "",
+              clientReference: "",
+              transferredAt: null,
+            },
+          ];
+        }
+
+        return allocations.map((allocation, allocationIndex) => ({
+          id: `${entry.id}-${allocation.id ?? allocationIndex}`,
+          employeeGroupIndex,
+          salaryEntryId: entry.id,
+          employeeId: entry.employeeId,
+          employeeName,
+          employeeSalary: roundAmount(toAmount(entry.salary)),
+          channel: allocation.paymentChannel,
+          destination: allocation.destination,
+          amount: roundAmount(toAmount(allocation.amount)),
+          status: allocation.status,
+          isTransferred: allocation.isTransferred,
+          transferResultCode: allocation.transferResultCode ?? "",
+          transferResultReason: allocation.transferResultReason ?? "",
+          commissionAmount: roundAmount(toAmount(allocation.commissionAmount)),
+          providerTransactionId: allocation.providerTransactionId ?? "",
+          clientReference: allocation.clientReference,
+          transferredAt: allocation.transferredAt ?? null,
+        }));
+      }),
+    [viewRows]
+  );
+
+  const allocationStatusOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allocationRows
+            .map((row) => row.status)
+            .filter((status) => status.trim().length > 0)
+        )
+      ).sort((a, b) => a.localeCompare(b)),
+    [allocationRows]
+  );
+
+  const statusLabel = useCallback(
+    (status: string): string => {
+      switch (status.toLowerCase()) {
+        case "success":
+          return t("statusSuccess");
+        case "failed":
+          return t("statusFailed");
+        case "pending":
+          return t("statusPending");
+        default:
+          return status;
+      }
+    },
+    [t]
+  );
+
+  const filteredAllocationRows = useMemo(() => {
+    const search = allocationSearchTerm.trim().toLowerCase();
+
+    return allocationRows.filter((row) => {
+      const matchesSearch =
+        search.length === 0 ||
+        (allocationSearchBy === "employeeName"
+          ? row.employeeName.toLowerCase().includes(search)
+          : row.destination.toLowerCase().includes(search));
+
+      const matchesChannel =
+        allocationChannelFilter === "all" ||
+        row.channel === allocationChannelFilter;
+
+      const matchesStatus =
+        allocationStatusFilter === "all" ||
+        row.status === allocationStatusFilter;
+
+      const matchesTransferred =
+        allocationTransferredFilter === "all" ||
+        (allocationTransferredFilter === "yes"
+          ? row.isTransferred
+          : !row.isTransferred);
+
+      return (
+        matchesSearch &&
+        matchesChannel &&
+        matchesStatus &&
+        matchesTransferred
+      );
+    });
+  }, [
+    allocationRows,
+    allocationSearchBy,
+    allocationSearchTerm,
+    allocationChannelFilter,
+    allocationStatusFilter,
+    allocationTransferredFilter,
+  ]);
+
   const notTransferred = useMemo(
     () => viewRows.filter((r) => !r.isTransferred),
     [viewRows]
@@ -294,19 +538,95 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     return !bothNull;
   }, [cycle]);
 
+  const splitInput = (
+    row: EmployeeResponse,
+    field:
+      | "accountAllocationAmount"
+      | "bcdAllocationAmount"
+      | "evoAllocationAmount",
+    channel: SalaryPaymentChannel
+  ) => {
+    const selected = selectedRows.includes(row.id);
+    const enabled = channelHasDestination(row, channel);
+    const invalid = selected && !validateAllocations(row).valid;
+    return (
+      <input
+        type="number"
+        value={toAmount(row[field])}
+        min={0}
+        disabled={!enabled}
+        onChange={(event) =>
+          handleSplitChange(row.id, field, Number(event.target.value) || 0)
+        }
+        className={`w-24 rounded border px-2 py-1 text-sm text-slate-700 ${
+          !enabled
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+            : invalid
+            ? "border-red-500 bg-red-50"
+            : "border-gray-300"
+        }`}
+      />
+    );
+  };
+
   /* ───────── columns ───────── */
   const columnsView: DataGridColumn[] = [
-    { key: "name", label: t("name"), renderCell: (r) => r.name },
-    { key: "salary", label: t("salary") },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType") },
+    {
+      key: "employeeName",
+      label: t("employee"),
+      renderCell: (r: SalaryAllocationResultRow) => r.employeeName,
+    },
+    {
+      key: "channel",
+      label: t("channel"),
+      renderCell: (r: SalaryAllocationResultRow) =>
+        r.channel ? channelLabel(r.channel) : "",
+    },
+    {
+      key: "destination",
+      label: t("destination"),
+      renderCell: (r: SalaryAllocationResultRow) => r.destination,
+    },
+    {
+      key: "amount",
+      label: t("amount"),
+      renderCell: (r: SalaryAllocationResultRow) =>
+        r.amount.toLocaleString(),
+    },
+    {
+      key: "status",
+      label: t("status"),
+      renderCell: (r: SalaryAllocationResultRow) => r.status,
+    },
+    {
+      key: "transferResultCode",
+      label: t("resultCode"),
+      renderCell: (r: SalaryAllocationResultRow) => r.transferResultCode,
+    },
+    {
+      key: "transferResultReason",
+      label: t("reason"),
+      renderCell: (r: SalaryAllocationResultRow) => r.transferResultReason,
+    },
     {
       key: "isTransferred",
       label: t("isTransferred", { defaultValue: "Transferred" }),
-      renderCell: (r) =>
+      renderCell: (r: SalaryAllocationResultRow) =>
         r.isTransferred
           ? t("yes", { defaultValue: "Yes" })
           : t("no", { defaultValue: "No" }),
+    },
+    {
+      key: "commissionAmount",
+      label: t("commission"),
+      renderCell: (r: SalaryAllocationResultRow) =>
+        r.commissionAmount.toLocaleString(),
+    },
+    {
+      key: "transferredAt",
+      label: t("transferredAt"),
+      renderCell: (r: SalaryAllocationResultRow) =>
+        r.transferredAt ? new Date(r.transferredAt).toLocaleString(locale) : "",
     },
   ];
 
@@ -340,20 +660,51 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
     {
       key: "salary",
       label: t("salary"),
-      renderCell: (r) => (
-        <input
-          type="number"
-          value={r.salary}
-          min={0}
-          onChange={(e) =>
-            handleSalaryChange(r.id, Number(e.target.value) || 0)
-          }
-          className="w-24 rounded border border-gray-300 px-1 py-0.5 text-sm"
-        />
+      renderCell: (r: EmployeeResponse) => (
+        <span className="font-medium text-slate-800">
+          {toAmount(r.salary).toLocaleString()}
+        </span>
       ),
     },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType") },
+    {
+      key: "accountAllocationAmount",
+      label: t("bankSplit", { defaultValue: "Bank Split" }),
+      renderCell: (r: EmployeeResponse) =>
+        splitInput(r, "accountAllocationAmount", "account"),
+    },
+    {
+      key: "bcdAllocationAmount",
+      label: t("bcdSplit", { defaultValue: "BCD Split" }),
+      renderCell: (r: EmployeeResponse) =>
+        splitInput(r, "bcdAllocationAmount", "bcd"),
+    },
+    {
+      key: "evoAllocationAmount",
+      label: t("evoSplit", { defaultValue: "Evo Split" }),
+      renderCell: (r: EmployeeResponse) =>
+        splitInput(r, "evoAllocationAmount", "evo"),
+    },
+    {
+      key: "allocationTotal",
+      label: t("allocationTotal", { defaultValue: "Split Total" }),
+      renderCell: (r: EmployeeResponse) => {
+        const total = allocationTotal(r);
+        const salary = roundAmount(toAmount(r.salary));
+        const selected = selectedRows.includes(r.id);
+        const invalid = selected && total !== salary;
+        return (
+          <span className={invalid ? "font-semibold text-red-600" : ""}>
+            {total.toLocaleString()}
+          </span>
+        );
+      },
+    },
+    {
+      key: "accountNumber",
+      label: t("accountNumber"),
+      renderCell: (r: EmployeeResponse) =>
+        hasBankDestination(r) ? r.accountNumber : "",
+    },
   ];
 
   /* ───────── commission preview (build recipients + open modal) ───────── */
@@ -367,94 +718,41 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
             ? fromAccOverride
             : cycle.debitAccount) ?? "";
 
-        // Build recipients with name + account + salary
-        let toAccountsRaw: string[] = [];
-        let detailed: Array<{
+        const detailed: Array<{
           accountNumber: string;
           name?: string;
           salary?: number;
-        }> = [];
-
-        if (isEditing) {
-          const selected = employees.filter((e) => selectedRows.includes(e.id));
-          toAccountsRaw = selected.map((e) => e.accountNumber);
-
-          // Deduplicate by accountNumber while preserving the first name/salary
-          const map = new Map<string, { name?: string; salary?: number }>();
-          for (const e of selected) {
-            const acc = (e.accountNumber || "").trim();
-            if (!acc) continue;
-            if (!map.has(acc)) {
-              map.set(acc, { name: e.name, salary: Number(e.salary) || 0 });
-            }
-          }
-          detailed = Array.from(map.entries()).map(([accountNumber, meta]) => ({
-            accountNumber,
-            name: meta.name,
-            salary: meta.salary,
-          }));
-        } else {
-          const entries = (cycle.entries as unknown as SalaryEntryRow[]) || [];
-          toAccountsRaw = entries.map((e) => e.accountNumber);
-
-          const map = new Map<string, { name?: string; salary?: number }>();
-          for (const e of entries) {
-            const acc = (e.accountNumber || "").trim();
-            if (!acc) continue;
-            if (!map.has(acc)) {
-              map.set(acc, { name: e.name, salary: Number(e.salary) || 0 });
-            }
-          }
-          detailed = Array.from(map.entries()).map(([accountNumber, meta]) => ({
-            accountNumber,
-            name: meta.name,
-            salary: meta.salary,
-          }));
-        }
+        }> = isEditing
+          ? employees
+              .filter((employee) => selectedRows.includes(employee.id))
+              .flatMap((employee) =>
+                buildAllocationInputs(employee).map((allocation) => ({
+                  accountNumber: allocation.destination,
+                  name: `${employee.name} (${channelLabel(allocation.paymentChannel)})`,
+                  salary: allocation.amount,
+                }))
+              )
+          : ((cycle.entries as unknown as SalaryEntryRow[]) || []).flatMap(
+              (entry) =>
+                (entry.allocations ?? []).map((allocation) => ({
+                  accountNumber: allocation.destination,
+                  name: `${entry.name ?? entry.employeeName ?? ""} (${channelLabel(allocation.paymentChannel)})`,
+                  salary: allocation.amount,
+                }))
+            );
 
         const toAccounts = Array.from(
-          new Set(toAccountsRaw.filter((x) => x && x.trim().length > 0))
+          new Set(
+            detailed
+              .map((recipient) => recipient.accountNumber)
+              .filter((account) => account && account.trim().length > 0)
+          )
         );
 
-        setRecipients(detailed); // <-- includes salary for the modal table
+        setRecipients(detailed);
 
         const totalAmount = isEditing ? computedTotalEdit : computedTotalView;
         const commissionCurrency = cycle.currency;
-
-        // transfer type via checkAccount(to)
-        let transferType: "B2B" | "B2C" = "B2C";
-        if (toAccounts.length > 0) {
-          try {
-            const res = (await checkAccount(toAccounts[0])) as Array<{
-              transferType?: string;
-            }>;
-            const tt = res?.[0]?.transferType;
-            transferType = tt === "B2B" ? "B2B" : "B2C";
-          } catch {
-            transferType = "B2C";
-          }
-        }
-
-        // commission config
-        const servicePackageId = Number(Cookies.get("servicePackageId") ?? 0);
-        const comm = (await getTransfersCommision(
-          servicePackageId,
-          17
-        )) as CommissionConfig;
-
-        const pct =
-          transferType === "B2B"
-            ? comm.b2BCommissionPct
-            : comm.b2CCommissionPct;
-        const fixed =
-          transferType === "B2B" ? comm.b2BFixedFee : comm.b2CFixedFee;
-
-        const commissionAmount =
-          totalAmount > 0 ? Math.max((pct * totalAmount) / 100, fixed) : 0;
-
-        // const displayAmount = commissionOnReceiver
-        //   ? totalAmount
-        //   : totalAmount + commissionAmount;
         const displayAmount = totalAmount;
 
         const desc = `${t("cycle")} #${cycle.id} – ${cycle.salaryMonth}`;
@@ -467,7 +765,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
             description: desc,
             commissionOnRecipient: commissionOnReceiver,
           },
-          commissionAmount,
+          commissionAmount: 0,
           commissionCurrency,
           displayAmount,
         });
@@ -480,16 +778,31 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
         );
       }
     },
-    [cycle, isEditing, employees, selectedRows, computedTotalEdit, computedTotalView, commissionOnReceiver, t]
+    [cycle, isEditing, employees, selectedRows, computedTotalEdit, computedTotalView, commissionOnReceiver, channelLabel, t]
   );
 
   /* ───────── save handler ───────── */
   const handleSave = async (debitAccount: string): Promise<void> => {
     if (!cycle) return;
 
+    const invalidRow = employees
+      .filter((row) => selectedRows.includes(row.id))
+      .map((row) => ({ row, validation: validateAllocations(row) }))
+      .find(({ validation }) => !validation.valid);
+
+    if (invalidRow) {
+      alert(allocationErrorMessage(invalidRow.row, invalidRow.validation.reason));
+      setCanPost(false);
+      return;
+    }
+
     const entries = employees
       .filter((e) => selectedRows.includes(e.id))
-      .map(({ id, salary }) => ({ employeeId: id, salary }));
+      .map((employee) => ({
+        employeeId: employee.id,
+        salary: roundAmount(toAmount(employee.salary)),
+        allocations: buildAllocationInputs(employee),
+      }));
 
     try {
       await editSalaryCycle(
@@ -503,7 +816,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       setCanPost(true);
     } catch (err: unknown) {
       alert(
-        err instanceof Error ? err.message : "Failed to save salary cycle."
+        localizedApiErrorMessage(err, locale) ?? "Failed to save salary cycle."
       );
       setCanPost(false);
     }
@@ -532,11 +845,10 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       setResultOpen(true);
     } catch (e: unknown) {
       const msg =
-        e instanceof Error
-          ? e.message
-          : t("genericError", {
-            defaultValue: "Something went wrong while posting the cycle.",
-          });
+        localizedApiErrorMessage(e, locale) ??
+        t("genericError", {
+          defaultValue: "Something went wrong while posting the cycle.",
+        });
 
       // Keep confirm modal open so user can retry, but also show error modal
       setResultSuccess(false);
@@ -547,7 +859,7 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       postingRef.current = false;
       setPosting(false);
     }
-  }, [cycle, refetchCycle, t]);
+  }, [cycle, locale, refetchCycle, t]);
 
   /* ───────── early states ───────── */
   if (loading) return <LoadingPage />;
@@ -577,6 +889,130 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
       ...cycle,
     };
 
+    const selectClassName =
+      "h-10 rounded border border-white/30 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm focus:border-warning-light focus:outline-none focus:ring-2 focus:ring-warning-light/40";
+
+    const allocationGridControls = (
+      <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={allocationChannelFilter}
+            onChange={(event) =>
+              setAllocationChannelFilter(
+                event.target.value as AllocationChannelFilter
+              )
+            }
+            className={selectClassName}
+            aria-label={t("channel")}
+          >
+            <option value="all">{t("allChannels")}</option>
+            <option value="account">{t("paymentChannelAccount")}</option>
+            <option value="bcd">{t("paymentChannelBcd")}</option>
+            <option value="evo">{t("paymentChannelEvo")}</option>
+          </select>
+
+          <select
+            value={allocationStatusFilter}
+            onChange={(event) => setAllocationStatusFilter(event.target.value)}
+            className={selectClassName}
+            aria-label={t("status")}
+          >
+            <option value="all">{t("allStatuses")}</option>
+            {allocationStatusOptions.map((status) => (
+              <option key={status} value={status}>
+                {statusLabel(status)}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={allocationTransferredFilter}
+            onChange={(event) =>
+              setAllocationTransferredFilter(
+                event.target.value as AllocationTransferredFilter
+              )
+            }
+            className={selectClassName}
+            aria-label={t("isTransferred")}
+          >
+            <option value="all">{t("allTransferStates")}</option>
+            <option value="yes">{t("yes")}</option>
+            <option value="no">{t("no")}</option>
+          </select>
+
+          <div className="flex items-baseline gap-2 text-sm font-medium text-white">
+            <span>{t("filteredEmployees")}:</span>
+            <span>
+              {filteredAllocationRows.length.toLocaleString()} /{" "}
+              {allocationRows.length.toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {!isPosted ? (
+            <Formik
+              initialValues={{}}
+              onSubmit={() => {
+                setIsEditing(true);
+                setCanPost(false);
+              }}
+            >
+              {() => (
+                <div className="flex flex-wrap items-center gap-2">
+                  <SubmitButton
+                    title={t("edit")}
+                    color="info-dark"
+                    fullWidth={false}
+                  />
+                  {showPostButton && (
+                    <button
+                      type="button"
+                      onClick={() => openCommissionPreview(cycle.debitAccount)}
+                      disabled={!canPost || posting}
+                      className={`rounded px-4 py-2 border ${
+                        !canPost || posting
+                          ? "bg-slate-300 text-slate-600 cursor-not-allowed border-slate-300"
+                          : "bg-info-dark text-white hover:opacity-90 border-white hover:border-transparent hover:bg-warning-light hover:text-info-dark"
+                      }`}
+                      title={
+                        canPost
+                          ? undefined
+                          : t("saveToEnablePost", {
+                              defaultValue:
+                                "You must save your changes before posting.",
+                            })
+                      }
+                    >
+                      {posting
+                        ? t("posting", { defaultValue: "Posting..." })
+                        : t("post", { defaultValue: "Post" })}
+                    </button>
+                  )}
+                  {showNotTransferredHeader && cycle && (
+                    <NotTransferredHeader
+                      entries={notTransferred}
+                      cycleId={cycle.id}
+                      onApply={handleRepostApplied}
+                    />
+                  )}
+                </div>
+              )}
+            </Formik>
+          ) : (
+            showNotTransferredHeader &&
+            cycle && (
+              <NotTransferredHeader
+                entries={notTransferred}
+                cycleId={cycle.id}
+                onApply={handleRepostApplied}
+              />
+            )
+          )}
+        </div>
+      </div>
+    );
+
     return (
       <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
         <SalaryCycleSummaryCard
@@ -585,78 +1021,31 @@ export default function SalaryCycleDetailsPage(): JSX.Element {
           locale={locale}
         />
         <CrudDataGrid
-          data={viewRows}
+          data={filteredAllocationRows}
           columns={columnsView}
           showActions={false}
-          showSearchBar={false}
+          showSearchBar
+          showSearchInput
+          showDropdown
+          dropdownOptions={[
+            { value: "employeeName", label: t("searchByName") },
+            { value: "destination", label: t("searchByAccountNumber") },
+          ]}
+          onSearch={setAllocationSearchTerm}
+          onDropdownSelect={(value) =>
+            setAllocationSearchBy(value as AllocationSearchBy)
+          }
           showAddButton={false}
           noPagination
           currentPage={1}
           totalPages={1}
           onPageChange={() => { }}
-          childrens={
-            !isPosted ? (
-              <Formik
-                initialValues={{}}
-                onSubmit={() => {
-                  setIsEditing(true);
-                  setCanPost(false);
-                }}
-              >
-                {() => (
-                  <div className="flex items-center gap-2">
-                    <SubmitButton
-                      title={t("edit")}
-                      color="info-dark"
-                      fullWidth={false}
-                    />
-                    {showPostButton && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openCommissionPreview(cycle.debitAccount)
-                        }
-                        disabled={!canPost || posting}
-                        className={`rounded px-4 py-2 border ${!canPost || posting
-                          ? "bg-slate-300 text-slate-600 cursor-not-allowed border-slate-300"
-                          : "bg-info-dark text-white hover:opacity-90 border-white hover:border-transparent hover:bg-warning-light hover:text-info-dark"
-                          }`}
-                        title={
-                          canPost
-                            ? undefined
-                            : t("saveToEnablePost", {
-                              defaultValue:
-                                "You must save your changes before posting.",
-                            })
-                        }
-                      >
-                        {posting
-                          ? t("posting", { defaultValue: "Posting..." })
-                          : t("post", { defaultValue: "Post" })}
-                      </button>
-                    )}
-                    {showNotTransferredHeader && cycle && (
-                      <NotTransferredHeader
-                        entries={notTransferred}
-                        cycleId={cycle.id}
-                        onApply={handleRepostApplied}
-                      />
-                    )}
-                  </div>
-                )}
-              </Formik>
-            ) : (
-              showNotTransferredHeader && cycle ? (
-                <NotTransferredHeader
-                  entries={notTransferred}
-                  cycleId={cycle.id}
-                  onApply={handleRepostApplied}
-                />
-              ) : undefined
-            )
-          }
+          childrens={allocationGridControls}
           canEdit={false}
           loading={false}
+          getRowClassName={(row) =>
+            Number(row.employeeGroupIndex) % 2 === 0 ? "bg-white" : "bg-slate-50"
+          }
         />
 
         {confirmState && (

@@ -7,6 +7,11 @@ export type EmployeeFormValues = {
   date?: string;
   accountNumber?: string;
   accountType?: string;
+  evoWallet?: string | null;
+  bcdWallet?: string | null;
+  accountAllocationAmount?: number;
+  evoAllocationAmount?: number;
+  bcdAllocationAmount?: number;
   sendSalary?: boolean;
   canPost?: boolean;
 };
@@ -30,6 +35,11 @@ export type EmployeeResponse = {
   date: string;
   accountNumber: string;
   accountType: string;
+  evoWallet?: string | null;
+  bcdWallet?: string | null;
+  accountAllocationAmount?: number;
+  evoAllocationAmount?: number;
+  bcdAllocationAmount?: number;
   sendSalary: boolean;
   canPost: boolean;
   isDeleted?: boolean;

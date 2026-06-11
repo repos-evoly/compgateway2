@@ -374,8 +374,12 @@ type LoginHandlerOptions = {
 type LoginUpstream = {
   success?: boolean;
   status?: number;
+  code?: string;
   message?: string;
-  details?: { message?: string | null } | null;
+  messageEn?: string;
+  messageAr?: string;
+  details?: { message?: string | null; debugClientIp?: unknown } | null;
+  debugClientIp?: unknown;
   requiresTwoFactorEnable?: boolean;
   requiresTwoFactor?: boolean;
   accessToken?: string;
@@ -390,6 +394,33 @@ type LoginUpstream = {
   servicePackageId?: number | null;
   enabledTransactionCategories?: unknown;
 };
+
+function getPreferredAuthMessage(data: LoginUpstream): string {
+  const locale =
+    typeof window !== "undefined"
+      ? Cookies.get("NEXT_LOCALE")?.split("-")[0]?.toLowerCase()
+      : undefined;
+
+  const localizedMessage =
+    locale === "en" ? data.messageEn?.trim() : data.messageAr?.trim();
+  const detailMessage = data.details?.message?.trim();
+
+  return (
+    localizedMessage ||
+    detailMessage ||
+    data.message?.trim() ||
+    "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك."
+  );
+}
+
+function logAuthIpDebug(data: LoginUpstream): void {
+  if (process.env.NEXT_PUBLIC_AUTH_IP_DEBUG !== "true") return;
+
+  const debugClientIp = data.debugClientIp ?? data.details?.debugClientIp;
+  if (debugClientIp) {
+    console.log("[AUTH IP DEBUG]", debugClientIp);
+  }
+}
 
 export async function loginHandler(
   values: LoginFormValues,
@@ -408,13 +439,10 @@ export async function loginHandler(
     }
 
     const data: LoginUpstream = await response.json();
+    logAuthIpDebug(data);
 
     if (data.success === false) {
-      const detailMessage = data.details?.message?.trim();
-      const message = detailMessage && detailMessage !== "{"
-        ? detailMessage
-        : data.message?.trim();
-      throw new Error(message || "فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
+      throw new Error(getPreferredAuthMessage(data));
     }
 
     // Save login so verification form can reuse it (if needed)

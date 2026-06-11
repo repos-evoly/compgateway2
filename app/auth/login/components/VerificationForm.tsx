@@ -277,6 +277,12 @@ export default function VerificationForm({
       });
 
       const data = await res.json();
+      if (process.env.NEXT_PUBLIC_AUTH_IP_DEBUG === "true") {
+        const debugClientIp = data?.debugClientIp ?? data?.details?.debugClientIp;
+        if (debugClientIp) {
+          console.log("[AUTH IP DEBUG]", debugClientIp);
+        }
+      }
 
       if (data?.success === false) {
         throw new Error(

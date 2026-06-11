@@ -11,6 +11,7 @@ import localFont from "next/font/local";
 import MainHeader from "@/app/components/mainHeader/MainHeader";
 import SideBar2 from "@/app/components/SideBar/SideBar2";
 import { GlobalProvider } from "@/app/context/GlobalContext";
+import SessionHeartbeat from "@/app/components/auth/SessionHeartbeat";
 
 import logoUrl from "@/public/Companygw/images/logo-trans.png";
 import "../globals.css";
@@ -78,6 +79,8 @@ export default async function LocaleLayout({
         >
           <GlobalProvider>
             <NextIntlClientProvider messages={messages} locale={locale}>
+              <SessionHeartbeat />
+
               {/* Sidebar */}
               <SideBar2 />
 

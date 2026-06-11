@@ -1,24 +1,26 @@
 
-//To build for uat server at 10.3.3.11 
-// import createNextIntlPlugin from 'next-intl/plugin';
+// To build for uat server at 10.3.3.11 
+// import createNextIntlPlugin from "next-intl/plugin";
 
-// const withNextIntl = createNextIntlPlugin('./i18n.ts');
+//   const BASE_PATH = "/Companygw";
+//   const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
-// /** @type {import('next').NextConfig} */
-// const nextConfig = {
-//   // ⬇️ add this function
-//   webpack(config) {
-//     // Stub out the optional Node-only dependency that pdfjs-dist tries to require
-//     config.resolve = config.resolve || {};
-//     config.resolve.alias = {
-//       ...(config.resolve.alias || {}),
-//       canvas: false,        // ← tells Webpack “pretend the ‘canvas’ module is empty”
-//     };
-//     return config;
-//   },
-// };
+//   /** @type {import("next").NextConfig} */
+//   const nextConfig = {
+//     basePath: BASE_PATH,
+//     assetPrefix: BASE_PATH,
 
-// export default withNextIntl(nextConfig);
+//     webpack(config) {
+//       config.resolve = config.resolve || {};
+//       config.resolve.alias = {
+//         ...(config.resolve.alias || {}),
+//         canvas: false,
+//       };
+//       return config;
+//     },
+//   };
+
+//   export default withNextIntl(nextConfig);
 
 
 

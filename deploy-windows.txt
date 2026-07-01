@@ -1,0 +1,170 @@
+Deployment Procedure for compgateway from Windows
+================================================
+
+Prerequisites
+-------------
+- Docker Engine installed and running on the target server (`administrator@192.168.113.10`).
+- SSH/SCP available from this Windows workstation. Windows 10/11 usually includes OpenSSH Client.
+- TCP port 3012 allowed through any firewalls on the server and network.
+- Updated environment values ready (see `NEXT_PUBLIC_*` variables below).
+- Local project path on this workstation:
+  `C:\Users\User\projects\Comp\compgateway2`
+
+1. Prepare the build artifact on Windows PowerShell
+--------------------------------------------------
+Run these commands in PowerShell:
+
+```powershell
+cd C:\Users\User\projects\Comp\compgateway2
+
+if (Test-Path "C:\Users\User\compgateway_docker.tar.gz") {
+  Remove-Item -LiteralPath "C:\Users\User\compgateway_docker.tar.gz" -Force
+}
+
+tar `
+  --exclude=node_modules `
+  --exclude=.next `
+  --exclude=.git `
+  -czf "C:\Users\User\compgateway_docker.tar.gz" .
+```
+
+Important: build the artifact from `C:\Users\User\projects\Comp\compgateway2`.
+Do not use another older frontend folder, because it may not contain the latest changes.
+
+Optional local verification before packaging:
+
+```powershell
+cd C:\Users\User\projects\Comp\compgateway2
+yarn build
+```
+
+2. Upload the artifact to the server (do it on .11)
+--------------------------------------------------
+
+```powershell
+scp "C:\Users\User\compgateway_docker.tar.gz" administrator@192.168.113.10:~
+```
+
+3. SSH into the server (do it on .11)
+------------------------------------
+
+```powershell
+ssh administrator@192.168.113.10
+```
+
+4. Backup the current image (optional rollback safety)
+-----------------------------------------------------
+Run this on the server after SSH login:
+
+```bash
+if sudo docker image inspect compgateway:latest >/dev/null 2>&1; then
+  BACKUP_TAG="compgateway:predeploy-$(date +%Y%m%d%H%M%S)"
+  echo "Backing up compgateway:latest to ${BACKUP_TAG}"
+  sudo docker tag compgateway:latest "$BACKUP_TAG"
+fi
+```
+
+If the deployment fails, stop the new container, retag the backup to `compgateway:latest`, and rerun step 8 using that image. Example rollback sequence:
+
+```bash
+sudo docker stop compgateway && sudo docker rm compgateway
+sudo docker tag compgateway:predeploy-<timestamp> compgateway:latest
+sudo docker run -d --name compgateway --restart unless-stopped \
+  -p 3012:3000 \
+  -e NEXT_PUBLIC_BASE_API=http://10.1.1.205/compgateapi/api \
+  -e NEXT_PUBLIC_AUTH_API=http://10.1.1.205/compauthapi/api/auth \
+  -e NEXT_PUBLIC_IMAGE_URL=http://10.1.1.205/compgateapi \
+  -e NEXT_PUBLIC_ALLOWED_URLS="/Companygw/auth/login,/Companygw/auth/register/uploadDocuments,/Companygw/auth/register/uploadDocuments/*,http://192.168.113.10:3012/Companygw/auth/login,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments/*,http://10.1.1.205:3012/Companygw/auth/login,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments/*,https://webanking.bcd.ly/Companygw/auth/login,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments/*" \
+  compgateway:latest
+```
+
+Replace `<timestamp>` with the value printed during the backup step, for example `compgateway:predeploy-20240603104512`.
+
+5. Stop and remove the existing container, if present
+----------------------------------------------------
+
+```bash
+sudo docker stop compgateway && sudo docker rm compgateway
+```
+
+Ignore errors if the container does not exist.
+
+6. Refresh the workspace directory
+----------------------------------
+
+```bash
+sudo rm -rf ~/compgateway
+mkdir -p ~/compgateway
+tar xzf ~/compgateway_docker.tar.gz -C ~/compgateway
+cd ~/compgateway
+```
+
+7. Build the Docker image with the correct allow list
+----------------------------------------------------
+
+```bash
+sudo docker build -t compgateway:latest \
+  --build-arg NEXT_PUBLIC_BASE_API=http://10.1.1.205/compgateapi/api \
+  --build-arg NEXT_PUBLIC_AUTH_API=http://10.1.1.205/compauthapi/api/auth \
+  --build-arg NEXT_PUBLIC_IMAGE_URL=http://10.1.1.205/compgateapi \
+  --build-arg NEXT_PUBLIC_ALLOWED_URLS="/Companygw/auth/login,/Companygw/auth/register/uploadDocuments,/Companygw/auth/register/uploadDocuments/*,http://192.168.113.10:3012/Companygw/auth/login,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments/*,http://10.1.1.205:3012/Companygw/auth/login,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments/*,https://webanking.bcd.ly/Companygw/auth/login,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments/*" \
+  .
+```
+
+8. Run the container on port 3012
+---------------------------------
+
+```bash
+sudo docker run -d --name compgateway --restart unless-stopped \
+  -p 3012:3000 \
+  -e NEXT_PUBLIC_BASE_API=http://10.1.1.205/compgateapi/api \
+  -e NEXT_PUBLIC_AUTH_API=http://10.1.1.205/compauthapi/api/auth \
+  -e NEXT_PUBLIC_IMAGE_URL=http://10.1.1.205/compgateapi \
+  -e NEXT_PUBLIC_ALLOWED_URLS="/Companygw/auth/login,/Companygw/auth/register/uploadDocuments,/Companygw/auth/register/uploadDocuments/*,http://192.168.113.10:3012/Companygw/auth/login,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments,http://192.168.113.10:3012/Companygw/auth/register/uploadDocuments/*,http://10.1.1.205:3012/Companygw/auth/login,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments,http://10.1.1.205:3012/Companygw/auth/register/uploadDocuments/*,https://webanking.bcd.ly/Companygw/auth/login,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments,https://webanking.bcd.ly/Companygw/auth/register/uploadDocuments/*" \
+  compgateway:latest
+```
+
+9. Verify the deployment
+------------------------
+Run this on the server:
+
+```bash
+docker ps
+curl http://127.0.0.1:3012/api/health
+```
+
+Then, from the Windows workstation, browse to:
+
+```text
+http://192.168.113.10:3012/
+```
+
+Confirm the login page loads without warnings.
+
+10. Clean up the uploaded artifact
+----------------------------------
+Run this on the server after deployment is confirmed:
+
+```bash
+rm ~/compgateway_docker.tar.gz
+```
+
+Remove the local Windows artifact if no longer needed:
+
+```powershell
+Remove-Item -LiteralPath "C:\Users\User\compgateway_docker.tar.gz" -Force
+```
+
+11. Optional: review logs and environment
+-----------------------------------------
+Run this on the server:
+
+```bash
+docker logs compgateway --tail 50
+docker exec compgateway printenv | grep NEXT_PUBLIC
+```
+
+12. Updating the deployment later
+---------------------------------
+- Repeat steps 1-8 whenever the code changes.
+- Ensure you rebuild the image whenever `NEXT_PUBLIC_*` values change, so the client bundle reflects the new configuration.

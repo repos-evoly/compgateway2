@@ -19,6 +19,7 @@ type ApiTransferRow = {
   categoryName: string;
   fromAccount: string;
   toAccount: string;
+  toCompanyName?: string | null;
   amount: number;
   currencyCode: string;
   packageName: string;
@@ -38,6 +39,7 @@ export type TransfersApiRow = {
   categoryName: string;
   fromAccount: string;
   toAccount: string | string[];
+  toCompanyName?: string | null;
   amount: number;
   status: string;
   requestedAt: string;
@@ -69,6 +71,7 @@ const mapApiRowToUi = (row: ApiTransferRow): TransfersApiRow => ({
   categoryName: row.categoryName,
   fromAccount: row.fromAccount,
   toAccount: row.toAccount,
+  toCompanyName: row.toCompanyName ?? null,
   amount: row.amount,
   status: row.status,
   requestedAt: row.requestedAt,
@@ -169,6 +172,7 @@ const Page = () => {
     { key: "categoryName", label: t("category") },
     { key: "fromAccount", label: t("from") },
     { key: "toAccount", label: t("to") },
+    { key: "toCompanyName", label: t("companyName") },
     { key: "amount", label: t("amount") },
     { key: "status", label: t("status") },
     { key: "requestedAt", label: t("requestedAt") },

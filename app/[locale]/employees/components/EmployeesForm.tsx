@@ -119,9 +119,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
   const handleSubmit = async (values: EmployeeFormValues) => {
     setIsSubmitting(true);
-    const normalizeOptionalText = (value?: string | null): string | null => {
+    const normalizeOptionalText = (value?: string | null): string => {
       const trimmed = value?.trim();
-      return trimmed ? trimmed : null;
+      return trimmed ?? "";
     };
     const payload: EmployeeFormValues = {
       ...values,

@@ -377,6 +377,7 @@
     "id": "ID",
     "from": "From Account",
     "to": "To Account",
+    "companyName": "Company Name",
     "value": "Amount",
     "commision": "Commissions",
     "description": "Description",

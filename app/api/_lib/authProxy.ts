@@ -116,6 +116,7 @@ export const proxyUpstream = async (
   const cookieStore = await cookies();
   let accessToken = sanitizeCookie(cookieStore.get("accessToken")?.value);
   const refreshToken = sanitizeCookie(cookieStore.get("refreshToken")?.value);
+  const authDeviceId = sanitizeCookie(cookieStore.get("authDeviceId")?.value);
 
   if (!accessToken) {
     const body = JSON.stringify({ message: "Missing access token" });
@@ -181,6 +182,13 @@ export const proxyUpstream = async (
     }
 
     headers.set("Authorization", `Bearer ${bearer}`);
+    if (authDeviceId) {
+      // Always overwrite a client-supplied value with the trusted HttpOnly cookie.
+      headers.set("X-CompGate-Device-Id", authDeviceId);
+    } else {
+      // Do not allow callers to spoof a device ID when the trusted cookie is absent.
+      headers.delete("X-CompGate-Device-Id");
+    }
     return headers;
   };
 

@@ -7,12 +7,20 @@ import { useRouter } from "next/navigation";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import { BeneficiariesApiResponse } from "./types";
+import type {
+  BeneficiariesApiResponse,
+  BeneficiaryPaymentRail,
+  BeneficiaryResponse,
+  BeneficiarySearchField,
+} from "./types";
 import { getBeneficiaries, deleteBeneficiary } from "./services";
-import { BeneficiaryResponse } from "./types";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaChevronDown, FaEdit, FaTrash } from "react-icons/fa";
 import type { Action } from "@/types";
 import BeneficiaryForm from "./components/BeneficiaryForm";
+import {
+  canApproveOnePayTransfer,
+  canCreateOnePayTransfer,
+} from "@/app/[locale]/transfers/onepay/permissions";
 
 const Page = () => {
   const t = useTranslations("beneficiaries");
@@ -25,12 +33,31 @@ const Page = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const limit = 10; // or whichever page size
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchBy, setSearchBy] =
+    useState<BeneficiarySearchField>("name");
+  const [railFilter, setRailFilter] =
+    useState<BeneficiaryPaymentRail>("normal");
   const [loading, setLoading] = useState<boolean>(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [canManageProviderBeneficiaries, setCanManageProviderBeneficiaries] =
+    useState(false);
+  const [canViewProviderBeneficiaries, setCanViewProviderBeneficiaries] =
+    useState(false);
+
+  useEffect(() => {
+    const canManage = canCreateOnePayTransfer();
+    setCanManageProviderBeneficiaries(canManage);
+    setCanViewProviderBeneficiaries(
+      canManage || canApproveOnePayTransfer()
+    );
+  }, []);
+
+  const canModifyCurrentRail =
+    railFilter === "normal" || canManageProviderBeneficiaries;
 
   // We'll create a function to fetch data
   const fetchBeneficiaries = useMemo(
@@ -38,7 +65,13 @@ const Page = () => {
       setLoading(true); // Set loading state
       try {
         console.log("Fetching beneficiaries...");
-        const result = await getBeneficiaries(currentPage, limit, searchTerm);
+        const result = await getBeneficiaries(
+          currentPage,
+          limit,
+          searchTerm,
+          searchBy,
+          railFilter
+        );
         console.log("Beneficiaries result:", result);
         setData(result.data);
         setTotalPages(result.totalPages);
@@ -53,7 +86,7 @@ const Page = () => {
         setLoading(false); // Reset loading state
       }
     },
-    [currentPage, limit, searchTerm, t]
+    [currentPage, limit, railFilter, searchBy, searchTerm, t]
   );
 
   // On mount / whenever page or searchTerm changes => fetch data
@@ -114,11 +147,21 @@ const Page = () => {
       label: t("id"),
       renderCell: (row: BeneficiaryResponse) => (
         <div
-          className="cursor-pointer hover:bg-gray-100 p-1 rounded"
-          onDoubleClick={() => router.push(`/${locale}/beneficiaries/${row.id}`)}
-          title={t("doubleClickToEdit", {
-            defaultValue: "Double-click to edit",
-          })}
+          className={`p-1 rounded ${
+            canModifyCurrentRail ? "cursor-pointer hover:bg-gray-100" : ""
+          }`}
+          onDoubleClick={() => {
+            if (canModifyCurrentRail) {
+              router.push(`/${locale}/beneficiaries/${row.id}`);
+            }
+          }}
+          title={
+            canModifyCurrentRail
+              ? t("doubleClickToEdit", {
+                  defaultValue: "Double-click to edit",
+                })
+              : undefined
+          }
         >
           {row.id}
         </div>
@@ -142,6 +185,15 @@ const Page = () => {
         </span>
       ),
     },
+    {
+      key: "paymentRail",
+      label: t("paymentRail"),
+      renderCell: (row: BeneficiaryResponse) => (
+        <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800">
+          {t(`rails.${row.paymentRail ?? "normal"}`)}
+        </span>
+      ),
+    },
     { key: "accountNumber", label: t("accountNumber") },
     {
       key: "createdAt",
@@ -157,8 +209,19 @@ const Page = () => {
     setSearchTerm(val);
     setCurrentPage(1);
   };
-  const handleDropdownSelect = (val: string) => {
-    console.log("Dropdown:", val);
+  const handleSearchFieldSelect = (val: string) => {
+    if (val === "name" || val === "accountNumber" || val === "bank") {
+      setSearchBy(val);
+      setCurrentPage(1);
+    }
+  };
+
+  const handleRailSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    if (value === "normal" || value === "onePay" || value === "lyPay") {
+      setRailFilter(value);
+      setCurrentPage(1);
+    }
   };
 
   // Show/hide form
@@ -182,7 +245,8 @@ const Page = () => {
     <div className="p-4">
       {showForm ? (
         <BeneficiaryForm
-          initialData={{}}
+          initialData={{ paymentRail: railFilter }}
+          canManageProviderRails={canManageProviderBeneficiaries}
           onSuccess={handleBeneficiaryCreated}
           onBack={handleFormBack}
         />
@@ -201,19 +265,52 @@ const Page = () => {
           // Example dropdown
           showDropdown
           dropdownOptions={[
-            { label: "Name", value: "name" },
-            { label: "Account Number", value: "accountNumber" },
-            { label: "Type", value: "type" },
-            { label: "Bank", value: "bank" },
-            { label: "Country", value: "country" },
+            { label: t("name"), value: "name" },
+            { label: t("accountNumber"), value: "accountNumber" },
+            { label: t("bankOrInstitution"), value: "bank" },
           ]}
-          onDropdownSelect={handleDropdownSelect}
+          onDropdownSelect={handleSearchFieldSelect}
+          haveChildrens
+          childrens={
+            <label className="flex h-10 items-center gap-2 rounded-md border border-white/40 bg-white/10 px-2 text-sm text-white">
+              <span className="whitespace-nowrap font-medium">
+                {t("paymentRail")}:
+              </span>
+              <span className="relative">
+                <select
+                  value={railFilter}
+                  onChange={handleRailSelect}
+                  aria-label={t("paymentRail")}
+                  className="h-8 min-w-28 appearance-none border-0 bg-transparent px-2 pe-7 text-sm text-white outline-none focus:ring-0"
+                >
+                  <option className="bg-info-dark text-white" value="normal">
+                    {t("rails.normal")}
+                  </option>
+                  {canViewProviderBeneficiaries && (
+                    <option className="bg-info-dark text-white" value="onePay">
+                      {t("rails.onePay")}
+                    </option>
+                  )}
+                  {canViewProviderBeneficiaries && (
+                    <option className="bg-info-dark text-white" value="lyPay">
+                      {t("rails.lyPay")}
+                    </option>
+                  )}
+                </select>
+                <FaChevronDown
+                  aria-hidden="true"
+                  className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-xs text-white"
+                />
+              </span>
+            </label>
+          }
           // Add button
-          showAddButton
+          showAddButton={canModifyCurrentRail}
           onAddClick={handleAddClick}
           // Actions
           showActions
-          actions={actions}
+          actions={canModifyCurrentRail ? actions : []}
+          canEdit={canModifyCurrentRail}
           loading={loading}
         />
       )}

@@ -38,6 +38,7 @@ export type FormItemsProps = {
     helpertext?: string;
     width?: string;
     inputMode?: React.InputHTMLAttributes<HTMLInputElement>["inputMode"];
+    step?: React.InputHTMLAttributes<HTMLInputElement>["step"];
     pattern?: string;
     maxLength?: number;
     placeholder?: string;

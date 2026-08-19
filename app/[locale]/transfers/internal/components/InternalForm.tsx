@@ -15,7 +15,7 @@ import {
   checkAccount, // used to fetch names for FROM/TO
   getEconomicSectors,
 } from "../services";
-import { getBeneficiaries } from "@/app/[locale]/beneficiaries/services";
+import { getBeneficiariesForRail } from "@/app/[locale]/beneficiaries/services";
 
 import FormInputIcon from "@/app/components/FormUI/FormInputIcon";
 import ResetButton from "@/app/components/FormUI/ResetButton";
@@ -299,9 +299,9 @@ function InternalForm({
   useEffect(() => {
     (async () => {
       try {
-        const res = await getBeneficiaries(1, 1000);
+        const beneficiaries = await getBeneficiariesForRail("normal");
         setToAccountOptions(
-          res.data.map((b) => ({
+          beneficiaries.map((b) => ({
             // VALUE IS THE ACCOUNT NUMBER so selecting fills "to" with account
             value: String(b.accountNumber),
             label: `${b.name} (${b.accountNumber})`,
@@ -764,4 +764,3 @@ export default InternalForm;
 
 
 // Choose action label based on mode
-

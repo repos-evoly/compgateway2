@@ -8,6 +8,7 @@ import { getBeneficiaryById } from "../services";
 import type { BeneficiaryFormValues } from "../types";
 import LoadingPage from "@/app/components/reusable/Loading";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import { canCreateOnePayTransfer } from "@/app/[locale]/transfers/onepay/permissions";
 
 export default function BeneficiaryDetailsPage() {
   const params = useParams<{ locale: string; id: string }>();
@@ -18,11 +19,16 @@ export default function BeneficiaryDetailsPage() {
 
   const [loading, setLoading] = useState(true);
   const [initial, setInitial] = useState<BeneficiaryFormValues | null>(null);
-  // Removed isEditMode state since we always edit now
+  const [canManageProviderBeneficiaries, setCanManageProviderBeneficiaries] =
+    useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+
+  useEffect(() => {
+    setCanManageProviderBeneficiaries(canCreateOnePayTransfer());
+  }, []);
 
   /* ---------------------- fetch by id --------------------- */
   useEffect(() => {
@@ -35,27 +41,40 @@ export default function BeneficiaryDetailsPage() {
       try {
         const res = await getBeneficiaryById(Number(id));
         /* map API response → BeneficiaryFormValues */
-        if (res.type === "local" || res.type === "Individual") {
+        const paymentRail = res.paymentRail ?? "normal";
+        if (
+          paymentRail !== "normal" ||
+          res.type === "local" ||
+          res.type === "Individual"
+        ) {
           setInitial({
             id: res.id,
             type: "local",
+            paymentRail,
             name: res.name,
             accountNumber: res.accountNumber,
             bank: res.bank || "",
-            amount: res.amount || 0,
+            amount: res.amount ?? 0,
             address: res.address || "",
             country: res.country || "Libya",
+            institutionId: res.institutionId || "",
+            providerInstitutionReference:
+              res.providerInstitutionReference || "",
+            institutionName: res.institutionName || "",
+            rowVersion: res.rowVersion,
           });
         } else {
           setInitial({
             id: res.id,
             type: "international",
+            paymentRail: "normal",
             name: res.name,
             accountNumber: res.accountNumber,
             address: res.address || "",
             country: res.country || "",
             intermediaryBankSwift: res.intermediaryBankSwift || "",
             intermediaryBankName: res.intermediaryBankName || "",
+            rowVersion: res.rowVersion,
           });
         }
       } catch (err) {
@@ -104,7 +123,11 @@ export default function BeneficiaryDetailsPage() {
       {/* Beneficiary form in edit mode */}
       <BeneficiaryForm
         initialData={initial}
-        viewOnly={false} // Always editable
+        viewOnly={
+          initial.paymentRail !== "normal" &&
+          !canManageProviderBeneficiaries
+        }
+        canManageProviderRails={canManageProviderBeneficiaries}
         onSuccess={handleBeneficiaryUpdated}
         onBack={handleBack}
       />
@@ -115,18 +138,18 @@ export default function BeneficiaryDetailsPage() {
         isSuccess={modalSuccess}
         title={modalTitle}
         message={modalMessage}
-          onClose={() => {
-            setModalOpen(false);
-            if (modalSuccess) {
-              router.push(`/${locale}/beneficiaries`);
-            }
-          }}
-          onConfirm={() => {
-            setModalOpen(false);
-            if (modalSuccess) {
-              router.push(`/${locale}/beneficiaries`);
-            }
-          }}
+        onClose={() => {
+          setModalOpen(false);
+          if (modalSuccess) {
+            router.push(`/${locale}/beneficiaries`);
+          }
+        }}
+        onConfirm={() => {
+          setModalOpen(false);
+          if (modalSuccess) {
+            router.push(`/${locale}/beneficiaries`);
+          }
+        }}
       />
     </div>
   );

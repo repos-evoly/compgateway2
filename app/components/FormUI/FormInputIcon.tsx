@@ -20,6 +20,7 @@ const FormInputIcon = ({
   helpertext,
   width = "w-full",
   inputMode,
+  step,
   pattern,
   maxLength,
   placeholder,
@@ -160,6 +161,7 @@ const FormInputIcon = ({
           name={field.name}
           type={effectiveType}
           inputMode={inputMode}
+          step={step}
           pattern={pattern}
           maxLength={maxLength}
           placeholder={placeholder}

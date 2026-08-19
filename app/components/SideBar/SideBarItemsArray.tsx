@@ -124,6 +124,22 @@ export const sidebarItems = [
         icon: FaUniversity,
         enabledTransactionCategories: ["InternalTransfer"],
       },
+      {
+        id: 39,
+        label: "transfer.onePay",
+        path: "/transfers/onepay",
+        icon: FaExchangeAlt,
+        permissions: ["CompanyCanTransfer"],
+        enabledTransactionCategories: ["Transfers"],
+      },
+      {
+        id: 40,
+        label: "transfer.lyPay",
+        path: "/transfers/lypay",
+        icon: FaExchangeAlt,
+        permissions: ["CompanyCanTransfer"],
+        enabledTransactionCategories: ["Transfers"],
+      },
       // {
       //   id: 5,
       //   label: "transfer.group",

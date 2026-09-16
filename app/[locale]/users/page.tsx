@@ -7,11 +7,12 @@ import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import UsersForm from "./components/UsersForm";
 import { getEmployees, createEmployee } from "./services";
 import type { EmployeesFormPayload, CompanyEmployee } from "./types";
-import { FaLock } from "react-icons/fa";
+import { FaKey, FaLock } from "react-icons/fa";
 import type { Action } from "@/types";
 import { useRouter } from "next/navigation";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import { useTranslations, useLocale } from "next-intl";
+import ActivationCodeModal from "../mobile-access/components/ActivationCodeModal";
 
 /* --------------------------------------------------
  * Helpers: read & normalize permissions from cookies
@@ -96,6 +97,8 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<CompanyEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [activationEmployee, setActivationEmployee] =
+    useState<CompanyEmployee | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,6 +117,7 @@ export default function EmployeesPage() {
   const [modalMessage, setModalMessage] = useState("");
 
   const t = useTranslations("employees");
+  const mobileT = useTranslations("mobileAccess");
   const router = useRouter();
   const locale = useLocale();
 
@@ -192,8 +196,8 @@ export default function EmployeesPage() {
     },
   ];
 
-  const actions: Action[] = useMemo(
-    () => [
+  const actions: Action[] = useMemo(() => {
+    const availableActions: Action[] = [
       {
         name: "permissions",
         tip: t("editPermissions"),
@@ -203,9 +207,29 @@ export default function EmployeesPage() {
           router.push(`/${locale}/users/permissions/${r.id}/${r.roleId}`);
         },
       },
-    ],
-    [router, t, locale]
-  );
+    ];
+
+    if (isCompanyAdmin) {
+      availableActions.push({
+        name: "mobileActivationCode",
+        tip: mobileT("activation.generateForUser"),
+        icon: <FaKey />,
+        onClick: (row) => {
+          const employee = row as CompanyEmployee;
+          if (employee.isActive === false) {
+            setModalTitle(mobileT("errors.title"));
+            setModalMessage(mobileT("errors.inactiveUser"));
+            setModalSuccess(false);
+            setModalOpen(true);
+            return;
+          }
+          setActivationEmployee(employee);
+        },
+      });
+    }
+
+    return availableActions;
+  }, [router, t, mobileT, locale, isCompanyAdmin]);
 
   /* --------------------------------------------------
    * Handlers
@@ -258,6 +282,10 @@ export default function EmployeesPage() {
    * Other conditions remain as-is.
    * -------------------------------------------------- */
   const shouldShowActions = isCompanyAdmin || canEditUser;
+  const activationEmployees = useMemo(
+    () => (activationEmployee ? [activationEmployee] : []),
+    [activationEmployee]
+  );
 
   const gridBaseProps = {
     data: rowData,
@@ -309,6 +337,13 @@ export default function EmployeesPage() {
         message={modalMessage}
         onClose={handleModalClose}
         onConfirm={handleModalConfirm}
+      />
+
+      <ActivationCodeModal
+        isOpen={Boolean(activationEmployee)}
+        employees={activationEmployees}
+        initialEmployee={activationEmployee}
+        onClose={() => setActivationEmployee(null)}
       />
     </div>
   );

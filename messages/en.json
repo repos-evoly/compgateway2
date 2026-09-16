@@ -1,5 +1,6 @@
 {
   "sidebarItems": {
+    "mobileAccess": "Mobile Access",
     "dashboard": "Dashboard",
     "statementOfAccount": "Statement of Account",
     "title": "Corporate Gateway System",
@@ -592,6 +593,7 @@
     "ok": "OK"
   },
   "descriptions": {
+    "mobileAccessDescription": "Generate activation codes and manage approved mobile devices",
     "dashboardDescription": "View overall dashboard metrics",
     "statementOfAccountDescription": "Display and download account statements",
     "employeesDescription": "Manage employee records and details",
@@ -1322,6 +1324,75 @@
       "submitting": "Submitting...",
       "employeeName": "Employee Name",
       "employeeAmount": "Employee Amount"
+    }
+  },
+  "mobileAccess": {
+    "loading": "Loading...",
+    "close": "Close",
+    "cancel": "Cancel",
+    "never": "Never",
+    "accessDeniedTitle": "Access denied",
+    "accessDeniedMessage": "Only the company administrator can manage mobile device access.",
+    "manualFlow": {
+      "title": "Manual device approval",
+      "description": "Generate a one-time activation code for a user. After the user enrolls the device in the mobile app, it remains Pending until a company administrator approves it here."
+    },
+    "activation": {
+      "title": "Generate mobile activation code",
+      "subtitle": "The code can be used once to enroll one mobile device.",
+      "user": "User",
+      "selectUser": "Select a user",
+      "login": "Login",
+      "loginHint": "Use the user's CompAuth username or email address.",
+      "expiry": "Expires in (minutes)",
+      "generate": "Generate activation code",
+      "generateForUser": "Generate mobile activation code",
+      "generating": "Generating...",
+      "generated": "Activation code generated",
+      "oneTimeNotice": "Copy this code now. It is displayed only in this window and does not approve the device automatically.",
+      "expiresAt": "Expires {date}",
+      "copy": "Copy code",
+      "copied": "Copied"
+    },
+    "columns": {
+      "user": "User",
+      "installationId": "Installation ID",
+      "platform": "Platform",
+      "appVersion": "App version",
+      "status": "Status",
+      "createdAt": "Registered at",
+      "lastSeenAt": "Last seen",
+      "actions": "Actions"
+    },
+    "statuses": {
+      "all": "All statuses",
+      "pending": "Pending",
+      "approved": "Approved",
+      "revoked": "Revoked"
+    },
+    "actions": {
+      "approve": "Approve device",
+      "revoke": "Revoke device",
+      "awaitingProof": "Awaiting device proof"
+    },
+    "confirm": {
+      "approve": "Approve this mobile device? The user will be able to log in from it.",
+      "revoke": "Revoke this mobile device? The user will no longer be able to log in from it."
+    },
+    "result": {
+      "successTitle": "Device updated",
+      "approved": "The mobile device was approved successfully.",
+      "revoked": "The mobile device was revoked successfully."
+    },
+    "validation": {
+      "userAndLoginRequired": "Select a user and provide their login."
+    },
+    "errors": {
+      "title": "Mobile access error",
+      "generate": "Failed to generate an activation code.",
+      "loadDevices": "Failed to load registered mobile devices.",
+      "updateDevice": "Failed to update the mobile device.",
+      "inactiveUser": "An activation code cannot be generated for an inactive user."
     }
   },
   "common": {

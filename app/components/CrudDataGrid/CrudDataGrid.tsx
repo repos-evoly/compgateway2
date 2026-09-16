@@ -39,6 +39,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
   loading = false,
   canEdit,
   noPagination = false,
+  addButtonLabel,
 }) => {
   const t = useTranslations("crudDataGrid");
 
@@ -123,6 +124,7 @@ const CrudDataGrid: React.FC<CrudDataGridProps> = ({
           childrens={childrens}
           showSearchInput={showSearchInput}
           showDropdown={showDropdown}
+          addButtonLabel={addButtonLabel}
         />
       </div>
 

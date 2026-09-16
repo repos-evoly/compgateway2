@@ -19,6 +19,7 @@ import {
   FaUserCog,
   FaRegAddressCard,
   FaUserTie,
+  FaMobileAlt,
 } from "react-icons/fa";
 // import { IoEarth } from "react-icons/io5";
 import { MdRequestQuote } from "react-icons/md";
@@ -75,6 +76,15 @@ export const sidebarItems = [
     icon: FaUserCog, // was FaCog
     children: [],
     permissions: ["CompanyCanEmployees"],
+  },
+  {
+    id: 39,
+    label: "mobileAccess",
+    path: "/mobile-access",
+    icon: FaMobileAlt,
+    children: [],
+    permissions: [],
+    companyAdminOnly: true,
   },
   {
     id: 33,

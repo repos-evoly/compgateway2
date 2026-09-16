@@ -29,6 +29,7 @@ import {
   FaUserCog,
   FaRegAddressCard,
   FaUserTie,
+  FaMobileAlt,
 } from "react-icons/fa";
 import { RxDashboard } from "react-icons/rx";
 import { IoWalletSharp, IoEarth } from "react-icons/io5";
@@ -75,6 +76,10 @@ const ICONS: Record<string, { icon: JSX.Element; description: string }> = {
   users: {
     icon: <FaUserCog />,
     description: "usersDescription",
+  },
+  mobileAccess: {
+    icon: <FaMobileAlt />,
+    description: "mobileAccessDescription",
   },
   employees: {
     icon: <FaUsers />,

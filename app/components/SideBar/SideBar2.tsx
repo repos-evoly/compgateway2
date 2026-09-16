@@ -353,6 +353,16 @@ const decodeCookieArray = (value: string | undefined): ReadonlySet<string> => {
   }
 };
 
+const decodeBooleanCookie = (value: string | undefined): boolean => {
+  if (!value) return false;
+  try {
+    const normalized = decodeURIComponent(value).replace(/^"|"$/g, "").toLowerCase();
+    return normalized === "true" || normalized === "1";
+  } catch {
+    return false;
+  }
+};
+
 type SidebarItem = (typeof sidebarItems)[number];
 
 /* --------------------------------------------------
@@ -414,13 +424,22 @@ const Sidebar = () => {
     () => decodeCookieArray(getCookieValue("permissions")),
     []
   );
+  const isCompanyAdmin = useMemo(
+    () => decodeBooleanCookie(getCookieValue("isCompanyAdmin")),
+    []
+  );
 
   /* ---------- filter items ----------------------- */
   const isItemVisible = useCallback(
-    (item: SidebarItem): boolean =>
-      !item.permissions?.length ||
-      item.permissions.every((perm) => permissionsSet.has(perm)),
-    [permissionsSet]
+    (item: SidebarItem): boolean => {
+      const requiresCompanyAdmin =
+        "companyAdminOnly" in item && item.companyAdminOnly === true;
+      const hasPermissions =
+        !item.permissions?.length ||
+        item.permissions.every((perm) => permissionsSet.has(perm));
+      return (!requiresCompanyAdmin || isCompanyAdmin) && hasPermissions;
+    },
+    [isCompanyAdmin, permissionsSet]
   );
 
   const filterItems = useCallback(

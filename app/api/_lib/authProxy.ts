@@ -10,6 +10,7 @@ type ProxyOptions = {
   method?: string;
   headers?: HeadersInit;
   body?: ArrayBuffer;
+  forwardRequestHeaders?: boolean;
 };
 
 const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
@@ -152,20 +153,22 @@ export const proxyUpstream = async (
   const buildHeaders = (bearer: string): Headers => {
     const headers = new Headers(options.headers);
 
-    req.headers.forEach((value, key) => {
-      const lower = key.toLowerCase();
-      if (
-        hopByHopHeaders.has(lower) ||
-        lower === "cookie" ||
-        lower === "authorization" ||
-        lower === "content-length"
-      ) {
-        return;
-      }
-      if (!headers.has(key)) {
-        headers.set(key, value);
-      }
-    });
+    if (options.forwardRequestHeaders !== false) {
+      req.headers.forEach((value, key) => {
+        const lower = key.toLowerCase();
+        if (
+          hopByHopHeaders.has(lower) ||
+          lower === "cookie" ||
+          lower === "authorization" ||
+          lower === "content-length"
+        ) {
+          return;
+        }
+        if (!headers.has(key)) {
+          headers.set(key, value);
+        }
+      });
+    }
 
     const contentType = req.headers.get("content-type");
     if (contentType && !headers.has("content-type")) {

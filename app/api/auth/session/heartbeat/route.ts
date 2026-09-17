@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { clearAuthCookies } from "@/app/api/_lib/authCookies";
 
 const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API;
 
 if (!AUTH_BASE) {
   throw new Error("NEXT_PUBLIC_AUTH_API is not defined");
 }
-
-const COOKIE_SECURE = process.env.NEXT_PUBLIC_COOKIE_SECURE?.trim().toLowerCase() !== "false";
 
 function buildCookieHeader(req: NextRequest): string | undefined {
   const cookieNames = ["authDeviceId", "authSessionId"] as const;
@@ -18,25 +17,6 @@ function buildCookieHeader(req: NextRequest): string | undefined {
     .filter(Boolean);
 
   return cookies.length > 0 ? cookies.join("; ") : undefined;
-}
-
-function clearAuthCookies(res: NextResponse): void {
-  const cookieNames = ["accessToken", "refreshToken", "kycToken", "authSessionId"] as const;
-  const paths = ["/Companygw", "/"] as const;
-
-  cookieNames.forEach((name) => {
-    paths.forEach((path) => {
-      res.cookies.set({
-        name,
-        value: "",
-        path,
-        httpOnly: true,
-        secure: COOKIE_SECURE,
-        sameSite: "lax",
-        maxAge: 0,
-      });
-    });
-  });
 }
 
 export async function POST(req: NextRequest) {

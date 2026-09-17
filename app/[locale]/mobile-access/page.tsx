@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Cookies from "js-cookie";
 import { useLocale, useTranslations } from "next-intl";
 import { FaBan, FaCheck, FaClock, FaMobileAlt } from "react-icons/fa";
@@ -50,6 +50,8 @@ export default function MobileAccessPage() {
     title: "",
     message: "",
   });
+  const automaticLoadKeyRef = useRef<string | null>(null);
+  const employeesLoadStartedRef = useRef(false);
 
   const pageSize = 20;
 
@@ -79,17 +81,25 @@ export default function MobileAccessPage() {
   }, [isCompanyAdmin, page, status, t]);
 
   useEffect(() => {
-    if (isReady && isCompanyAdmin) void loadDevices();
-  }, [isReady, isCompanyAdmin, loadDevices]);
+    if (!isReady || !isCompanyAdmin) return;
 
-  useEffect(() => {
-    if (!isCompanyAdmin) return;
-    getEmployees()
-      .then(setEmployees)
-      .catch(() => {
-        setEmployees([]);
-      });
-  }, [isCompanyAdmin]);
+    const loadKey = `${page}:${status}`;
+    if (automaticLoadKeyRef.current === loadKey) return;
+    automaticLoadKeyRef.current = loadKey;
+
+    void (async () => {
+      if (!employeesLoadStartedRef.current) {
+        employeesLoadStartedRef.current = true;
+        try {
+          setEmployees(await getEmployees());
+        } catch {
+          setEmployees([]);
+        }
+      }
+
+      await loadDevices();
+    })();
+  }, [isReady, isCompanyAdmin, loadDevices, page, status]);
 
   const employeeNames = useMemo(
     () =>

@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  deviceCookieConfig,
+  setCanonicalAuthCookies,
+} from "@/app/api/_lib/authCookies";
 
 const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API;
 
@@ -18,26 +22,6 @@ type TwoFactorResponse = {
   requiresTwoFactorEnable?: boolean;
   requiresTwoFactor?: boolean;
   [key: string]: unknown;
-};
-
-const AUTH_COOKIE_SECONDS = 60 * 180;
-const DEVICE_COOKIE_SECONDS = 60 * 60 * 24 * 365;
-const COOKIE_SECURE = process.env.NEXT_PUBLIC_COOKIE_SECURE?.trim().toLowerCase() !== "false";
-
-const cookieConfig = {
-  httpOnly: true as const,
-  secure: COOKIE_SECURE,
-  sameSite: "lax" as const,
-  path: "/Companygw",
-  maxAge: AUTH_COOKIE_SECONDS,
-};
-
-const deviceCookieConfig = {
-  httpOnly: true as const,
-  secure: COOKIE_SECURE,
-  sameSite: "lax" as const,
-  path: "/Companygw",
-  maxAge: DEVICE_COOKIE_SECONDS,
 };
 
 function buildCookieHeader(req: NextRequest): string | undefined {
@@ -117,16 +101,12 @@ export async function handleTwoFactorVerification(
     !data.requiresTwoFactor &&
     !data.requiresTwoFactorEnable
   ) {
-    res.cookies.set("accessToken", data.accessToken, cookieConfig);
-    res.cookies.set("refreshToken", data.refreshToken, cookieConfig);
-
-    if (data.kycToken) {
-      res.cookies.set("kycToken", data.kycToken, cookieConfig);
-    }
-
-    if (data.sessionId) {
-      res.cookies.set("authSessionId", data.sessionId, cookieConfig);
-    }
+    setCanonicalAuthCookies(res, {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      kycToken: data.kycToken,
+      authSessionId: data.sessionId,
+    });
   }
 
   return res;

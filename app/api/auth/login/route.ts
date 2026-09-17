@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  deviceCookieConfig,
+  setCanonicalAuthCookies,
+} from "@/app/api/_lib/authCookies";
 
 const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API; 
 // e.g. https://compgw.backend.bcd.ly/compauthapi/api/auth
@@ -21,27 +25,6 @@ type UpstreamLoginResponse = {
   sessionExpiresAt?: string;
   heartbeatIntervalMinutes?: number;
   // optionally any extra fields your backend returns
-};
-
-const COMPANY_BASE_PATH = "/Companygw";
-const AUTH_COOKIE_SECONDS = 60 * 180;
-const DEVICE_COOKIE_SECONDS = 60 * 60 * 24 * 365;
-const COOKIE_SECURE = process.env.NEXT_PUBLIC_COOKIE_SECURE?.trim().toLowerCase() !== "false";
-
-const authCookieConfig = {
-  httpOnly: true as const,
-  secure: COOKIE_SECURE,
-  sameSite: "lax" as const,
-  path: COMPANY_BASE_PATH,
-  maxAge: AUTH_COOKIE_SECONDS,
-};
-
-const deviceCookieConfig = {
-  httpOnly: true as const,
-  secure: COOKIE_SECURE,
-  sameSite: "lax" as const,
-  path: COMPANY_BASE_PATH,
-  maxAge: DEVICE_COOKIE_SECONDS,
 };
 
 function buildCookieHeader(req: NextRequest): string | undefined {
@@ -110,13 +93,12 @@ export async function POST(req: NextRequest) {
 
   // Set tokens as HttpOnly cookies if present and no 2FA gate
   if (data.accessToken && data.refreshToken && data.kycToken && !data.requiresTwoFactor && !data.requiresTwoFactorEnable) {
-    res.cookies.set("accessToken", data.accessToken, authCookieConfig);
-    res.cookies.set("refreshToken", data.refreshToken, authCookieConfig);
-    res.cookies.set("kycToken", data.kycToken, authCookieConfig);
-
-    if (data.sessionId) {
-      res.cookies.set("authSessionId", data.sessionId, authCookieConfig);
-    }
+    setCanonicalAuthCookies(res, {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      kycToken: data.kycToken,
+      authSessionId: data.sessionId,
+    });
   }
 
   return res;

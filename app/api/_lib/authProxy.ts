@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { setCanonicalAuthCookies } from "@/app/api/_lib/authCookies";
 
 export type TokenPair = {
   accessToken: string;
   refreshToken: string;
+  sessionId?: string;
 };
 
 type ProxyOptions = {
@@ -13,17 +15,21 @@ type ProxyOptions = {
   forwardRequestHeaders?: boolean;
 };
 
-const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+const shouldRefresh = async (response: Response): Promise<boolean> => {
+  if (response.status === 401) return true;
+  if (response.status !== 403) return false;
 
-const cookieConfig = {
-  httpOnly: false as const,
-  secure: false as const,
-  sameSite: "lax" as const,
-  path: "/",
-  maxAge: WEEK_IN_SECONDS,
+  // The Mobile BFF can surface an expired forwarded user JWT as an upstream
+  // authorization error because its private CompGate route also authenticates
+  // the BFF service identity. Refresh that authentication-specific response,
+  // but never refresh a real device-administrator permission denial.
+  try {
+    const body = (await response.clone().json()) as { code?: unknown };
+    return body.code === "device_administration_upstream_error";
+  } catch {
+    return false;
+  }
 };
-
-const shouldRefresh = (status: number) => status === 401 || status === 403;
 
 const sanitizeCookie = (value?: string): string | undefined => {
   if (!value) return undefined;
@@ -201,7 +207,7 @@ export const proxyUpstream = async (
 
   let upstream = await attempt(accessToken);
 
-  if (shouldRefresh(upstream.status) && refreshToken) {
+  if ((await shouldRefresh(upstream)) && refreshToken) {
     const refreshed = await fetchRefreshTokens(accessToken, refreshToken);
     if (refreshed) {
       accessToken = refreshed.accessToken;
@@ -230,8 +236,11 @@ export const nextResponseFrom = (
   });
 
   if (tokens) {
-    res.cookies.set("accessToken", tokens.accessToken, cookieConfig);
-    res.cookies.set("refreshToken", tokens.refreshToken, cookieConfig);
+    setCanonicalAuthCookies(res, {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      authSessionId: tokens.sessionId,
+    });
   }
 
   return res;

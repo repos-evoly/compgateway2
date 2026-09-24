@@ -15,6 +15,17 @@ type ProxyOptions = {
   forwardRequestHeaders?: boolean;
 };
 
+type RefreshFlight = {
+  promise: Promise<TokenPair | null>;
+  expiresAt: number;
+};
+
+// Several route handlers can discover an expired access token at the same
+// time. CompAuth rotates refresh tokens, so those requests must share one
+// refresh result instead of racing with the same one-time credential.
+const REFRESH_FLIGHT_TTL_MS = 30_000;
+const refreshFlights = new Map<string, RefreshFlight>();
+
 const shouldRefresh = async (response: Response): Promise<boolean> => {
   if (response.status === 401) return true;
   if (response.status !== 403) return false;
@@ -115,6 +126,33 @@ const fetchRefreshTokens = async (
   return data as TokenPair;
 };
 
+const fetchRefreshTokensSingleFlight = (
+  accessToken: string,
+  refreshToken: string
+): Promise<TokenPair | null> => {
+  const now = Date.now();
+  const existing = refreshFlights.get(refreshToken);
+  if (existing && existing.expiresAt > now) {
+    return existing.promise;
+  }
+
+  const promise = fetchRefreshTokens(accessToken, refreshToken);
+  const flight: RefreshFlight = {
+    promise,
+    expiresAt: now + REFRESH_FLIGHT_TTL_MS,
+  };
+  refreshFlights.set(refreshToken, flight);
+
+  const cleanup = setTimeout(() => {
+    if (refreshFlights.get(refreshToken) === flight) {
+      refreshFlights.delete(refreshToken);
+    }
+  }, REFRESH_FLIGHT_TTL_MS);
+  cleanup.unref?.();
+
+  return promise;
+};
+
 export const proxyUpstream = async (
   req: NextRequest,
   target: URL,
@@ -208,7 +246,7 @@ export const proxyUpstream = async (
   let upstream = await attempt(accessToken);
 
   if ((await shouldRefresh(upstream)) && refreshToken) {
-    const refreshed = await fetchRefreshTokens(accessToken, refreshToken);
+    const refreshed = await fetchRefreshTokensSingleFlight(accessToken, refreshToken);
     if (refreshed) {
       accessToken = refreshed.accessToken;
       upstream = await attempt(accessToken);

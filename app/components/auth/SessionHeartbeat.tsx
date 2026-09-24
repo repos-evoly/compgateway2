@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
+const HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000;
 const LOGIN_URL = "/Companygw/auth/login";
 
 type HeartbeatResponse = {
@@ -42,12 +42,13 @@ export default function SessionHeartbeat() {
       }
     };
 
-    const initialTimeout = window.setTimeout(sendHeartbeat, 30_000);
+    // Refresh the session as soon as the authenticated shell mounts. Waiting
+    // here can let the first protected page requests race the idle timeout.
+    void sendHeartbeat();
     const interval = window.setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
 
     return () => {
       stopped = true;
-      window.clearTimeout(initialTimeout);
       window.clearInterval(interval);
     };
   }, []);

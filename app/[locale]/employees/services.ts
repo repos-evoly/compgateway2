@@ -37,7 +37,7 @@ export const getEmployees = async (
     limit: String(limit),
   });
   if (searchTerm) {
-    params.set("search", searchTerm);
+    params.set("searchTerm", searchTerm);
   }
   const url = `${API_BASE}?${params.toString()}`;
 

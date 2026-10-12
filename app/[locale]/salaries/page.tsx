@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import Cookies from "js-cookie";
 
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import Button from "@/app/components/reusable/Button";
@@ -14,6 +15,11 @@ import SalariesDownloadPdf from "@/app/components/reusable/SalariesDownloadPdf";
 import type { SalaryCyclesResponse, TSalaryTransaction } from "./types";
 import { getEmployeeSalaryCycles } from "./services";
 import LoadingPage from "@/app/components/reusable/Loading";
+import SalaryStatusBadge from "./components/SalaryStatusBadge";
+import {
+  getSalaryCycleDisplayStatus,
+  isSalaryCycleCompleted,
+} from "./salaryStatus";
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                          */
@@ -46,6 +52,17 @@ const formatAmountWithCommas = (value: unknown): string => {
 export default function SalariesPage() {
   const locale = useLocale();
   const t = useTranslations("salaries");
+  const canCreate = (() => {
+    try {
+      const raw = Cookies.get("permissions") ?? "";
+      const parsed = raw
+        ? JSON.parse(decodeURIComponent(raw).replace(/^"|"$/g, ""))
+        : [];
+      return Array.isArray(parsed) && parsed.includes("canCreateOrEditSalaryCycle");
+    } catch {
+      return false;
+    }
+  })();
 
   /* ------------------- state -------------------------------------- */
   const [transactions, setTransactions] = useState<TSalaryTransaction[]>([]);
@@ -106,10 +123,10 @@ export default function SalariesPage() {
 
   /* ------------------- grid columns ------------------------------- */
   const columns = [
-    { key: "id", label: "ID" },
+    { key: "id", label: t("id") },
     {
       key: "salaryMonth",
-      label: "Salary Month",
+      label: t("salaryMonth"),
       renderCell: (row: TSalaryTransaction) => {
         const v = row.salaryMonth as unknown as string | null | undefined;
         return typeof v === "string" && v.trim().length > 0 ? v : "";
@@ -117,7 +134,7 @@ export default function SalariesPage() {
     },
     {
       key: "additionalMonth",
-      label: "Additional Month",
+      label: t("additionalMonth"),
       renderCell: (row: TSalaryTransaction) => {
         const v = row.additionalMonth;
         return v && String(v).trim().length > 0 ? String(v) : "";
@@ -125,42 +142,50 @@ export default function SalariesPage() {
     },
     {
       key: "totalAmount",
-      label: "Total Amount",
+      label: t("totalAmount"),
       renderCell: (row: TSalaryTransaction) =>
         formatAmountWithCommas(row.totalAmount),
     },
-    { key: "currency", label: "Currency" },
+    { key: "currency", label: t("currency") },
     {
       key: "entries",
-      label: "Employees",
+      label: t("employees"),
       renderCell: (row: TSalaryTransaction) => (
-        <span>{row.entryCount ?? row.entries.length}</span>
+        <span>{row.entryCount ?? row.entries?.length ?? 0}</span>
       ),
     },
     {
       key: "createdAt",
-      label: "Created At",
+      label: t("createdAt"),
       renderCell: (row: TSalaryTransaction) =>
         new Date(row.createdAt).toLocaleDateString(locale),
     },
-    { key: "createdByUserId", label: "Created By" },
+    { key: "createdByUserId", label: t("createdBy") },
     {
       key: "postedAt",
-      label: "Posted At",
+      label: t("postedAt"),
       renderCell: (row: TSalaryTransaction) =>
         row.postedAt ? new Date(row.postedAt).toLocaleDateString(locale) : "-",
     },
     {
       key: "postedByUserId",
-      label: "Posted By",
+      label: t("postedBy"),
       renderCell: (row: TSalaryTransaction) => row.postedByUserId ?? "-",
     },
     {
+      key: "postingStatus",
+      label: t("status"),
+      renderCell: (row: TSalaryTransaction) => (
+        <SalaryStatusBadge
+          status={getSalaryCycleDisplayStatus(row)}
+        />
+      ),
+    },
+    {
       key: "actions",
-      label: "Actions",
+      label: t("actions"),
       renderCell: (row: TSalaryTransaction) => {
-        const isPosted = Boolean(row.postedAt);
-        if (!isPosted) return null;
+        if (!isSalaryCycleCompleted(row)) return null;
 
         return <SalariesDownloadPdf transaction={row} />;
       },
@@ -168,14 +193,14 @@ export default function SalariesPage() {
   ];
 
   /* ------------------- header button ------------------------------ */
-  const setSalariesButton = (
+  const setSalariesButton = canCreate ? (
     <Button
       actions={{ type: "navigate", href: `/${locale}/salaries/setSalaries` }}
       isTransparent
     >
       {t("setSalaries")}
     </Button>
-  );
+  ) : undefined;
 
   /* ------------------- data slice --------------------------------- */
   const pagedData = transactions;
@@ -191,7 +216,7 @@ export default function SalariesPage() {
         columns={columns}
         showActions={false}
         showSearchBar={false}
-        showAddButton={true}
+        showAddButton={false}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}

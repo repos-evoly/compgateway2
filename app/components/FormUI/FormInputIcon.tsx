@@ -21,6 +21,7 @@ const FormInputIcon = ({
   width = "w-full",
   inputMode,
   step,
+  min,
   pattern,
   maxLength,
   placeholder,
@@ -162,6 +163,7 @@ const FormInputIcon = ({
           type={effectiveType}
           inputMode={inputMode}
           step={step}
+          min={min}
           pattern={pattern}
           maxLength={maxLength}
           placeholder={placeholder}

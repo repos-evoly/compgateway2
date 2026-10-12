@@ -2,14 +2,135 @@
 /* Entry type (nested inside a transaction)                           */
 
 import { EmployeeResponse } from "../employees/types";
+import type {
+  SalaryPaymentChannel,
+  WalletRecipientType,
+} from "../employees/salaryWalletHelpers";
+
+export type SalaryRecipientType = WalletRecipientType | "accountNumber";
+
+export type SalaryAllocationStatus =
+  | "pending"
+  | "posting"
+  | "funding"
+  | "funded"
+  | "fundingFailed"
+  | "dispatching"
+  | "failedBeforeDispatch"
+  | "pendingProvider"
+  | "pendingProviderResponse"
+  | "completed"
+  | "failedBeforeSend"
+  | "providerRejectedNotProcessed"
+  | "failed"
+  | "unknown"
+  | "manualReview"
+  | "reversed"
+  | string;
+
+export type SalaryEntryAllocation = {
+  id: number;
+  salaryEntryId?: number;
+  paymentChannel: SalaryPaymentChannel;
+  amount: number;
+  destination?: string | null;
+  recipientType?: SalaryRecipientType | null;
+  recipientNameSnapshot?: string | null;
+  status: SalaryAllocationStatus;
+  commissionAmount?: number;
+  senderCommission?: number;
+  receiverCommission?: number;
+  providerTransactionId?: string | null;
+  providerTransactionCode?: string | null;
+  providerTxCode?: string | null;
+  txCode?: string | null;
+  transferResultCode?: string | null;
+  transferResultReason?: string | null;
+  isTransferred?: boolean;
+  transferredAt?: string | null;
+  canRetry?: boolean;
+  outcomeKnown?: boolean;
+  requiresManualReview?: boolean;
+  reversalStatus?: string | null;
+  reversalReference?: string | null;
+};
 
 /* ------------------------------------------------------------------ */
 export type TSalaryEntry = {
   id: number;
   employeeId: number;
   employeeName: string;
+  name?: string;
+  email?: string | null;
+  phone?: string | null;
+  accountNumber?: string | null;
+  accountType?: string | null;
   amount: number;
+  salary?: number;
   isTransferred: boolean;
+  transferResultCode?: string | null;
+  transferResultReason?: string | null;
+  transferredAt?: string | null;
+  allocations?: SalaryEntryAllocation[];
+};
+
+export type SalaryWalletBatchItem = {
+  id?: number;
+  allocationId: number;
+  requestIndex: number;
+  amount: number;
+  destination: string;
+  recipientType: SalaryRecipientType;
+  status: SalaryAllocationStatus;
+  commissionAmount?: number;
+  providerTransactionId?: string | null;
+  providerTxCode?: string | null;
+};
+
+export type SalaryWalletBatch = {
+  id: number;
+  salaryCycleId?: number;
+  rail?: "evoWallet" | "bcdWallet";
+  walletChannel?: "evoWallet" | "bcdWallet" | "evo" | "bcd";
+  status?: string;
+  overallStatus?: string;
+  shadowAccount?: string | null;
+  coreReferenceId?: string | null;
+  coreFundingStatus?: string | null;
+  coreFundingReference?: string | null;
+  providerBatchId?: string | null;
+  batchId?: string | null;
+  requestedCount?: number;
+  approvedCount?: number;
+  failedCount?: number;
+  total?: number;
+  approved?: number;
+  failed?: number;
+  requestedTotalAmount?: number;
+  successfulTotalAmount?: number;
+  failedTotalAmount?: number;
+  totalAmount?: number;
+  commission?: number;
+  totalCommission?: number;
+  senderCommission?: number;
+  receiverCommission?: number;
+  debitAmount?: number;
+  lastStatusCheckedAt?: string | null;
+  processedAt?: string | null;
+  errorMessage?: string | null;
+  lastError?: string | null;
+  canRetry?: boolean;
+  retryAllowed?: boolean;
+  canRefreshStatus?: boolean;
+  outcomeKnown?: boolean;
+  requiresManualReview?: boolean;
+  reconciliationAvailable?: boolean;
+  lastCheckedAt?: string | null;
+  reversalStatus?: string | null;
+  reversalAmount?: number;
+  reversalReference?: string | null;
+  reversalError?: string | null;
+  items?: SalaryWalletBatchItem[];
 };
 
 /* ------------------------------------------------------------------ */
@@ -28,6 +149,46 @@ export type TSalaryTransaction = {
   additionalMonth?: string | null;
   entryCount?: number;
   entries: TSalaryEntry[];        // detailed per-employee lines
+  status?: string;
+  postingStatus?: string;
+  bankFeeStatus?: string | null;
+  bankFeeError?: string | null;
+  postingStartedAt?: string | null;
+  postingCompletedAt?: string | null;
+  canEdit?: boolean;
+  canPost?: boolean;
+  canRetry?: boolean;
+  canRefreshStatus?: boolean;
+  outcomeKnown?: boolean;
+  requiresManualReview?: boolean;
+  bankReference?: string | null;
+  walletBatches?: SalaryWalletBatch[];
+};
+
+export type SalaryWalletCapabilities = {
+  allocationPrecision?: number;
+  commissionMode?: string;
+  rails?: {
+    bankAccount?: SalaryWalletRailCapability;
+    evoWallet?: SalaryWalletRailCapability;
+    bcdWallet?: SalaryWalletRailCapability;
+  };
+  canCreateOrEdit?: boolean;
+  canPost?: boolean;
+  evoEnabled: boolean;
+  bcdEnabled: boolean;
+  evoConfigured?: boolean;
+  bcdConfigured?: boolean;
+  evoUnavailableReason?: string | null;
+  bcdUnavailableReason?: string | null;
+};
+
+export type SalaryWalletRailCapability = {
+  enabled: boolean;
+  configured?: boolean;
+  available?: boolean;
+  recipientTypes?: SalaryRecipientType[];
+  reason?: string | null;
 };
 
 export type SalaryCyclesResponse = {
@@ -136,7 +297,15 @@ export type BankResponse = {
 
 export type PostSalaryCycleResponse = {
   cycle: TSalaryTransaction;
-  bank: BankResponse;
+  bank?: BankResponse;
+  summary?: {
+    overallStatus?: string;
+    bankAccount?: unknown;
+    evoWallet?: unknown;
+    bcdWallet?: unknown;
+  };
+  status?: string;
+  message?: string;
 };
 
 
@@ -155,6 +324,10 @@ export type SalaryEntryRow = {
   sendSalary: boolean;
   canPost: boolean;
   isTransferred: boolean;
+  transferResultCode?: string | null;
+  transferResultReason?: string | null;
+  transferredAt?: string | null;
+  allocations?: SalaryEntryAllocation[];
 };
 export type EmployeeRow = EmployeeResponse;
 

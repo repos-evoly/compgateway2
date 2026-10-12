@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { generateSalaryTransactionPdf } from "@/app/lib/generateSalaryPdf";
 import { getSalaryCycleById } from "@/app/[locale]/salaries/services";
+import { isSalaryCycleCompleted } from "@/app/[locale]/salaries/salaryStatus";
 import type { TSalaryTransaction } from "@/app/[locale]/salaries/types";
 
 interface SalaryPdfDownloadButtonProps {
@@ -21,6 +22,8 @@ const SalaryPdfDownloadButton: React.FC<SalaryPdfDownloadButtonProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations("requests");
+  const salaryT = useTranslations("salaries");
+  const isCompleted = isSalaryCycleCompleted(transaction);
 
   const handleDownloadPdf = async () => {
     if (!transaction) return;
@@ -42,10 +45,14 @@ const SalaryPdfDownloadButton: React.FC<SalaryPdfDownloadButtonProps> = ({
         );
       }
 
+      if (!isSalaryCycleCompleted(data)) {
+        throw new Error(salaryT("pdfCompletedOnly"));
+      }
+
       generateSalaryTransactionPdf(data);
     } catch (error) {
       console.error("Failed to generate PDF:", error);
-      alert("Failed to generate PDF.");
+      alert(error instanceof Error ? error.message : salaryT("pdfGenerationFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -57,9 +64,11 @@ const SalaryPdfDownloadButton: React.FC<SalaryPdfDownloadButtonProps> = ({
         type="button"
         onClick={handleDownloadPdf}
         onMouseDown={(e) => e.stopPropagation()}
-        disabled={disabled || isLoading}
+        disabled={disabled || isLoading || !isCompleted}
         className={`p-1 text-black hover:text-gray-700 transition-colors duration-200 ${
-          disabled || isLoading ? "opacity-50 cursor-not-allowed" : ""
+          disabled || isLoading || !isCompleted
+            ? "opacity-50 cursor-not-allowed"
+            : ""
         }`}
         title={title || t("downloadPdf", { defaultValue: "Download PDF" })}
       >

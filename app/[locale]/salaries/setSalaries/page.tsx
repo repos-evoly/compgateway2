@@ -1,152 +1,316 @@
-
 "use client";
 
-import React, { useMemo, useState, useEffect, JSX } from "react";
+import React, { JSX, useEffect, useMemo, useState } from "react";
 import { Formik } from "formik";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
 import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import BackButton from "@/app/components/reusable/BackButton";
-import type { DataGridColumn } from "@/types";
-import { getAllEmployees } from "../../employees/services";
-import type { EmployeeResponse } from "../../employees/types";
-import SalariesModal from "../components/SalariesModal"; // returns { debitAccount, salaryMonthArabic, additionalMonth }
-import { submitSalaryCycle, type NewCycleEntry } from "../services";
-import LoadingPage from "@/app/components/reusable/Loading";
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import Disclaimer from "@/app/components/reusable/Disclaimer";
+import LoadingPage from "@/app/components/reusable/Loading";
+import type { DataGridColumn } from "@/types";
 
-/* A safe, minimal shape of the API response without using `any` */
-type PostResult = {
-  success?: boolean;
-  message?: string;
+import { getAllEmployees } from "../../employees/services";
+import {
+  allocationTotal,
+  buildAllocationRequest,
+  employeeHasDestination,
+  roundSalaryAmount,
+  validateEmployeeAllocations,
+  type AllocationAmounts,
+  type SalaryPaymentChannel,
+} from "../../employees/salaryWalletHelpers";
+import type { EmployeeResponse } from "../../employees/types";
+import SalariesModal from "../components/SalariesModal";
+import {
+  getSalaryWalletCapabilities,
+  submitSalaryCycle,
+  type NewCycleEntry,
+} from "../services";
+import type { SalaryWalletCapabilities } from "../types";
+
+type SalarySearchBy = "name" | "destination";
+
+const EMPTY_AMOUNTS: AllocationAmounts = {
+  bankAccount: 0,
+  evoWallet: 0,
+  bcdWallet: 0,
 };
 
-type SalarySearchBy = "name" | "accountNumber";
+const initialAmountsForEmployee = (
+  employee: EmployeeResponse,
+  capabilities: SalaryWalletCapabilities
+): AllocationAmounts => {
+  const salary = roundSalaryAmount(employee.salary);
+  const savedDefaults: AllocationAmounts = {
+    bankAccount: roundSalaryAmount(employee.bankAllocationAmount),
+    evoWallet: roundSalaryAmount(employee.evoAllocationAmount),
+    bcdWallet: roundSalaryAmount(employee.bcdAllocationAmount),
+  };
+  const savedChannels = [
+    "bankAccount",
+    "evoWallet",
+    "bcdWallet",
+  ] as const;
+  const hasSavedDefaults =
+    salary > 0 &&
+    allocationTotal(savedDefaults) === salary &&
+    savedChannels.every(
+      (channel) =>
+        savedDefaults[channel] <= 0 || employeeHasDestination(employee, channel)
+    );
 
-/* ------------------------------------------------------------------ */
+  if (hasSavedDefaults) {
+    return savedDefaults;
+  }
+
+  // Backward compatibility for employees created before default allocations
+  // were stored: keep the existing first-available-destination behavior.
+  if (employeeHasDestination(employee, "bankAccount")) {
+    return { ...EMPTY_AMOUNTS, bankAccount: salary };
+  }
+  if (
+    capabilities.evoEnabled &&
+    employeeHasDestination(employee, "evoWallet")
+  ) {
+    return { ...EMPTY_AMOUNTS, evoWallet: salary };
+  }
+  if (
+    capabilities.bcdEnabled &&
+    employeeHasDestination(employee, "bcdWallet")
+  ) {
+    return { ...EMPTY_AMOUNTS, bcdWallet: salary };
+  }
+  return { ...EMPTY_AMOUNTS };
+};
+
 export default function SetSalariesPage(): JSX.Element {
   const locale = useLocale();
   const t = useTranslations("salaries");
   const router = useRouter();
-
-  /* ---------- table state ---------- */
   const [data, setData] = useState<EmployeeResponse[]>([]);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [allocations, setAllocations] = useState<
+    Record<number, AllocationAmounts>
+  >({});
+  const [capabilities, setCapabilities] =
+    useState<SalaryWalletCapabilities | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchBy, setSearchBy] = useState<SalarySearchBy>("name");
   const [searchTerm, setSearchTerm] = useState("");
-  console.log("SetSalariesPage render, error:", error);
-
-  /* ---------- flow modals ---------- */
-  const [showPickerModal, setShowPickerModal] = useState(false); // SalariesModal
-  const [resultOpen, setResultOpen] = useState(false); // ErrorOrSuccessModal
+  const [showPickerModal, setShowPickerModal] = useState(false);
+  const [resultOpen, setResultOpen] = useState(false);
   const [resultSuccess, setResultSuccess] = useState(false);
   const [resultTitle, setResultTitle] = useState("");
   const [resultMessage, setResultMessage] = useState("");
 
-  /* ---------- fetch employees ---------- */
+  const showResult = (success: boolean, title: string, message: string) => {
+    setResultSuccess(success);
+    setResultTitle(title);
+    setResultMessage(message);
+    setResultOpen(true);
+  };
+
   useEffect(() => {
-    const fetchEmployees = async (): Promise<void> => {
+    let active = true;
+    const load = async () => {
       try {
         setLoading(true);
-        const employees = await getAllEmployees();
-        setData(employees);
-        // Preselect those flagged to receive salaries
-        setSelectedRows(employees.filter((e) => e.sendSalary).map((e) => e.id));
-      } catch (err: unknown) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : t("fetchEmployeesError", {
-              defaultValue: "Failed to fetch employees",
-            });
-        setError(message);
-        setResultSuccess(false);
-        setResultTitle(
-          t("fetchEmployeesErrorTitle", {
-            defaultValue: "تعذر تحميل الموظفين",
-          })
+        const [employees, walletCapabilities] = await Promise.all([
+          getAllEmployees(),
+          getSalaryWalletCapabilities(),
+        ]);
+        if (!active) return;
+
+        const nextAllocations = Object.fromEntries(
+          employees.map((employee) => [
+            employee.id,
+            initialAmountsForEmployee(employee, walletCapabilities),
+          ])
         );
-        setResultMessage(message);
-        setResultOpen(true);
+        setData(employees);
+        setCapabilities(walletCapabilities);
+        setAllocations(nextAllocations);
+        setSelectedRows(
+          employees
+            .filter((employee) => employee.sendSalary)
+            .map((employee) => employee.id)
+        );
+      } catch (error) {
+        if (!active) return;
+        showResult(
+          false,
+          t("fetchEmployeesErrorTitle"),
+          error instanceof Error ? error.message : t("fetchEmployeesError")
+        );
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
-    fetchEmployees();
+    void load();
+    return () => {
+      active = false;
+    };
   }, [t]);
 
   const filteredData = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return data;
-
     return data.filter((employee) => {
-      const value =
-        searchBy === "name" ? employee.name : employee.accountNumber;
-      return String(value ?? "").toLowerCase().includes(term);
+      if (searchBy === "name") {
+        return employee.name.toLowerCase().includes(term);
+      }
+      return [employee.accountNumber, employee.evoWallet, employee.bcdWallet]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term));
     });
   }, [data, searchBy, searchTerm]);
 
-  /* ---------- handlers ---------- */
-  const handleRowSelect = (id: number): void => {
-    setSelectedRows((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const bcdEnabled = capabilities?.bcdEnabled === true;
+  const evoEnabled = capabilities?.evoEnabled === true;
+
+  const updateAllocation = (
+    employeeId: number,
+    channel: SalaryPaymentChannel,
+    value: number
+  ) => {
+    setAllocations((current) => ({
+      ...current,
+      [employeeId]: {
+        ...(current[employeeId] ?? EMPTY_AMOUNTS),
+        [channel]: roundSalaryAmount(value),
+      },
+    }));
+  };
+
+  const updateSalary = (employeeId: number, salary: number) => {
+    setData((current) =>
+      current.map((employee) =>
+        employee.id === employeeId
+          ? { ...employee, salary: roundSalaryAmount(salary) }
+          : employee
+      )
     );
   };
 
-  const handleSelectAll = (): void => {
-    const visibleIds = filteredData.map((r) => r.id);
-    if (visibleIds.length === 0) return;
-
-    const allVisibleSelected = visibleIds.every((id) =>
-      selectedRows.includes(id)
-    );
-
-    setSelectedRows((prev) =>
-      allVisibleSelected
-        ? prev.filter((id) => !visibleIds.includes(id))
-        : Array.from(new Set([...prev, ...visibleIds]))
+  const toggleRow = (employeeId: number) => {
+    setSelectedRows((current) =>
+      current.includes(employeeId)
+        ? current.filter((id) => id !== employeeId)
+        : [...current, employeeId]
     );
   };
 
-  const handleSalaryChange = (id: number, newSalary: number): void => {
-    setData((prev) =>
-      prev.map((emp) => (emp.id === id ? { ...emp, salary: newSalary } : emp))
+  const toggleVisibleRows = () => {
+    const visibleIds = filteredData.map((employee) => employee.id);
+    const allSelected = visibleIds.every((id) => selectedRows.includes(id));
+    setSelectedRows((current) =>
+      allSelected
+        ? current.filter((id) => !visibleIds.includes(id))
+        : Array.from(new Set([...current, ...visibleIds]))
     );
   };
 
-  const handleSubmitSelected = (): void => {
+  const channelLabel = (channel: SalaryPaymentChannel) =>
+    channel === "bankAccount"
+      ? t("channelBank")
+      : channel === "evoWallet"
+        ? t("channelEvo")
+        : t("channelBcd");
+
+  const allocationError = (employee: EmployeeResponse): string | null => {
+    const validation = validateEmployeeAllocations(
+      employee,
+      allocations[employee.id] ?? EMPTY_AMOUNTS,
+      { evoEnabled, bcdEnabled }
+    );
+    if (validation.valid) return null;
+    if (validation.reason === "salaryRequired") return t("salaryPositive");
+    if (validation.reason === "allocationRequired") {
+      return t("allocationRequired");
+    }
+    if (validation.reason === "bcdUnavailable") return t("bcdNotConfigured");
+    if (validation.reason === "railUnavailable") return t("railNotConfigured");
+    if (validation.reason === "destinationUnavailable") {
+      return t("allocationDestinationMissing", {
+        channel: channelLabel(validation.channel ?? "bankAccount"),
+      });
+    }
+    return t("allocationTotalMismatch");
+  };
+
+  const openCreateModal = () => {
     if (selectedRows.length === 0) {
-      // If nothing selected, show error modal immediately
-      setResultSuccess(false);
-      setResultTitle(
-        t("noSelectionTitle", { defaultValue: "No Employees Selected" })
+      showResult(false, t("noSelectionTitle"), t("noSelectionMsg"));
+      return;
+    }
+    const invalidEmployee = data
+      .filter((employee) => selectedRows.includes(employee.id))
+      .find((employee) => allocationError(employee));
+    if (invalidEmployee) {
+      showResult(
+        false,
+        t("invalidAllocationsTitle"),
+        `${invalidEmployee.name}: ${allocationError(invalidEmployee)}`
       );
-      setResultMessage(
-        t("noSelectionMsg", {
-          defaultValue:
-            "Please select at least one employee to create a salary cycle.",
-        })
-      );
-      setResultOpen(true);
       return;
     }
     setShowPickerModal(true);
   };
 
-  /* ---------- totals ---------- */
-  const totalSelectedSalary = useMemo(
-    () =>
-      data
-        .filter((e) => selectedRows.includes(e.id))
-        .reduce((sum, e) => sum + (Number(e.salary) || 0), 0),
-    [data, selectedRows]
-  );
+  const allocationInput = (
+    employee: EmployeeResponse,
+    channel: SalaryPaymentChannel
+  ) => {
+    const railEnabled =
+      channel === "bankAccount" ||
+      (channel === "evoWallet" ? evoEnabled : bcdEnabled);
+    const destinationExists = employeeHasDestination(employee, channel);
+    const disabled = !railEnabled || !destinationExists;
+    const selected = selectedRows.includes(employee.id);
+    const invalid = selected && Boolean(allocationError(employee));
+    return (
+      <div className="space-y-1">
+        <input
+          type="number"
+          min={0}
+          step="0.001"
+          value={(allocations[employee.id] ?? EMPTY_AMOUNTS)[channel]}
+          disabled={disabled}
+          onChange={(event) =>
+            updateAllocation(employee.id, channel, Number(event.target.value))
+          }
+          title={
+            !railEnabled
+              ? t("railNotConfigured")
+              : !destinationExists
+                ? t("employeeDestinationMissing")
+                : undefined
+          }
+          className={`w-28 rounded border px-2 py-1 text-sm outline-none ${
+            disabled
+              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+              : invalid
+                ? "border-red-400 bg-red-50 text-slate-800"
+                : "border-slate-300 bg-white text-slate-800 focus:border-blue-500"
+          }`}
+        />
+        <div className="max-w-36 truncate text-xs text-slate-500" dir="ltr">
+          {destinationExists
+            ? channel === "bankAccount"
+              ? employee.accountNumber
+              : channel === "evoWallet"
+                ? employee.evoWallet
+                : employee.bcdWallet
+            : t("notAvailable")}
+        </div>
+      </div>
+    );
+  };
 
-  /* ---------- columns ---------- */
   const columns: DataGridColumn[] = [
     {
       key: "select",
@@ -156,115 +320,106 @@ export default function SetSalariesPage(): JSX.Element {
           type="checkbox"
           checked={
             filteredData.length > 0 &&
-            filteredData.every((r) => selectedRows.includes(r.id))
+            filteredData.every((employee) =>
+              selectedRows.includes(employee.id)
+            )
           }
-          onChange={handleSelectAll}
-          className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500"
+          onChange={toggleVisibleRows}
+          aria-label={t("selectAll")}
         />
       ),
-      renderCell: (row: EmployeeResponse) => (
+      renderCell: (employee: EmployeeResponse) => (
         <input
           type="checkbox"
-          checked={selectedRows.includes(row.id)}
-          onChange={() => handleRowSelect(row.id)}
-          className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500"
+          checked={selectedRows.includes(employee.id)}
+          onChange={() => toggleRow(employee.id)}
+          aria-label={`${t("selectEmployee")} ${employee.name}`}
         />
       ),
     },
-    { key: "name", label: t("name"), renderCell: (r) => r.name },
-    { key: "email", label: t("email") },
-    { key: "phone", label: t("phone") },
+    { key: "name", label: t("name") },
     {
       key: "salary",
       label: t("salary"),
-      renderCell: (r) => (
+      renderCell: (employee: EmployeeResponse) => (
         <input
           type="number"
-          value={r.salary}
           min={0}
-          onChange={(e) =>
-            handleSalaryChange(r.id, Number(e.target.value) || 0)
+          step="0.001"
+          value={employee.salary}
+          onChange={(event) =>
+            updateSalary(employee.id, Number(event.target.value))
           }
-          className="w-24 rounded border border-gray-300 px-1 py-0.5 text-sm text-slate-700"
+          className="w-28 rounded border border-slate-300 px-2 py-1 text-sm text-slate-800 outline-none focus:border-blue-500"
         />
       ),
     },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType", { defaultValue: "Type" }) },
+    {
+      key: "bankAllocation",
+      label: t("channelBank"),
+      renderCell: (employee: EmployeeResponse) =>
+        allocationInput(employee, "bankAccount"),
+    },
+    {
+      key: "evoAllocation",
+      label: t("channelEvo"),
+      renderCell: (employee: EmployeeResponse) =>
+        allocationInput(employee, "evoWallet"),
+    },
+    {
+      key: "bcdAllocation",
+      label: t("channelBcd"),
+      renderHeader: () => (
+        <div className="flex items-center gap-2">
+          <span>{t("channelBcd")}</span>
+          {!bcdEnabled && (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">
+              {t("notConfigured")}
+            </span>
+          )}
+        </div>
+      ),
+      renderCell: (employee: EmployeeResponse) =>
+        allocationInput(employee, "bcdWallet"),
+    },
+    {
+      key: "allocationTotal",
+      label: t("allocationTotal"),
+      renderCell: (employee: EmployeeResponse) => {
+        const total = allocationTotal(
+          allocations[employee.id] ?? EMPTY_AMOUNTS
+        );
+        const valid = !selectedRows.includes(employee.id) || !allocationError(employee);
+        return (
+          <div>
+            <span className={valid ? "font-medium" : "font-semibold text-red-600"}>
+              {total.toLocaleString()} / {roundSalaryAmount(employee.salary).toLocaleString()}
+            </span>
+            {!valid && (
+              <p className="mt-1 max-w-48 text-xs text-red-600">
+                {allocationError(employee)}
+              </p>
+            )}
+          </div>
+        );
+      },
+    },
   ];
 
-  /* ---------- header controls ---------- */
-  const headerControls = (
-    <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:gap-4">
-        <div className="flex items-center gap-2">
-          <BackButton isEditing fallbackPath={`/${locale}/salaries`} />
-          <Formik initialValues={{}} onSubmit={handleSubmitSelected}>
-            {() => (
-              <SubmitButton
-                title={t("submit")}
-                color="info-dark"
-                fullWidth={false}
-                disabled={loading}
-              />
-            )}
-          </Formik>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label className="sr-only" htmlFor="salary-search-by">
-            {t("searchBy", { defaultValue: "Search by" })}
-          </label>
-          <select
-            id="salary-search-by"
-            value={searchBy}
-            onChange={(event) =>
-              setSearchBy(event.target.value as SalarySearchBy)
-            }
-            className="h-10 rounded border border-white/30 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm focus:border-warning-light focus:outline-none focus:ring-2 focus:ring-warning-light/40"
-          >
-            <option value="name">
-              {t("searchByName", { defaultValue: "Name" })}
-            </option>
-            <option value="accountNumber">
-              {t("searchByAccountNumber", {
-                defaultValue: "Account Number",
-              })}
-            </option>
-          </select>
-          <input
-            type="search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={t("searchEmployeesPlaceholder", {
-              defaultValue: "Search employees",
-            })}
-            className="h-10 w-full rounded border border-white/30 bg-white px-3 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-warning-light focus:outline-none focus:ring-2 focus:ring-warning-light/40 sm:w-72"
-          />
-        </div>
-      </div>
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-white">
-        <div className="flex items-baseline gap-2 text-sm font-medium">
-          <span>{t("filteredEmployees", { defaultValue: "Shown" })}:</span>
-          <span>
-            {filteredData.length.toLocaleString()} / {data.length.toLocaleString()}
-          </span>
-        </div>
-        <div className="flex items-baseline gap-2 font-semibold">
-          <span>{t("totalAmount")}:</span>
-          <span>{totalSelectedSalary.toLocaleString()}</span>
-        </div>
-      </div>
-    </div>
-  );
+  const totalSelectedSalary = data
+    .filter((employee) => selectedRows.includes(employee.id))
+    .reduce((sum, employee) => sum + roundSalaryAmount(employee.salary), 0);
 
-  /* ---------- early states ---------- */
   if (loading) return <LoadingPage />;
 
-  /* ---------- main render ---------- */
   return (
     <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
       <Disclaimer message={t("hint")} className="mb-4" />
-
+      {!bcdEnabled && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>{t("channelBcd")}:</strong> {t("bcdNotConfigured")}
+        </div>
+      )}
       <CrudDataGrid
         data={filteredData}
         columns={columns}
@@ -274,100 +429,99 @@ export default function SetSalariesPage(): JSX.Element {
         noPagination
         currentPage={1}
         totalPages={1}
-        onPageChange={() => { }}
-        childrens={headerControls}
+        onPageChange={() => undefined}
         canEdit={false}
         loading={false}
+        childrens={
+          <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <BackButton isEditing fallbackPath={`/${locale}/salaries`} />
+              <Formik initialValues={{}} onSubmit={openCreateModal}>
+                <SubmitButton
+                  title={t("createSalaryCycle")}
+                  color="info-dark"
+                  fullWidth={false}
+                  disabled={capabilities?.canCreateOrEdit === false}
+                />
+              </Formik>
+              <select
+                value={searchBy}
+                onChange={(event) =>
+                  setSearchBy(event.target.value as SalarySearchBy)
+                }
+                className="h-10 rounded border border-white/30 bg-white/10 px-3 text-sm text-white outline-none"
+                aria-label={t("searchBy")}
+              >
+                <option className="text-slate-900" value="name">{t("searchByName")}</option>
+                <option className="text-slate-900" value="destination">{t("searchByDestination")}</option>
+              </select>
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder={t("searchEmployeesPlaceholder")}
+                className="h-10 w-64 rounded border border-white/30 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-white/70"
+              />
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm font-medium text-white">
+              <span>{t("selectedEmployees")}: {selectedRows.length.toLocaleString()}</span>
+              <span>{t("totalAmount")}: {roundSalaryAmount(totalSelectedSalary).toLocaleString()} LYD</span>
+            </div>
+          </div>
+        }
       />
 
-      {/* ---------- salary picker modal (debit account + month) ---------- */}
       <SalariesModal
         isOpen={showPickerModal}
         onClose={() => setShowPickerModal(false)}
-        onConfirm={async (
-          debitAccount: string,
-          salaryMonthArabic: string,
-          additionalMonth: string | null
-        ): Promise<void> => {
+        onConfirm={async (debitAccount, salaryMonth, additionalMonth) => {
           const entries: NewCycleEntry[] = data
-            .filter((e) => selectedRows.includes(e.id))
-            .map(({ id, salary }) => ({ employeeId: id, salary }));
-
+            .filter((employee) => selectedRows.includes(employee.id))
+            .map((employee) => ({
+              employeeId: employee.id,
+              salary: roundSalaryAmount(employee.salary),
+              allocations: buildAllocationRequest(
+                allocations[employee.id] ?? EMPTY_AMOUNTS
+              ),
+            }));
           try {
-            const res: PostResult = await submitSalaryCycle(
+            const response = await submitSalaryCycle(
               debitAccount,
-              salaryMonthArabic,
+              salaryMonth,
               entries,
               additionalMonth
             );
-
-            // Treat undefined `success` as success; only explicit false is failure.
-            const ok: boolean = res.success !== false;
-
             setShowPickerModal(false);
-            setResultSuccess(ok);
-            setResultTitle(
-              ok
-                ? t("createdTitle", { defaultValue: "Salary Cycle Created" })
-                : t("failedTitle", { defaultValue: "Creation Failed" })
+            showResult(
+              response.success !== false,
+              response.success === false ? t("failedTitle") : t("createdTitle"),
+              response.message ??
+                (response.success === false ? t("failedMsg") : t("createdMsg"))
             );
-
-            // Prefer API message if present; fallback to friendly default
-            const apiMsg: string =
-              res.message ??
-              (ok
-                ? t("createdMsg", {
-                  defaultValue: "The salary cycle was created successfully.",
-                })
-                : t("failedMsg", {
-                  defaultValue: "Could not create the salary cycle.",
-                }));
-
-            setResultMessage(apiMsg);
-            setResultOpen(true);
-          } catch (err: unknown) {
-            // Only thrown errors from the submit request land here
+          } catch (error) {
             setShowPickerModal(false);
-            setResultSuccess(false);
-            setResultTitle(
-              t("failedTitle", { defaultValue: "Creation Failed" })
+            showResult(
+              false,
+              t("failedTitle"),
+              error instanceof Error ? error.message : t("genericError")
             );
-            setResultMessage(
-              err instanceof Error
-                ? err.message
-                : t("genericError", {
-                  defaultValue: "Failed to create salary cycle.",
-                })
-            );
-            setResultOpen(true);
           }
         }}
       />
 
-      {/* ---------- result modal (success/error) ---------- */}
       <ErrorOrSuccessModal
         isOpen={resultOpen}
         isSuccess={resultSuccess}
         title={resultTitle}
         message={resultMessage}
-        onClose={() => {
-          setResultOpen(false);
-          if (!resultSuccess) {
-            setError(null);
-          }
-        }}
+        onClose={() => setResultOpen(false)}
         onConfirm={() => {
-          // Only shown for success; navigate back to list
           setResultOpen(false);
-          if (resultSuccess) {
-            router.push(`/${locale}/salaries`);
-          } else {
-            setError(null);
-          }
+          if (resultSuccess) router.push(`/${locale}/salaries`);
         }}
-        okLabel={t("ok", { defaultValue: "حسناً" })}
-        confirmLabel={t("confirm", { defaultValue: "تأكيد" })}
-        closeAriaLabel={t("close", { defaultValue: "إغلاق" })}
+        okLabel={t("ok")}
+        confirmLabel={t("confirm")}
+        closeAriaLabel={t("close")}
       />
     </div>
   );

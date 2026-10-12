@@ -7,6 +7,7 @@ import { FiX, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 export type ErrorOrSuccessModalProps = {
   isOpen: boolean;
   isSuccess: boolean;
+  variant?: "success" | "warning" | "error";
   title: string;
   message: string;
   onClose: () => void;
@@ -21,6 +22,7 @@ export type ErrorOrSuccessModalProps = {
 export default function ErrorOrSuccessModal({
   isOpen,
   isSuccess,
+  variant,
   title,
   message,
   onClose,
@@ -30,6 +32,7 @@ export default function ErrorOrSuccessModal({
   closeAriaLabel = "إغلاق",
 }: ErrorOrSuccessModalProps) {
   if (!isOpen) return null;
+  const tone = variant ?? (isSuccess ? "success" : "error");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
@@ -54,9 +57,13 @@ export default function ErrorOrSuccessModal({
           {/* Icon & message */}
           <div className="py-8 text-center">
             <div className="mb-6 flex justify-center">
-              {isSuccess ? (
+              {tone === "success" ? (
                 <div className="rounded-full bg-green-50 p-3">
                   <FiCheckCircle size={54} className="text-green-500" />
+                </div>
+              ) : tone === "warning" ? (
+                <div className="rounded-full bg-yellow-50 p-3">
+                  <FiAlertCircle size={54} className="text-yellow-500" />
                 </div>
               ) : (
                 <div className="rounded-full bg-red-50 p-3">
@@ -68,7 +75,7 @@ export default function ErrorOrSuccessModal({
             <p className="mb-6 text-lg text-gray-700">{message}</p>
 
             {/* Buttons */}
-            {isSuccess ? (
+            {tone === "success" ? (
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={onConfirm || onClose}
@@ -80,7 +87,7 @@ export default function ErrorOrSuccessModal({
             ) : (
               <button
                 onClick={onClose}
-                className="rounded-full px-8 py-2.5 text-lg font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md bg-red-500 hover:bg-red-600"
+                className={`rounded-full px-8 py-2.5 text-lg font-medium shadow-sm transition-all duration-200 hover:shadow-md ${tone === "warning" ? "bg-yellow-400 text-gray-900 hover:bg-yellow-500" : "bg-red-500 text-white hover:bg-red-600"}`}
               >
                 {okLabel}
               </button>

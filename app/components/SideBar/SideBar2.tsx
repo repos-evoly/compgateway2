@@ -417,9 +417,21 @@ const Sidebar = () => {
 
   /* ---------- filter items ----------------------- */
   const isItemVisible = useCallback(
-    (item: SidebarItem): boolean =>
-      !item.permissions?.length ||
-      item.permissions.every((perm) => permissionsSet.has(perm)),
+    (item: SidebarItem): boolean => {
+      const anyPermissions =
+        "permissionsAny" in item && Array.isArray(item.permissionsAny)
+          ? item.permissionsAny
+          : [];
+      if (anyPermissions.length > 0) {
+        return anyPermissions.some((permission) =>
+          permissionsSet.has(permission)
+        );
+      }
+      return (
+        !item.permissions?.length ||
+        item.permissions.every((permission) => permissionsSet.has(permission))
+      );
+    },
     [permissionsSet]
   );
 

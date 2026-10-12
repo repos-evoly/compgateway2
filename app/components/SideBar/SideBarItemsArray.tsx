@@ -66,7 +66,8 @@ export const sidebarItems = [
     path: "/salaries",
     icon: FaMoneyCheckAlt, // was FaCog
     children: [],
-    permissions: ["canCreateOrEditSalaryCycle"],
+    permissions: [],
+    permissionsAny: ["canCreateOrEditSalaryCycle", "canPostSalaryCycle"],
   },
   {
     id: 35,

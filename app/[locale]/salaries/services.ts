@@ -4,11 +4,24 @@ import { handleApiResponse } from "@/app/helpers/apiResponse";
 import type {
   PostSalaryCycleResponse,
   SalaryCyclesResponse,
+  SalaryWalletBatch,
+  SalaryWalletCapabilities,
   TSalaryTransaction,
 } from "./types";
+import type {
+  SalaryAllocationDraft,
+} from "../employees/salaryWalletHelpers";
 
-export type NewCycleEntry = { employeeId: number; salary: number };
-export type SubmitCycleResponse = { success: boolean; message: string };
+export type NewCycleEntry = {
+  employeeId: number;
+  salary: number;
+  allocations: SalaryAllocationDraft[];
+};
+export type SubmitCycleResponse = {
+  success?: boolean;
+  message?: string;
+  cycle?: TSalaryTransaction;
+};
 
 const API_ROOT = "/Companygw/api" as const;
 
@@ -58,6 +71,46 @@ export async function getEmployeeSalaryCycles(
   );
 }
 
+export async function getSalaryWalletCapabilities(): Promise<SalaryWalletCapabilities> {
+  const response = await fetch(
+    buildUrl("employees/salary-wallet/capabilities"),
+    withCredentials()
+  );
+  const raw = await handleApiResponse<
+    SalaryWalletCapabilities & {
+      evo?: { enabled?: boolean; configured?: boolean; reason?: string | null };
+      bcd?: { enabled?: boolean; configured?: boolean; reason?: string | null };
+    }
+  >(response, "Failed to load salary wallet availability.");
+
+  const evoConfigured =
+    raw.evoConfigured ?? raw.rails?.evoWallet?.configured ?? raw.evo?.configured;
+  const bcdConfigured =
+    raw.bcdConfigured ?? raw.rails?.bcdWallet?.configured ?? raw.bcd?.configured;
+  const evoFeatureEnabled =
+    raw.evoEnabled ?? raw.rails?.evoWallet?.enabled ?? raw.evo?.enabled ?? false;
+  const bcdFeatureEnabled =
+    raw.bcdEnabled ?? raw.rails?.bcdWallet?.enabled ?? raw.bcd?.enabled ?? false;
+  const evoAvailable =
+    raw.rails?.evoWallet?.available ??
+    (evoFeatureEnabled && evoConfigured === true);
+  const bcdAvailable =
+    raw.rails?.bcdWallet?.available ??
+    (bcdFeatureEnabled && bcdConfigured === true);
+
+  return {
+    ...raw,
+    evoEnabled: evoAvailable,
+    bcdEnabled: bcdAvailable,
+    evoConfigured,
+    bcdConfigured,
+    evoUnavailableReason:
+      raw.evoUnavailableReason ?? raw.rails?.evoWallet?.reason ?? raw.evo?.reason ?? null,
+    bcdUnavailableReason:
+      raw.bcdUnavailableReason ?? raw.rails?.bcdWallet?.reason ?? raw.bcd?.reason ?? null,
+  };
+}
+
 export async function submitSalaryCycle(
   debitAccount: string,
   salaryMonthArabic: string,
@@ -70,10 +123,14 @@ export async function submitSalaryCycle(
     currency: "LYD",
     entries,
   };
-  if (additionalMonth !== "0" && additionalMonth !== null) {
+  if (
+    additionalMonth !== undefined &&
+    additionalMonth !== null &&
+    additionalMonth !== "0"
+  ) {
     const trimmed = String(additionalMonth).trim();
     if (trimmed.length > 0) {
-      payload.additionalMonth = additionalMonth;
+      payload.additionalMonth = Number(trimmed);
     }
   }
 
@@ -157,6 +214,38 @@ export async function postSalaryCycleById(
   return handleApiResponse<PostSalaryCycleResponse>(
     response,
     "Failed to post salary cycle."
+  );
+}
+
+export async function refreshSalaryWalletBatchStatus(
+  cycleId: number,
+  internalBatchId: number
+): Promise<TSalaryTransaction | SalaryWalletBatch> {
+  const response = await fetch(
+    buildUrl(
+      `employees/salarycycles/${cycleId}/wallet-batches/${internalBatchId}/refresh`
+    ),
+    jsonRequest("POST", {})
+  );
+  return handleApiResponse<TSalaryTransaction | SalaryWalletBatch>(
+    response,
+    "Failed to refresh the provider status."
+  );
+}
+
+export async function retrySalaryWalletBatch(
+  cycleId: number,
+  internalBatchId: number
+): Promise<TSalaryTransaction | SalaryWalletBatch> {
+  const response = await fetch(
+    buildUrl(
+      `employees/salarycycles/${cycleId}/wallet-batches/${internalBatchId}/retry`
+    ),
+    jsonRequest("POST", {})
+  );
+  return handleApiResponse<TSalaryTransaction | SalaryWalletBatch>(
+    response,
+    "Failed to retry the wallet batch."
   );
 }
 

@@ -1,794 +1,739 @@
-
 "use client";
 
-import React, { JSX, useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { Formik, Form } from "formik";
+import React, { JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Cookies from "js-cookie";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
+import { FaEdit, FaSave, FaTimes } from "react-icons/fa";
+
+import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
 import CrudDataGrid from "@/app/components/CrudDataGrid/CrudDataGrid";
-import SubmitButton from "@/app/components/FormUI/SubmitButton";
+import LoadingPage from "@/app/components/reusable/Loading";
+import { CheckAccount, type AccountInfo } from "@/app/helpers/checkAccount";
 import type { DataGridColumn } from "@/types";
+
+import { getAllEmployees } from "../../employees/services";
 import {
-  getSalaryCycleById,
+  allocationTotal,
+  buildAllocationRequest,
+  employeeHasDestination,
+  roundSalaryAmount,
+  validateEmployeeAllocations,
+  type AllocationAmounts,
+  type SalaryPaymentChannel,
+} from "../../employees/salaryWalletHelpers";
+import type { EmployeeResponse } from "../../employees/types";
+import SalaryCycleSummaryCard from "../components/SalaryCycleSummaryCard";
+import SalaryPostingConfirmModal, {
+  type SalaryPostingTotals,
+} from "../components/SalaryPostingConfirmModal";
+import {
+  getSalaryCycleDisplayStatus,
+  getSalaryResultTone,
+  getSalaryFailureMessage,
+  isSalaryProcessingStatus,
+  isKnownProviderFailureStatus,
+  isManualReviewStatus,
+  normalizeSalaryStatus,
+} from "../salaryStatus";
+import SalaryStatusBadge from "../components/SalaryStatusBadge";
+import SalaryWalletBatchCard from "../components/SalaryWalletBatchCard";
+import {
   editSalaryCycle,
+  getSalaryCycleById,
+  getSalaryWalletCapabilities,
   postSalaryCycleById,
+  refreshSalaryWalletBatchStatus,
+  retrySalaryWalletBatch,
+  type NewCycleEntry,
 } from "../services";
-import {
-  CommissionConfig,
-  ConfirmModalState,
-  // CurrencyLookup,
-  EmployeeRow,
-  SalaryEntryRow,
+import type {
+  SalaryEntryAllocation,
+  SalaryWalletCapabilities,
   TSalaryTransaction,
 } from "../types";
-import { getAllEmployees } from "../../employees/services";
-import type { EmployeeResponse } from "../../employees/types";
-import { CheckAccount, type AccountInfo } from "@/app/helpers/checkAccount";
-import { type InputSelectComboOption } from "@/app/components/FormUI/InputSelectCombo";
-import SalaryCycleSummaryCard from "../components/SalaryCycleSummaryCard";
-import { getCompannyInfoByCode } from "@/app/[locale]/profile/services";
-import {
-  checkAccount,
-  getTransfersCommision,
-} from "../../transfers/internal/services";
-import SalaryConfirmInfoModal from "../components/SalaryConfirmInfoModal";
-import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
-import LoadingPage from "@/app/components/reusable/Loading";
-import NotTransferredHeader from "../components/NotTransferredHeader";
 
-const getCompanyCode = (): string | undefined => {
-  const raw = Cookies.get("companyCode");
-  if (!raw) return undefined;
-  return decodeURIComponent(raw).replace(/^"|"$/g, "");
+const EMPTY_AMOUNTS: AllocationAmounts = {
+  bankAccount: 0,
+  evoWallet: 0,
+  bcdWallet: 0,
 };
 
-const getPermissionsFromCookies = (): string[] => {
-  const raw =
-    Cookies.get("permissions") ??
-    Cookies.get("userPermissions") ??
-    Cookies.get("authPermissions") ??
-    "";
-  if (!raw) return [];
+const getCompanyCode = (): string | undefined => {
+  const value = Cookies.get("companyCode");
+  return value ? decodeURIComponent(value).replace(/^"|"$/g, "") : undefined;
+};
+
+const permissionSet = (): ReadonlySet<string> => {
+  const value = Cookies.get("permissions") ?? "";
+  if (!value) return new Set();
   try {
-    const decoded = decodeURIComponent(raw).replace(/^"|"$/g, "");
-    const parsed = JSON.parse(decoded);
-    return Array.isArray(parsed) ? (parsed as string[]) : [];
+    const parsed = JSON.parse(decodeURIComponent(value).replace(/^"|"$/g, ""));
+    return new Set(Array.isArray(parsed) ? parsed.map(String) : []);
   } catch {
-    return [];
+    return new Set();
   }
 };
 
-/* ------------------------------------------------------------------ */
+const channelFromAllocation = (
+  allocation: SalaryEntryAllocation
+): SalaryPaymentChannel | null => {
+  if (
+    allocation.paymentChannel === "bankAccount" ||
+    allocation.paymentChannel === "evoWallet" ||
+    allocation.paymentChannel === "bcdWallet"
+  ) {
+    return allocation.paymentChannel;
+  }
+  return null;
+};
+
+type AllocationRow = SalaryEntryAllocation & {
+  employeeName: string;
+  employeeId: number;
+};
+
 export default function SalaryCycleDetailsPage(): JSX.Element {
   const locale = useLocale();
   const t = useTranslations("salaries");
   const { cycleId } = useParams<{ cycleId: string }>();
+  const numericCycleId = Number(cycleId);
+  const permissions = useMemo(permissionSet, []);
+  const hasCreatePermission = permissions.has("canCreateOrEditSalaryCycle");
+  const hasPostPermission = permissions.has("canPostSalaryCycle");
+
   const [cycle, setCycle] = useState<TSalaryTransaction | null>(null);
+  const [capabilities, setCapabilities] =
+    useState<SalaryWalletCapabilities | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [employees, setEmployees] = useState<EmployeeResponse[]>([]);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
-  const [empLoading, setEmpLoading] = useState(false);
-  const [empError, setEmpError] = useState<string | null>(null);
-  const [accountOptions, setAccountOptions] = useState<
-    InputSelectComboOption[]
-  >([]);
-  const [accLoading, setAccLoading] = useState(false);
-  const [accError, setAccError] = useState<string | null>(null);
-  const [salaryMonthInput, setSalaryMonthInput] = useState<string>("");
-
-  /* --- company config: who pays commission --- */
-  const [commissionOnReceiver, setCommissionOnReceiver] =
-    useState<boolean>(false);
-  useEffect(() => {
-    (async () => {
-      try {
-        const code = getCompanyCode();
-        if (!code) return;
-        const info = await getCompannyInfoByCode(code);
-        if (typeof info?.commissionOnReceiver === "boolean") {
-          setCommissionOnReceiver(info.commissionOnReceiver);
-        }
-      } catch {
-        // ignore
-      }
-    })();
-  }, []);
-
-  /* --- permissions --- */
-  const hasPostPermission = useMemo(() => {
-    const perms = getPermissionsFromCookies();
-    return perms.includes("canPostSalaryCycle");
-  }, []);
-
+  const [editAllocations, setEditAllocations] = useState<
+    Record<number, AllocationAmounts>
+  >({});
+  const [debitAccount, setDebitAccount] = useState("");
+  const [accountOptions, setAccountOptions] = useState<string[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmState, setConfirmState] = useState<ConfirmModalState | null>(
-    null
-  );
-  const [recipients, setRecipients] = useState<
-    Array<{ accountNumber: string; name?: string; salary?: number }>
-  >([]);
-  const [canPost, setCanPost] = useState<boolean>(true);
-  const [posting, setPosting] = useState<boolean>(false);
+  const [posting, setPosting] = useState(false);
   const postingRef = useRef(false);
-  const [resultOpen, setResultOpen] = useState<boolean>(false);
-  const [resultSuccess, setResultSuccess] = useState<boolean>(false);
-  const [resultTitle, setResultTitle] = useState<string>("");
-  const [resultMessage, setResultMessage] = useState<string>("");
+  const [busyBatchId, setBusyBatchId] = useState<number | null>(null);
+  const [resultOpen, setResultOpen] = useState(false);
+  const [resultVariant, setResultVariant] = useState<"success" | "warning" | "error">("error");
+  const [resultTitle, setResultTitle] = useState("");
+  const [resultMessage, setResultMessage] = useState("");
 
-  /* ───────────────── fetch salary cycle ───────────────── */
-  const refetchCycle = useCallback(async (id: number) => {
-    const fresh = await getSalaryCycleById(id);
+  const showResult = useCallback(
+    (result: boolean | "success" | "warning" | "error", title: string, message: string) => {
+      setResultVariant(typeof result === "boolean" ? (result ? "success" : "error") : result);
+      setResultTitle(title);
+      setResultMessage(message);
+      setResultOpen(true);
+    },
+    []
+  );
+
+  const refetchCycle = useCallback(async () => {
+    if (!Number.isInteger(numericCycleId) || numericCycleId <= 0) {
+      throw new Error(t("invalidCycleId"));
+    }
+    const fresh = await getSalaryCycleById(numericCycleId);
     setCycle(fresh);
-  }, []);
-
-  
+    return fresh;
+  }, [numericCycleId, t]);
 
   useEffect(() => {
-    const fetchCycle = async (): Promise<void> => {
+    let active = true;
+    const load = async () => {
       try {
         setLoading(true);
-        const id = Number(cycleId);
-        if (Number.isNaN(id)) throw new Error("Invalid salary-cycle ID.");
-        await refetchCycle(id);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to fetch cycle.");
+        const [freshCycle, walletCapabilities] = await Promise.all([
+          getSalaryCycleById(numericCycleId),
+          getSalaryWalletCapabilities(),
+        ]);
+        if (!active) return;
+        setCycle(freshCycle);
+        setCapabilities(walletCapabilities);
+      } catch (loadError) {
+        if (active) {
+          setError(
+            loadError instanceof Error ? loadError.message : t("cycleLoadFailed")
+          );
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
-    fetchCycle();
-  }, [cycleId, refetchCycle]);
-
-  /* ───────────────── fetch employees ───────────────── */
-  const loadEmployees = useCallback(async () => {
-    try {
-      setEmpLoading(true);
-      setEmpError(null);
-
-      const baseEmployees = await getAllEmployees();
-
-      let merged: EmployeeResponse[] = baseEmployees;
-      if (cycle) {
-        const salaryMap = new Map<number, number>(
-          (
-            cycle.entries as unknown as { employeeId: number; salary: number }[]
-          ).map((e) => [e.employeeId, e.salary])
-        );
-        merged = baseEmployees.map((emp) =>
-          salaryMap.has(emp.id)
-            ? { ...emp, salary: salaryMap.get(emp.id)! }
-            : emp
-        );
-      }
-
-      setEmployees(merged);
-    } catch (err: unknown) {
-      setEmpError(
-        err instanceof Error ? err.message : "Failed to fetch employees."
-      );
-    } finally {
-      setEmpLoading(false);
+    if (Number.isInteger(numericCycleId) && numericCycleId > 0) void load();
+    else {
+      setError(t("invalidCycleId"));
+      setLoading(false);
     }
+    return () => {
+      active = false;
+    };
+  }, [numericCycleId, t]);
+
+  const allocationRows = useMemo<AllocationRow[]>(() => {
+    if (!cycle) return [];
+    return cycle.entries.flatMap((entry) => {
+      const savedAllocations = entry.allocations ?? [];
+      const normalizedAllocations: SalaryEntryAllocation[] =
+        savedAllocations.length > 0
+          ? savedAllocations
+          : [
+              {
+                id: -entry.id,
+                paymentChannel: "bankAccount",
+                amount: roundSalaryAmount(entry.salary ?? entry.amount),
+                destination: entry.accountNumber ?? null,
+                recipientType: null,
+                status: entry.isTransferred ? "completed" : "pending",
+                isTransferred: entry.isTransferred,
+                transferResultCode: entry.transferResultCode,
+                transferResultReason: entry.transferResultReason,
+                transferredAt: entry.transferredAt,
+                commissionAmount: 0,
+              },
+            ];
+      return normalizedAllocations.map((allocation) => ({
+        ...allocation,
+        employeeId: entry.employeeId,
+        employeeName:
+          allocation.recipientNameSnapshot ??
+          entry.employeeName ??
+          entry.name ??
+          `#${entry.employeeId}`,
+      }));
+    });
   }, [cycle]);
 
-  /* ───────────────── fetch debit accounts ───────────────── */
-  const loadAccounts = useCallback(async () => {
+  const postingTotals = useMemo<SalaryPostingTotals>(() => {
+    const totals: SalaryPostingTotals = {
+      bankAccount: { amount: 0, count: 0 },
+      evoWallet: { amount: 0, count: 0 },
+      bcdWallet: { amount: 0, count: 0 },
+    };
+    allocationRows.forEach((allocation) => {
+      const channel = channelFromAllocation(allocation);
+      if (!channel) return;
+      totals[channel].amount = roundSalaryAmount(
+        totals[channel].amount + allocation.amount
+      );
+      totals[channel].count += 1;
+    });
+    return totals;
+  }, [allocationRows]);
+
+  const hasUnavailableRail =
+    (postingTotals.evoWallet.amount > 0 && capabilities?.evoEnabled !== true) ||
+    (postingTotals.bcdWallet.amount > 0 && capabilities?.bcdEnabled !== true);
+
+  const cycleStatus = cycle
+    ? getSalaryCycleDisplayStatus(cycle)
+    : "notPosted";
+  const isNotPosted = (cycleStatus ?? "")
+    .replace(/[\s_-]/g, "")
+    .toLowerCase() === "notposted";
+  const editable =
+    hasCreatePermission &&
+    capabilities?.canCreateOrEdit !== false &&
+    (cycle?.canEdit ??
+      (isNotPosted ||
+        (!cycle?.postingStatus && !cycle?.postingStartedAt && !cycle?.postedAt)));
+  const postable =
+    hasPostPermission &&
+    capabilities?.canPost !== false &&
+    (cycle?.canPost ?? (isNotPosted || (!cycle?.postingStatus && !cycle?.postedAt))) &&
+    !hasUnavailableRail;
+
+  const beginEdit = async () => {
+    if (!cycle || !editable) return;
     try {
-      setAccLoading(true);
-      setAccError(null);
+      setEditLoading(true);
       const companyCode = getCompanyCode();
-      if (!companyCode) throw new Error("Company code not found.");
-      const accounts = await CheckAccount(companyCode);
+      if (!companyCode) throw new Error(t("companyCodeMissing"));
+      const [allEmployees, accounts] = await Promise.all([
+        getAllEmployees(),
+        CheckAccount(companyCode),
+      ]);
+      const entryByEmployee = new Map(
+        cycle.entries.map((entry) => [entry.employeeId, entry])
+      );
+      const merged = allEmployees.map((employee) => {
+        const entry = entryByEmployee.get(employee.id);
+        return entry
+          ? { ...employee, salary: roundSalaryAmount(entry.salary ?? entry.amount) }
+          : employee;
+      });
+      const nextAmounts: Record<number, AllocationAmounts> = {};
+      cycle.entries.forEach((entry) => {
+        const amounts = { ...EMPTY_AMOUNTS };
+        const savedAllocations = entry.allocations ?? [];
+        savedAllocations.forEach((allocation) => {
+          const channel = channelFromAllocation(allocation);
+          if (channel) amounts[channel] = roundSalaryAmount(allocation.amount);
+        });
+        if (savedAllocations.length === 0) {
+          amounts.bankAccount = roundSalaryAmount(entry.salary ?? entry.amount);
+        }
+        nextAmounts[entry.employeeId] = amounts;
+      });
+      setEmployees(merged);
+      setSelectedRows(cycle.entries.map((entry) => entry.employeeId));
+      setEditAllocations(nextAmounts);
+      setDebitAccount(cycle.debitAccount);
       setAccountOptions(
         accounts
-          .filter((a: AccountInfo) => a.accountString.endsWith("001"))
-          .map<InputSelectComboOption>((a) => ({
-            label: a.accountString,
-            value: a.accountString,
-          }))
+          .filter((account: AccountInfo) => account.accountString.endsWith("001"))
+          .map((account: AccountInfo) => account.accountString)
       );
-    } catch (err: unknown) {
-      setAccError(
-        err instanceof Error ? err.message : "Failed to fetch accounts."
+      setIsEditing(true);
+    } catch (editError) {
+      showResult(
+        false,
+        t("editLoadFailedTitle"),
+        editError instanceof Error ? editError.message : t("editLoadFailed")
       );
     } finally {
-      setAccLoading(false);
+      setEditLoading(false);
     }
-  }, []);
+  };
 
-  /* ───────── initialise edit state once we enter edit ───────── */
-  useEffect(() => {
-    if (!isEditing || !cycle) return;
+  const updateEmployeeSalary = (employeeId: number, salary: number) => {
+    setEmployees((current) =>
+      current.map((employee) =>
+        employee.id === employeeId
+          ? { ...employee, salary: roundSalaryAmount(salary) }
+          : employee
+      )
+    );
+  };
 
-    // salaryMonth is now a string (e.g., Arabic month). Only convert if it's a valid date.
-    const raw = (cycle.salaryMonth as unknown) as string | null | undefined;
-    let iso = "";
-    if (typeof raw === "string" && raw.trim().length > 0) {
-      const ms = Date.parse(raw);
-      if (!Number.isNaN(ms)) {
-        iso = new Date(ms).toISOString().split("T")[0];
+  const updateEditAllocation = (
+    employeeId: number,
+    channel: SalaryPaymentChannel,
+    amount: number
+  ) => {
+    setEditAllocations((current) => ({
+      ...current,
+      [employeeId]: {
+        ...(current[employeeId] ?? EMPTY_AMOUNTS),
+        [channel]: roundSalaryAmount(amount),
+      },
+    }));
+  };
+
+  const editValidation = (employee: EmployeeResponse): string | null => {
+    const validation = validateEmployeeAllocations(
+      employee,
+      editAllocations[employee.id] ?? EMPTY_AMOUNTS,
+      {
+        evoEnabled: capabilities?.evoEnabled === true,
+        bcdEnabled: capabilities?.bcdEnabled === true,
       }
+    );
+    if (validation.valid) return null;
+    if (validation.reason === "bcdUnavailable") return t("bcdNotConfigured");
+    if (validation.reason === "railUnavailable") return t("railNotConfigured");
+    if (validation.reason === "destinationUnavailable") {
+      return t("employeeDestinationMissing");
     }
-    setSalaryMonthInput(iso);
+    if (validation.reason === "allocationRequired") return t("allocationRequired");
+    if (validation.reason === "salaryRequired") return t("salaryPositive");
+    return t("allocationTotalMismatch");
+  };
 
-    if (employees.length === 0 && !empLoading) loadEmployees();
-    if (accountOptions.length === 0 && !accLoading) loadAccounts();
-  }, [
-    isEditing,
-    cycle,
-    employees.length,
-    empLoading,
-    loadEmployees,
-    accountOptions.length,
-    accLoading,
-    loadAccounts,
-  ]);
-
-  // Refresh data after a partial repost from NotTransferredHeader
-  const handleRepostApplied = useCallback(async () => {
+  const saveEdit = async () => {
     if (!cycle) return;
-    try {
-      await refetchCycle(cycle.id);
-      await loadEmployees();
-    } catch {
-      // ignore refresh errors
+    const selected = employees.filter((employee) =>
+      selectedRows.includes(employee.id)
+    );
+    if (selected.length === 0) {
+      showResult(false, t("invalidAllocationsTitle"), t("noSelectionMsg"));
+      return;
     }
-  }, [cycle, refetchCycle, loadEmployees]);
-
-  /* ───────── set selectedRows once employees & cycle ready ───────── */
-  useEffect(() => {
-    if (!isEditing || !cycle || employees.length === 0) return;
-    const idsInCycle = new Set(
-      (cycle.entries as unknown as SalaryEntryRow[]).map((e) => e.employeeId)
-    );
-    setSelectedRows(
-      employees.filter((e) => idsInCycle.has(e.id)).map((e) => e.id)
-    );
-  }, [isEditing, cycle, employees]);
-
-  /* ───────── selection & salary handlers ───────── */
-  const toggleRow = (id: number): void => {
-    setSelectedRows((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-  const toggleAll = (): void => {
-    const all = employees.every((e) => selectedRows.includes(e.id));
-    setSelectedRows(all ? [] : employees.map((e) => e.id));
-  };
-  const handleSalaryChange = (id: number, val: number): void => {
-    setEmployees((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, salary: val } : e))
-    );
-  };
-
-  /* ───────── totals & rows ───────── */
-  const computedTotalView: number = useMemo(() => {
-    if (!cycle) return 0;
-    const entries = cycle.entries as unknown as { salary: number }[];
-    return entries.reduce((sum, e) => sum + (Number(e.salary) || 0), 0);
-  }, [cycle]);
-
-  const computedTotalEdit: number = useMemo(() => {
-    return employees
-      .filter((e) => selectedRows.includes(e.id))
-      .reduce((sum, e) => sum + (Number(e.salary) || 0), 0);
-  }, [employees, selectedRows]);
-
-  const viewRows: SalaryEntryRow[] = useMemo(
-    () => (cycle ? (cycle.entries as unknown as SalaryEntryRow[]) : []),
-    [cycle]
-  );
-
-  const notTransferred = useMemo(
-    () => viewRows.filter((r) => !r.isTransferred),
-    [viewRows]
-  );
-
-  const showNotTransferredHeader = useMemo(() => {
-    if (!cycle) return false;
-    const bothNull = (cycle.postedAt == null) && (cycle.postedByUserId == null);
-    return !bothNull;
-  }, [cycle]);
-
-  /* ───────── columns ───────── */
-  const columnsView: DataGridColumn[] = [
-    { key: "name", label: t("name"), renderCell: (r) => r.name },
-    { key: "salary", label: t("salary") },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType") },
-    {
-      key: "isTransferred",
-      label: t("isTransferred", { defaultValue: "Transferred" }),
-      renderCell: (r) =>
-        r.isTransferred
-          ? t("yes", { defaultValue: "Yes" })
-          : t("no", { defaultValue: "No" }),
-    },
-  ];
-
-  const columnsEdit: DataGridColumn[] = [
-    {
-      key: "select",
-      label: "",
-      renderHeader: () => (
-        <input
-          type="checkbox"
-          checked={
-            employees.length > 0 &&
-            employees.every((e) => selectedRows.includes(e.id))
-          }
-          onChange={toggleAll}
-          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        />
+    const invalid = selected.find((employee) => editValidation(employee));
+    if (invalid) {
+      showResult(
+        false,
+        t("invalidAllocationsTitle"),
+        `${invalid.name}: ${editValidation(invalid)}`
+      );
+      return;
+    }
+    const entries: NewCycleEntry[] = selected.map((employee) => ({
+      employeeId: employee.id,
+      salary: roundSalaryAmount(employee.salary),
+      allocations: buildAllocationRequest(
+        editAllocations[employee.id] ?? EMPTY_AMOUNTS
       ),
-      renderCell: (row: EmployeeRow) => (
-        <input
-          type="checkbox"
-          checked={selectedRows.includes(row.id)}
-          onChange={() => toggleRow(row.id)}
-          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        />
-      ),
-    },
-    { key: "name", label: t("name"), renderCell: (r) => r.name },
-    { key: "email", label: t("email") },
-    { key: "phone", label: t("phone") },
-    {
-      key: "salary",
-      label: t("salary"),
-      renderCell: (r) => (
-        <input
-          type="number"
-          value={r.salary}
-          min={0}
-          onChange={(e) =>
-            handleSalaryChange(r.id, Number(e.target.value) || 0)
-          }
-          className="w-24 rounded border border-gray-300 px-1 py-0.5 text-sm"
-        />
-      ),
-    },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType") },
-  ];
-
-  /* ───────── commission preview (build recipients + open modal) ───────── */
-  const openCommissionPreview = useCallback(
-    async (fromAccOverride?: string) => {
-      if (!cycle) return;
-
-      try {
-        const fromAccount =
-          (fromAccOverride && fromAccOverride.length > 0
-            ? fromAccOverride
-            : cycle.debitAccount) ?? "";
-
-        // Build recipients with name + account + salary
-        let toAccountsRaw: string[] = [];
-        let detailed: Array<{
-          accountNumber: string;
-          name?: string;
-          salary?: number;
-        }> = [];
-
-        if (isEditing) {
-          const selected = employees.filter((e) => selectedRows.includes(e.id));
-          toAccountsRaw = selected.map((e) => e.accountNumber);
-
-          // Deduplicate by accountNumber while preserving the first name/salary
-          const map = new Map<string, { name?: string; salary?: number }>();
-          for (const e of selected) {
-            const acc = (e.accountNumber || "").trim();
-            if (!acc) continue;
-            if (!map.has(acc)) {
-              map.set(acc, { name: e.name, salary: Number(e.salary) || 0 });
-            }
-          }
-          detailed = Array.from(map.entries()).map(([accountNumber, meta]) => ({
-            accountNumber,
-            name: meta.name,
-            salary: meta.salary,
-          }));
-        } else {
-          const entries = (cycle.entries as unknown as SalaryEntryRow[]) || [];
-          toAccountsRaw = entries.map((e) => e.accountNumber);
-
-          const map = new Map<string, { name?: string; salary?: number }>();
-          for (const e of entries) {
-            const acc = (e.accountNumber || "").trim();
-            if (!acc) continue;
-            if (!map.has(acc)) {
-              map.set(acc, { name: e.name, salary: Number(e.salary) || 0 });
-            }
-          }
-          detailed = Array.from(map.entries()).map(([accountNumber, meta]) => ({
-            accountNumber,
-            name: meta.name,
-            salary: meta.salary,
-          }));
-        }
-
-        const toAccounts = Array.from(
-          new Set(toAccountsRaw.filter((x) => x && x.trim().length > 0))
-        );
-
-        setRecipients(detailed); // <-- includes salary for the modal table
-
-        const totalAmount = isEditing ? computedTotalEdit : computedTotalView;
-        const commissionCurrency = cycle.currency;
-
-        // transfer type via checkAccount(to)
-        let transferType: "B2B" | "B2C" = "B2C";
-        if (toAccounts.length > 0) {
-          try {
-            const res = (await checkAccount(toAccounts[0])) as Array<{
-              transferType?: string;
-            }>;
-            const tt = res?.[0]?.transferType;
-            transferType = tt === "B2B" ? "B2B" : "B2C";
-          } catch {
-            transferType = "B2C";
-          }
-        }
-
-        // commission config
-        const servicePackageId = Number(Cookies.get("servicePackageId") ?? 0);
-        const comm = (await getTransfersCommision(
-          servicePackageId,
-          17
-        )) as CommissionConfig;
-
-        const pct =
-          transferType === "B2B"
-            ? comm.b2BCommissionPct
-            : comm.b2CCommissionPct;
-        const fixed =
-          transferType === "B2B" ? comm.b2BFixedFee : comm.b2CFixedFee;
-
-        const commissionAmount =
-          totalAmount > 0 ? Math.max((pct * totalAmount) / 100, fixed) : 0;
-
-        // const displayAmount = commissionOnReceiver
-        //   ? totalAmount
-        //   : totalAmount + commissionAmount;
-        const displayAmount = totalAmount;
-
-        const desc = `${t("cycle")} #${cycle.id} – ${cycle.salaryMonth}`;
-
-        setConfirmState({
-          formData: {
-            from: fromAccount,
-            to: toAccounts,
-            value: totalAmount,
-            description: desc,
-            commissionOnRecipient: commissionOnReceiver,
-          },
-          commissionAmount,
-          commissionCurrency,
-          displayAmount,
-        });
-        setConfirmOpen(true);
-      } catch (e: unknown) {
-        alert(
-          e instanceof Error
-            ? e.message
-            : "Failed to prepare commission preview."
-        );
-      }
-    },
-    [cycle, isEditing, employees, selectedRows, computedTotalEdit, computedTotalView, commissionOnReceiver, t]
-  );
-
-  /* ───────── save handler ───────── */
-  const handleSave = async (debitAccount: string): Promise<void> => {
-    if (!cycle) return;
-
-    const entries = employees
-      .filter((e) => selectedRows.includes(e.id))
-      .map(({ id, salary }) => ({ employeeId: id, salary }));
-
+    }));
     try {
+      setEditLoading(true);
       await editSalaryCycle(
         cycle.id,
         debitAccount,
-        salaryMonthInput,
+        cycle.salaryMonth,
         entries
       );
-      await refetchCycle(cycle.id);
+      await refetchCycle();
       setIsEditing(false);
-      setCanPost(true);
-    } catch (err: unknown) {
-      alert(
-        err instanceof Error ? err.message : "Failed to save salary cycle."
+      showResult(true, t("saveSuccessTitle"), t("cycleSaved"));
+    } catch (saveError) {
+      showResult(
+        false,
+        t("failedTitle"),
+        saveError instanceof Error ? saveError.message : t("cycleSaveFailed")
       );
-      setCanPost(false);
+    } finally {
+      setEditLoading(false);
     }
   };
 
-  /* ───────── confirm modal action: POST cycle then show result modal ───────── */
-  const handleConfirmPost = useCallback(async () => {
+  const confirmPost = async () => {
     if (!cycle || postingRef.current) return;
     postingRef.current = true;
+    setPosting(true);
     try {
-      setPosting(true);
-      await postSalaryCycleById(cycle.id);
-      await refetchCycle(cycle.id);
-
-      // Close confirm modal
+      const response = await postSalaryCycleById(cycle.id);
+      const fresh = await refetchCycle();
       setConfirmOpen(false);
-
-      // Show success modal
-      setResultSuccess(true);
-      setResultTitle(t("postedTitle", { defaultValue: "Cycle Posted" }));
-      setResultMessage(
-        t("postedMsg", {
-          defaultValue: "Salaries were submitted successfully.",
-        })
+      const displayStatus = getSalaryCycleDisplayStatus(fresh);
+      const tone = getSalaryResultTone(displayStatus);
+      showResult(
+        tone,
+        isSalaryProcessingStatus(displayStatus)
+          ? t("paymentProcessingTitle")
+          : tone === "success" ? t("paymentCompletedTitle") : tone === "error" ? t("failedTitle") : t("postingOutcomeCheckTitle"),
+        isSalaryProcessingStatus(displayStatus)
+          ? t("paymentProcessingMessage")
+          : tone === "success" ? t("paymentCompletedMessage")
+            : getSalaryFailureMessage(fresh) ?? response.message ?? t("postingAccepted", { status: displayStatus })
       );
-      setResultOpen(true);
-    } catch (e: unknown) {
-      const msg =
-        e instanceof Error
-          ? e.message
-          : t("genericError", {
-            defaultValue: "Something went wrong while posting the cycle.",
-          });
-
-      // Keep confirm modal open so user can retry, but also show error modal
-      setResultSuccess(false);
-      setResultTitle(t("failedTitle", { defaultValue: "Posting Failed" }));
-      setResultMessage(msg);
-      setResultOpen(true);
+    } catch (postError) {
+      const fresh = await refetchCycle().catch(() => undefined);
+      setConfirmOpen(false);
+      const status = fresh ? getSalaryCycleDisplayStatus(fresh) : "unknown";
+      const tone = getSalaryResultTone(status);
+      showResult(
+        tone,
+        isSalaryProcessingStatus(status) ? t("paymentProcessingTitle")
+          : tone === "success" ? t("paymentCompletedTitle") : tone === "error" ? t("failedTitle") : t("postingOutcomeCheckTitle"),
+        isSalaryProcessingStatus(status) ? t("paymentProcessingMessage")
+          : tone === "success" ? t("paymentCompletedMessage")
+            : (fresh ? getSalaryFailureMessage(fresh) : undefined) ?? (postError instanceof Error ? postError.message : t("postingOutcomeCheckMessage"))
+      );
     } finally {
       postingRef.current = false;
       setPosting(false);
     }
-  }, [cycle, refetchCycle, t]);
+  };
 
-  /* ───────── early states ───────── */
+  const runBatchAction = async (batchId: number, action: "refresh" | "retry") => {
+    if (!cycle) return;
+    try {
+      setBusyBatchId(batchId);
+      if (action === "refresh") {
+        await refreshSalaryWalletBatchStatus(cycle.id, batchId);
+      } else {
+        await retrySalaryWalletBatch(cycle.id, batchId);
+      }
+      const fresh = await refetchCycle();
+      const freshBatch = fresh.walletBatches?.find((batch) => batch.id === batchId);
+      const actionStatus =
+        freshBatch?.status ??
+        freshBatch?.overallStatus ??
+        getSalaryCycleDisplayStatus(fresh);
+      const tone = getSalaryResultTone(actionStatus, freshBatch?.requiresManualReview);
+      showResult(
+        tone,
+        isSalaryProcessingStatus(actionStatus) ? t("paymentProcessingTitle")
+          : tone === "success" ? t("paymentCompletedTitle") : tone === "error" ? t("failedTitle") : t("postingOutcomeCheckTitle"),
+        isSalaryProcessingStatus(actionStatus) ? t("paymentProcessingMessage")
+          : tone === "success" ? t("paymentCompletedMessage")
+            : getSalaryFailureMessage(fresh, batchId) ?? t("postingAccepted", { status: actionStatus })
+      );
+    } catch (batchError) {
+      await refetchCycle().catch(() => undefined);
+      showResult(
+        false,
+        t("failedTitle"),
+        batchError instanceof Error ? batchError.message : t("genericError")
+      );
+    } finally {
+      setBusyBatchId(null);
+    }
+  };
+
+  const channelLabel = (channel: SalaryPaymentChannel) =>
+    channel === "bankAccount"
+      ? t("channelBank")
+      : channel === "evoWallet"
+        ? t("channelEvo")
+        : t("channelBcd");
+
+  const allocationColumns: DataGridColumn[] = [
+    { key: "employeeName", label: t("name") },
+    {
+      key: "paymentChannel",
+      label: t("paymentChannel"),
+      renderCell: (row: AllocationRow) => channelLabel(row.paymentChannel),
+    },
+    {
+      key: "destination",
+      label: t("destination"),
+      renderCell: (row: AllocationRow) => (
+        <div dir="ltr">
+          <div className="font-mono">{row.destination || "-"}</div>
+          {(row.recipientType || row.paymentChannel === "bankAccount") && (
+            <div className="text-xs text-slate-500">
+              {row.recipientType === "accountNumber" ||
+              row.paymentChannel === "bankAccount"
+                ? t("accountNumber")
+                : row.recipientType === "phoneNumber"
+                  ? t("walletPhoneNumber")
+                  : t("walletId")}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "amount",
+      label: t("amount"),
+      renderCell: (row: AllocationRow) => `${row.amount.toLocaleString()} ${cycle?.currency ?? "LYD"}`,
+    },
+    {
+      key: "status",
+      label: t("status"),
+      renderCell: (row: AllocationRow) => <SalaryStatusBadge status={row.status} />,
+    },
+    {
+      key: "commissionAmount",
+      label: t("commission"),
+      renderCell: (row: AllocationRow) => `${roundSalaryAmount(row.commissionAmount).toLocaleString()} ${cycle?.currency ?? "LYD"}`,
+    },
+    {
+      key: "providerReference",
+      label: t("providerReference"),
+      renderCell: (row: AllocationRow) => (
+        <div className="space-y-1 font-mono text-xs" dir="ltr">
+          <div>{row.providerTransactionId || "-"}</div>
+          <div>{row.providerTxCode ?? row.txCode ?? "-"}</div>
+        </div>
+      ),
+    },
+    {
+      key: "result",
+      label: t("resultDetails"),
+      renderCell: (row: AllocationRow) => (
+        <div className="max-w-64 text-sm">
+          <div>{row.transferResultReason || row.transferResultCode || "-"}</div>
+          {row.reversalStatus && (
+            <div className="mt-1 text-xs text-purple-700">
+              {t("reversal")}: {row.reversalStatus} {row.reversalReference ?? ""}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "transferredAt",
+      label: t("transferredAt"),
+      renderCell: (row: AllocationRow) =>
+        row.transferredAt ? new Date(row.transferredAt).toLocaleString(locale) : "-",
+    },
+  ];
+
   if (loading) return <LoadingPage />;
+  if (error || !cycle) return <p className="p-4 text-red-600">{error ?? t("cycleLoadFailed")}</p>;
 
-  if (error || !cycle) {
-    return (
-      <p className="p-4 text-red-600">
-        {error ?? "Unknown error while loading cycle"}
-      </p>
-    );
-  }
-
-  if (isEditing && (empError || accError)) {
-    return (
-      <p className="p-4 text-red-600">
-        {empError ?? accError ?? "Unknown error in edit mode"}
-      </p>
-    );
-  }
-
-  const isPosted: boolean = Boolean(cycle.postedAt);
-  const showPostButton: boolean = !isPosted && hasPostPermission;
-
-  /* ───────── view mode ───────── */
-  if (!isEditing) {
-    const cycleForSummary: TSalaryTransaction = {
-      ...cycle,
-    };
+  if (isEditing) {
+    const editColumns: DataGridColumn[] = [
+      {
+        key: "selected",
+        label: "",
+        renderCell: (employee: EmployeeResponse) => (
+          <input
+            type="checkbox"
+            checked={selectedRows.includes(employee.id)}
+            onChange={() =>
+              setSelectedRows((current) =>
+                current.includes(employee.id)
+                  ? current.filter((id) => id !== employee.id)
+                  : [...current, employee.id]
+              )
+            }
+          />
+        ),
+      },
+      { key: "name", label: t("name") },
+      {
+        key: "salary",
+        label: t("salary"),
+        renderCell: (employee: EmployeeResponse) => (
+          <input type="number" min={0} step="0.001" value={employee.salary} onChange={(event) => updateEmployeeSalary(employee.id, Number(event.target.value))} className="w-28 rounded border border-slate-300 px-2 py-1" />
+        ),
+      },
+      ...(["bankAccount", "evoWallet", "bcdWallet"] as SalaryPaymentChannel[]).map(
+        (channel): DataGridColumn => ({
+          key: channel,
+          label: channelLabel(channel),
+          renderCell: (employee: EmployeeResponse) => {
+            const enabled = channel === "bankAccount" || (channel === "evoWallet" ? capabilities?.evoEnabled : capabilities?.bcdEnabled);
+            const destination = employeeHasDestination(employee, channel);
+            return (
+              <input
+                type="number"
+                min={0}
+                step="0.001"
+                disabled={!enabled || !destination}
+                value={(editAllocations[employee.id] ?? EMPTY_AMOUNTS)[channel]}
+                onChange={(event) => updateEditAllocation(employee.id, channel, Number(event.target.value))}
+                className="w-28 rounded border border-slate-300 px-2 py-1 disabled:bg-slate-100 disabled:text-slate-400"
+              />
+            );
+          },
+        })
+      ),
+      {
+        key: "total",
+        label: t("allocationTotal"),
+        renderCell: (employee: EmployeeResponse) => (
+          <div>
+            <div>{allocationTotal(editAllocations[employee.id] ?? EMPTY_AMOUNTS).toLocaleString()} / {roundSalaryAmount(employee.salary).toLocaleString()}</div>
+            {selectedRows.includes(employee.id) && editValidation(employee) && (
+              <div className="text-xs text-red-600">{editValidation(employee)}</div>
+            )}
+          </div>
+        ),
+      },
+    ];
 
     return (
       <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
-        <SalaryCycleSummaryCard
-          mode="view"
-          cycle={cycleForSummary}
-          locale={locale}
-        />
-        <CrudDataGrid
-          data={viewRows}
-          columns={columnsView}
-          showActions={false}
-          showSearchBar={false}
-          showAddButton={false}
-          noPagination
-          currentPage={1}
-          totalPages={1}
-          onPageChange={() => { }}
-          childrens={
-            !isPosted ? (
-              <Formik
-                initialValues={{}}
-                onSubmit={() => {
-                  setIsEditing(true);
-                  setCanPost(false);
-                }}
-              >
-                {() => (
-                  <div className="flex items-center gap-2">
-                    <SubmitButton
-                      title={t("edit")}
-                      color="info-dark"
-                      fullWidth={false}
-                    />
-                    {showPostButton && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openCommissionPreview(cycle.debitAccount)
-                        }
-                        disabled={!canPost || posting}
-                        className={`rounded px-4 py-2 border ${!canPost || posting
-                          ? "bg-slate-300 text-slate-600 cursor-not-allowed border-slate-300"
-                          : "bg-info-dark text-white hover:opacity-90 border-white hover:border-transparent hover:bg-warning-light hover:text-info-dark"
-                          }`}
-                        title={
-                          canPost
-                            ? undefined
-                            : t("saveToEnablePost", {
-                              defaultValue:
-                                "You must save your changes before posting.",
-                            })
-                        }
-                      >
-                        {posting
-                          ? t("posting", { defaultValue: "Posting..." })
-                          : t("post", { defaultValue: "Post" })}
-                      </button>
-                    )}
-                    {showNotTransferredHeader && cycle && (
-                      <NotTransferredHeader
-                        entries={notTransferred}
-                        cycleId={cycle.id}
-                        onApply={handleRepostApplied}
-                      />
-                    )}
-                  </div>
-                )}
-              </Formik>
-            ) : (
-              showNotTransferredHeader && cycle ? (
-                <NotTransferredHeader
-                  entries={notTransferred}
-                  cycleId={cycle.id}
-                  onApply={handleRepostApplied}
-                />
-              ) : undefined
-            )
-          }
-          canEdit={false}
-          loading={false}
-        />
-
-        {confirmState && (
-          <SalaryConfirmInfoModal
-            isOpen={confirmOpen}
-            formData={confirmState.formData}
-            commissionAmount={confirmState.commissionAmount}
-            commissionCurrency={confirmState.commissionCurrency}
-            displayAmount={confirmState.displayAmount}
-            recipients={recipients} // <-- includes salary per employee
-            isSubmitting={posting}
-            onClose={() => setConfirmOpen(false)}
-            onConfirm={handleConfirmPost}
-          />
-        )}
-
-        {/* Result modal */}
-        <ErrorOrSuccessModal
-          isOpen={resultOpen}
-          isSuccess={resultSuccess}
-          title={resultTitle}
-          message={resultMessage}
-          onClose={() => setResultOpen(false)}
-          onConfirm={() => setResultOpen(false)}
-          okLabel={t("ok", { defaultValue: "حسناً" })}
-          confirmLabel={t("confirm", { defaultValue: "تأكيد" })}
-          closeAriaLabel={t("close", { defaultValue: "إغلاق" })}
-        />
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 rounded-xl bg-info-dark p-4 text-white">
+          <label className="text-sm">
+            <span className="mb-1 block">{t("debitAccount")}</span>
+            <select value={debitAccount} onChange={(event) => setDebitAccount(event.target.value)} className="h-10 rounded-md border border-white/30 bg-white px-3 text-slate-900">
+              {!accountOptions.includes(debitAccount) && debitAccount && <option value={debitAccount}>{debitAccount}</option>}
+              {accountOptions.map((account) => <option key={account} value={account}>{account}</option>)}
+            </select>
+          </label>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setIsEditing(false)} disabled={editLoading} className="inline-flex items-center gap-2 rounded-md border border-white/40 px-4 py-2 text-sm font-medium"><FaTimes />{t("cancel")}</button>
+            <button type="button" onClick={saveEdit} disabled={editLoading} className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-info-dark disabled:opacity-50"><FaSave />{t("save")}</button>
+          </div>
+        </div>
+        <CrudDataGrid data={employees} columns={editColumns} showActions={false} showSearchBar={false} showAddButton={false} noPagination currentPage={1} totalPages={1} onPageChange={() => undefined} canEdit={false} loading={editLoading} />
+        <ErrorOrSuccessModal isOpen={resultOpen} isSuccess={resultVariant === "success"} variant={resultVariant} title={resultTitle} message={resultMessage} onClose={() => setResultOpen(false)} onConfirm={() => setResultOpen(false)} />
       </div>
     );
   }
 
-  /* ───────── edit mode ───────── */
-  const cycleForEditSummary: TSalaryTransaction = {
-    ...cycle,
-    totalAmount: computedTotalEdit,
-  };
+  const knownProviderFailure = isKnownProviderFailureStatus(cycleStatus);
+  const unknownOutcome =
+    !knownProviderFailure &&
+    (cycle.outcomeKnown === false || isManualReviewStatus(cycleStatus));
+  const bankFeeStatus = normalizeSalaryStatus(cycle.bankFeeStatus);
+  const bankFeeNeedsReview =
+    bankFeeStatus === "failed" || bankFeeStatus === "unknown";
+  const manualReview =
+    !bankFeeNeedsReview &&
+    (cycle.requiresManualReview === true || unknownOutcome);
 
   return (
-    <Formik
-      initialValues={{ debitAccount: cycle.debitAccount }}
-      enableReinitialize
-      onSubmit={async (vals, { setSubmitting }) => {
-        await handleSave(vals.debitAccount);
-        setSubmitting(false);
-      }}
-    >
-      {({ isSubmitting }) => (
-        <Form>
-          <div className={`p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
-            <SalaryCycleSummaryCard
-              mode="edit"
-              cycle={cycleForEditSummary}
-              locale={locale}
-              salaryMonthInput={salaryMonthInput}
-              onSalaryMonthChange={setSalaryMonthInput}
-              accountOptions={accountOptions}
-              accLoading={accLoading}
-            />
+    <div className={`space-y-4 p-4 ${locale === "ar" ? "rtl" : "ltr"}`}>
+      <SalaryCycleSummaryCard mode="view" cycle={cycle} locale={locale} />
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-info-dark px-4 py-3 text-white">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium">{t("status")}</span>
+          <SalaryStatusBadge status={cycleStatus} />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {editable && (
+            <button type="button" onClick={beginEdit} disabled={editLoading} className="inline-flex items-center gap-2 rounded-md border border-white/40 px-4 py-2 text-sm font-medium disabled:opacity-50"><FaEdit />{t("edit")}</button>
+          )}
+          {postable && (
+            <button type="button" onClick={() => setConfirmOpen(true)} disabled={posting} className="rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50">{t("post")}</button>
+          )}
+        </div>
+      </div>
 
-            <CrudDataGrid
-              data={employees}
-              columns={columnsEdit}
-              showActions={false}
-              showSearchBar={false}
-              showAddButton={false}
-              noPagination
-              currentPage={1}
-              totalPages={1}
-              onPageChange={() => { }}
-              childrens={
-                <div className="flex items-center gap-2">
-                  <SubmitButton
-                    title={t("save")}
-                    color="info-dark"
-                    disabled={isSubmitting}
-                    fullWidth={false}
-                  />
-                  {showPostButton && (
-                    <button
-                      type="button"
-                      disabled
-                      className="rounded px-4 py-2 bg-slate-300 text-slate-600 cursor-not-allowed"
-                      title={t("saveToEnablePost", {
-                        defaultValue: "Save changes to enable posting.",
-                      })}
-                    >
-                      {t("post", { defaultValue: "Post" })}
-                    </button>
-                  )}
-                  {showNotTransferredHeader && cycle && (
-                    <NotTransferredHeader
-                      entries={notTransferred}
-                      cycleId={cycle.id}
-                      onApply={handleRepostApplied}
-                    />
-                  )}
-                </div>
-              }
-              canEdit={false}
-              loading={empLoading || accLoading}
-            />
-
-            {confirmState && (
-              <SalaryConfirmInfoModal
-                isOpen={confirmOpen}
-                formData={confirmState.formData}
-                commissionAmount={confirmState.commissionAmount}
-                commissionCurrency={confirmState.commissionCurrency}
-                displayAmount={confirmState.displayAmount}
-                recipients={recipients} // <-- includes salary per employee
-                isSubmitting={posting}
-                onClose={() => setConfirmOpen(false)}
-                onConfirm={handleConfirmPost}
-              />
-            )}
-
-            {/* Result modal */}
-            <ErrorOrSuccessModal
-              isOpen={resultOpen}
-              isSuccess={resultSuccess}
-              title={resultTitle}
-              message={resultMessage}
-              onClose={() => setResultOpen(false)}
-              onConfirm={() => setResultOpen(false)}
-              okLabel={t("ok", { defaultValue: "حسناً" })}
-              confirmLabel={t("confirm", { defaultValue: "تأكيد" })}
-              closeAriaLabel={t("close", { defaultValue: "إغلاق" })}
-            />
-          </div>
-        </Form>
+      {hasUnavailableRail && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          {t("cycleContainsUnavailableRail")}
+        </div>
       )}
-    </Formik>
+      {bankFeeNeedsReview && (
+        <div
+          className={`rounded-lg border p-4 text-sm ${
+            bankFeeStatus === "failed"
+              ? "border-red-300 bg-red-50 text-red-900"
+              : "border-amber-300 bg-amber-50 text-amber-950"
+          }`}
+        >
+          <div className="flex flex-wrap items-center gap-2 font-semibold">
+            <span>{t("bankFeeSettlementStatus")}</span>
+            <SalaryStatusBadge status={cycleStatus} />
+          </div>
+          <div className="mt-1">
+            {cycle.bankFeeError ||
+              (bankFeeStatus === "failed"
+                ? t("bankFeeSettlementFailed")
+                : t("bankFeeSettlementUnknown"))}
+          </div>
+        </div>
+      )}
+      {manualReview && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+          <div className="font-semibold">{t("manualReviewRequired")}</div>
+          <div className="mt-1">
+            {unknownOutcome
+              ? t("unknownOutcomeNoRetry")
+              : knownProviderFailure
+                ? t("knownProviderFailureManualReview")
+                : t("manualReviewFollowUp")}
+          </div>
+        </div>
+      )}
+
+      <section>
+        <h2 className="mb-2 text-base font-semibold text-slate-900">{t("salaryAllocations")}</h2>
+        <CrudDataGrid data={allocationRows} columns={allocationColumns} showActions={false} showSearchBar={false} showAddButton={false} noPagination currentPage={1} totalPages={1} onPageChange={() => undefined} canEdit={false} loading={false} />
+      </section>
+
+      {(cycle.walletBatches ?? []).length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold text-slate-900">{t("walletBatches")}</h2>
+          {(cycle.walletBatches ?? []).map((batch) => (
+            <SalaryWalletBatchCard
+              key={batch.id}
+              batch={batch}
+              currency={cycle.currency}
+              canPost={hasPostPermission}
+              busy={busyBatchId === batch.id}
+              onRefresh={() => runBatchAction(batch.id, "refresh")}
+              onRetry={() => runBatchAction(batch.id, "retry")}
+            />
+          ))}
+        </section>
+      )}
+
+      <SalaryPostingConfirmModal
+        isOpen={confirmOpen}
+        debitAccount={cycle.debitAccount}
+        currency={cycle.currency}
+        totalAmount={cycle.totalAmount}
+        totals={postingTotals}
+        submitting={posting}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmPost}
+      />
+      <ErrorOrSuccessModal isOpen={resultOpen} isSuccess={resultVariant === "success"} variant={resultVariant} title={resultTitle} message={resultMessage} onClose={() => setResultOpen(false)} onConfirm={() => setResultOpen(false)} okLabel={t("ok")} confirmLabel={t("confirm")} closeAriaLabel={t("close")} />
+    </div>
   );
 }

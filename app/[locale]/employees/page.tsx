@@ -154,8 +154,47 @@ const Page = () => {
         </span>
       ),
     },
-    { key: "accountNumber", label: t("accountNumber") },
-    { key: "accountType", label: t("accountType") },
+    {
+      key: "accountNumber",
+      label: t("bankAccount", { defaultValue: "Bank Account" }),
+      renderCell: (row: EmployeeResponse) => (
+        <span dir="ltr">{row.accountNumber || "-"}</span>
+      ),
+    },
+    {
+      key: "evoWallet",
+      label: t("evoWallet", { defaultValue: "EVO Wallet" }),
+      renderCell: (row: EmployeeResponse) =>
+        row.evoWallet ? (
+          <div className="flex flex-col" dir="ltr">
+            <span>{row.evoWallet}</span>
+            <span className="text-xs text-slate-500">
+              {row.evoWalletRecipientType === "phoneNumber"
+                ? t("walletPhoneNumber", { defaultValue: "Phone number" })
+                : t("walletId", { defaultValue: "Wallet ID" })}
+            </span>
+          </div>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      key: "bcdWallet",
+      label: t("bcdWallet", { defaultValue: "BCD Wallet" }),
+      renderCell: (row: EmployeeResponse) =>
+        row.bcdWallet ? (
+          <div className="flex flex-col" dir="ltr">
+            <span>{row.bcdWallet}</span>
+            <span className="text-xs text-slate-500">
+              {row.bcdWalletRecipientType === "phoneNumber"
+                ? t("walletPhoneNumber", { defaultValue: "Phone number" })
+                : t("walletId", { defaultValue: "Wallet ID" })}
+            </span>
+          </div>
+        ) : (
+          "-"
+        ),
+    },
     {
       key: "sendSalary",
       label: t("sendSalary"),

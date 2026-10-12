@@ -11,6 +11,7 @@ export type ApiErrorEnvelope = {
   success?: boolean | string | number;
   status?: number | string;
   message?: string | null;
+  error?: string | null;
   details?: ApiErrorDetails;
   [key: string]: unknown;
 };
@@ -113,6 +114,10 @@ const extractMessage = (
     return envelope.message.trim();
   }
 
+  if (typeof envelope.error === "string" && envelope.error.trim()) {
+    return envelope.error.trim();
+  }
+
   const statusCode = coerceStatusCode(envelope.status);
   if (statusCode !== undefined && statusCode >= 400 && statusCode !== 200) {
     return `Request failed with status ${envelope.status}`;
@@ -149,7 +154,11 @@ export async function handleApiResponse<T = unknown>(
     }
   }
 
-  const envelope = isErrorEnvelope(parsed) ? parsed : undefined;
+  const envelope = isErrorEnvelope(parsed)
+    ? parsed
+    : !response.ok && isObject(parsed)
+      ? (parsed as ApiErrorEnvelope)
+      : undefined;
   const shouldThrow = !response.ok || envelope !== undefined;
 
   if (shouldThrow) {

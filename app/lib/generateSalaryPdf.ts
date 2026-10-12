@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { TSalaryTransaction } from "../[locale]/salaries/types";
+import { isSalaryCycleCompleted } from "../[locale]/salaries/salaryStatus";
 import { registerAmiriFont } from "./pdfFonts";
 
 registerAmiriFont();
@@ -15,9 +16,17 @@ type AnyEntry = {
   amount?: number;
   salary?: number;
   isTransferred?: boolean;
+  allocations?: Array<{ recipientNameSnapshot?: string | null }>;
 };
 
-const getEntryName = (e: AnyEntry) => String(e.name ?? e.employeeName ?? "");
+const getEntryName = (e: AnyEntry) =>
+  String(
+    e.allocations?.find((allocation) => allocation.recipientNameSnapshot)
+      ?.recipientNameSnapshot ??
+      e.name ??
+      e.employeeName ??
+      ""
+  );
 const getEntrySalary = (e: AnyEntry) =>
   Number(e.salary ?? e.amount ?? 0);
 
@@ -25,6 +34,10 @@ const getEntrySalary = (e: AnyEntry) =>
 export const generateSalaryTransactionPdf = (
   transaction: TSalaryTransaction
 ): void => {
+  if (!isSalaryCycleCompleted(transaction)) {
+    throw new Error("A salary PDF can only be generated for a completed cycle.");
+  }
+
   const doc = new jsPDF({ putOnlyUsedFonts: true, hotfixes: ["px_scaling"] });
   doc.setLanguage("ar");
   doc.setFont("Amiri");
@@ -76,7 +89,7 @@ export const generateSalaryTransactionPdf = (
       ? transaction.totalAmount
       : computedTotalFromEntries;
 
-  const statusText = transaction.postedAt ? "مكتمل" : "قيد المعالجة";
+  const statusText = "مكتمل";
 
   // Right table: ID / Salary Month
   const salaryMonthValue = String(transaction.salaryMonth ?? "");

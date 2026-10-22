@@ -30,6 +30,7 @@ export const generateSalaryTransactionPdf = (
   doc.setFont("Amiri");
 
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const boxWidth = (pageWidth - margin * 3) / 2;
 
   /* ---------- header (logo/title) ---------- */
@@ -171,18 +172,21 @@ export const generateSalaryTransactionPdf = (
   const tableLeftX = (pageWidth - totalTableWidth) / 2;
   const tableRightX = tableLeftX + totalTableWidth;
 
-  // Draw header from right to left
-  let currentX_Header = tableRightX;
-  headers.forEach((header, i) => {
-    const width = columnWidths[i];
-    const cellX = currentX_Header - width; // top-left X for the cell
-    doc.rect(cellX, startY, width, rowHeight);
-    doc.text(String(header), cellX + width / 2, startY + 7, {
-      align: "center",
+  const drawTableHeader = () => {
+    let currentX = tableRightX;
+    headers.forEach((header, i) => {
+      const width = columnWidths[i];
+      const cellX = currentX - width;
+      doc.rect(cellX, startY, width, rowHeight);
+      doc.text(String(header), cellX + width / 2, startY + 7, {
+        align: "center",
+      });
+      currentX -= width;
     });
-    currentX_Header -= width; // move left
-  });
-  startY += rowHeight;
+    startY += rowHeight;
+  };
+
+  drawTableHeader();
 
   // Prepare data rows from new `entries`
   const rows: Array<[string, string, string]> = entries.map((e) => [
@@ -193,6 +197,18 @@ export const generateSalaryTransactionPdf = (
 
   // Draw data rows from right to left
   rows.forEach((row) => {
+    if (startY + rowHeight > pageHeight - margin) {
+      doc.addPage();
+      doc.setFont("Amiri", "normal").setFontSize(10);
+      doc.text(`${String(transaction.id)} : رمز المعاملة`, pageWidth - margin, 15, {
+        align: "right",
+      });
+      doc.setFontSize(14);
+      doc.text("تفاصيل الموظفين", pageWidth / 2, 25, { align: "center" });
+      startY = 40;
+      drawTableHeader();
+    }
+
     let currentX_Row = tableRightX; // reset X to the right edge for each new row
     row.forEach((cell, i) => {
       const width = columnWidths[i];

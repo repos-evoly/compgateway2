@@ -1,4 +1,4 @@
-// "use client";
+﻿// "use client";
 
 // import React, { useState, useEffect, useRef } from "react";
 // import * as Yup from "yup";
@@ -302,6 +302,7 @@ export default function VerificationForm({
       /* Remove saved login */
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth_login");
+        sessionStorage.removeItem("auth_setup_token");
       }
 
       /* Shared post-login routing

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import VerificationForm from "@/app/auth/login/components/VerificationForm";
@@ -54,7 +54,7 @@ const QRCodeDisplay: React.FC = () => {
             "Content-Type": "application/json",
             "Cache-Control": "no-cache, no-store, must-revalidate",
           },
-          body: JSON.stringify({ login }),
+          body: JSON.stringify({ login, setupToken: sessionStorage.getItem("auth_setup_token") }),
           credentials: "include",
           cache: "no-store",
         });
@@ -76,6 +76,10 @@ const QRCodeDisplay: React.FC = () => {
           );
         }
 
+        if (typeof data.qrCodeImageBase64 === "string" && data.qrCodeImageBase64.startsWith("data:image/png;base64,")) {
+          setQrCodePath(data.qrCodeImageBase64);
+          return;
+        }
         const qrSource =
           typeof data.qrCodeUrl === "string"
             ? data.qrCodeUrl

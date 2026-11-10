@@ -40,5 +40,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json(data, { status: upstream.status });
+  return NextResponse.json(data, { status: upstream.status, headers: { "Cache-Control": "no-store" } });
 }

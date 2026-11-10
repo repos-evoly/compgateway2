@@ -1,4 +1,4 @@
-// // /app/helpers/authentication/authHandler.ts
+﻿// // /app/helpers/authentication/authHandler.ts
 
 // import Cookies from "js-cookie";
 // import { parseJwt } from "../tokenHandler"; // Adjust path if needed
@@ -351,18 +351,8 @@ type OnCompanyNotApproved = (status: string, msg: string) => void;
 
 export type LoginFormValues = { login: string; password: string };
 
-export type ForgotPasswordValues = { email: string };
 
-export type ResetPasswordValues = {
-  passwordToken: string;
-  password: string;
-  confirmPassword: string;
-};
 
-export type ResetPasswordHandlerOptions = {
-  onSuccess?: () => void;
-  onError?: (msg: string) => void;
-};
 
 type LoginHandlerOptions = {
   router: SimpleRouter;
@@ -380,6 +370,7 @@ type LoginUpstream = {
   messageAr?: string;
   details?: { message?: string | null; debugClientIp?: unknown } | null;
   debugClientIp?: unknown;
+  setupToken?: string;
   requiresTwoFactorEnable?: boolean;
   requiresTwoFactor?: boolean;
   accessToken?: string;
@@ -450,6 +441,8 @@ export async function loginHandler(
 
     // 1) 2FA flows
     if (data.requiresTwoFactorEnable) {
+      if (typeof data.setupToken !== "string") throw new Error("Sign in again to begin authenticator setup.");
+      sessionStorage.setItem("auth_setup_token", data.setupToken);
       router.push("/auth/qr");
       return;
     }
@@ -467,68 +460,6 @@ export async function loginHandler(
     const msg = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
     if (onError) {
       onError(msg);
-    }
-  }
-}
-
-type ForgotPasswordHandlerOptions = {
-  onSuccess?: (login: string) => void;
-  onError?: (msg: string) => void;
-};
-
-export async function forgotPasswordHandler(
-  values: ForgotPasswordValues,
-  { onSuccess, onError }: ForgotPasswordHandlerOptions
-): Promise<void> {
-  try {
-    const res = await fetch(`/Companygw/api/auth/customer-forgot-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-      credentials: "include",
-    });
-    if (!res.ok) {
-      throw new Error("فشل إرسال طلب إعادة تعيين كلمة المرور.");
-    }
-
-    alert("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.");
-    if (onSuccess) {
-      onSuccess(values.email);
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "حدث خطأ غير متوقع.";
-    if (onError) {
-      onError(msg);
-    } else {
-      alert(msg);
-    }
-  }
-}
-
-export async function resetPasswordHandler(
-  values: ResetPasswordValues,
-  { onSuccess, onError }: ResetPasswordHandlerOptions
-): Promise<void> {
-  try {
-    const res = await fetch(`/Companygw/api/auth/reset-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-      credentials: "include",
-    });
-    if (!res.ok) {
-      throw new Error("فشل إعادة تعيين كلمة المرور.");
-    }
-    alert("تم تغيير كلمة المرور بنجاح.");
-    if (onSuccess) {
-      onSuccess();
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "حدث خطأ غير متوقع.";
-    if (onError) {
-      onError(msg);
-    } else {
-      alert(msg);
     }
   }
 }

@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json(data, { status: 200 });
+  res.headers.set("Cache-Control", "no-store");
 
   if (data.deviceId) {
     res.cookies.set("authDeviceId", data.deviceId, deviceCookieConfig);

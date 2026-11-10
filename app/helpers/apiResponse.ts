@@ -11,6 +11,8 @@ export type ApiErrorEnvelope = {
   success?: boolean | string | number;
   status?: number | string;
   message?: string | null;
+  error?: string | null;
+  title?: string | null;
   details?: ApiErrorDetails;
   [key: string]: unknown;
 };
@@ -113,6 +115,14 @@ const extractMessage = (
     return envelope.message.trim();
   }
 
+  if (typeof envelope.error === "string" && envelope.error.trim()) {
+    return envelope.error.trim();
+  }
+
+  if (typeof envelope.title === "string" && envelope.title.trim()) {
+    return envelope.title.trim();
+  }
+
   const statusCode = coerceStatusCode(envelope.status);
   if (statusCode !== undefined && statusCode >= 400 && statusCode !== 200) {
     return `Request failed with status ${envelope.status}`;
@@ -149,17 +159,16 @@ export async function handleApiResponse<T = unknown>(
     }
   }
 
-  const envelope = isErrorEnvelope(parsed) ? parsed : undefined;
-  const shouldThrow = !response.ok || envelope !== undefined;
+  const isFailureEnvelope = isErrorEnvelope(parsed);
+  const envelope = isFailureEnvelope || (!response.ok && isObject(parsed))
+    ? parsed as ApiErrorEnvelope
+    : undefined;
+  const shouldThrow = !response.ok || isFailureEnvelope;
 
   if (shouldThrow) {
     const message = extractMessage(envelope, fallbackMessage);
-    const status =
-      envelope !== undefined
-        ? coerceStatusCode(envelope.status)
-        : response.ok
-        ? undefined
-        : response.status;
+    const status = coerceStatusCode(envelope?.status) ??
+      (response.ok ? undefined : response.status);
     const details = envelope?.details;
     throw new ApiError(message, status, details);
   }

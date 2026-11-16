@@ -72,9 +72,8 @@ export default function ConfirmInfoModal({
       : "ltr";
 
   const { from, to, description, commissionOnRecipient } = formData;
-  // Show USD label if currency is not LYD
-  const normalizedCurrency = (commissionCurrency || "").trim().toUpperCase();
-  const modalCurrency = normalizedCurrency === "LYD" ? "LYD" : "USD";
+  // Keep the total and fee labels in the transfer's resolved currency.
+  const modalCurrency = (commissionCurrency || "").trim().toUpperCase();
   const payer = commissionOnRecipient
     ? t("feePayerRecipient")
     : t("feePayerSender");

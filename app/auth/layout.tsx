@@ -1,5 +1,8 @@
 /* app/auth/layout.tsx – allow-list enforcement for selected auth pages */
 import localFont from "next/font/local";
+import { cookies } from "next/headers";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 import "../globals.css";
 
@@ -28,7 +31,12 @@ const cairo = localFont({
 
 type Props = { children: ReactNode };
 
-export default function AuthLayout({ children }: Props): React.JSX.Element {
+export default async function AuthLayout({ children }: Props): Promise<React.JSX.Element> {
+  const preferredLocale = (await cookies()).get("NEXT_LOCALE")?.value.toLowerCase().split("-")[0];
+  const locale = preferredLocale === "en" ? "en" : "ar";
+  setRequestLocale(locale);
+  const { authenticatorRecovery } = await getMessages();
+
   // Comma-separated list of allowed URLs/paths (absolute enforces origin; relative resolved against current origin)
   const allowedRaw =
     process.env.NEXT_PUBLIC_ALLOWED_URLS ??
@@ -38,7 +46,9 @@ export default function AuthLayout({ children }: Props): React.JSX.Element {
   return (
     <html className={`h-full ${cairo.className}`} lang="ar" dir="rtl">
       <body className="h-full flex flex-row">
-        {children}
+        <NextIntlClientProvider locale={locale} messages={{ authenticatorRecovery }}>
+          {children}
+        </NextIntlClientProvider>
 
         {/* Enforce only on allow-listed pages; ignore query/hash/trailing slashes */}
         <script

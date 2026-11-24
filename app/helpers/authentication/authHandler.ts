@@ -356,7 +356,7 @@ export type LoginFormValues = { login: string; password: string };
 
 type LoginHandlerOptions = {
   router: SimpleRouter;
-  onTwoFactorRequired?: () => void;
+  onTwoFactorRequired?: (recoveryAttempt?: string) => void;
   onError?: (msg: string) => void;
   onCompanyNotApproved?: (status: string, msg: string) => void;
 };
@@ -371,6 +371,7 @@ type LoginUpstream = {
   details?: { message?: string | null; debugClientIp?: unknown } | null;
   debugClientIp?: unknown;
   setupToken?: string;
+  recoveryAttempt?: string;
   requiresTwoFactorEnable?: boolean;
   requiresTwoFactor?: boolean;
   accessToken?: string;
@@ -448,7 +449,7 @@ export async function loginHandler(
     }
     if (data.requiresTwoFactor) {
       if (onTwoFactorRequired) {
-        onTwoFactorRequired();
+        onTwoFactorRequired(data.recoveryAttempt);
       }
       return;
     }

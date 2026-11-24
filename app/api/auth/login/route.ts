@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import {
   deviceCookieConfig,
   setCanonicalAuthCookies,
 } from "@/app/api/_lib/authCookies";
+import { isRecoveryBrowserKey, recoveryBrowserCookie, recoveryBrowserHeader, recoveryCookieConfig, recoveryProofCookie } from "../_authenticatorRecovery";
 
 const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API; 
 // e.g. https://compgw.backend.bcd.ly/compauthapi/api/auth
@@ -24,6 +26,7 @@ type UpstreamLoginResponse = {
   deviceId?: string;
   sessionExpiresAt?: string;
   heartbeatIntervalMinutes?: number;
+  webRecoveryProof?: string;
   // optionally any extra fields your backend returns
 };
 
@@ -57,11 +60,15 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const cookieHeader = buildCookieHeader(req);
   const forwardedHeaders = buildForwardedHeaders(req);
+  const existingBrowserKey = req.cookies.get(recoveryBrowserCookie)?.value;
+  const browserKey = isRecoveryBrowserKey(existingBrowserKey) ? existingBrowserKey : randomBytes(32).toString("hex");
 
   const upstream = await fetch(`${AUTH_BASE}/login`, {
     method: "POST",
+    redirect: "error",
     headers: {
       "Content-Type": "application/json",
+      [recoveryBrowserHeader]: browserKey,
       ...forwardedHeaders,
       ...(cookieHeader ? { Cookie: cookieHeader } : {}),
     },
@@ -85,8 +92,17 @@ export async function POST(req: NextRequest) {
     // if backend returns non-JSON 200 (unlikely), just pass it back
   }
 
-  const res = NextResponse.json(data, { status: 200 });
+  const { webRecoveryProof, ...publicData } = data;
+  const recoveryAttempt = data.requiresTwoFactor === true && typeof webRecoveryProof === "string" && webRecoveryProof.length <= 2048 && webRecoveryProof.length > 0
+    ? randomBytes(16).toString("hex") : undefined;
+  const res = NextResponse.json({ ...publicData, recoveryAttempt }, { status: 200 });
   res.headers.set("Cache-Control", "no-store");
+  if (recoveryAttempt) {
+    res.cookies.set(recoveryBrowserCookie, browserKey, recoveryCookieConfig);
+    res.cookies.set(recoveryProofCookie, `${recoveryAttempt}.${webRecoveryProof}`, { ...recoveryCookieConfig, maxAge: 300 });
+  } else {
+    res.cookies.set(recoveryProofCookie, "", { ...recoveryCookieConfig, maxAge: 0 });
+  }
 
   if (data.deviceId) {
     res.cookies.set("authDeviceId", data.deviceId, deviceCookieConfig);

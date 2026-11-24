@@ -130,6 +130,7 @@ export default function LoginForm(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
+  const [recoveryAttempt, setRecoveryAttempt] = useState<string>();
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
@@ -146,7 +147,10 @@ export default function LoginForm(): JSX.Element {
     setLoading(true);
     await loginHandler(values, {
       router,
-      onTwoFactorRequired: () => setShow2FAModal(true),
+      onTwoFactorRequired: (attempt) => {
+        setRecoveryAttempt(attempt);
+        setShow2FAModal(true);
+      },
       onError: (msg) => setError(msg),
       onCompanyNotApproved: (status, msg) => {
         setModalTitle(`حالة الشركة: ${status}`);
@@ -262,12 +266,13 @@ export default function LoginForm(): JSX.Element {
           onClick={() => setShow2FAModal(false)}
         >
           <div
-            className="rounded-3xl w-full max-w-sm p-4"
+            className="rounded-3xl w-full max-w-sm max-h-[90vh] overflow-y-auto p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <VerificationForm
               onClose={() => setShow2FAModal(false)}
               sourcePage="login"
+              recoveryAttempt={recoveryAttempt}
             />
           </div>
         </div>

@@ -197,6 +197,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import * as Yup from "yup";
 import { FormikHelpers } from "formik";
 import { FiShield, FiX } from "react-icons/fi";
@@ -206,21 +207,27 @@ import SubmitButton from "@/app/components/FormUI/SubmitButton";
 import { useRouter } from "next/navigation";
 import { loginRoutingHandler } from "@/app/helpers/authentication/authHandler";
 import ErrorOrSuccessModal from "@/app/auth/components/ErrorOrSuccessModal";
+import AuthenticatorRecoveryPanel from "./AuthenticatorRecoveryPanel";
 
 type VerificationFormProps = {
   onClose: () => void;
   sourcePage?: string;
+  recoveryAttempt?: string;
 };
 
 export default function VerificationForm({
   onClose,
   sourcePage,
+  recoveryAttempt,
 }: VerificationFormProps) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("authenticatorRecovery");
 
   /* ----------------------- Local state ----------------------- */
   const [apiError, setApiError] = useState<string | null>(null);
   const [storedlogin, setStoredlogin] = useState<string | null>(null);
+  const [recoverySetup, setRecoverySetup] = useState(false);
 
   /* Modal for company-status fallback */
   const [modalOpen, setModalOpen] = useState(false);
@@ -241,8 +248,8 @@ export default function VerificationForm({
   const validationSchema = Yup.object().shape({
     code: Yup.string()
       .trim()
-      .length(6, "يجب أن يكون رمز التحقق مكونًا من 6 أرقام")
-      .required("هذا الحقل مطلوب"),
+      .length(6, t("verificationLength"))
+      .required(t("verificationRequired")),
   });
 
   /* -------------------- Submit -------------------- */
@@ -255,7 +262,8 @@ export default function VerificationForm({
 
     try {
       if (!storedlogin) {
-        throw new Error("تعذر تحديد البريد الإلكتروني. يرجى إعادة المحاولة.");
+        setApiError(t("verificationMissingLogin"));
+        return;
       }
 
       const endpoint =
@@ -284,19 +292,10 @@ export default function VerificationForm({
         }
       }
 
-      if (data?.success === false) {
-        throw new Error(
-          data?.details?.message ||
-            data?.message ||
-            "فشل التحقق من الرمز. تأكد من صحة الرمز وحاول مرة أخرى."
-        );
-      }
-
-      if (!res.ok) {
-        throw new Error(
-          data?.message ||
-            "فشل التحقق من الرمز. تأكد من صحة الرمز وحاول مرة أخرى."
-        );
+      if (!res.ok || data?.success === false) {
+        const localizedMessage = locale === "ar" ? data?.messageAr : data?.messageEn;
+        setApiError(localizedMessage || t("verificationFailed"));
+        return;
       }
 
       /* Remove saved login */
@@ -314,15 +313,15 @@ export default function VerificationForm({
 
       await loginRoutingHandler(router, (status, msg) => {
         fallbackTriggered.current = true;
-        setModalTitle(`حالة الشركة: ${status}`);
+        setModalTitle(t("companyStatus", { status }));
         setModalMessage(msg);
         setModalOpen(true);
       });
 
       /* Close the 2FA overlay only if fallback didn’t show */
       if (!fallbackTriggered.current) onClose();
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : "حدث خطأ غير متوقع");
+    } catch {
+      setApiError(t("verificationFailed"));
     } finally {
       helpers.setSubmitting(false);
     }
@@ -332,24 +331,25 @@ export default function VerificationForm({
   return (
     <>
       <div
-        dir="rtl"
+        lang={locale}
+        dir={locale === "ar" ? "rtl" : "ltr"}
         className="w-full max-w-sm bg-white rounded-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between p-4 bg-info-dark">
-          <h2 className="text-xl font-bold text-white m-0">إدخال رمز التحقق</h2>
+          <h2 className="text-xl font-bold text-white m-0">{t(recoverySetup ? "recover" : "verificationTitle")}</h2>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="w-8 h-8 flex items-center justify-center rounded-full border border-white bg-info-dark text-white hover:bg-warning-light hover:text-info-dark transition-colors"
           >
             <FiX className="text-lg" />
           </button>
         </div>
 
-        <div className="p-6 text-right">
+        {!recoverySetup && <div className="p-6 text-start">
           <p className="text-sm text-gray-500 mb-6">
-            يرجى إدخال رمز التحقق المكوّن من 6 أرقام لمتابعة عملية التحقق
-            بخطوتين.
+            {t("verificationHelp")}
           </p>
 
           <Form
@@ -359,7 +359,7 @@ export default function VerificationForm({
           >
             <FormInputIcon
               name="code"
-              label="رمز التحقق"
+              label={t("verificationCode")}
               type="text"
               startIcon={<FiShield />}
               textColor="text-dark"
@@ -372,10 +372,13 @@ export default function VerificationForm({
             )}
 
             <div className="flex justify-end mt-6">
-              <SubmitButton title="تأكيد" Icon={FiShield} color="info-dark" />
+              <SubmitButton title={t("verificationConfirm")} Icon={FiShield} color="info-dark" />
             </div>
           </Form>
-        </div>
+        </div>}
+        {recoveryAttempt && (
+          <AuthenticatorRecoveryPanel attempt={recoveryAttempt} onSetup={() => setRecoverySetup(true)} onBackToSignIn={onClose} />
+        )}
       </div>
 
       {modalOpen && (

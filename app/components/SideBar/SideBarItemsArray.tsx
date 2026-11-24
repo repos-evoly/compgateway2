@@ -134,15 +134,15 @@ export const sidebarItems = [
         icon: FaUniversity,
         enabledTransactionCategories: ["InternalTransfer"],
       },
-      // Hidden from navigation; the transfer pages remain accessible by URL.
-      // {
-      //   id: 39,
-      //   label: "transfer.onePay",
-      //   path: "/transfers/onepay",
-      //   icon: FaExchangeAlt,
-      //   permissions: ["CompanyCanTransfer"],
-      //   enabledTransactionCategories: ["Transfers"],
-      // },
+      {
+        id: 39,
+        label: "transfer.onePay",
+        path: "/transfers/onepay",
+        icon: FaExchangeAlt,
+        permissions: ["CompanyCanTransfer"],
+        enabledTransactionCategories: ["Transfers"],
+      },
+      // LYPay remains accessible by URL.
       // {
       //   id: 40,
       //   label: "transfer.lyPay",
